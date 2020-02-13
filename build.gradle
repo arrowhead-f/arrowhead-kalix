@@ -1,0 +1,40 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '5.2.0'
+}
+
+group = 'eu.arrowhead.kalix'
+version = '4.0.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    nettyVersion = '4.1.45.Final'
+    junitJupiterEngineVersion = '5.4.0'
+}
+
+application {
+    mainClassName = 'io.vertx.core.Launcher'
+}
+
+sourceCompatibility = '11'
+
+dependencies {
+    compile "io.netty:netty-all:$nettyVersion"
+
+    testCompileOnly "org.junit.jupiter:junit-jupiter-engine:$junitJupiterEngineVersion"
+}
+
+shadowJar {
+    classifier = 'fat'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events 'PASSED', 'FAILED', 'SKIPPED'
+    }
+}
