@@ -23,7 +23,7 @@ import java.util.*;
  * to start the services, if any, and acquire an {@link ArrowheadClient}
  * object, which can be used to consume the services of remote AHF systems.
  */
-public abstract class ArrowheadSystem {
+public class ArrowheadSystem {
     private final String name;
     private final InetSocketAddress inetSocketAddress;
     private final KeyStore keyStore;
@@ -47,21 +47,7 @@ public abstract class ArrowheadSystem {
         return inetSocketAddress;
     }
 
-    public KeyStore getKeyStore() {
-        return keyStore;
-    }
-
-    public TrustStore getTrustStore() {
-        return trustStore;
-    }
-
-    public List<ArrowheadService> getProducedServices() {
-        return providedServices;
-    }
-
-    public abstract Future<ArrowheadClient> start();
-
-    public static abstract class Builder {
+    public static class Builder {
         private String name;
         private InetSocketAddress inetSocketAddress;
         private KeyStore keyStore;
@@ -108,6 +94,8 @@ public abstract class ArrowheadSystem {
             return this;
         }
 
-        public abstract ArrowheadSystem build();
+        public ArrowheadSystem build() {
+            return new ArrowheadSystem(this);
+        }
     }
 }

@@ -1,20 +1,19 @@
 package eu.arrowhead.kalix;
 
+import java.util.List;
+
 /**
  * An abstract Arrowhead Framework (AHF) service.
  */
-public abstract class ArrowheadService {
-    private final String name;
-
-    protected ArrowheadService(final String name) {
-        this.name = name;
-    }
-
+public interface ArrowheadService {
     /**
      * @return The name, also known as the <i>service definition</i>, of this
      * service.
      */
-    public String getName() {
-        return name;
-    }
+    String getName();
+
+    /**
+     * @return A list of all interface triples supported by this service.
+     */
+    List<InterfaceTriple> getSupportedInterfaces();
 }

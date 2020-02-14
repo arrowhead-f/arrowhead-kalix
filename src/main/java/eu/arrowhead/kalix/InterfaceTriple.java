@@ -7,19 +7,7 @@ import java.util.Objects;
  * transport interface, security interface and message encoding a given
  * {@link ArrowheadService} uses.
  */
-public class Triple {
-    /**
-     * Represents a {@link ArrowheadService} that communicates over HTTPS with
-     * message payloads encoded with JSON.
-     */
-    public static final Triple HTTP_SECURE_JSON = new Triple("HTTP", true, "JSON");
-
-    /**
-     * Represents a {@link ArrowheadService} that communicates over plain HTTP
-     * with message payloads encoded with JSON.
-     */
-    public static final Triple HTTP_INSECURE_JSON = new Triple("HTTP", false, "JSON");
-
+public class InterfaceTriple {
     private final String transport;
     private final boolean isSecure;
     private final String encoding;
@@ -37,11 +25,23 @@ public class Triple {
      * @param encoding  Message payload format, such as {@code "CBOR"} or
      *                  {@code "JSON"}.
      */
-    public Triple(final String transport, final boolean isSecure, final String encoding) {
+    public InterfaceTriple(final String transport, final boolean isSecure, final String encoding) {
         this.transport = Objects.requireNonNull(transport).toUpperCase();
         this.isSecure = isSecure;
         this.encoding = Objects.requireNonNull(encoding).toUpperCase();
     }
+
+    /**
+     * Represents a {@link ArrowheadService} that communicates over HTTPS with
+     * message payloads encoded with JSON.
+     */
+    public static final InterfaceTriple HTTP_SECURE_JSON = new InterfaceTriple("HTTP", true, "JSON");
+
+    /**
+     * Represents a {@link ArrowheadService} that communicates over plain HTTP
+     * with message payloads encoded with JSON.
+     */
+    public static final InterfaceTriple HTTP_INSECURE_JSON = new InterfaceTriple("HTTP", false, "JSON");
 
     /**
      * Parses given string into interface triple.
@@ -62,14 +62,14 @@ public class Triple {
      * @return Protocol triple.
      * @throws IllegalArgumentException If
      */
-    public static Triple parse(final String string) {
+    public static InterfaceTriple parse(final String string) {
         final var parts = string.split("-", 3);
         if (parts.length == 2 && parts[0].equalsIgnoreCase("HTTPS")) {
             if (isNameInvalid(parts[1])) {
                 throw new IllegalArgumentException("Invalid Arrowhead interface string `" + string
                     + "`; should match `([A-Z][0-9A-Z_]*)-(SECURE|INSECURE)-([A-Z][0-9A-Z_]*)`");
             }
-            return new Triple("HTTP", true, parts[1]);
+            return new InterfaceTriple("HTTP", true, parts[1]);
         }
         if (parts.length != 3 || isNameInvalid(parts[0]) || isNameInvalid(parts[2])) {
             throw new IllegalArgumentException("Invalid Arrowhead interface string `" + string
@@ -91,7 +91,7 @@ public class Triple {
                 throw new IllegalArgumentException("Invalid Arrowhead security interface `"
                     + parts[1] + "`; use `SECURE` or `INSECURE`");
         }
-        return new Triple(parts[0], isSecure, parts[2]);
+        return new InterfaceTriple(parts[0], isSecure, parts[2]);
     }
 
     private static boolean isNameInvalid(final String name) {
@@ -144,7 +144,7 @@ public class Triple {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Triple triple = (Triple) o;
+        InterfaceTriple triple = (InterfaceTriple) o;
         return transport.equals(triple.transport) &&
             isSecure == triple.isSecure &&
             encoding.equals(triple.encoding);
@@ -157,6 +157,6 @@ public class Triple {
 
     @Override
     public String toString() {
-        return transport + (isSecure ? "SECURE" : "INSECURE") + encoding;
+        return transport + (isSecure ? "-SECURE-" : "-INSECURE-") + encoding;
     }
 }
