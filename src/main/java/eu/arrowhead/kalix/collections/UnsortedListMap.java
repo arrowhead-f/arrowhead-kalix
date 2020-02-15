@@ -5,7 +5,7 @@ import java.util.*;
 /**
  * A {@link Map} optimized for small collections (e.g. less than 20 entries).
  * <p>
- * Internally, an unsorted list of entries are maintain, which are scanned
+ * Internally, an unsorted list of entries are maintained, which is scanned
  * linearly every time a new entry is added, removed or requested.
  *
  * @param <K> Key type.

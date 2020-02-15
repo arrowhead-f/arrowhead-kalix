@@ -5,7 +5,7 @@ import java.util.*;
 /**
  * A {@link Set} optimized for small collections (e.g. less than 20 elements).
  * <p>
- * Internally, an unsorted list of elements are maintain, which are scanned
+ * Internally, an unsorted list of elements are maintained, which is scanned
  * linearly every time a new element is added, removed or requested.
  *
  * @param <E> Element type.

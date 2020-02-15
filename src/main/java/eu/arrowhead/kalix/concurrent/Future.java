@@ -3,7 +3,8 @@ package eu.arrowhead.kalix.concurrent;
 import java.util.function.Supplier;
 
 /**
- * A {@link java.util.concurrent.Future} that notifies a listener when completed, for any reason.
+ * A {@link java.util.concurrent.Future} that notifies a listener when
+ * completed, for any reason.
  *
  * @param <V> Type of value that can be retrieved if the operation succeeds.
  */
