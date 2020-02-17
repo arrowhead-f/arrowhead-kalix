@@ -1,16 +1,16 @@
 package eu.arrowhead.kalix.http;
 
 import java.net.InetSocketAddress;
+import java.security.cert.Certificate;
 
 /**
- * Represents information about the sender of some HTTP request.
+ * Represents information about a system sending some received HTTP request.
  */
 public class HttpRequester {
     /**
-     * @return The {@code User-Agent} string of some HTTP request header, or
-     * {@code null}.
+     * @return Certificate of request sender, if available.
      */
-    public String getUserAgent() {
+    public Certificate certificate() {
         return null;
     }
 
@@ -18,7 +18,15 @@ public class HttpRequester {
      * @return The hostname/port or IP-address/port of the sender of some HTTP
      * request.
      */
-    public InetSocketAddress getHost() {
+    public InetSocketAddress host() {
+        return null;
+    }
+
+    /**
+     * @return The {@code User-Agent} string of some HTTP request header, or
+     * {@code null}.
+     */
+    public String userAgent() {
         return null;
     }
 }

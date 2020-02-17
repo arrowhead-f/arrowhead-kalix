@@ -10,58 +10,58 @@ import java.util.List;
 /**
  * Represents a collection of trusted PEM encoded x.509 certificates.
  */
-public class TrustStorePEM implements TrustStore {
+public class TruststorePEM implements Truststore {
     private final List<byte[]> trustedCertificates;
 
     /**
-     * Creates new {@link TrustStorePEM} from a list of PEM encoded x.509
+     * Creates new {@link TruststorePEM} from a list of PEM encoded x.509
      * certificates. Note that each byte array may contain any number of
      * certificates.
      *
      * @param trustedCertificates List of byte arrays containing PEM encoded
      *                            x.509 certificates.
      */
-    public TrustStorePEM(final List<byte[]> trustedCertificates) {
+    public TruststorePEM(final List<byte[]> trustedCertificates) {
         this.trustedCertificates = trustedCertificates;
     }
 
     /**
-     * Creates new {@link TrustStorePEM} from a list of PEM encoded x.509
+     * Creates new {@link TruststorePEM} from a list of PEM encoded x.509
      * certificates. Note that each byte array may contain any number of
      * certificates.
      *
      * @param trustedCertificates Array of byte arrays containing PEM encoded
      *                            x.509 certificates.
      */
-    public TrustStorePEM(final byte[]... trustedCertificates) {
+    public TruststorePEM(final byte[]... trustedCertificates) {
         this(Arrays.asList(trustedCertificates));
     }
 
     /**
-     * Creates new {@link TrustStorePEM} by reading PEM encoded x.509
+     * Creates new {@link TruststorePEM} by reading PEM encoded x.509
      * certificates from a list of paths. Note that each read file may contain
      * any number of certificates.
      *
      * @param paths List of filesystem paths to trusted certificate files.
-     * @return New {@link TrustStorePEM}.
+     * @return New {@link TruststorePEM}.
      */
-    public static TrustStorePEM read(final List<Path> paths) throws IOException {
+    public static TruststorePEM read(final List<Path> paths) throws IOException {
         final var trustedCertificates = new ArrayList<byte[]>(paths.size());
         for (final var path : paths) {
             trustedCertificates.add(Files.readAllBytes(path));
         }
-        return new TrustStorePEM(trustedCertificates);
+        return new TruststorePEM(trustedCertificates);
     }
 
     /**
-     * Creates new {@link TrustStorePEM} by reading PEM encoded x.509
+     * Creates new {@link TruststorePEM} by reading PEM encoded x.509
      * certificates from an array of paths. Note that each read file may
      * contain any number of certificates.
      *
      * @param paths List of filesystem paths to trusted certificate files.
-     * @return New {@link TrustStorePEM}.
+     * @return New {@link TruststorePEM}.
      */
-    public static TrustStorePEM read(final Path... paths) throws IOException {
+    public static TruststorePEM read(final Path... paths) throws IOException {
         return read(Arrays.asList(paths));
     }
 
@@ -69,7 +69,7 @@ public class TrustStorePEM implements TrustStore {
      * @return Contents of PEM files, each containing one or more PEM encoded
      * x.509 certificates.
      */
-    public List<byte[]> getTrustedCertificates() {
+    public List<byte[]> trustedCertificates() {
         return trustedCertificates;
     }
 }

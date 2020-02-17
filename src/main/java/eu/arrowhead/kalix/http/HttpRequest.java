@@ -10,12 +10,12 @@ public class HttpRequest {
      * Requests the body of the request to be serialized into an instance of
      * given target class.
      *
-     * @param class_ Desired class type to serialize request body into.
-     * @param <C>    Type annotation for desired class type.
+     * @param class_ Class to serialize request body into.
+     * @param <C>    Type of {@code class_}.
      * @return Serialized request body.
      * @throws HttpRequestException If the request body cannot be parsed.
      */
-    public <C> C getBodyAs(final Class<C> class_) throws HttpRequestException {
+    public <C> C bodyAs(final Class<C> class_) throws HttpRequestException {
         return null;
     }
 
@@ -25,14 +25,14 @@ public class HttpRequest {
      * @param name Name of header. Case is ignored.
      * @return Header value, or {@code null}.
      */
-    public String getHeader(final String name) {
+    public String header(final String name) {
         return null;
     }
 
     /**
      * @return Map of all request headers.
      */
-    public Map<String, String> getHeaders() {
+    public Map<String, String> headers() {
         return null;
     }
 
@@ -43,14 +43,14 @@ public class HttpRequest {
      * @param name Name of path parameter. Case is ignored.
      * @return Path parameter value, or {@code null}.
      */
-    public String getPathParameter(final String name) {
+    public String pathParameter(final String name) {
         return null;
     }
 
     /**
      * @return Map of all path parameters.
      */
-    public Map<String, String> getPathParameters() {
+    public Map<String, String> pathParameters() {
         return null;
     }
 
@@ -61,28 +61,28 @@ public class HttpRequest {
      * @param name Name of query parameter. Case is ignored.
      * @return Query parameter value, or {@code null}.
      */
-    public String getQueryParameter(final String name) {
+    public String queryParameter(final String name) {
         return null;
     }
 
     /**
      * @return Map of all query parameters.
      */
-    public Map<String, String> getQueryParameters() {
+    public Map<String, String> queryParameters() {
         return null;
     }
 
     /**
      * @return Information about the request sender.
      */
-    public HttpRequester getRequester() {
+    public HttpRequester requester() {
         return null;
     }
 
     /**
      * @return HTTP version used by request.
      */
-    public HttpVersion getVersion() {
+    public HttpVersion version() {
         return null;
     }
 }

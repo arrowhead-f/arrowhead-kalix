@@ -10,32 +10,21 @@ package eu.arrowhead.kalix.http;
  * trace, some other exception should be used instead.
  */
 public class HttpRequestException extends Exception {
-    private final HttpRequestIssue issue;
-
-    private HttpRequestException(final HttpRequestIssue issue) {
-        super(null, null, false, false); // Disable stack trace.
-        this.issue = issue;
-    }
+    private final HttpStatus status;
 
     /**
-     * Creates new {@link HttpRequestException} from an issue description.
+     * Creates new HTTP request exception with given HTTP status and message.
      *
-     * @param issue The reason the request in question is invalid.
-     * @return New {@link HttpRequestException}.
+     * @param status  HTTP status.
+     * @param message Human-readable description of issue.
      */
-    public HttpRequestException fromIssue(final HttpRequestIssue issue) {
-        return new HttpRequestException(issue);
-    }
-
-    /**
-     * @return The issue causing this exception to be thrown.
-     */
-    public HttpRequestIssue getIssue() {
-        return issue;
+    public HttpRequestException(final HttpStatus status, final String message) {
+        super(message, null, false, false); // Disable stack trace.
+        this.status = status;
     }
 
     @Override
     public String getMessage() {
-        return issue.getDescription();
+        return status + " " + super.getMessage();
     }
 }

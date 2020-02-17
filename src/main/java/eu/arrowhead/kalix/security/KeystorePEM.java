@@ -6,32 +6,32 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 /**
- * Represents a PEM encoded x.509 certificate chain the PKCS#8 private key
+ * Represents a PEM encoded x.509 certificate chain and the PKCS#8 private key
  * of the last certificate in that chain.
  * <p>
  * Note that PKCS#1 is not supported. PKCS#8 entries of PEM files are
  * distinguished by their using the {@code -----BEGIN PRIVATE KEY-----}
  * delimiter instead of the {@code -----BEGIN RSA PRIVATE KEY-----} that is
  * used by PKCS#1. If your private key is in PKCS#1, it must first be
- * converted to PKCS#8.
+ * converted into PKCS#8.
  */
-public class KeyStorePEM implements KeyStore {
+public class KeystorePEM implements Keystore {
     private final byte[] certificateChain;
     private final byte[] privateKey;
 
     /**
-     * Creates new {@link KeyStorePEM} from given byte arrays.
+     * Creates new {@link KeystorePEM} from given byte arrays.
      *
      * @param certificateChain PEM encoded x.509 certificates.
      * @param privateKey       PEM encoded PKCS#8 private key.
      */
-    public KeyStorePEM(final byte[] certificateChain, byte[] privateKey) {
+    public KeystorePEM(final byte[] certificateChain, byte[] privateKey) {
         this.certificateChain = Objects.requireNonNull(certificateChain);
         this.privateKey = Objects.requireNonNull(privateKey);
     }
 
     /**
-     * Creates new {@link KeyStorePEM} from contents of identified files.
+     * Creates new {@link KeystorePEM} from contents of identified files.
      *
      * @param pathToCertificateChain Path to file containing PEM encoded x.509
      *                               certificate chain, typically having one of
@@ -42,9 +42,9 @@ public class KeyStorePEM implements KeyStore {
      *                               {@code .pem} or {@code .key} file
      *                               extensions.
      */
-    public static KeyStorePEM read(final Path pathToCertificateChain, final Path pathToPrivateKey)
+    public static KeystorePEM read(final Path pathToCertificateChain, final Path pathToPrivateKey)
         throws IOException {
-        return new KeyStorePEM(
+        return new KeystorePEM(
             Files.readAllBytes(pathToCertificateChain),
             Files.readAllBytes(pathToPrivateKey)
         );
@@ -53,14 +53,14 @@ public class KeyStorePEM implements KeyStore {
     /**
      * @return PEM encoded x.509 certificate chain.
      */
-    public byte[] getCertificateChain() {
+    public byte[] certificateChain() {
         return certificateChain;
     }
 
     /**
      * @return PEM encoded PKCS#8 private key.
      */
-    public byte[] getPrivateKey() {
+    public byte[] privateKey() {
         return privateKey;
     }
 }

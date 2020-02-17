@@ -3,17 +3,29 @@ package eu.arrowhead.kalix.http;
 import java.util.Map;
 
 public class HttpResponse {
-    public HttpResponse setHeader(final String name, final String value) {
+    public String header(final String name) {
+        return null;
+    }
+
+    public HttpResponse header(final String name, final String value) {
         // TODO.
         return this;
     }
 
-    public HttpResponse setHeaders(final Map<String, String> headers) {
+    public Map<String, String> headers() {
+        return null;
+    }
+
+    public HttpResponse headers(final Map<String, String> headers) {
         // TODO.
         return this;
     }
 
-    public HttpResponse setStatus(final HttpStatus status) {
+    public HttpStatus status() {
+        return null;
+    }
+
+    public HttpResponse status(final HttpStatus status) {
         // TODO.
         return this;
     }

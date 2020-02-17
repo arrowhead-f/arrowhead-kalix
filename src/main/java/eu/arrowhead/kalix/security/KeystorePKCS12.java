@@ -11,13 +11,13 @@ import java.util.Objects;
  * The PKCS#12 keystore must contain at least one x.509 certificate and its
  * corresponding private key.
  */
-public class KeyStorePKCS12 implements KeyStore {
+public class KeystorePKCS12 implements Keystore {
     private final byte[] contents;
     private final String password;
     private final String alias;
 
     /**
-     * Creates new {@link KeyStorePKCS12} from PKCS#12 keystore contents, a
+     * Creates new {@link KeystorePKCS12} from PKCS#12 keystore contents, a
      * password and an optional alias. If the keystore contains more than one
      * certificate with a private key, the alias of that certificate should be
      * provided.
@@ -26,14 +26,14 @@ public class KeyStorePKCS12 implements KeyStore {
      * @param password Password of PKCS#12 keystore.
      * @param alias    Alias of primary/preferred certificate, or {@code null}.
      */
-    public KeyStorePKCS12(final byte[] contents, final String password, final String alias) {
+    public KeystorePKCS12(final byte[] contents, final String password, final String alias) {
         this.contents = Objects.requireNonNull(contents);
         this.password = Objects.requireNonNull(password);
         this.alias = alias;
     }
 
     /**
-     * Creates new {@link KeyStorePKCS12} from the path to a PKCS#12 keystore,
+     * Creates new {@link KeystorePKCS12} from the path to a PKCS#12 keystore,
      * a password and an optional alias. If the PKCS#12 keystore contains more
      * than one certificate with a private key, the alias is used to pinpoint
      * that certificate.
@@ -43,22 +43,22 @@ public class KeyStorePKCS12 implements KeyStore {
      * @param password Password of PKCS#12 keystore.
      * @param alias    Alias of primary/preferred certificate, or {@code null}.
      */
-    public static KeyStorePKCS12 read(final Path path, final String password, final String alias)
+    public static KeystorePKCS12 read(final Path path, final String password, final String alias)
         throws IOException {
-        return new KeyStorePKCS12(Files.readAllBytes(path), password, alias);
+        return new KeystorePKCS12(Files.readAllBytes(path), password, alias);
     }
 
     /**
      * @return PKCS#12 keystore as an array of bytes.
      */
-    public byte[] getContents() {
+    public byte[] contents() {
         return contents;
     }
 
     /**
      * @return PKCS#12 keystore password.
      */
-    public String getPassword() {
+    public String password() {
         return password;
     }
 
@@ -66,7 +66,7 @@ public class KeyStorePKCS12 implements KeyStore {
      * @return Alias of primary/preferred PKCS#12 keystore certificate, or
      * {@code null} no such has been designated.
      */
-    public String getAlias() {
+    public String alias() {
         return alias;
     }
 }

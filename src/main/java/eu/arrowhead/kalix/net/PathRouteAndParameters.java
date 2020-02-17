@@ -1,15 +1,15 @@
-package eu.arrowhead.kalix.http;
+package eu.arrowhead.kalix.net;
 
 import eu.arrowhead.kalix.collections.UnsortedListMap;
 
 import java.util.Map;
 import java.util.function.Consumer;
 
-final class HttpRouteTask {
+final class PathRouteAndParameters<Request, Response> {
     private final UnsortedListMap<String, String> queryParameters;
-    private final Consumer<HttpRoute> callback;
+    private final Consumer<PathRoute<Request, Response>> callback;
 
-    HttpRouteTask(final Consumer<HttpRoute> callback) {
+    PathRouteAndParameters(final Consumer<PathRoute<Request, Response>> callback) {
         this.queryParameters = new UnsortedListMap<>();
         this.callback = callback;
     }
@@ -22,7 +22,7 @@ final class HttpRouteTask {
         queryParameters.put(name, value);
     }
 
-    public void callback(final HttpRoute route) {
+    public void callback(final PathRoute<Request, Response> route) {
         callback.accept(route);
     }
 }
