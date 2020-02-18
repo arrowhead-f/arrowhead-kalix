@@ -1,157 +1,149 @@
 package eu.arrowhead.kalix.http;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class HttpPattern {
-    private final byte[] pattern;
-    private final int parameterCount;
+    private final String pattern;
+    private final int nParameters;
+    private final boolean isPrefix;
 
-    private HttpPattern(final byte[] pattern, final int parameterCount) {
+    private HttpPattern(final String pattern, final int nParameters, final boolean isPrefix) {
         this.pattern = pattern;
-        this.parameterCount = parameterCount;
+        this.nParameters = nParameters;
+        this.isPrefix = isPrefix;
     }
 
     /**
      * The root pattern, only matching the "/" path.
      */
-    public static final HttpPattern ROOT = new HttpPattern(new byte[0], 0);
+    public static final HttpPattern ROOT = new HttpPattern("/", 0, false);
 
-    public Optional<List<String>> apply(final String path) {
-        final var parameters = new ArrayList<String>(parameterCount);
-        if (this == ROOT) {
-            return Optional.of(parameters);
+    public boolean apply(final String path, final List<String> parameters) {
+        // p0 = start of path;    p1 = end of path.
+        // q0 = start of pattern; q1 = end of pattern.
+
+        var p1 = path.length();
+        if (p1 > 1 && path.charAt(p1 - 1) == '/') {
+            p1 -= 1;
         }
-        final var pathBytes = path.getBytes(StandardCharsets.ISO_8859_1);
+        // We have already stripped any trailing '/' from the pattern.
+        final var q1 = pattern.length();
 
-        int patternOffset = 0;
-        int pathOffset = 0;
+        if (!isPrefix && nParameters == 0 && p1 != q1) {
+            return false;
+        }
+
+        var hasFoundParameter = false;
+        int p0 = 0, q0 = 0;
         while (true) {
-            final var m = Arrays.mismatch(
-                pattern, patternOffset, pattern.length,
-                pathBytes, pathOffset, pathBytes.length);
-            if (m == -1) {
-                break;
+            // Find first non-identical character.
+            while (p0 < p1 && q0 < q1 && path.charAt(p0) == pattern.charAt(q0)) {
+                p0 += 1;
+                q0 += 1;
             }
-            patternOffset += m;
-            if (patternOffset == pattern.length) {
-                if (pathBytes.length == patternOffset + 1 && pathBytes[patternOffset] == '/') {
-                    break;
-                }
-                else {
-                    return Optional.empty();
-                }
+            // Are we done?
+            final var pAtEnd = p0 == p1;
+            final var qAtEnd = q0 == q1;
+            if (pAtEnd && qAtEnd || isPrefix && qAtEnd) {
+                return true;
             }
-            final var q = pattern[patternOffset];
-            if (q == '#') {
-                pathOffset += m;
-                var i = pathOffset;
-                while (i < pathBytes.length && pathBytes[i] != '/') {
-                    i += 1;
-                }
-                parameters.add(new String(Arrays.copyOfRange(pathBytes, pathOffset, i), StandardCharsets.ISO_8859_1));
-                if (i == pathBytes.length) {
-                    break;
-                }
-                else {
-                    pathOffset = i;
-                    continue;
-                }
+            if (pAtEnd || qAtEnd) {
+                return false;
             }
-            if (q == '>') {
-                break;
+            // We must be at a path parameter. Collect segment from path.
+            if (!hasFoundParameter) {
+                parameters.clear();
+                hasFoundParameter = true;
             }
-            return Optional.empty();
+            var px = p0;
+            while (px < p1 && path.charAt(px) != '/') {
+                px += 1;
+            }
+            parameters.add(path.substring(p0, px));
+            p0 = px;
+            q0 += 1;
         }
-        return Optional.of(parameters);
     }
 
     public static HttpPattern valueOf(final String pattern) {
-        var p1 = pattern.length();
-        if (p1 == 0 || pattern.charAt(0) != '/') {
+        // q0 = start of pattern; q1 = end of pattern
+        var q1 = pattern.length();
+        if (q1 == 0 || pattern.charAt(0) != '/') {
             throw new IllegalArgumentException("Patterns must start with `/`.");
         }
-        if (p1 == 1) {
+        if (q1 == 1) {
             return ROOT;
         }
-        if (pattern.charAt(p1 - 1) == '/') {
-            p1 -= 1;
+        if (pattern.charAt(q1 - 1) == '/') {
+            q1 -= 1;
         }
 
-        final var compressed = new byte[p1];
-        int c1 = 0; // Current length of compressed pattern
-        var parameterCount = 0;
+        final var buffer = new StringBuilder(pattern.length());
+        var nParameters = 0;
+        var isPrefix = false;
 
         outer:
-        for (var p0 = 0; p0 < p1; ++p0) {
-            var cp = pattern.codePointAt(p0);
+        for (var q0 = 0; q0 < q1; ++q0) {
+            var cp = pattern.codePointAt(q0);
             if (cp == '%') {
-                throw new IllegalArgumentException("Percent encodings may not "
-                    + "be used in patterns.");
+                throw new IllegalArgumentException("Percent encodings may not be used in patterns.");
+            }
+            if (cp != '/') {
+                buffer.append(requirePathCharacter(cp));
+                continue;
             }
             segment:
-            while (cp == '/') {
-                if (p0 + 1 == p1) {
+            while (true) {
+                buffer.append('/');
+                if (q0 + 1 == q1) {
                     break outer;
                 }
-                cp = pattern.codePointAt(p0 + 1);
+                cp = pattern.codePointAt(q0 + 1);
                 switch (cp) {
                 case '#':
-                    compressed[c1++] = '/';
-                    compressed[c1++] = '#';
-                    parameterCount += 1;
-                    p0 += 2;
-                    while (p0 < p1) {
-                        cp = pattern.codePointAt(p0);
+                    buffer.append('#');
+                    nParameters += 1;
+                    q0 += 2;
+                    while (q0 < q1) {
+                        cp = pattern.codePointAt(q0);
                         if (cp == '/') {
                             continue segment;
                         }
-                        p0 += 1;
+                        q0 += 1;
                     }
                     break;
 
                 case '.':
                     var isRelative = false;
-                    if (p0 + 2 == p1) {
+                    if (q0 + 2 == q1) {
                         isRelative = true; // Pattern ends with "/."
                     }
                     else {
-                        cp = pattern.codePointAt(p0 + 2);
-                        switch (cp) {
-                        case '.':
-                            if (p0 + 3 == p1 || pattern.codePointAt(p0 + 3) == '/') {
-                                // Pattern ends with "/.." or contains "/../"
-                                isRelative = true;
-                            }
-                            break;
-
-                        case '/':
+                        cp = pattern.codePointAt(q0 + 2);
+                        if (cp == '.' && (q0 + 3 == q1 || pattern.codePointAt(q0 + 3) == '/')) {
+                            isRelative = true; // Pattern ends with "/.." or contains "/../"
+                        }
+                        else if (cp == '/') {
                             isRelative = true; // Pattern contains "/./"
-                            break;
                         }
                     }
                     if (isRelative) {
-                        throw new IllegalArgumentException("Relative paths may "
-                            + "not be used in patterns.");
+                        throw new IllegalArgumentException("Relative paths may not be used in patterns.");
                     }
-                    break;
 
                 case '>':
-                    if (p0 + 2 == p1) {
-                        compressed[c1++] = '/';
-                        compressed[c1++] = '>';
+                    if (q0 + 2 == q1) {
+                        isPrefix = true;
                         break outer;
                     }
-                    throw new IllegalArgumentException("`>` may only occur "
-                        + "right after the last `/` of a pattern to signify "
-                        + "that any subpath is to be considered a match.");
+                    throw new IllegalArgumentException("`>` may only occur at the very end of a pattern, right " +
+                        "after the last `/`, to make the pattern allow subpaths.");
                 }
                 break;
             }
-            compressed[c1++] = requirePathCharacter(cp);
         }
 
-        return new HttpPattern(Arrays.copyOf(compressed, c1), parameterCount);
+        return new HttpPattern(buffer.toString(), nParameters, isPrefix);
     }
 
     /**
@@ -167,18 +159,22 @@ public class HttpPattern {
      *                                  character.
      * @see <a href="https://tools.ietf.org/html/rfc3986#section-3.3">RFC 3986, Section 3.3</a>
      */
-    private static byte requirePathCharacter(final int c) {
+    private static char requirePathCharacter(final int c) {
         final var isValid = c >= 0x61 && c <= 0x7A || c >= 0x24 && c <= 0x3B ||
             c >= 0x40 && c <= 0x5A || c == 0x5F || c == 0x7E || c == 0x3D ||
             c == 0x21;
         if (isValid) {
-            return (byte) c;
+            return Character.toChars(c)[0];
         }
-        throw new IllegalArgumentException(c == 0x23
-            ? "`#` may only occur right after a `/` to promote its segment to "
-            + "a path parameter."
+        throw new IllegalArgumentException(c == '#'
+            ? "`#` may only occur right after a `/` to promote its segment to a path parameter."
             : "Invalid pattern character `" + Character.toString(c) + "`; "
             + "expected one of `0–9 A–Z a–z - . _ ~ % / ! $ & ' ( ) * + , ; = "
             + ": @`.");
+    }
+
+    @Override
+    public String toString() {
+        return pattern;
     }
 }
