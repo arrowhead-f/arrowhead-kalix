@@ -3,6 +3,18 @@ package eu.arrowhead.kalix.http;
 import java.util.Map;
 
 public class HttpResponse {
+    public void cancel() {
+        // TODO.
+    }
+
+    public void cancel(final HttpStatus status) {
+
+    }
+
+    public void cancel(final HttpStatus status, final String message) {
+
+    }
+
     public String header(final String name) {
         return null;
     }

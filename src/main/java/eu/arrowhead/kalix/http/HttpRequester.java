@@ -1,7 +1,7 @@
 package eu.arrowhead.kalix.http;
 
 import java.net.InetSocketAddress;
-import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 
 /**
  * Represents information about a system sending some received HTTP request.
@@ -10,7 +10,7 @@ public class HttpRequester {
     /**
      * @return Certificate of request sender, if available.
      */
-    public Certificate certificate() {
+    public X509Certificate certificate() {
         return null;
     }
 
@@ -19,6 +19,13 @@ public class HttpRequester {
      * request.
      */
     public InetSocketAddress host() {
+        return null;
+    }
+
+    /**
+     * @return Maybe?
+     */
+    public String token() {
         return null;
     }
 

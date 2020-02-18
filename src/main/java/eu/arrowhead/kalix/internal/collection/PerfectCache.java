@@ -5,11 +5,11 @@ import eu.arrowhead.kalix.internal.util.BinaryMath;
 /**
  * A map whose entries are guaranteed to be accessible in O(1).
  * <p>
- * To achieve this, a so-called <i>perfect hashing table</i> i used. Such a
- * table can only be reliably constructed from a well-known set of keys, and
- * is, therefore, almost only practically useful for caching data known at
- * compile-time. For this reason, this implementation does not support having
- * the key set change after instantiation.
+ * To achieve this, a so-called <i>perfect hashtable</i> i used. Such a table
+ * can only be reliably constructed from a well-known set of keys, and is,
+ * therefore, almost only practically useful for caching data known at
+ * compile-time. It is, for example, useful for caching strings that are
+ * expected to be parsed frequently during runtime.
  *
  * @see #PerfectCache(int, int, Entry...)
  */
@@ -19,7 +19,7 @@ public class PerfectCache {
     private final int rotate;
 
     /**
-     * Constructs new perfect hashing table from given collection of
+     * Constructs new perfect hash table from given collection of
      * {@code entries}.
      * <p>
      * In the case of construction failing with an exception, try arbitrary
@@ -55,10 +55,11 @@ public class PerfectCache {
                 this.entries[index] = entry;
                 continue;
             }
-            // Adjust `rotate` to avoid this as necessary.
+            // Adjust `rotate` or `capacity` to avoid this as necessary.
             throw new IllegalArgumentException(
-                "Encoding cache hash collision; `" + this.entries[index] + "` and `"
-                    + entry + "` have the same masked string hash codes.");
+                "Encoding cache hash collision; `" + this.entries[index].key
+                    + "` and `" + entry.key
+                    + "` have the same masked string hash codes.");
         }
     }
 

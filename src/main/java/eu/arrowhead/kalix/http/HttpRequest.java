@@ -1,6 +1,10 @@
 package eu.arrowhead.kalix.http;
 
+import eu.arrowhead.kalix.concurrent.Future;
+
+import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * A fully received HTTP request.
@@ -9,13 +13,18 @@ public class HttpRequest {
     /**
      * Requests the body of the request to be serialized into an instance of
      * given target class.
+     * <p>
+     * As the body may not have been fully received when this method is called,
+     * a {@link Future} is returned whose {@link Future#onDone(Supplier)}
+     * method will be called when the body is either ready or it is known that
+     * it cannot be received and/or serialized.
      *
      * @param class_ Class to serialize request body into.
      * @param <C>    Type of {@code class_}.
-     * @return Serialized request body.
+     * @return Future of serialized request body.
      * @throws HttpRequestException If the request body cannot be parsed.
      */
-    public <C> C bodyAs(final Class<C> class_) throws HttpRequestException {
+    public <C> Future<C> bodyAs(final Class<C> class_) throws HttpRequestException {
         return null;
     }
 
@@ -37,20 +46,28 @@ public class HttpRequest {
     }
 
     /**
-     * Gets value of named path parameter, or {@code null} if the path parameter
-     * is not set.
+     * Gets value of identified path parameter, or {@code null}.
+     * <p>
+     * This operation accesses an arbitrary list that has exactly the same size
+     * as the number of path parameters in some original {@link HttpPattern}.
+     * If an index is given outside the bounds of this list, {@code null} is
+     * returned.
+     * <p>
+     * Note that it is possible to match a path parameter with an empty string.
+     * It should never be assumed that a non-null value returned by this method
+     * has a length larger than 0.
      *
-     * @param name Name of path parameter. Case is ignored.
+     * @param index Position of path parameter in original pattern.
      * @return Path parameter value, or {@code null}.
      */
-    public String pathParameter(final String name) {
+    public String pathParameter(final int index) {
         return null;
     }
 
     /**
      * @return Map of all path parameters.
      */
-    public Map<String, String> pathParameters() {
+    public List<String> pathParameters() {
         return null;
     }
 

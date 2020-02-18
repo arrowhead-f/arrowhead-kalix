@@ -11,7 +11,7 @@ repositories {
 
 ext {
     nettyVersion = '4.1.45.Final'
-    junitJupiterEngineVersion = '5.4.0'
+    junitJupiterVersion = '5.6.0'
 }
 
 sourceCompatibility = '11'
@@ -19,12 +19,12 @@ sourceCompatibility = '11'
 dependencies {
     implementation "io.netty:netty-all:$nettyVersion"
 
-    testImplementation "org.junit.jupiter:junit-jupiter-engine:$junitJupiterEngineVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter:$junitJupiterVersion"
 }
 
 test {
     useJUnitPlatform()
     testLogging {
-        events 'PASSED', 'FAILED', 'SKIPPED'
+        events 'FAILED', 'SKIPPED'
     }
 }

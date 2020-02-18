@@ -14,24 +14,13 @@ import java.util.regex.Pattern;
  * reserved keyword.
  */
 public class InterfaceDescriptor {
-    private static final Pattern TRIPLET_PATTERN = Pattern.compile("([A-Z][0-9A-Z_]*)-(IN)?SECURE-([A-Z][0-9A-Z_]*)");
+    private static final Pattern TRIPLET_PATTERN = Pattern.compile("([0-9A-Z_]+)-(IN)?SECURE-([0-9A-Z_]+)");
 
     private final TransportDescriptor transport;
     private final boolean isSecure;
     private final EncodingDescriptor encoding;
     private final String text;
 
-    /**
-     * Creates new interface triplet.
-     * <p>
-     * Note that {@code "HTTPS"} is *not* a valid transport interface
-     * identifier. In that case, use {@code "HTTP"} as transport interface and
-     * set {@code isSecure} to {@code true}.
-     *
-     * @param transport Transport interface description.
-     * @param isSecure  Whether or not transport security is to be used.
-     * @param encoding  Encoding description.
-     */
     private InterfaceDescriptor(
         final TransportDescriptor transport,
         final boolean isSecure,
@@ -478,9 +467,9 @@ public class InterfaceDescriptor {
     /**
      * Parses given string into interface triplet.
      * <p>
-     * Valid strings must strictly adhere to the following regular expression:
+     * Valid strings must match the following regular expression:
      * <pre>
-     * ([A-Z][0-9A-Z_]*)-(IN)?SECURE-([A-Z][0-9A-Z_]*)
+     * ([0-9A-Z_]+)-(IN)?SECURE-([0-9A-Z_]+)
      * </pre>
      *
      * @param triplet String to parse.
@@ -488,7 +477,7 @@ public class InterfaceDescriptor {
      * @throws IllegalArgumentException If {@code triplet} is malformed.
      */
     public static InterfaceDescriptor valueOf(String triplet) {
-        triplet = Objects.requireNonNull(triplet, "Name required.").toUpperCase();
+        triplet = Objects.requireNonNull(triplet, "Name required").toUpperCase();
         final var value = cache.get(triplet);
         if (value != null) {
             return (InterfaceDescriptor) value;

@@ -7,9 +7,9 @@ import java.util.function.Consumer;
 
 final class PathRouteAndParameters<Request, Response> {
     private final UnsortedListMap<String, String> queryParameters;
-    private final Consumer<PathRoute<Request, Response>> callback;
+    private final Consumer<PathHandler<Request, Response>> callback;
 
-    PathRouteAndParameters(final Consumer<PathRoute<Request, Response>> callback) {
+    PathRouteAndParameters(final Consumer<PathHandler<Request, Response>> callback) {
         this.queryParameters = new UnsortedListMap<>();
         this.callback = callback;
     }
@@ -22,7 +22,7 @@ final class PathRouteAndParameters<Request, Response> {
         queryParameters.put(name, value);
     }
 
-    public void callback(final PathRoute<Request, Response> route) {
+    public void callback(final PathHandler<Request, Response> route) {
         callback.accept(route);
     }
 }
