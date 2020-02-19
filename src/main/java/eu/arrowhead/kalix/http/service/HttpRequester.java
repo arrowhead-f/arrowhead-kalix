@@ -1,16 +1,17 @@
-package eu.arrowhead.kalix.http;
+package eu.arrowhead.kalix.http.service;
 
 import java.net.InetSocketAddress;
 import java.security.cert.X509Certificate;
+import java.util.Optional;
 
 /**
  * Represents information about a system sending some received HTTP request.
  */
-public class HttpServiceRequester {
+public class HttpRequester {
     /**
      * @return Certificate of request sender, if available.
      */
-    public X509Certificate certificate() {
+    public Optional<X509Certificate> certificate() {
         return null;
     }
 

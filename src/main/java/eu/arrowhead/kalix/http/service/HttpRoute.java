@@ -1,4 +1,6 @@
-package eu.arrowhead.kalix.http;
+package eu.arrowhead.kalix.http.service;
+
+import eu.arrowhead.kalix.http.HttpMethod;
 
 import java.util.Optional;
 
@@ -6,7 +8,7 @@ import java.util.Optional;
  * Describes the conditions for and where to route matching incoming
  * {@link HttpServiceRequest}s.
  */
-public class HttpServiceRoute {
+public class HttpRoute {
     private final HttpMethod method;
     private final HttpPattern pattern;
     private final HttpServiceHandler handler;
@@ -20,7 +22,7 @@ public class HttpServiceRoute {
      *                this route. Use {@code null} to allow any path.
      * @param handler The handler to execute with matching requests.
      */
-    public HttpServiceRoute(final HttpMethod method, final HttpPattern pattern, final HttpServiceHandler handler) {
+    public HttpRoute(final HttpMethod method, final HttpPattern pattern, final HttpServiceHandler handler) {
         this.method = method;
         this.pattern = pattern;
         this.handler = handler;

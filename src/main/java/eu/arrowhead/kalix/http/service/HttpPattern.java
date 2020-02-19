@@ -1,4 +1,4 @@
-package eu.arrowhead.kalix.http;
+package eu.arrowhead.kalix.http.service;
 
 import java.util.*;
 

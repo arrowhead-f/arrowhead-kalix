@@ -1,6 +1,7 @@
-package eu.arrowhead.kalix.http;
+package eu.arrowhead.kalix.http.service;
 
 import eu.arrowhead.kalix.Service;
+import eu.arrowhead.kalix.http.HttpMethod;
 
 import java.util.ArrayList;
 
@@ -10,16 +11,16 @@ public class HttpService implements Service {
     }
 
     public static class Builder {
-        private final ArrayList<HttpServiceFilter> filters = new ArrayList<>(0);
-        private final ArrayList<HttpServiceRoute> routes = new ArrayList<>(0);
+        private final ArrayList<HttpFilter> filters = new ArrayList<>(0);
+        private final ArrayList<HttpRoute> routes = new ArrayList<>(0);
 
-        public Builder addFilter(final HttpServiceFilter filter) {
+        public Builder addFilter(final HttpFilter filter) {
             filters.add(filter);
             return this;
         }
 
         public Builder before(final HttpMethod method, final HttpPattern pattern, final HttpServiceHandler handler) {
-            return addFilter(new HttpServiceFilter(-1000, method, pattern, handler));
+            return addFilter(new HttpFilter(-1000, method, pattern, handler));
         }
 
         public Builder before(final HttpMethod method, final String pattern, final HttpServiceHandler handler) {
@@ -43,7 +44,7 @@ public class HttpService implements Service {
         }
 
         public Builder after(final HttpMethod method, final HttpPattern pattern, final HttpServiceHandler handler) {
-            return addFilter(new HttpServiceFilter(1000, method, pattern, handler));
+            return addFilter(new HttpFilter(1000, method, pattern, handler));
         }
 
         public Builder after(final HttpMethod method, final String pattern, final HttpServiceHandler handler) {
@@ -66,13 +67,13 @@ public class HttpService implements Service {
             return before(null, (HttpPattern) null, handler);
         }
 
-        public Builder addRoute(final HttpServiceRoute route) {
+        public Builder addRoute(final HttpRoute route) {
             routes.add(route);
             return this;
         }
 
         public Builder addRoute(final HttpMethod method, final HttpPattern pattern, final HttpServiceHandler handler) {
-            return addRoute(new HttpServiceRoute(method, pattern, handler));
+            return addRoute(new HttpRoute(method, pattern, handler));
         }
 
         public Builder addRoute(final HttpMethod method, final String pattern, final HttpServiceHandler handler) {

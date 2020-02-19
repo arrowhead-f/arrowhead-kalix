@@ -1,4 +1,4 @@
-package eu.arrowhead.kalix.http;
+package eu.arrowhead.kalix.http.service;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;

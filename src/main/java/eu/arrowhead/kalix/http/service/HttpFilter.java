@@ -1,4 +1,6 @@
-package eu.arrowhead.kalix.http;
+package eu.arrowhead.kalix.http.service;
+
+import eu.arrowhead.kalix.http.HttpMethod;
 
 import java.util.Optional;
 
@@ -9,7 +11,7 @@ import java.util.Optional;
  * <p>
  * Note that filters cannot modify requests. They can reply to requests with
  * their own response bodies, however. If a filter executed before a
- * {@link HttpServiceRoute} handler returns any other value than null or a
+ * {@link HttpRoute} handler returns any other value than null or a
  * {@link eu.arrowhead.kalix.concurrent.Future} yielding {@link Void}, no more
  * handlers are invoked and the original request is responded to as soon as
  * the returned value has been serialized into a response body.
@@ -18,7 +20,7 @@ import java.util.Optional;
  * care of by the {@link HttpService} handling the filter and the handler it
  * filters.
  */
-public class HttpServiceFilter {
+public class HttpFilter {
     private final int ordinal;
     private final HttpMethod method;
     private final HttpPattern pattern;
@@ -28,8 +30,8 @@ public class HttpServiceFilter {
      * Creates new {@link HttpService} filter.
      *
      * @param ordinal When to execute the filter relative to other filters and
-     *                the {@link HttpServiceRoute} it filters. Lower numbers are
-     *                executed first. The filtered {@link HttpServiceRoute} is
+     *                the {@link HttpRoute} it filters. Lower numbers are
+     *                executed first. The filtered {@link HttpRoute} is
      *                executed after ordinal 0 and before ordinal 1.
      * @param method  HTTP method to require in filtered requests. Use
      *                {@code null} to allow any method.
@@ -37,7 +39,7 @@ public class HttpServiceFilter {
      *                Use {@code null} to allow any path.
      * @param handler The handler to execute with matching requests.
      */
-    public HttpServiceFilter(
+    public HttpFilter(
         final int ordinal,
         final HttpMethod method,
         final HttpPattern pattern,
@@ -51,7 +53,7 @@ public class HttpServiceFilter {
 
     /**
      * @return Integer indicating when to execute filter in relation to other
-     * filters and a {@link HttpServiceRoute} handler.
+     * filters and a {@link HttpRoute} handler.
      */
     public int ordinal() {
         return ordinal;

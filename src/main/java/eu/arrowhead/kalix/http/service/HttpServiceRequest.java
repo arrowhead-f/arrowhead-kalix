@@ -1,9 +1,11 @@
-package eu.arrowhead.kalix.http;
+package eu.arrowhead.kalix.http.service;
 
 import eu.arrowhead.kalix.concurrent.Future;
+import eu.arrowhead.kalix.http.HttpVersion;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -29,12 +31,12 @@ public class HttpServiceRequest {
     }
 
     /**
-     * Gets value of named header, or {@code null} if the header is not set.
+     * Gets value of named header, if set.
      *
      * @param name Name of header. Case is ignored.
      * @return Header value, or {@code null}.
      */
-    public String header(final String name) {
+    public Optional<String> header(final String name) {
         return null;
     }
 
@@ -46,7 +48,7 @@ public class HttpServiceRequest {
     }
 
     /**
-     * Gets value of identified path parameter, or {@code null}.
+     * Gets value of identified path parameter, if set.
      * <p>
      * This operation accesses an arbitrary list that has exactly the same size
      * as the number of path parameters of the {@link HttpPattern} matched
@@ -58,9 +60,9 @@ public class HttpServiceRequest {
      * has a length larger than 0.
      *
      * @param index Position of path parameter in original pattern.
-     * @return Path parameter value, or {@code null}.
+     * @return Path parameter value, if any.
      */
-    public String pathParameter(final int index) {
+    public Optional<String> pathParameter(final int index) {
         return null;
     }
 
@@ -72,13 +74,12 @@ public class HttpServiceRequest {
     }
 
     /**
-     * Gets value of named query parameter, or {@code null} if the query
-     * parameter is not set.
+     * Gets value of named query parameter, if set.
      *
-     * @param name Name of query parameter. Case is ignored.
+     * @param name Name of query parameter. Case sensitive.
      * @return Query parameter value, or {@code null}.
      */
-    public String queryParameter(final String name) {
+    public Optional<String> queryParameter(final String name) {
         return null;
     }
 
@@ -92,7 +93,7 @@ public class HttpServiceRequest {
     /**
      * @return Information about the request sender.
      */
-    public HttpServiceRequester requester() {
+    public HttpRequester requester() {
         return null;
     }
 

@@ -1,4 +1,4 @@
-package eu.arrowhead.kalix.http;
+package eu.arrowhead.kalix.http.service;
 
 /**
  * A service handler, meant to process incoming HTTP requests matching some

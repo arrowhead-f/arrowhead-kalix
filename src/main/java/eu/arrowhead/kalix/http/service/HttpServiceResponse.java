@@ -1,4 +1,6 @@
-package eu.arrowhead.kalix.http;
+package eu.arrowhead.kalix.http.service;
+
+import eu.arrowhead.kalix.http.HttpStatus;
 
 import java.util.Map;
 import java.util.Optional;
