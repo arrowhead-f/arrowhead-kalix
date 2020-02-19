@@ -20,7 +20,7 @@ public final class HttpMethod {
     }
 
     /**
-     * @return Whether or not this method is "safe" as defined in RFC 7231
+     * @return Whether or not this method is "safe" as defined in RFC 7231,
      * Section 4.2.1.
      * @see <a href="https://tools.ietf.org/html/rfc7231#section-4.2.1">RFC 7231, Section 4.2.1</a>
      */
@@ -30,7 +30,7 @@ public final class HttpMethod {
 
     /**
      * @return Whether or not this method is "idempotent" as defined in RFC
-     * 7231 Section 4.2.2.
+     * 7231, Section 4.2.2.
      * @see <a href="https://tools.ietf.org/html/rfc7231#section-4.2.2">RFC 7231, Section 4.2.2</a>
      */
     public boolean isIdempotent() {
@@ -38,7 +38,7 @@ public final class HttpMethod {
     }
 
     /**
-     * @return Whether or not this method is part of either RFC 7231 Section 4
+     * @return Whether or not this method is part of either RFC 7231, Section 4
      * or RFC 5789.
      * @see <a href="https://tools.ietf.org/html/rfc7231#section-4">RFC 7231, Section 4</a>
      * @see <a href="https://tools.ietf.org/html/rfc5789">RFC 5789</a>

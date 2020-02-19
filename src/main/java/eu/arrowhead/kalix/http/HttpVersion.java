@@ -3,7 +3,7 @@ package eu.arrowhead.kalix.http;
 import java.util.Objects;
 
 /**
- * Denotes HTTP protocol version.
+ * HTTP protocol version.
  *
  * @see <a href="https://tools.ietf.org/html/rfc1945">RFC 1945</a>
  * @see <a href="https://tools.ietf.org/html/rfc7230">RFC 7230</a>
