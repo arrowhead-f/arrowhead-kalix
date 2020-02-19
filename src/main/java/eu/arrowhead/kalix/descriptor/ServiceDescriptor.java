@@ -1,4 +1,4 @@
-package eu.arrowhead.kalix.description;
+package eu.arrowhead.kalix.descriptor;
 
 import java.util.Collections;
 import java.util.List;

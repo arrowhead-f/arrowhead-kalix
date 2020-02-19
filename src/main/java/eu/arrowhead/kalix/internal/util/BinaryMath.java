@@ -23,7 +23,7 @@ public class BinaryMath {
             return 1;
         }
         if (value > 0x40000000) {
-            throw new IllegalArgumentException(value + " outside permitted range.");
+            throw new IllegalArgumentException(value + " outside permitted range");
         }
         value--;
         value |= value >> 1;

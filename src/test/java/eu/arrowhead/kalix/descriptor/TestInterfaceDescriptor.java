@@ -1,4 +1,4 @@
-package eu.arrowhead.kalix.description;
+package eu.arrowhead.kalix.descriptor;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;

@@ -6,7 +6,7 @@ import java.security.cert.X509Certificate;
 /**
  * Represents information about a system sending some received HTTP request.
  */
-public class HttpRequester {
+public class HttpServiceRequester {
     /**
      * @return Certificate of request sender, if available.
      */

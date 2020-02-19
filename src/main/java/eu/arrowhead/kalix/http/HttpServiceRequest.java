@@ -7,9 +7,9 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * A fully received HTTP request.
+ * An incoming HTTP request, handled by a {@link HttpService}.
  */
-public class HttpRequest {
+public class HttpServiceRequest {
     /**
      * Requests the body of the request to be serialized into an instance of
      * given target class.
@@ -22,9 +22,9 @@ public class HttpRequest {
      * @param class_ Class to serialize request body into.
      * @param <C>    Type of {@code class_}.
      * @return Future of serialized request body.
-     * @throws HttpRequestException If the request body cannot be parsed.
+     * @throws HttpServiceRequestException If the request body cannot be parsed.
      */
-    public <C> Future<C> bodyAs(final Class<C> class_) throws HttpRequestException {
+    public <C> Future<C> bodyAs(final Class<C> class_) throws HttpServiceRequestException {
         return null;
     }
 
@@ -49,9 +49,9 @@ public class HttpRequest {
      * Gets value of identified path parameter, or {@code null}.
      * <p>
      * This operation accesses an arbitrary list that has exactly the same size
-     * as the number of path parameters in some original {@link HttpPattern}.
-     * If an index is given outside the bounds of this list, {@code null} is
-     * returned.
+     * as the number of path parameters of the {@link HttpPattern} matched
+     * prior to this request becoming available. If an index is given outside
+     * the bounds of this list, {@code null} is returned.
      * <p>
      * Note that it is possible to match a path parameter with an empty string.
      * It should never be assumed that a non-null value returned by this method
@@ -65,7 +65,7 @@ public class HttpRequest {
     }
 
     /**
-     * @return Map of all path parameters.
+     * @return List of all path parameters.
      */
     public List<String> pathParameters() {
         return null;
@@ -92,7 +92,7 @@ public class HttpRequest {
     /**
      * @return Information about the request sender.
      */
-    public HttpRequester requester() {
+    public HttpServiceRequester requester() {
         return null;
     }
 

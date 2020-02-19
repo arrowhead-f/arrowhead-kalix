@@ -11,20 +11,20 @@ import java.util.*;
  * optional forward slash may be located at the end. While it is recommended
  * for segments to contain only the alphanumeric ASCII characters and hyphens
  * to maximize compatibility with various HTTP libraries and frameworks, RFC
- * 3986 explicitly allows the following characters to be used, except for
- * percent encodings:
+ * 3986 explicitly allows the following characters, and so-called <i>percent
+ * encodings</i> to be used:
  * <pre>
  * A–Z a–z 0–9 - . _ ~ ! $ & ' ( ) * + , ; = : @
  * </pre>
- * While all these segment characters are allowed by this pattern
+ * While all these characters are allowed in segments by this pattern
  * implementation, percent encodings are not (e.g. {@code %20} as a
  * representation for ASCII space).
  * <p>
  * It is frequently useful to allow certain pattern segments to match any
- * segment in a given path. For this reason, pattern segments may be qualified
- * as <i>path parameters</i> by adding a hash ({@code #}) at the beginning of
- * the segment (e.g. {@code /some/#parameter} or
- * {@code /some/other/#parameter/path}). When a path is successfully matched
+ * segment at the corresponding position in given paths. For this reason,
+ * pattern segments may be qualified as <i>path parameters</i> by adding a hash
+ * ({@code #}) at the beginning of the segment (e.g. {@code /some/#parameter}
+ * or {@code /some/other/#parameter/path}). When a path is successfully matched
  * against a pattern, any path parameter segments are collected from the path
  * into a list.
  * <p>
@@ -34,7 +34,7 @@ import java.util.*;
  *
  * @see <a href="https://tools.ietf.org/html/rfc3986#section-3.3">RFC 3986, Section 3.3</a>
  */
-public class HttpPattern {
+class HttpPattern {
     private final String pattern;
     private final int nParameters;
     private final boolean isPrefix;
@@ -140,7 +140,7 @@ public class HttpPattern {
         // q0 = start of pattern; q1 = end of pattern
         var q1 = pattern.length();
         if (q1 == 0 || pattern.charAt(0) != '/') {
-            throw new IllegalArgumentException("Patterns must start with `/`.");
+            throw new IllegalArgumentException("Patterns must start with `/`");
         }
         if (q1 == 1) {
             return ROOT;
@@ -157,7 +157,7 @@ public class HttpPattern {
         for (var q0 = 0; q0 < q1; ++q0) {
             var c = pattern.charAt(q0);
             if (c == '%') {
-                throw new IllegalArgumentException("Percent encodings may not be used in patterns.");
+                throw new IllegalArgumentException("Percent encodings may not be used in patterns");
             }
             if (c != '/') {
                 if (isRFC3986PathChar(c)) {
@@ -166,7 +166,7 @@ public class HttpPattern {
                 }
                 throw new IllegalArgumentException(c == '#'
                     ? "`#` may only occur right after a `/` to promote its segment to a path parameter."
-                    : "Invalid pattern character `" + c + "`; expected one of `0–9 A–Z a–z -._~!$&'()*+,;=:@`.");
+                    : "Invalid pattern character `" + c + "`; expected one of `0–9 A–Z a–z -._~!$&'()*+,;=:@`");
             }
             segment:
             while (true) {
@@ -192,19 +192,19 @@ public class HttpPattern {
                 case '.': // Ensure segment is not a relative path directive.
                     var isRelative = false;
                     if (q0 + 2 == q1) {
-                        isRelative = true; // Pattern ends with "/."
+                        isRelative = true; // Pattern ends with "/.".
                     }
                     else {
                         c = pattern.charAt(q0 + 2);
                         if (c == '.' && (q0 + 3 == q1 || pattern.charAt(q0 + 3) == '/')) {
-                            isRelative = true; // Pattern ends with "/.." or contains "/../"
+                            isRelative = true; // Pattern ends with "/.." or contains "/../".
                         }
                         else if (c == '/') {
-                            isRelative = true; // Pattern contains "/./"
+                            isRelative = true; // Pattern contains "/./".
                         }
                     }
                     if (isRelative) {
-                        throw new IllegalArgumentException("Relative paths may not be used in patterns.");
+                        throw new IllegalArgumentException("Relative paths may not be used in patterns");
                     }
 
                 case '>': // Makes pattern into a prefix. Ensure it is the last thing in the pattern.
@@ -213,7 +213,7 @@ public class HttpPattern {
                         break outer;
                     }
                     throw new IllegalArgumentException("`>` may only occur at the very end of a pattern, right " +
-                        "after the last `/`, to make the pattern allow subpaths.");
+                        "after the last `/`, to make the pattern allow subpaths");
                 }
                 break;
             }

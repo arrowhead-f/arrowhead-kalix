@@ -110,7 +110,7 @@ public final class HttpMethod {
      */
     public static final HttpMethod TRACE = new HttpMethod("TRACE", true);
 
-    private static final PerfectCache cache = new PerfectCache(14, 0,
+    private static final PerfectCache cache = new PerfectCache(6, 0,
         new PerfectCache.Entry(GET.name, GET),
         new PerfectCache.Entry(POST.name, POST),
         new PerfectCache.Entry(PUT.name, PUT),
@@ -128,11 +128,12 @@ public final class HttpMethod {
      * If given {@code name} is a standardized method, a cached
      * {@link HttpMethod} is returned. Otherwise, a new instance is provided.
      *
-     * @param name Name to resolve. Case insensitive.
+     * @param name Name to resolve. Case sensitive, as required by RFC 7230,
+     *             Section 3.1.1.
      * @return Cached or new {@link HttpMethod}.
+     * @see <a href="https://tools.ietf.org/html/rfc7230#section-3.1.1">RFC 7230, Section 3.1.1</a>
      */
-    public static HttpMethod valueOf(String name) {
-        name = name.toUpperCase();
+    public static HttpMethod valueOf(final String name) {
         final var value = cache.get(name);
         return value != null
             ? (HttpMethod) value
@@ -158,13 +159,3 @@ public final class HttpMethod {
         return name;
     }
 }
-
-
-
-
-
-
-
-
-
-

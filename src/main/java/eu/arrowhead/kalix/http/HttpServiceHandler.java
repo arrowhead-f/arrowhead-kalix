@@ -1,12 +1,11 @@
 package eu.arrowhead.kalix.http;
 
 /**
- * A handler meant to process HTTP requests matching some associated URI path.
- *
- * @see <a href="https://tools.ietf.org/html/rfc3986#section-3.3">RFC 3986, Section 3.3</a>
+ * A service handler, meant to process incoming HTTP requests matching some
+ * arbitrary set of preconditions.
  */
 @FunctionalInterface
-public interface HttpHandler {
+public interface HttpServiceHandler {
     /**
      * Called with an incoming HTTP request and a response handler.
      *
@@ -18,13 +17,18 @@ public interface HttpHandler {
      * expected to be serialized automatically into the appropriate encoding.
      * If a {@link eu.arrowhead.kalix.concurrent.Future} is returned, it can be
      * expected to be awaited before its contents are serialized and returned
-     * to the caller.
+     * to the caller. If {@code null} is returned or {@link Void} is used as
+     * type parameter to a returned
+     * {@link eu.arrowhead.kalix.concurrent.Future}, assembling a response is
+     * either delegated to some other handler or used to indicate that no
+     * response is to be sent.
      * @throws Exception Whatever exception the handle may want to throw. If
      *                   the HTTP service owning this handle knows how to
      *                   translate the exception into a certain kind of HTTP
      *                   response, it should. Otherwise the requester should
      *                   receive a 500 Internal Server Error response without
-     *                   any details.
+     *                   any details and the exception be logged (if logging is
+     *                   enabled).
      */
-    Object handle(HttpRequest request, HttpResponse response) throws Exception;
+    Object handle(HttpServiceRequest request, HttpServiceResponse response) throws Exception;
 }

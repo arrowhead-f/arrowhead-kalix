@@ -10,90 +10,109 @@ public class HttpService implements Service {
     }
 
     public static class Builder {
-        private final ArrayList<HttpFilter> filters = new ArrayList<>(0);
-        private final ArrayList<HttpRoute> routes = new ArrayList<>(0);
+        private final ArrayList<HttpServiceFilter> filters = new ArrayList<>(0);
+        private final ArrayList<HttpServiceRoute> routes = new ArrayList<>(0);
 
-
-        public Builder addFilter(final HttpFilter filter) {
+        public Builder addFilter(final HttpServiceFilter filter) {
             filters.add(filter);
             return this;
         }
 
-        public Builder before(final HttpMethod method, final String path, final HttpHandler handler) {
-            return addFilter(new HttpFilter(-1000, method, path, handler));
+        public Builder before(final HttpMethod method, final HttpPattern pattern, final HttpServiceHandler handler) {
+            return addFilter(new HttpServiceFilter(-1000, method, pattern, handler));
         }
 
-        public Builder before(final String path, final HttpHandler handler) {
-            return addFilter(new HttpFilter(-1000, null, path, handler));
+        public Builder before(final HttpMethod method, final String pattern, final HttpServiceHandler handler) {
+            return before(method, HttpPattern.valueOf(pattern), handler);
         }
 
-        public Builder before(final HttpHandler handler) {
-            return addFilter(new HttpFilter(-1000, null, null, handler));
+        public Builder before(final HttpPattern pattern, final HttpServiceHandler handler) {
+            return before(null, pattern, handler);
         }
 
-        public Builder after(final HttpMethod method, final String path, final HttpHandler handler) {
-            return addFilter(new HttpFilter(1000, method, path, handler));
+        public Builder before(final String pattern, final HttpServiceHandler handler) {
+            return before(null, HttpPattern.valueOf(pattern), handler);
         }
 
-        public Builder after(final String path, final HttpHandler handler) {
-            return addFilter(new HttpFilter(1000, null, path, handler));
+        public Builder before(final HttpMethod method, final HttpServiceHandler handler) {
+            return before(method, (HttpPattern) null, handler);
         }
 
-        public Builder after(final HttpHandler handler) {
-            return addFilter(new HttpFilter(1000, null, null, handler));
+        public Builder before(final HttpServiceHandler handler) {
+            return before(null, (HttpPattern) null, handler);
         }
 
-        public Builder lastly(final HttpMethod method, final String path, final HttpHandler handler) {
-            return addFilter(new HttpFilter(2000, method, path, handler));
+        public Builder after(final HttpMethod method, final HttpPattern pattern, final HttpServiceHandler handler) {
+            return addFilter(new HttpServiceFilter(1000, method, pattern, handler));
         }
 
-        public Builder lastly(final String path, final HttpHandler handler) {
-            return addFilter(new HttpFilter(2000, null, path, handler));
+        public Builder after(final HttpMethod method, final String pattern, final HttpServiceHandler handler) {
+            return after(method, HttpPattern.valueOf(pattern), handler);
         }
 
-        public Builder lastly(final HttpHandler handler) {
-            return addFilter(new HttpFilter(2000, null, null, handler));
+        public Builder after(final HttpPattern pattern, final HttpServiceHandler handler) {
+            return after(null, pattern, handler);
         }
 
-        public Builder addRoute(final HttpRoute route) {
+        public Builder after(final String pattern, final HttpServiceHandler handler) {
+            return after(null, HttpPattern.valueOf(pattern), handler);
+        }
+
+        public Builder after(final HttpMethod method, final HttpServiceHandler handler) {
+            return after(method, (HttpPattern) null, handler);
+        }
+
+        public Builder after(final HttpServiceHandler handler) {
+            return before(null, (HttpPattern) null, handler);
+        }
+
+        public Builder addRoute(final HttpServiceRoute route) {
             routes.add(route);
             return this;
         }
 
-        public Builder get(final String path, final HttpHandler handler) {
-            return addRoute(new HttpRoute(HttpMethod.GET, path, handler));
+        public Builder addRoute(final HttpMethod method, final HttpPattern pattern, final HttpServiceHandler handler) {
+            return addRoute(new HttpServiceRoute(method, pattern, handler));
         }
 
-        public Builder post(final String path, final HttpHandler handler) {
-            return addRoute(new HttpRoute(HttpMethod.POST, path, handler));
+        public Builder addRoute(final HttpMethod method, final String pattern, final HttpServiceHandler handler) {
+            return addRoute(method, HttpPattern.valueOf(pattern), handler);
         }
 
-        public Builder put(final String path, final HttpHandler handler) {
-            return addRoute(new HttpRoute(HttpMethod.PUT, path, handler));
+        public Builder get(final String path, final HttpServiceHandler handler) {
+            return addRoute(HttpMethod.GET, path, handler);
         }
 
-        public Builder delete(final String path, final HttpHandler handler) {
-            return addRoute(new HttpRoute(HttpMethod.DELETE, path, handler));
+        public Builder post(final String path, final HttpServiceHandler handler) {
+            return addRoute(HttpMethod.POST, path, handler);
         }
 
-        public Builder head(final String path, final HttpHandler handler) {
-            return addRoute(new HttpRoute(HttpMethod.HEAD, path, handler));
+        public Builder put(final String path, final HttpServiceHandler handler) {
+            return addRoute(HttpMethod.PUT, path, handler);
         }
 
-        public Builder options(final String path, final HttpHandler handler) {
-            return addRoute(new HttpRoute(HttpMethod.OPTIONS, path, handler));
+        public Builder delete(final String path, final HttpServiceHandler handler) {
+            return addRoute(HttpMethod.DELETE, path, handler);
         }
 
-        public Builder connect(final String path, final HttpHandler handler) {
-            return addRoute(new HttpRoute(HttpMethod.CONNECT, path, handler));
+        public Builder head(final String path, final HttpServiceHandler handler) {
+            return addRoute(HttpMethod.HEAD, path, handler);
         }
 
-        public Builder patch(final String path, final HttpHandler handler) {
-            return addRoute(new HttpRoute(HttpMethod.PATCH, path, handler));
+        public Builder options(final String path, final HttpServiceHandler handler) {
+            return addRoute(HttpMethod.OPTIONS, path, handler);
         }
 
-        public Builder trace(final String path, final HttpHandler handler) {
-            return addRoute(new HttpRoute(HttpMethod.TRACE, path, handler));
+        public Builder connect(final String path, final HttpServiceHandler handler) {
+            return addRoute(HttpMethod.CONNECT, path, handler);
+        }
+
+        public Builder patch(final String path, final HttpServiceHandler handler) {
+            return addRoute(HttpMethod.PATCH, path, handler);
+        }
+
+        public Builder trace(final String path, final HttpServiceHandler handler) {
+            return addRoute(HttpMethod.TRACE, path, handler);
         }
 
         public HttpService build() {

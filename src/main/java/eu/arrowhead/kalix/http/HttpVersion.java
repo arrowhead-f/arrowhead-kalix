@@ -42,8 +42,7 @@ public class HttpVersion {
     }
 
     /**
-     * @return HTTP version string, consisting of the major version, a dot and
-     * the minor version.
+     * @return HTTP version string, such as {@code "HTTP/1.1"}.
      */
     private String text() {
         return text;
@@ -52,7 +51,6 @@ public class HttpVersion {
     /**
      * @return Whether or not this version represents a standardized HTTP
      * protocol version.
-     *
      * @see <a href="https://tools.ietf.org/html/rfc1945">RFC 1945</a>
      * @see <a href="https://tools.ietf.org/html/rfc7230">RFC 7230</a>
      * @see <a href="https://tools.ietf.org/html/rfc7231">RFC 7231</a>
@@ -69,49 +67,52 @@ public class HttpVersion {
     /**
      * HTTP version 1.0.
      */
-    public static final HttpVersion HTTP_10 = new HttpVersion(1, 0, "1.0", true);
+    public static final HttpVersion HTTP_10 = new HttpVersion(1, 0, "HTTP/1.0", true);
 
     /**
      * HTTP version 1.1.
      */
-    public static final HttpVersion HTTP_11 = new HttpVersion(1, 1, "1.1", true);
+    public static final HttpVersion HTTP_11 = new HttpVersion(1, 1, "HTTP/1.1", true);
 
     /**
      * HTTP version 2.0.
      */
-    public static final HttpVersion HTTP_20 = new HttpVersion(2, 0, "2.0", true);
+    public static final HttpVersion HTTP_20 = new HttpVersion(2, 0, "HTTP/2.0", true);
 
     /**
-     * HTTP version 3.0.
-     */
-    public static final HttpVersion HTTP_30 = new HttpVersion(3, 0, "3.0", false);
-
-    /**
-     * Parses given HTTP version string, expected to be on the form
-     * {@code <major>.<minor>}.
+     * Resolves {@link HttpVersion} from given version string, expected to be
+     * on the form {@code "HTTP/<major>.<minor>"}.
      * <p>
      * If parsed version is a standardized such, a cached {@link HttpVersion}
      * is returned. Otherwise, a new instance is returned.
      *
-     * @param majorDotMinor HTTP version to parse.
-     * @return Existing or new {@link HttpVersion}.
+     * @param version Version to parse. Case sensitive, as required by RFC
+     *                7230, Section 2.6.
+     * @return Cached or new {@link HttpVersion}.
+     * @see <a href="https://tools.ietf.org/html/rfc7230#section-2.6">RFC 7230, Section 2.6</a>
      */
-    public static HttpVersion valueOf(final String majorDotMinor) {
-        switch (majorDotMinor) {
-            case "1.0": return HTTP_10;
-            case "1.1": return HTTP_11;
+    public static HttpVersion valueOf(final String version) {
+        error:
+        {
+            if (!version.startsWith("HTTP/")) {
+                break error;
+            }
+            final var majorDotMinor = version.substring(5);
+            switch (majorDotMinor) {
             case "2.0": return HTTP_20;
-            case "3.0": return HTTP_30;
-            default:
-                break;
+            case "1.1": return HTTP_11;
+            case "1.0": return HTTP_10;
+            }
+            final var dotIndex = majorDotMinor.indexOf('.');
+            if (dotIndex == -1 || dotIndex == majorDotMinor.length() - 1) {
+                break error;
+            }
+            final var major = Integer.parseInt(majorDotMinor.substring(0, dotIndex));
+            final var minor = Integer.parseInt(majorDotMinor.substring(dotIndex + 1));
+            return new HttpVersion(major, minor, version, false);
         }
-        final var dotIndex = majorDotMinor.indexOf('.');
-        if (dotIndex == -1 || dotIndex == majorDotMinor.length() - 1) {
-            throw new IllegalArgumentException("Expected HTTP version to be on form `<major>.<minor>`.");
-        }
-        final var major = Integer.parseInt(majorDotMinor.substring(0, dotIndex));
-        final var minor = Integer.parseInt(majorDotMinor.substring(dotIndex + 1));
-        return new HttpVersion(major, minor, majorDotMinor, false);
+        throw new IllegalArgumentException("Invalid HTTP version `" + version +
+            "`; expected `HTTP/<major>.<minor>`");
     }
 
     @Override

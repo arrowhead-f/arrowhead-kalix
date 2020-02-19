@@ -70,7 +70,7 @@ public class TestHttpPattern {
 
     @ParameterizedTest
     @MethodSource("invalidPatterns")
-    void shouldNotParsePattern(final String pattern) {
+    void shouldFailToParsePattern(final String pattern) {
         assertThrows(
             IllegalArgumentException.class, () -> HttpPattern.valueOf(pattern),
             "Expected pattern `" + pattern + "` to be invalid."

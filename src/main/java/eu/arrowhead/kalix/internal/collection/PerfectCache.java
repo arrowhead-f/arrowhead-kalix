@@ -59,7 +59,7 @@ public class PerfectCache {
             throw new IllegalArgumentException(
                 "Encoding cache hash collision; `" + this.entries[index].key
                     + "` and `" + entry.key
-                    + "` have the same masked string hash codes.");
+                    + "` have the same masked string hash codes");
         }
     }
 

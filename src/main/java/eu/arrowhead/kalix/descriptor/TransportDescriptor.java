@@ -1,4 +1,4 @@
-package eu.arrowhead.kalix.description;
+package eu.arrowhead.kalix.descriptor;
 
 import eu.arrowhead.kalix.internal.collection.PerfectCache;
 
