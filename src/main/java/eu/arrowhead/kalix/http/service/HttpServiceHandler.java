@@ -1,5 +1,7 @@
 package eu.arrowhead.kalix.http.service;
 
+import eu.arrowhead.kalix.concurrent.Future;
+
 /**
  * A service handler, meant to process incoming HTTP requests matching some
  * arbitrary set of preconditions.
@@ -15,13 +17,11 @@ public interface HttpServiceHandler {
      *                 is to be responded to.
      * @return The body to use in the request response. The object can be
      * expected to be serialized automatically into the appropriate encoding.
-     * If a {@link eu.arrowhead.kalix.concurrent.Future} is returned, it can be
-     * expected to be awaited before its contents are serialized and returned
-     * to the caller. If {@code null} is returned or {@link Void} is used as
-     * type parameter to a returned
-     * {@link eu.arrowhead.kalix.concurrent.Future}, assembling a response is
-     * either delegated to some other handler or used to indicate that no
-     * response is to be sent.
+     * If a {@link Future} is returned, it can be expected to be awaited before
+     * its contents are serialized and returned to the caller. If {@code null}
+     * is returned or {@link Void} is used as type parameter to a returned
+     * {@link Future}, assembling a response is either delegated to some other
+     * handler or used to indicate that no response is to be sent.
      * @throws Exception Whatever exception the handle may want to throw. If
      *                   the HTTP service owning this handle knows how to
      *                   translate the exception into a certain kind of HTTP

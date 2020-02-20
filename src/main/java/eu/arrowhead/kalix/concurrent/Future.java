@@ -1,6 +1,7 @@
 package eu.arrowhead.kalix.concurrent;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 /**
  * Represents an operation that will complete at some point in the future.
@@ -17,7 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * as it may be the case that the operation represented by the future will not
  * start running until either of these methods are invoked. Failing to call any
  * of these methods may lead to memory never being reclaimed, which could lead
- * to memory exhaustion at some point in the future.
+ * to memory running out at some point in the future.
  *
  * @param <V> Type of value that can be retrieved if the operation succeeds.
  */
@@ -27,7 +28,14 @@ public interface Future<V> {
      * available.
      * <p>
      * If this method has been called previously on the same object, any
-     * previously set consumer should be replaced by this one.
+     * previously set consumer should be replaced by the one given.
+     * <p>
+     * The given consumer function should never throw exceptions that need to
+     * be handled explicitly. Any thrown exception will end up with the caller
+     * of the function, which is unlikely to be able to handle it in any other
+     * way than by logging it.
+     * <p>
+     * Calling this method must be thread safe.
      *
      * @param consumer Function invoked when this {@code Future} completes.
      * @throws NullPointerException If the consumer function is {@code null}.
@@ -37,41 +45,79 @@ public interface Future<V> {
     /**
      * Signals that the result of this {@code Future} no longer is of interest.
      * <p>
-     * If this {@code Future} has already completed, calling this method should
-     * do nothing. If not, any function provided to {@link #onResult(Consumer)}
-     * should never be called.
+     * If this {@code Future} has already been cancelled or completed, calling
+     * this method should do nothing. Calling this method on a {@code Future}
+     * that has not yet completed should prevent {@link #onResult(Consumer)}
+     * from ever being called.
+     * <p>
+     * Calling this method must be thread safe.
      */
     void cancel();
 
     /**
      * Returns new {@code Future} that is completed after the value of this
      * {@code Future} has become available and could be transformed into a
-     * value of type {@code U} by {@code mapper}. If this {@code Future} fails,
-     * the returned {@code Future} is failed with the same {@code Exception}.
+     * value of type {@code U} by {@code mapper}.
+     * <p>
+     * Any exception thrown by {@code mapper} should lead to the returned
+     * future being failed with the same exception.
      *
      * @param <U>    The type of the value returned from the mapping function.
      * @param mapper The mapping function to apply to the value of this
      *               {@code Future}, if it becomes available.
      * @return A {@code Future} that may eventually hold the result of applying
-     * a mapping function to the value of this {@code Future}, if its value
-     * ever becomes available.
+     * a mapping function to the value of this {@code Future}, if it completes
+     * successfully.
      * @throws NullPointerException If the mapping function is {@code null}.
      */
-    <U> Future<U> map(final Function<? super V, ? extends U> mapper);
+    default <U> Future<? extends U> map(final Mapper<? super V, ? extends U> mapper) {
+        final var source = this;
+        return new Future<>() {
+            @Override
+            public void onResult(final Consumer<Result<? extends U>> consumer) {
+                source.onResult(r0 -> {
+                    Result<? extends U> r1;
+                    success:
+                    {
+                        Throwable err;
+                        if (r0.isSuccess()) {
+                            try {
+                                r1 = Result.success(mapper.apply(r0.value()));
+                                break success;
+                            }
+                            catch (final Throwable error) {
+                                err = error;
+                            }
+                        }
+                        else {
+                            err = r0.error();
+                        }
+                        r1 = Result.failure(err);
+                    }
+                    consumer.accept(r1);
+                });
+            }
+
+            @Override
+            public void cancel() {
+                source.cancel();
+            }
+        };
+    }
 
     /**
-     * Returns new {@code Future} that is completed after the value of this
-     * {@code Future} has become available and could be transformed into a
-     * value of type {@code U} by {@code mapper}.
+     * Returns new {@code Future} that is completed when the {@code Future}
+     * returned by {@code mapper} completes, which, in turn, is not executed
+     * until this {@code Future} completes.
      * <p>
-     * The difference between this method and {@link #map(Function)} is that
-     * {@code mapper} does not return a plain value, but a {@code Future} that
-     * is completed before the {@code Future} returned by this method is
-     * completed.
+     * The difference between this method and {@link #map(Mapper)} is that the
+     * {@code mapper} provided here is expected to return a {@code Future}
+     * rather than a plain value. The returned {@code Future} completes after
+     * this {@code Future} and the {@code Future} returned by {@code mapper}
+     * have completed in sequence.
      * <p>
-     * If this {@code Future} or the {@code Future} of {@code mapper} fails,
-     * the {@code Future} returned by this method is failed with the same
-     * {@code Exception}.
+     * Any exception thrown by {@code mapper} should lead to the returned
+     * future being failed with the same exception.
      *
      * @param <U>    The type of the value returned from the mapping function.
      * @param mapper The mapping function to apply to the value of this
@@ -81,130 +127,80 @@ public interface Future<V> {
      * for the {@code Future} returned by the mapper to complete.
      * @throws NullPointerException If the mapping function is {@code null}.
      */
-    <U> Future<U> flatMap(final Function<? super V, ? extends Future<? extends U>> mapper);
+    default <U> Future<? extends U> flatMap(final Mapper<? super V, ? extends Future<? extends U>> mapper) {
+        final var source = this;
+        final var cancelTarget = new AtomicReference<Future<?>>(this);
+        return new Future<>() {
+            @Override
+            public void onResult(final Consumer<Result<? extends U>> consumer) {
+                source.onResult(r0 -> {
+                    Throwable err;
+                    if (r0.isSuccess()) {
+                        try {
+                            final var f1 = mapper.apply(r0.value());
+                            f1.onResult(consumer::accept);
+                            cancelTarget.set(f1);
+                            return;
+                        }
+                        catch (final Throwable error) {
+                            err = error;
+                        }
+                    }
+                    else {
+                        err = r0.error();
+                    }
+                    consumer.accept(Result.failure(err));
+                });
+            }
+
+            @Override
+            public void cancel() {
+                final var target = cancelTarget.getAndSet(null);
+                if (target != null) {
+                    target.cancel();
+                }
+            }
+        };
+    }
 
     /**
-     * A function that may throw any {@link Throwable} while being executed.
+     * Creates new {@code Future} that always succeeds with {@code value}.
      *
-     * @param <V> Type of value to be provided to function.
+     * @param value Value to wrap in {@code Future}.
+     * @param <V>   Type of value.
+     * @return New {@code Future}.
      */
-    @FunctionalInterface
-    interface Consumer<V> {
-        /**
-         * Provides consumer with a value.
-         *
-         * @param v Value to provide.
-         * @throws Throwable Any kind of exception.
-         */
-        void accept(V v) throws Throwable;
+    static <V> Future<V> success(final V value) {
+        return new Success<>(value);
+    }
+
+    /**
+     * Creates new {@code Future} that always fails with {@code error}.
+     *
+     * @param error Error to wrap in {@code Future}.
+     * @param <V>   Type of value that would have been wrapped if successful.
+     * @return New {@code Future}.
+     */
+    static <V> Future<V> failure(final Throwable error) {
+        return new Failure<>(error);
     }
 
     /**
      * A function, converting an input value into an output value. May throw
      * any {@link Throwable} while being executed.
      *
-     * @param <V> Type of value to be provided to function.
-     * @param <U> Type of value returned from function.
+     * @param <V> Type of value to be provided to mapper.
+     * @param <U> Type of value returned from mapper.
      */
     @FunctionalInterface
-    interface Function<V, U> {
+    interface Mapper<V, U> {
         /**
-         * Provides consumer with a value and receives its output value.
+         * Provides mapper with a value and receives its output value.
          *
          * @param v Value to provide.
          * @return Output value.
          * @throws Throwable Any kind of exception.
          */
         U apply(V v) throws Throwable;
-    }
-
-    /**
-     * The result of a {@link Future}.
-     * <p>
-     * A {@code Result} may either be a <i>success</i>, in which case a
-     * <i>value</i> is available, or a <i>failure</i>, which makes an
-     * <i>error</i> available. The {@link #isSuccess()} method is used to
-     * determine which of the two situations is the case. The {@link #value()}
-     * and {@link #error()} methods are used to collect the value or error.
-     *
-     * @param <V> Type of value provided by {@code Result} if successful.
-     */
-    class Result<V> {
-        private final boolean isSuccess;
-        private final V value;
-        private final Throwable error;
-
-        private Result(final boolean isSuccess, final V value, final Throwable error) {
-            this.isSuccess = isSuccess;
-            this.value = value;
-            this.error = error;
-        }
-
-        /**
-         * Creates new successful {@code Result}.
-         *
-         * @param value Value.
-         * @param <V>   Type of value.
-         * @return New {@code Result}.
-         */
-        public static <V> Result<V> success(final V value) {
-            return new Result<>(true, value, null);
-        }
-
-        /**
-         * Creates new failure {@code Result}.
-         *
-         * @param error Reason for failure.
-         * @param <V>   Type of value that would have been provided by the
-         *              created {@code Result}, if it were successful.
-         * @return New {@code Result}.
-         */
-        public static <V> Result<V> failure(final Throwable error) {
-            return new Result<>(false, null, error);
-        }
-
-        /**
-         * @return {@code true} if this {@code Result} contains a value.
-         */
-        public boolean isSuccess() {
-            return isSuccess;
-        }
-
-        /**
-         * @return Some exception if this {@code Result} is a failure.
-         * {@code null} otherwise.
-         */
-        public Throwable error() {
-            return error;
-        }
-
-        /**
-         * @return Some value if this {@code Result} is a success. {@code null}
-         * otherwise.
-         */
-        public V value() {
-            return value;
-        }
-
-        /**
-         * Either returns {@code Result} value or throws its error, depending
-         * on whether it is successful or not.
-         * <p>
-         * In the case of being a failure, the error is thrown as-is if it is a
-         * subclass of {@link RuntimeException}. If not, it is wrapped in a
-         * {@code RuntimeException} before being thrown.
-         *
-         * @return Result value, if the {@code Result} is successful.
-         * @throws RuntimeException If the {@code Result} is a failure.
-         */
-        public V valueOrThrow() {
-            if (isSuccess()) {
-                return value();
-            }
-            if (error instanceof RuntimeException) {
-                throw (RuntimeException) error;
-            }
-            throw new RuntimeException(error());
-        }
     }
 }

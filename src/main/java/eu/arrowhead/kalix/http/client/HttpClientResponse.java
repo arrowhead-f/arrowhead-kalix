@@ -6,7 +6,7 @@ import eu.arrowhead.kalix.http.HttpVersion;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
+import java.util.function.Consumer;
 
 /**
  * An incoming  HTTP response.
@@ -17,10 +17,9 @@ public class HttpClientResponse {
      * given target class.
      * <p>
      * As the body may not have been fully received when this method is called,
-     * a {@link Future} is returned whose
-     * {@link Future#onResult(Future.Consumer)} method will be called when the
-     * body is either ready or it is known that it cannot be received and/or
-     * serialized.
+     * a {@link Future} is returned whose {@link Future#onResult(Consumer)}
+     * method will be called when the body is either ready or it is known that
+     * it cannot be received and/or serialized.
      *
      * @param class_ Class to serialize request body into.
      * @param <C>    Type of {@code class_}.

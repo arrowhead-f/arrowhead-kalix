@@ -9,7 +9,6 @@ import java.net.InetSocketAddress;
  */
 public class HttpClient {
     private final InetSocketAddress host;
-    private final HttpQualifier qualifier;
 
     /**
      * Creates new {@link HttpClient} for communicating with {@code host}.
@@ -18,21 +17,13 @@ public class HttpClient {
      */
     public HttpClient(final InetSocketAddress host) {
         this.host = host;
-        this.qualifier = null;
     }
 
     /**
-     * Creates new {@link HttpClient} for communicating with {@code host},
-     * using given {@link HttpQualifier} to qualify outgoing HTTP requests.
-     * Qualification may entail adding authorization headers, or other details,
-     * to sent requests.
-     *
-     * @param host      Hostname/port or IP/port of target host.
-     * @param qualifier Client request qualifier.
+     * @return Host reachable via this client
      */
-    public HttpClient(final InetSocketAddress host, final HttpQualifier qualifier) {
-        this.host = host;
-        this.qualifier = qualifier;
+    public InetSocketAddress host() {
+        return host;
     }
 
     /**
@@ -43,12 +34,6 @@ public class HttpClient {
      * @return Future of {@code HttpClientResponse}.
      */
     public Future<HttpClientResponse> send(final HttpClientRequest request) {
-        /*if (qualifier != null) {
-            return qualifier.apply(request)
-                .flatMap(() -> {
-                    // Actual send request.
-                });
-        }*/
-        throw new UnsupportedOperationException();
+        return Future.failure(new UnsupportedOperationException()); // TODO.
     }
 }

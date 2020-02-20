@@ -1,11 +1,9 @@
 package eu.arrowhead.kalix.internal.collection;
 
-import eu.arrowhead.kalix.internal.util.BinaryMath;
-
 /**
  * A map whose entries are guaranteed to be accessible in O(1).
  * <p>
- * To achieve this, a so-called <i>perfect hashtable</i> i used. Such a table
+ * To achieve this, a so-called <i>perfect hash table</i> i used. Such a table
  * can only be reliably constructed from a well-known set of keys, and is,
  * therefore, almost only practically useful for caching data known at
  * compile-time. It is, for example, useful for caching strings that are
@@ -45,7 +43,7 @@ public class PerfectCache {
      * @param entries  Entries from which to construct perfect cache.
      */
     public PerfectCache(final int rotate, final int capacity, final Entry... entries) {
-        this.entries = new Entry[BinaryMath.findNextPositivePowerOfTwo(Math.max(entries.length, capacity))];
+        this.entries = new Entry[findNextPositivePowerOfTwo(Math.max(entries.length, capacity))];
         this.mask = this.entries.length - 1;
         this.rotate = rotate;
 
@@ -92,5 +90,28 @@ public class PerfectCache {
             this.key = key;
             this.value = value;
         }
+    }
+
+    /**
+     * Calculates the smallest power of two greater than or equal to
+     * {@code value}, which must not be greater than 2^30.
+     *
+     * @param value Value from which search begins.
+     * @return Power of two. Result is undefined if {@code value < 1}.
+     * @throws IllegalArgumentException If {@code value} is larger than 2^30.
+     *
+     * @see <a href="https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2">Bit Twiddling Hacks - Round up to the next highest power of 2</a>
+     */
+    private static int findNextPositivePowerOfTwo(int value) {
+        if (value > 0x40000000) {
+            throw new IllegalArgumentException(value + " outside permitted range");
+        }
+        value--;
+        value |= value >> 1;
+        value |= value >> 2;
+        value |= value >> 4;
+        value |= value >> 8;
+        value |= value >> 16;
+        return ++value;
     }
 }

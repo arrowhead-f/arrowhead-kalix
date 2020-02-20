@@ -1,26 +1,27 @@
 package eu.arrowhead.kalix.http.service;
 
+import eu.arrowhead.kalix.concurrent.Future;
 import eu.arrowhead.kalix.http.HttpMethod;
 
 import java.util.Optional;
 
 /**
- * A {@link HttpService} filter, useful for verifying HTTP requests before or
- * after they are handled, cancelling or responding to pending responses, or
- * modifying response headers.
+ * A {@link HttpService} filter, useful for verifying incoming HTTP requests
+ * before or after they are handled, cancelling or responding to pending
+ * responses, or modifying response headers.
  * <p>
  * Note that filters cannot modify requests. They can reply to requests with
  * their own response bodies, however. If a filter executed before a
  * {@link HttpRoute} handler returns any other value than null or a
- * {@link eu.arrowhead.kalix.concurrent.Future} yielding {@link Void}, no more
- * handlers are invoked and the original request is responded to as soon as
- * the returned value has been serialized into a response body.
+ * {@link Future} yielding {@link Void}, no more handlers are invoked and the
+ * original request is responded to as soon as the returned value has been
+ * serialized into a response body.
  * <p>
  * Deserialization and serialization of request and response bodies is taken
  * care of by the {@link HttpService} handling the filter and the handler it
  * filters.
  */
-public class HttpFilter {
+public class HttpFilter implements HttpServiceHandler {
     private final int ordinal;
     private final HttpMethod method;
     private final HttpPattern pattern;
@@ -74,11 +75,8 @@ public class HttpFilter {
         return Optional.ofNullable(pattern);
     }
 
-    /**
-     * @return The handler to execute when all preconditions for this filter
-     * are satisfied.
-     */
-    public HttpServiceHandler handler() {
-        return handler;
+    @Override
+    public Object handle(HttpServiceRequest request, HttpServiceResponse response) throws Exception {
+        return handler.handle(request, response);
     }
 }
