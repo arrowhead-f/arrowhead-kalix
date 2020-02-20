@@ -1,6 +1,6 @@
 package eu.arrowhead.kalix.http.client;
 
-import eu.arrowhead.kalix.util.LowercaseHashMap;
+import eu.arrowhead.kalix.http.HttpHeaders;
 import eu.arrowhead.kalix.http.HttpVersion;
 
 import java.util.HashMap;
@@ -12,8 +12,8 @@ import java.util.Optional;
  */
 public class HttpClientRequest {
     private HttpVersion version;
-    private Map<String, String> queryParameters = new HashMap<>(4);
-    private Map<String, String> headers = new LowercaseHashMap<>();
+    private Map<String, String> queryParameters = new HashMap<>(8);
+    private HttpHeaders headers = new HttpHeaders();
     private Object body;
 
     /**
@@ -60,7 +60,7 @@ public class HttpClientRequest {
      * @return Header value, or {@code null}.
      */
     public Optional<String> header(final String name) {
-        return Optional.ofNullable(headers.get(name));
+        return headers.get(name);
     }
 
     /**
@@ -71,14 +71,14 @@ public class HttpClientRequest {
      * @return This request.
      */
     public HttpClientRequest header(final String name, final String value) {
-        headers.put(name, value);
+        headers.set(name, value);
         return this;
     }
 
     /**
      * @return Case-insensitive map of request headers. Prefer lowercase keys.
      */
-    public Map<String, String> headers() {
+    public HttpHeaders headers() {
         return headers;
     }
 
@@ -92,14 +92,8 @@ public class HttpClientRequest {
      * @param headers New map of response headers.
      * @return This response object.
      */
-    public HttpClientRequest headers(final Map<String, String> headers) {
-        if (headers instanceof LowercaseHashMap) {
-            this.headers = headers;
-        }
-        else {
-            this.headers.clear();
-            this.headers.putAll(headers);
-        }
+    public HttpClientRequest headers(final HttpHeaders headers) {
+        this.headers = headers;
         return this;
     }
 

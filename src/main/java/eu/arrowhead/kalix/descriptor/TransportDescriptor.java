@@ -1,6 +1,6 @@
 package eu.arrowhead.kalix.descriptor;
 
-import eu.arrowhead.kalix.internal.collection.PerfectCache;
+import eu.arrowhead.kalix.internal.util.PerfectCache;
 
 import java.util.Objects;
 

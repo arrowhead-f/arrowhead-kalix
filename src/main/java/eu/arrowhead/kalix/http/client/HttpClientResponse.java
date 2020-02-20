@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.http.client;
 
+import eu.arrowhead.kalix.http.HttpHeaders;
 import eu.arrowhead.kalix.util.concurrent.Future;
 import eu.arrowhead.kalix.http.HttpStatus;
 import eu.arrowhead.kalix.http.HttpVersion;
@@ -42,7 +43,7 @@ public class HttpClientResponse {
     /**
      * @return Map of all request headers.
      */
-    public Map<String, String> headers() {
+    public HttpHeaders headers() {
         return null;
     }
 

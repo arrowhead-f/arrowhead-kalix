@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.http.service;
 
+import eu.arrowhead.kalix.http.HttpHeaders;
 import eu.arrowhead.kalix.http.HttpStatus;
 
 import java.util.Map;
@@ -79,7 +80,7 @@ public class HttpServiceResponse {
     /**
      * @return Mutable {@link Map} of all response headers.
      */
-    public Map<String, String> headers() {
+    public HttpHeaders headers() {
         return null;
     }
 
