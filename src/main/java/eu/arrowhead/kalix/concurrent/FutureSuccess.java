@@ -7,7 +7,7 @@ import java.util.function.Consumer;
  *
  * @param <V> Type of value.
  */
-public class Success<V> implements Future<V> {
+public class FutureSuccess<V> implements Future<V> {
     private final V value;
     private boolean isDone = false;
 
@@ -16,14 +16,14 @@ public class Success<V> implements Future<V> {
      *
      * @param value Value to include in {@code Future}.
      */
-    public Success(final V value) {
+    public FutureSuccess(final V value) {
         this.value = value;
     }
 
     @Override
-    public void onResult(final Consumer<Result<? extends V>> consumer) {
+    public void onResult(final Consumer<FutureResult<V>> consumer) {
         if (!isDone) {
-            consumer.accept(Result.success(value));
+            consumer.accept(FutureResult.success(value));
             isDone = true;
         }
     }
@@ -36,20 +36,20 @@ public class Success<V> implements Future<V> {
     @Override
     public <U> Future<U> map(final Mapper<? super V, ? extends U> mapper) {
         try {
-            return new Success<>(mapper.apply(value));
+            return new FutureSuccess<>(mapper.apply(value));
         }
         catch (final Throwable error) {
-            return new Failure<>(error);
+            return new FutureFailure<>(error);
         }
     }
 
     @Override
-    public <U> Future<? extends U> flatMap(final Mapper<? super V, ? extends Future<? extends U>> mapper) {
+    public <U> Future<U> flatMap(final Mapper<? super V, ? extends Future<U>> mapper) {
         try {
             return mapper.apply(value);
         }
         catch (final Throwable error) {
-            return new Failure<>(error);
+            return new FutureFailure<>(error);
         }
     }
 }

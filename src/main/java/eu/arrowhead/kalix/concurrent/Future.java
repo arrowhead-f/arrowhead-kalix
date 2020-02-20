@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.concurrent;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -9,7 +10,7 @@ import java.util.function.Consumer;
  * To make it convenient to act on the completion of this {@code Future}, the
  * receiver of it is expected to provide a {@code Consumer} to the
  * {@link #onResult(Consumer)} method, which should be invoked whenever the
- * {@link Result} of the operation becomes available. As an alternative, the
+ * {@link FutureResult} of the operation becomes available. As an alternative, the
  * {@code Future} receiver may also decide to {@link #cancel()} it, which
  * should mean that any {@code Consumer}, if set, never will be invoked.
  * <p>
@@ -40,7 +41,7 @@ public interface Future<V> {
      * @param consumer Function invoked when this {@code Future} completes.
      * @throws NullPointerException If the consumer function is {@code null}.
      */
-    void onResult(final Consumer<Result<? extends V>> consumer);
+    void onResult(final Consumer<FutureResult<V>> consumer);
 
     /**
      * Signals that the result of this {@code Future} no longer is of interest.
@@ -70,19 +71,20 @@ public interface Future<V> {
      * successfully.
      * @throws NullPointerException If the mapping function is {@code null}.
      */
-    default <U> Future<? extends U> map(final Mapper<? super V, ? extends U> mapper) {
+    default <U> Future<U> map(final Mapper<? super V, ? extends U> mapper) {
+        Objects.requireNonNull(mapper);
         final var source = this;
         return new Future<>() {
             @Override
-            public void onResult(final Consumer<Result<? extends U>> consumer) {
+            public void onResult(final Consumer<FutureResult<U>> consumer) {
                 source.onResult(r0 -> {
-                    Result<? extends U> r1;
+                    FutureResult<U> r1;
                     success:
                     {
                         Throwable err;
                         if (r0.isSuccess()) {
                             try {
-                                r1 = Result.success(mapper.apply(r0.value()));
+                                r1 = FutureResult.success(mapper.apply(r0.value()));
                                 break success;
                             }
                             catch (final Throwable error) {
@@ -92,7 +94,7 @@ public interface Future<V> {
                         else {
                             err = r0.error();
                         }
-                        r1 = Result.failure(err);
+                        r1 = FutureResult.failure(err);
                     }
                     consumer.accept(r1);
                 });
@@ -127,18 +129,19 @@ public interface Future<V> {
      * for the {@code Future} returned by the mapper to complete.
      * @throws NullPointerException If the mapping function is {@code null}.
      */
-    default <U> Future<? extends U> flatMap(final Mapper<? super V, ? extends Future<? extends U>> mapper) {
+    default <U> Future<U> flatMap(final Mapper<? super V, ? extends Future<U>> mapper) {
+        Objects.requireNonNull(mapper);
         final var source = this;
         final var cancelTarget = new AtomicReference<Future<?>>(this);
         return new Future<>() {
             @Override
-            public void onResult(final Consumer<Result<? extends U>> consumer) {
+            public void onResult(final Consumer<FutureResult<U>> consumer) {
                 source.onResult(r0 -> {
                     Throwable err;
                     if (r0.isSuccess()) {
                         try {
                             final var f1 = mapper.apply(r0.value());
-                            f1.onResult(consumer::accept);
+                            f1.onResult(consumer);
                             cancelTarget.set(f1);
                             return;
                         }
@@ -149,7 +152,7 @@ public interface Future<V> {
                     else {
                         err = r0.error();
                     }
-                    consumer.accept(Result.failure(err));
+                    consumer.accept(FutureResult.failure(err));
                 });
             }
 
@@ -171,7 +174,7 @@ public interface Future<V> {
      * @return New {@code Future}.
      */
     static <V> Future<V> success(final V value) {
-        return new Success<>(value);
+        return new FutureSuccess<>(value);
     }
 
     /**
@@ -182,7 +185,7 @@ public interface Future<V> {
      * @return New {@code Future}.
      */
     static <V> Future<V> failure(final Throwable error) {
-        return new Failure<>(error);
+        return new FutureFailure<>(error);
     }
 
     /**

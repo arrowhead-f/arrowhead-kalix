@@ -7,7 +7,7 @@ import java.util.function.Consumer;
  *
  * @param <V> Type of value that would have been included if successful.
  */
-public class Failure<V> implements Future<V> {
+public class FutureFailure<V> implements Future<V> {
     private final Throwable error;
     private boolean isDone = false;
 
@@ -16,14 +16,14 @@ public class Failure<V> implements Future<V> {
      *
      * @param error Error to include in {@code Future}.
      */
-    public Failure(final Throwable error) {
+    public FutureFailure(final Throwable error) {
         this.error = error;
     }
 
     @Override
-    public void onResult(final Consumer<Result<? extends V>> consumer) {
+    public void onResult(final Consumer<FutureResult<V>> consumer) {
         if (!isDone) {
-            consumer.accept(Result.failure(error));
+            consumer.accept(FutureResult.failure(error));
             isDone = true;
         }
     }
@@ -35,11 +35,11 @@ public class Failure<V> implements Future<V> {
 
     @Override
     public <U> Future<U> map(final Mapper<? super V, ? extends U> mapper) {
-        return new Failure<>(error);
+        return new FutureFailure<>(error);
     }
 
     @Override
-    public <U> Future<? extends U> flatMap(final Mapper<? super V, ? extends Future<? extends U>> mapper) {
-        return new Failure<>(error);
+    public <U> Future<U> flatMap(final Mapper<? super V, ? extends Future<U>> mapper) {
+        return new FutureFailure<>(error);
     }
 }
