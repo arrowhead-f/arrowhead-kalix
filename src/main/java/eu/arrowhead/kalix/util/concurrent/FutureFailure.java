@@ -1,4 +1,7 @@
-package eu.arrowhead.kalix.concurrent;
+package eu.arrowhead.kalix.util.concurrent;
+
+import eu.arrowhead.kalix.util.Result;
+import eu.arrowhead.kalix.util.function.ThrowingFunction;
 
 import java.util.function.Consumer;
 
@@ -7,7 +10,7 @@ import java.util.function.Consumer;
  *
  * @param <V> Type of value that would have been included if successful.
  */
-public class FutureFailure<V> implements Future<V> {
+class FutureFailure<V> implements Future<V> {
     private final Throwable error;
     private boolean isDone = false;
 
@@ -21,9 +24,9 @@ public class FutureFailure<V> implements Future<V> {
     }
 
     @Override
-    public void onResult(final Consumer<FutureResult<V>> consumer) {
+    public void onResult(final Consumer<Result<V>> consumer) {
         if (!isDone) {
-            consumer.accept(FutureResult.failure(error));
+            consumer.accept(Result.failure(error));
             isDone = true;
         }
     }
@@ -34,12 +37,12 @@ public class FutureFailure<V> implements Future<V> {
     }
 
     @Override
-    public <U> Future<U> map(final Mapper<? super V, ? extends U> mapper) {
+    public <U> Future<U> map(final ThrowingFunction<? super V, ? extends U> mapper) {
         return new FutureFailure<>(error);
     }
 
     @Override
-    public <U> Future<U> flatMap(final Mapper<? super V, ? extends Future<U>> mapper) {
+    public <U> Future<U> flatMap(final ThrowingFunction<? super V, ? extends Future<U>> mapper) {
         return new FutureFailure<>(error);
     }
 }

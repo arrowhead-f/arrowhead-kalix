@@ -1,6 +1,6 @@
 package eu.arrowhead.kalix.http.service;
 
-import eu.arrowhead.kalix.concurrent.Future;
+import eu.arrowhead.kalix.util.concurrent.Future;
 
 /**
  * A service handler, meant to process incoming HTTP requests matching some

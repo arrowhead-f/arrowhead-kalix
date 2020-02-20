@@ -1,4 +1,4 @@
-package eu.arrowhead.kalix.collections;
+package eu.arrowhead.kalix.util;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -11,7 +11,7 @@ import java.util.Set;
  *
  * @param <V> Type of map values.
  */
-public class LowercaseMap<V> implements Map<String, V> {
+public class LowercaseHashMap<V> implements Map<String, V> {
     private final HashMap<String, V> inner;
 
     /**
@@ -23,7 +23,7 @@ public class LowercaseMap<V> implements Map<String, V> {
      * @throws IllegalArgumentException If the initial capacity is negative
      *                                  or the load factor is below 1.
      */
-    public LowercaseMap(int initialCapacity, float loadFactor) {
+    public LowercaseHashMap(int initialCapacity, float loadFactor) {
         inner = new HashMap<>(initialCapacity, loadFactor);
     }
 
@@ -34,7 +34,7 @@ public class LowercaseMap<V> implements Map<String, V> {
      * @param initialCapacity the initial capacity.
      * @throws IllegalArgumentException If the initial capacity is negative.
      */
-    public LowercaseMap(int initialCapacity) {
+    public LowercaseHashMap(int initialCapacity) {
         this(initialCapacity, 0.75f);
     }
 
@@ -42,7 +42,7 @@ public class LowercaseMap<V> implements Map<String, V> {
      * Creates empty {@code LowercaseMap} with the default initial capacity
      * (16) and the default load factor (0.75).
      */
-    public LowercaseMap() {
+    public LowercaseHashMap() {
         this(16);
     }
 

@@ -1,10 +1,11 @@
-package eu.arrowhead.kalix.concurrent;
+package eu.arrowhead.kalix.util;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * The result of a {@link Future}.
+ * The result of an operation that can either succeed or fail, during which
+ * exceptions would not end up at the appropriate caller if thrown.
  * <p>
  * A {@code Result} may either be a <i>success</i>, in which case a
  * <i>value</i> is available, or a <i>failure</i>, which makes an
@@ -15,12 +16,12 @@ import java.util.function.Function;
  *
  * @param <V> Type of value provided by {@code Result} if successful.
  */
-public class FutureResult<V> {
+public class Result<V> {
     private final boolean isSuccess;
     private final V value;
     private final Throwable error;
 
-    private FutureResult(final boolean isSuccess, final V value, final Throwable error) {
+    private Result(final boolean isSuccess, final V value, final Throwable error) {
         this.isSuccess = isSuccess;
         this.value = value;
         this.error = error;
@@ -33,8 +34,8 @@ public class FutureResult<V> {
      * @param <V>   Type of value.
      * @return New {@code Result}.
      */
-    public static <V> FutureResult<V> success(final V value) {
-        return new FutureResult<>(true, value, null);
+    public static <V> Result<V> success(final V value) {
+        return new Result<>(true, value, null);
     }
 
     /**
@@ -45,8 +46,8 @@ public class FutureResult<V> {
      *              created {@code Result}, if it were successful.
      * @return New {@code Result}.
      */
-    public static <V> FutureResult<V> failure(final Throwable error) {
-        return new FutureResult<>(false, null, error);
+    public static <V> Result<V> failure(final Throwable error) {
+        return new Result<>(false, null, error);
     }
 
     /**
@@ -126,7 +127,7 @@ public class FutureResult<V> {
      * @return New result containing either output of mapping or an error
      * passed on from this result.
      */
-    public <U> FutureResult<U> map(final Function<? super V, ? extends U> mapper) {
+    public <U> Result<U> map(final Function<? super V, ? extends U> mapper) {
         if (isSuccess()) {
             return success(mapper.apply(value()));
         }
@@ -146,7 +147,7 @@ public class FutureResult<V> {
      * @return New result consisting either of result of {@code mapper} or an
      * error passed on from this result.
      */
-    public <U> FutureResult<U> flatMap(final Function<? super V, ? extends FutureResult<U>> mapper) {
+    public <U> Result<U> flatMap(final Function<? super V, ? extends Result<U>> mapper) {
         if (isSuccess()) {
             return mapper.apply(value());
         }

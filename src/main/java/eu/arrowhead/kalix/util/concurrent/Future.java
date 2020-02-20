@@ -1,4 +1,7 @@
-package eu.arrowhead.kalix.concurrent;
+package eu.arrowhead.kalix.util.concurrent;
+
+import eu.arrowhead.kalix.util.Result;
+import eu.arrowhead.kalix.util.function.ThrowingFunction;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
@@ -10,7 +13,7 @@ import java.util.function.Consumer;
  * To make it convenient to act on the completion of this {@code Future}, the
  * receiver of it is expected to provide a {@code Consumer} to the
  * {@link #onResult(Consumer)} method, which should be invoked whenever the
- * {@link FutureResult} of the operation becomes available. As an alternative, the
+ * {@link Result} of the operation becomes available. As an alternative, the
  * {@code Future} receiver may also decide to {@link #cancel()} it, which
  * should mean that any {@code Consumer}, if set, never will be invoked.
  * <p>
@@ -41,7 +44,7 @@ public interface Future<V> {
      * @param consumer Function invoked when this {@code Future} completes.
      * @throws NullPointerException If the consumer function is {@code null}.
      */
-    void onResult(final Consumer<FutureResult<V>> consumer);
+    void onResult(final Consumer<Result<V>> consumer);
 
     /**
      * Signals that the result of this {@code Future} no longer is of interest.
@@ -71,20 +74,20 @@ public interface Future<V> {
      * successfully.
      * @throws NullPointerException If the mapping function is {@code null}.
      */
-    default <U> Future<U> map(final Mapper<? super V, ? extends U> mapper) {
+    default <U> Future<U> map(final ThrowingFunction<? super V, ? extends U> mapper) {
         Objects.requireNonNull(mapper);
         final var source = this;
         return new Future<>() {
             @Override
-            public void onResult(final Consumer<FutureResult<U>> consumer) {
+            public void onResult(final Consumer<Result<U>> consumer) {
                 source.onResult(r0 -> {
-                    FutureResult<U> r1;
+                    Result<U> r1;
                     success:
                     {
                         Throwable err;
                         if (r0.isSuccess()) {
                             try {
-                                r1 = FutureResult.success(mapper.apply(r0.value()));
+                                r1 = Result.success(mapper.apply(r0.value()));
                                 break success;
                             }
                             catch (final Throwable error) {
@@ -94,7 +97,7 @@ public interface Future<V> {
                         else {
                             err = r0.error();
                         }
-                        r1 = FutureResult.failure(err);
+                        r1 = Result.failure(err);
                     }
                     consumer.accept(r1);
                 });
@@ -112,7 +115,7 @@ public interface Future<V> {
      * returned by {@code mapper} completes, which, in turn, is not executed
      * until this {@code Future} completes.
      * <p>
-     * The difference between this method and {@link #map(Mapper)} is that the
+     * The difference between this method and {@link #map(ThrowingFunction)} is that the
      * {@code mapper} provided here is expected to return a {@code Future}
      * rather than a plain value. The returned {@code Future} completes after
      * this {@code Future} and the {@code Future} returned by {@code mapper}
@@ -129,13 +132,13 @@ public interface Future<V> {
      * for the {@code Future} returned by the mapper to complete.
      * @throws NullPointerException If the mapping function is {@code null}.
      */
-    default <U> Future<U> flatMap(final Mapper<? super V, ? extends Future<U>> mapper) {
+    default <U> Future<U> flatMap(final ThrowingFunction<? super V, ? extends Future<U>> mapper) {
         Objects.requireNonNull(mapper);
         final var source = this;
         final var cancelTarget = new AtomicReference<Future<?>>(this);
         return new Future<>() {
             @Override
-            public void onResult(final Consumer<FutureResult<U>> consumer) {
+            public void onResult(final Consumer<Result<U>> consumer) {
                 source.onResult(r0 -> {
                     Throwable err;
                     if (r0.isSuccess()) {
@@ -152,7 +155,7 @@ public interface Future<V> {
                     else {
                         err = r0.error();
                     }
-                    consumer.accept(FutureResult.failure(err));
+                    consumer.accept(Result.failure(err));
                 });
             }
 
@@ -188,22 +191,4 @@ public interface Future<V> {
         return new FutureFailure<>(error);
     }
 
-    /**
-     * A function, converting an input value into an output value. May throw
-     * any {@link Throwable} while being executed.
-     *
-     * @param <V> Type of value to be provided to mapper.
-     * @param <U> Type of value returned from mapper.
-     */
-    @FunctionalInterface
-    interface Mapper<V, U> {
-        /**
-         * Provides mapper with a value and receives its output value.
-         *
-         * @param v Value to provide.
-         * @return Output value.
-         * @throws Throwable Any kind of exception.
-         */
-        U apply(V v) throws Throwable;
-    }
 }

@@ -29,7 +29,7 @@ public class ServiceDescriptor {
     }
 
     /**
-     * Note that the returned collection is read-only.
+     * Note that the returned list is read-only.
      *
      * @return Interface triplets supported by service.
      */

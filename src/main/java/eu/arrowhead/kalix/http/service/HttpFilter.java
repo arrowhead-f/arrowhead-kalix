@@ -1,6 +1,6 @@
 package eu.arrowhead.kalix.http.service;
 
-import eu.arrowhead.kalix.concurrent.Future;
+import eu.arrowhead.kalix.util.concurrent.Future;
 import eu.arrowhead.kalix.http.HttpMethod;
 
 import java.util.Optional;

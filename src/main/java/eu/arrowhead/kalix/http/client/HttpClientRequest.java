@@ -1,6 +1,6 @@
 package eu.arrowhead.kalix.http.client;
 
-import eu.arrowhead.kalix.collections.LowercaseMap;
+import eu.arrowhead.kalix.util.LowercaseHashMap;
 import eu.arrowhead.kalix.http.HttpVersion;
 
 import java.util.HashMap;
@@ -13,7 +13,7 @@ import java.util.Optional;
 public class HttpClientRequest {
     private HttpVersion version;
     private Map<String, String> queryParameters = new HashMap<>(4);
-    private Map<String, String> headers = new LowercaseMap<>();
+    private Map<String, String> headers = new LowercaseHashMap<>();
     private Object body;
 
     /**
@@ -93,7 +93,7 @@ public class HttpClientRequest {
      * @return This response object.
      */
     public HttpClientRequest headers(final Map<String, String> headers) {
-        if (headers instanceof LowercaseMap) {
+        if (headers instanceof LowercaseHashMap) {
             this.headers = headers;
         }
         else {

@@ -1,4 +1,4 @@
-package eu.arrowhead.kalix.internal.collection;
+package eu.arrowhead.kalix.internal.util;
 
 /**
  * A map whose entries are guaranteed to be accessible in O(1).
@@ -17,8 +17,7 @@ public class PerfectCache {
     private final int rotate;
 
     /**
-     * Constructs new perfect hash table from given collection of
-     * {@code entries}.
+     * Constructs new perfect hash table from given array of {@code entries}.
      * <p>
      * In the case of construction failing with an exception, try arbitrary
      * values between 0 and 31 for {@code rotate} until one is found that does

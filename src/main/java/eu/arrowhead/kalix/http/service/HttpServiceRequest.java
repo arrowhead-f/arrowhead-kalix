@@ -1,12 +1,11 @@
 package eu.arrowhead.kalix.http.service;
 
-import eu.arrowhead.kalix.concurrent.Future;
+import eu.arrowhead.kalix.util.concurrent.Future;
 import eu.arrowhead.kalix.http.HttpVersion;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 /**
  * An incoming HTTP request, handled by a {@link HttpService}.
