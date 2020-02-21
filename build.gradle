@@ -10,16 +10,22 @@ repositories {
 }
 
 ext {
-    nettyVersion = '4.1.45.Final'
-    junitJupiterVersion = '5.6.0'
+    versionJackson = '2.10.2'
+    versionNetty = '4.1.45.Final'
+    versionJunitJupiter = '5.6.0'
 }
 
 sourceCompatibility = '11'
 
 dependencies {
-    implementation "io.netty:netty-all:$nettyVersion"
+    implementation "com.fasterxml.jackson.core:jackson-core:$versionJackson"
+    implementation "com.fasterxml.jackson.core:jackson-databind:$versionJackson"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:$versionJackson"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$versionJackson"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-protobuf:$versionJackson"
+    implementation "io.netty:netty-all:$versionNetty"
 
-    testImplementation "org.junit.jupiter:junit-jupiter:$junitJupiterVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter:$versionJunitJupiter"
 }
 
 test {
