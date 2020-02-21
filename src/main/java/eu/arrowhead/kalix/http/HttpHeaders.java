@@ -4,13 +4,17 @@ import java.util.*;
 
 /**
  * A collection of HTTP header name/value pairs.
+ * <p>
+ * Internally, all header names are stored in lowercase form, as it is required
+ * if sending them in HTTP/2.0 messages (see RFC 7540, Section 8.1.2).
  *
  * @see <a href="https://tools.ietf.org/html/rfc7230#section-3.2">RFC 7230, Section 3.2</a>
  * @see <a href="https://tools.ietf.org/html/rfc7231#section-5">RFC 7231, Section 5</a>
  * @see <a href="https://tools.ietf.org/html/rfc7231#section-7">RFC 7231, Section 7</a>
+ * @see <a href="https://tools.ietf.org/html/rfc7540#section-8.1.2">RFC 7540, Section 8.1.2</a>
  * @see <a href="https://www.iana.org/assignments/message-headers/message-headers.xhtml">IANA Message Headers</a>
  */
-public class HttpHeaders {
+public class HttpHeaders implements Iterable<Map.Entry<String, String>> {
     private final HashMap<String, String> map = new HashMap<>();
 
     /**
@@ -38,7 +42,7 @@ public class HttpHeaders {
      * Framework, for which reason no room is provided by this collection type
      * for properly representing more than one "set-cookie" pair.
      *
-     * @param name  Name of header.
+     * @param name  Name of header. Not case sensitive.
      * @param value Value of header.
      * @return This collection.
      * @see <a href="https://tools.ietf.org/html/rfc7230#section-3.2.2">RFC 7230, Section 3.2.2</a>
@@ -57,7 +61,7 @@ public class HttpHeaders {
      * values, consider using {@link #getAndSplit(String)} to ensure that they
      * are extracted properly.
      *
-     * @param name Name associated with desired value.
+     * @param name Name associated with desired value. Not case sensitive.
      * @return Desired value, if available.
      */
     public Optional<String> get(final String name) {
@@ -81,6 +85,7 @@ public class HttpHeaders {
      * and no exceptions are ever thrown due to syntax inconsistencies.
      *
      * @param name Name of header value to get and split, as described above.
+     *             Note that header names are not case sensitive.
      * @return List of values, if any.
      * @see <a href="https://tools.ietf.org/html/rfc7230#section-3.2.2">RFC 7230, Section 3.2.2</a>
      * @see <a href="https://tools.ietf.org/html/rfc7230#section-3.2.6">RFC 7230, Section 3.2.6</a>
@@ -97,18 +102,17 @@ public class HttpHeaders {
             final var builder = new StringBuilder();
             final int v1 = value.length();
             for (var v0 = 0; v0 < v1; ++v0) {
-                var c = value.charAt(v0++);
-                if (c < ' ') {
+                var c = value.charAt(v0);
+                if (c <= ' ') {
                     continue; // Skip white space and control characters.
                 }
                 if (c == '"') {
                     for (++v0; v0 < v1; ++v0) {
                         c = value.charAt(v0);
                         if (c == '\\' && v0 + 1 < v1) {
-                            v0 += 1; // Skip whatever is after the backslash.
-                            continue;
+                            c = value.charAt(++v0); // Append whatever is after the backslash.
                         }
-                        if (c == '"') {
+                        else if (c == '"') {
                             break;
                         }
                         builder.append(c);
@@ -122,6 +126,7 @@ public class HttpHeaders {
                 }
                 builder.append(c);
             }
+            result.add(builder.toString());
             if (result.size() == 0) {
                 break empty;
             }
@@ -134,7 +139,7 @@ public class HttpHeaders {
      * Sets header name/value pair, potentially replacing a previously set
      * such with the same name.
      *
-     * @param name  Name of header.
+     * @param name  Name of header. Not case sensitive.
      * @param value Value of header.
      * @return This collection.
      */
@@ -147,6 +152,7 @@ public class HttpHeaders {
     /**
      * @return Iterator over all header name/value pairs.
      */
+    @Override
     public Iterator<Map.Entry<String, String>> iterator() {
         return map.entrySet().iterator();
     }
