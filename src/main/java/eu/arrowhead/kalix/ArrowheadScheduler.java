@@ -1,6 +1,7 @@
-package eu.arrowhead.kalix.util.concurrent;
+package eu.arrowhead.kalix;
 
 import eu.arrowhead.kalix.util.Result;
+import eu.arrowhead.kalix.util.concurrent.Future;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
@@ -21,7 +22,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-public class GlobalScheduler {
+public class ArrowheadScheduler {
     private static final EventLoopGroup eventLoopGroup;
     private static final Class<? extends SocketChannel> socketChannelClass;
     private static final Class<? extends ServerSocketChannel> serverSocketChannelClass;
@@ -46,7 +47,7 @@ public class GlobalScheduler {
             }
         }
         catch (final UnsatisfiedLinkError error) {
-            error.printStackTrace(); // TODO: Provide to logger?
+            ArrowheadLogger.log(error);
         }
         if (group == null) {
             group = new NioEventLoopGroup();
@@ -58,7 +59,7 @@ public class GlobalScheduler {
         serverSocketChannelClass = serverChannelClass;
     }
 
-    private GlobalScheduler() {}
+    private ArrowheadScheduler() {}
 
     public static Future<?> run(final Runnable command) {
         return runAfter(command, Duration.ZERO);

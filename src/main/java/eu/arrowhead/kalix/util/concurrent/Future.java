@@ -1,5 +1,7 @@
 package eu.arrowhead.kalix.util.concurrent;
 
+import eu.arrowhead.kalix.ArrowheadLogger;
+import eu.arrowhead.kalix.ArrowheadScheduler;
 import eu.arrowhead.kalix.util.Result;
 import eu.arrowhead.kalix.util.function.ThrowingFunction;
 
@@ -19,10 +21,10 @@ import java.util.function.Consumer;
  * <p>
  * It is the responsibility of the receiver of a {@code Future} to make sure
  * that either {@link #onResult(Consumer)} and/or {@link #cancel()} is called,
- * as it may be the case that the operation represented by the future will not
- * start running until either of these methods are invoked. Failing to call any
- * of these methods may lead to memory never being reclaimed, which could lead
- * to memory running out at some point in the future.
+ * or any method that uses one of them internally, as it may be the case that
+ * the operation represented by the future will not start running until either
+ * of these methods are invoked. Failing to call any of these methods may lead
+ * to memory never being reclaimed.
  *
  * @param <V> Type of value that can be retrieved if the operation succeeds.
  */
@@ -57,6 +59,25 @@ public interface Future<V> {
      * Calling this method must be thread safe.
      */
     void cancel();
+
+    default void onValueOrLog(final Consumer<? super V> consumer) {
+        onResult(result -> {
+            if (result.isSuccess()) {
+                consumer.accept(result.value());
+            }
+            else {
+                ArrowheadLogger.log(result.error());
+            }
+        });
+    }
+
+    default void onError(final Consumer<Throwable> consumer) {
+        onResult(result -> {
+            if (!result.isSuccess()) {
+                consumer.accept(result.error());
+            }
+        });
+    }
 
     /**
      * Returns new {@code Future} that is completed after the value of this
