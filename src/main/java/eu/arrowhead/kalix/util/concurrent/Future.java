@@ -1,7 +1,5 @@
 package eu.arrowhead.kalix.util.concurrent;
 
-import eu.arrowhead.kalix.ArrowheadLogger;
-import eu.arrowhead.kalix.ArrowheadScheduler;
 import eu.arrowhead.kalix.util.Result;
 import eu.arrowhead.kalix.util.function.ThrowingFunction;
 
@@ -16,15 +14,15 @@ import java.util.function.Consumer;
  * receiver of it is expected to provide a {@code Consumer} to the
  * {@link #onResult(Consumer)} method, which should be invoked whenever the
  * {@link Result} of the operation becomes available. As an alternative, the
- * {@code Future} receiver may also decide to {@link #cancel()} it, which
- * should mean that any {@code Consumer}, if set, never will be invoked.
+ * {@code Future} receiver may also decide to {@link #cancel(boolean)} it,
+ * which should mean that any {@code Consumer}, if set, never will be invoked.
  * <p>
  * It is the responsibility of the receiver of a {@code Future} to make sure
- * that either {@link #onResult(Consumer)} and/or {@link #cancel()} is called,
- * or any method that uses one of them internally, as it may be the case that
- * the operation represented by the future will not start running until either
- * of these methods are invoked. Failing to call any of these methods may lead
- * to memory never being reclaimed.
+ * that either {@link #onResult(Consumer)} and/or {@link #cancel(boolean)} is
+ * called, or any method that uses one of them internally, as it may be the
+ * case that the operation represented by the future will not start running
+ * until either of these methods are invoked. Failing to call any of these
+ * methods may lead to memory never being reclaimed.
  *
  * @param <V> Type of value that can be retrieved if the operation succeeds.
  */
@@ -40,11 +38,9 @@ public interface Future<V> {
      * be handled explicitly. Any thrown exception will end up with the caller
      * of the function, which is unlikely to be able to handle it in any other
      * way than by logging it.
-     * <p>
-     * Calling this method must be thread safe.
      *
      * @param consumer Function invoked when this {@code Future} completes.
-     * @throws NullPointerException If the consumer function is {@code null}.
+     * @throws NullPointerException If {@code consumer} is {@code null}.
      */
     void onResult(final Consumer<Result<V>> consumer);
 
@@ -55,23 +51,49 @@ public interface Future<V> {
      * this method should do nothing. Calling this method on a {@code Future}
      * that has not yet completed should prevent {@link #onResult(Consumer)}
      * from ever being called.
-     * <p>
-     * Calling this method must be thread safe.
+     *
+     * @param mayInterruptIfRunning Whether or not the thread executing the
+     *                              task associated with this {@code Future},
+     *                              should be interrupted. If not, in-progress
+     *                              tasks are allowed to complete.
      */
-    void cancel();
+    void cancel(final boolean mayInterruptIfRunning);
 
-    default void onValueOrLog(final Consumer<? super V> consumer) {
-        onResult(result -> {
-            if (result.isSuccess()) {
-                consumer.accept(result.value());
-            }
-            else {
-                ArrowheadLogger.log(result.error());
-            }
-        });
+    /**
+     * Signals that the result of this {@code Future} no longer is of interest
+     * and that evaluation of the {@code Future} should be gracefully
+     * terminated.
+     * <p>
+     * If this {@code Future} has already been cancelled or completed, calling
+     * this method should do nothing. Calling this method on a {@code Future}
+     * that has not yet completed should prevent {@link #onResult(Consumer)}
+     * from ever being called.
+     */
+    default void cancel() {
+        cancel(false);
     }
 
+    /**
+     * Sets function to receive result of this {@code Future} only if its
+     * operation fails.
+     * <p>
+     * Successful results are ignored.
+     * <p>
+     * While it might seem like a logical addition, there is no corresponding
+     * {@code #onValue(Consumer)} method. The reason for this is that there is
+     * no reasonable default strategy for handling ignored errors. Silently
+     * discarding them is unlikely to be a suitable design choice, as it could
+     * hide details important for discovering or tracking application issues,
+     * and logging them would necessitate information about the context in
+     * which the successful result was required, as well as integration against
+     * a logging framework.
+     *
+     * @param consumer Function invoked if this {@code Future} completes with
+     *                 an error.
+     * @throws NullPointerException If {@code consumer} is {@code null}.
+     */
     default void onError(final Consumer<Throwable> consumer) {
+        Objects.requireNonNull(consumer);
         onResult(result -> {
             if (!result.isSuccess()) {
                 consumer.accept(result.error());
@@ -125,8 +147,8 @@ public interface Future<V> {
             }
 
             @Override
-            public void cancel() {
-                source.cancel();
+            public void cancel(final boolean mayInterruptIfRunning) {
+                source.cancel(mayInterruptIfRunning);
             }
         };
     }
@@ -181,10 +203,10 @@ public interface Future<V> {
             }
 
             @Override
-            public void cancel() {
+            public void cancel(final boolean mayInterruptIfRunning) {
                 final var target = cancelTarget.getAndSet(null);
                 if (target != null) {
-                    target.cancel();
+                    target.cancel(mayInterruptIfRunning);
                 }
             }
         };

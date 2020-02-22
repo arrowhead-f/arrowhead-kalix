@@ -32,17 +32,17 @@ class FutureSuccess<V> implements Future<V> {
     }
 
     @Override
-    public void cancel() {
+    public void cancel(final boolean mayInterruptIfRunning) {
         isDone = true;
     }
 
     @Override
     public <U> Future<U> map(final ThrowingFunction<? super V, ? extends U> mapper) {
         try {
-            return new FutureSuccess<>(mapper.apply(value));
+            return Future.success(mapper.apply(value));
         }
         catch (final Throwable error) {
-            return new FutureFailure<>(error);
+            return Future.failure(error);
         }
     }
 
@@ -52,7 +52,7 @@ class FutureSuccess<V> implements Future<V> {
             return mapper.apply(value);
         }
         catch (final Throwable error) {
-            return new FutureFailure<>(error);
+            return Future.failure(error);
         }
     }
 }

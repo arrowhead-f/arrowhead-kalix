@@ -11,18 +11,14 @@ repositories {
 
 ext {
     versionJackson = '2.10.2'
-    versionNetty = '4.1.45.Final'
     versionJunitJupiter = '5.6.0'
+    versionNetty = '4.1.45.Final'
+    versionSlf4j = '1.7.30'
 }
 
 sourceCompatibility = '11'
 
 dependencies {
-    implementation "com.fasterxml.jackson.core:jackson-core:$versionJackson"
-    implementation "com.fasterxml.jackson.core:jackson-databind:$versionJackson"
-    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:$versionJackson"
-    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:$versionJackson"
-    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-protobuf:$versionJackson"
     implementation "io.netty:netty-all:$versionNetty"
 
     testImplementation "org.junit.jupiter:junit-jupiter:$versionJunitJupiter"

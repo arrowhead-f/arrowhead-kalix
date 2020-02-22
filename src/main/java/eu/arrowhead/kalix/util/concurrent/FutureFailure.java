@@ -3,6 +3,7 @@ package eu.arrowhead.kalix.util.concurrent;
 import eu.arrowhead.kalix.util.Result;
 import eu.arrowhead.kalix.util.function.ThrowingFunction;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -18,9 +19,10 @@ class FutureFailure<V> implements Future<V> {
      * Creates new failing {@link Future}.
      *
      * @param error Error to include in {@code Future}.
+     * @throws NullPointerException If {@code error} is {@code null}.
      */
     public FutureFailure(final Throwable error) {
-        this.error = error;
+        this.error = Objects.requireNonNull(error);
     }
 
     @Override
@@ -32,7 +34,7 @@ class FutureFailure<V> implements Future<V> {
     }
 
     @Override
-    public void cancel() {
+    public void cancel(final boolean mayInterruptIfRunning) {
         isDone = true;
     }
 
