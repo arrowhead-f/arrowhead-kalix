@@ -1,32 +1,15 @@
-plugins {
-    id 'java-library'
-}
-
-group = 'eu.arrowhead.kalix'
-version = '4.0.0-SNAPSHOT'
-
-repositories {
-    mavenCentral()
-}
-
-ext {
-    versionJackson = '2.10.2'
-    versionJunitJupiter = '5.6.0'
-    versionNetty = '4.1.45.Final'
-    versionSlf4j = '1.7.30'
-}
-
-sourceCompatibility = '11'
-
-dependencies {
-    implementation "io.netty:netty-all:$versionNetty"
-
-    testImplementation "org.junit.jupiter:junit-jupiter:$versionJunitJupiter"
-}
-
-test {
-    useJUnitPlatform()
-    testLogging {
-        events 'FAILED', 'SKIPPED'
+buildscript {
+    repositories {
+        mavenCentral()
     }
+}
+
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
 }
