@@ -1,22 +1,24 @@
 package eu.arrowhead.kalix.util.io.json;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 class JsonTokenizer {
-    private final byte[] source;
+    private final ByteBuffer source;
     private final ArrayList<JsonToken> tokens;
 
-    private int c0 = 0, c1 = 0;
-    private JsonSyntaxError error = null;
+    private int p0;
+    private JsonSyntaxException error = null;
 
-    private JsonTokenizer(final byte[] source) {
+    private JsonTokenizer(final ByteBuffer source) {
         this.source = source;
-        this.tokens = new ArrayList<>(source.length / 16);
+        this.tokens = new ArrayList<>(source.remaining() / 16);
+        this.p0 = source.position();
     }
 
-    static List<JsonToken> tokenize(final byte[] source) throws JsonSyntaxError {
+    static List<JsonToken> tokenize(final ByteBuffer source) throws JsonSyntaxException {
         final var tokenizer = new JsonTokenizer(source);
         if (tokenizer.tokenizeRoot()) {
             return tokenizer.tokens;
@@ -25,18 +27,20 @@ class JsonTokenizer {
     }
 
     private JsonToken collectCandidate(final JsonTokenType type) {
-        final var token = new JsonToken(type, c0, c1, 0);
+        final var token = new JsonToken(type, p0, source.position(), 0);
         tokens.add(token);
         discardCandidate();
         return token;
     }
 
     private void discardCandidate() {
-        c0 = c1;
+        p0 = source.position();
     }
 
     private void saveCandidateAsError(final String message) {
-        error = new JsonSyntaxError(message, new String(source, c0, c1, StandardCharsets.UTF_8), c0);
+        final var buffer = new byte[source.position() - p0];
+        source.position(p0).get(buffer);
+        error = new JsonSyntaxException(message, new String(buffer, StandardCharsets.UTF_8), p0);
     }
 
     private void discardWhitespace() {
@@ -51,27 +55,27 @@ class JsonTokenizer {
     }
 
     private byte next() {
-        return c1 < source.length
-            ? source[c1++]
+        return source.position() < source.limit()
+            ? source.get()
             : 0;
     }
 
     private byte peek() {
-        return source[c1];
+        return source.get(source.position());
     }
 
     private void skip1() {
-        if (c1 < source.length) {
-            c1 += 1;
+        if (source.position() < source.limit()) {
+            source.position(source.position() + 1);
         }
     }
 
     private void skip4() {
-        if (c1 + 3 < source.length) {
-            c1 += 4;
+        if (source.position() + 3 < source.limit()) {
+            source.position(source.position() + 4);
         }
         else {
-            c1 = source.length;
+            source.position(source.limit());
         }
     }
 
