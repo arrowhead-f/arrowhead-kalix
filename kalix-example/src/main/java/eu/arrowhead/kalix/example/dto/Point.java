@@ -1,11 +1,13 @@
-package eu.arrowhead.kalix.example.data;
+package eu.arrowhead.kalix.example.dto;
 
+import eu.arrowhead.kalix.util.io.Decodable;
 import eu.arrowhead.kalix.util.io.Encodable;
 
 /**
  * A point in 2D space.
  */
-@Encodable
+@Decodable("json")
+@Encodable("json")
 public interface Point {
     /**
      * @return X-coordinate.
