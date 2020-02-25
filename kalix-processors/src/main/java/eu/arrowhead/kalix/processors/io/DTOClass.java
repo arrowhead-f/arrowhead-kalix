@@ -1,9 +1,13 @@
 package eu.arrowhead.kalix.processors.io;
 
-import eu.arrowhead.kalix.util.io.DTO;
+import eu.arrowhead.kalix.dto.Readable;
+import eu.arrowhead.kalix.dto.Writable;
+import eu.arrowhead.kalix.dto.Format;
 
 import javax.lang.model.element.*;
 import javax.lang.model.type.TypeKind;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -16,11 +20,11 @@ public class DTOClass {
     private final String name;
     private final String qualifiedName;
 
-    private final Set<DTO.Format> decodableFormats;
-    private final Set<DTO.Format> encodableFormats;
+    private final Set<Format> decodableFormats;
+    private final Set<Format> encodableFormats;
     private final List<DTOProperty> properties = new ArrayList<>();
 
-    public DTOClass(final Element origin) throws DTOException {
+    public DTOClass(final Element origin, final Elements elementUtils, final Types typeUtils) throws DTOException {
         if (!(origin instanceof TypeElement) || origin.getKind() != ElementKind.INTERFACE) {
             throw new DTOException(origin, "DTO must be of type `interface`");
         }
@@ -29,6 +33,10 @@ public class DTOClass {
             throw new DTOException(origin, "DTO interfaces may not have any " +
                 "type parameters");
         }
+        if (this.origin.getInterfaces().size() != 0) {
+            throw new DTOException(origin, "DTO interfaces may not extend " +
+                "other interfaces");
+        }
         if (this.origin.getSimpleName().toString().endsWith("DTO")) {
             throw new DTOException(origin, "DTO interfaces may not have " +
                 "names ending with `DTO`");
@@ -36,11 +44,11 @@ public class DTOClass {
 
         this.name = origin.getSimpleName() + "DTO";
         this.qualifiedName = ((TypeElement) origin).getQualifiedName() + "DTO";
-        this.decodableFormats = Optional.ofNullable(origin.getAnnotation(DTO.Decodable.class))
-            .map(decodable -> Stream.of(decodable.value()).collect(Collectors.toSet()))
+        this.decodableFormats = Optional.ofNullable(origin.getAnnotation(Readable.class))
+            .map(readable -> Stream.of(readable.value()).collect(Collectors.toSet()))
             .orElse(Collections.emptySet());
-        this.encodableFormats = Optional.ofNullable(origin.getAnnotation(DTO.Encodable.class))
-            .map(encodable -> Stream.of(encodable.value()).collect(Collectors.toSet()))
+        this.encodableFormats = Optional.ofNullable(origin.getAnnotation(Writable.class))
+            .map(writable -> Stream.of(writable.value()).collect(Collectors.toSet()))
             .orElse(Collections.emptySet());
 
         if (this.decodableFormats.size() == 0 && this.encodableFormats.size() == 0) {
@@ -49,7 +57,8 @@ public class DTOClass {
         }
 
         for (final var element : origin.getEnclosedElements()) {
-            if (element.getKind() != ElementKind.METHOD ||
+            if (element.getEnclosingElement().getKind() != ElementKind.INTERFACE ||
+                element.getKind() != ElementKind.METHOD ||
                 element.getModifiers().contains(Modifier.DEFAULT)
             ) {
                 continue;
@@ -59,7 +68,7 @@ public class DTOClass {
                 method.getParameters().size() == 0 &&
                 method.getTypeParameters().size() == 0
             ) {
-                properties.add(new DTOProperty(element));
+                properties.add(new DTOProperty(element, elementUtils, typeUtils));
                 continue;
             }
             throw new DTOException(element, "DTO interface methods must " +
@@ -82,11 +91,11 @@ public class DTOClass {
         return qualifiedName;
     }
 
-    public boolean isToBeDecodableAs(final DTO.Format format) {
+    public boolean isToBeDecodableAs(final Format format) {
         return decodableFormats.contains(format);
     }
 
-    public boolean isToBeEncodableAs(final DTO.Format format) {
+    public boolean isToBeEncodableAs(final Format format) {
         return encodableFormats.contains(format);
     }
 

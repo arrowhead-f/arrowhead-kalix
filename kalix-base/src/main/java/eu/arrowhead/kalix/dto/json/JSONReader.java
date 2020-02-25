@@ -1,33 +1,36 @@
-package eu.arrowhead.kalix.util.io.json;
+package eu.arrowhead.kalix.dto.json;
+
+import eu.arrowhead.kalix.dto.Format;
+import eu.arrowhead.kalix.dto.ReadException;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-final class JsonTokenizer {
+final class JSONReader {
     private final ByteBuffer source;
-    private final ArrayList<JsonToken> tokens;
+    private final ArrayList<JSONToken> tokens;
 
     private int p0;
-    private JsonSyntaxException error = null;
+    private ReadException error = null;
 
-    private JsonTokenizer(final ByteBuffer source) {
+    private JSONReader(final ByteBuffer source) {
         this.source = source;
         this.tokens = new ArrayList<>(source.remaining() / 16);
         this.p0 = source.position();
     }
 
-    static List<JsonToken> tokenize(final ByteBuffer source) throws JsonSyntaxException {
-        final var tokenizer = new JsonTokenizer(source);
+    public static List<JSONToken> tokenize(final ByteBuffer source) throws ReadException {
+        final var tokenizer = new JSONReader(source);
         if (tokenizer.tokenizeRoot()) {
             return tokenizer.tokens;
         }
         throw tokenizer.error;
     }
 
-    private JsonToken collectCandidate(final JsonTokenType type) {
-        final var token = new JsonToken(type, p0, source.position(), 0);
+    private JSONToken collectCandidate(final JSONType type) {
+        final var token = new JSONToken(type, p0, source.position(), 0);
         tokens.add(token);
         discardCandidate();
         return token;
@@ -40,7 +43,7 @@ final class JsonTokenizer {
     private void saveCandidateAsError(final String message) {
         final var buffer = new byte[source.position() - p0];
         source.position(p0).get(buffer);
-        error = new JsonSyntaxException(message, new String(buffer, StandardCharsets.UTF_8), p0);
+        error = new ReadException(Format.JSON, message, new String(buffer, StandardCharsets.UTF_8), p0);
     }
 
     private void discardWhitespace() {
@@ -125,7 +128,7 @@ final class JsonTokenizer {
     }
 
     private boolean tokenizeObject() {
-        final var object = collectCandidate(JsonTokenType.OBJECT);
+        final var object = collectCandidate(JSONType.OBJECT);
 
         discardWhitespace();
 
@@ -177,7 +180,7 @@ final class JsonTokenizer {
     }
 
     private boolean tokenizeArray() {
-        final var array = collectCandidate(JsonTokenType.ARRAY);
+        final var array = collectCandidate(JSONType.ARRAY);
 
         discardWhitespace();
 
@@ -211,7 +214,7 @@ final class JsonTokenizer {
         while (true) {
             byte b = next();
             if (b == '\"') {
-                final var token = collectCandidate(JsonTokenType.STRING);
+                final var token = collectCandidate(JSONType.STRING);
 
                 // Remove leading and trailing double quotes `"` from token.
                 token.begin += 1;
@@ -238,7 +241,7 @@ final class JsonTokenizer {
             case '\r':
             case '\n':
             case ' ':
-                collectCandidate(JsonTokenType.NUMBER);
+                collectCandidate(JSONType.NUMBER);
                 return true;
 
             default:
@@ -260,7 +263,7 @@ final class JsonTokenizer {
             if (next() != 'e') {
                 break error;
             }
-            collectCandidate(JsonTokenType.TRUE);
+            collectCandidate(JSONType.TRUE);
             return true;
         }
         expandAndSaveCandidateAsError("Bad true token");
@@ -282,7 +285,7 @@ final class JsonTokenizer {
             if (next() != 'e') {
                 break error;
             }
-            collectCandidate(JsonTokenType.FALSE);
+            collectCandidate(JSONType.FALSE);
             return true;
         }
         expandAndSaveCandidateAsError("Bad false token");
@@ -301,7 +304,7 @@ final class JsonTokenizer {
             if (next() != 'l') {
                 break error;
             }
-            collectCandidate(JsonTokenType.NULL);
+            collectCandidate(JSONType.NULL);
             return true;
         }
         expandAndSaveCandidateAsError("Bad null token");

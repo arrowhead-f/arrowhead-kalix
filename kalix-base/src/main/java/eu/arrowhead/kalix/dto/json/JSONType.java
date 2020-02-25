@@ -1,6 +1,6 @@
-package eu.arrowhead.kalix.util.io.json;
+package eu.arrowhead.kalix.dto.json;
 
-enum JsonTokenType {
+enum JSONType {
     OBJECT,
     ARRAY,
     STRING,

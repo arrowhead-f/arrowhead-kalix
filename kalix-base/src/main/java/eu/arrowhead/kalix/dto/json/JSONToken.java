@@ -1,23 +1,48 @@
-package eu.arrowhead.kalix.util.io.json;
+package eu.arrowhead.kalix.dto.json;
+
+import eu.arrowhead.kalix.dto.ReadException;
+import eu.arrowhead.kalix.dto.Format;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-final class JsonToken {
-    final JsonTokenType type;
+public final class JSONToken {
+    final JSONType type;
 
     int begin, end;
     int nChildren;
 
-    JsonToken(final JsonTokenType type, final int begin, final int end, final int nChildren) {
+    public JSONType type() {
+        return type;
+    }
+
+    public int begin() {
+        return begin;
+    }
+
+    public int end() {
+        return end;
+    }
+
+    public int length() {
+        return end - begin;
+    }
+
+    public int nChildren() {
+        return nChildren;
+    }
+
+    JSONToken(final JSONType type, final int begin, final int end, final int nChildren) {
+        assert begin >= 0 && begin < end && nChildren >= 0;
+
         this.type = type;
         this.begin = begin;
         this.end = end;
         this.nChildren = nChildren;
     }
 
-    double intoNumber(final ByteBuffer source) throws JsonSyntaxException {
-        final var buffer = new byte[end - begin];
+    public double readNumberFrom(final ByteBuffer source) throws ReadException {
+        final var buffer = new byte[length()];
         source.position(begin).get(buffer);
         final var string = new String(buffer, StandardCharsets.ISO_8859_1);
         error:
@@ -31,13 +56,13 @@ final class JsonToken {
             return Double.parseDouble(string);
         }
         catch (final NumberFormatException ignored) {}
-        throw new JsonSyntaxException("Bad number", string, begin);
+        throw new ReadException(Format.JSON, "Bad number", string, begin);
     }
 
-    String intoString(final ByteBuffer source) throws JsonSyntaxException {
+    public String readStringFrom(final ByteBuffer source) throws ReadException {
         source.position(begin);
 
-        final var buffer = new byte[end - begin];
+        final var buffer = new byte[length()];
         var b0 = 0; // Index of first unwritten byte in buffer.
         var p0 = begin; // Index of first non-appended byte in source.
         var badEscapeBuilder = new StringBuilder(0);
@@ -66,16 +91,11 @@ final class JsonToken {
                     case '\\':
                         break;
 
-                    case 'b': b = '\b';
-                        break;
-                    case 'f': b = '\f';
-                        break;
-                    case 'r': b = '\r';
-                        break;
-                    case 'n': b = '\n';
-                        break;
-                    case 't': b = '\t';
-                        break;
+                    case 'b': b = '\b'; break;
+                    case 'f': b = '\f'; break;
+                    case 'r': b = '\r'; break;
+                    case 'n': b = '\n'; break;
+                    case 't': b = '\t'; break;
 
                     case 'u':
                         final var uBuffer = new byte[4];
@@ -111,6 +131,6 @@ final class JsonToken {
             source.get(buffer, b0, source.position() - p0);
             return new String(buffer, StandardCharsets.UTF_8);
         }
-        throw new JsonSyntaxException("Bad escape", badEscapeBuilder.toString(), p0);
+        throw new ReadException(Format.JSON, "Bad escape", badEscapeBuilder.toString(), p0);
     }
 }

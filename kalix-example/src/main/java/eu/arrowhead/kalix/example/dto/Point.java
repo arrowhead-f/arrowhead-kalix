@@ -1,23 +1,22 @@
 package eu.arrowhead.kalix.example.dto;
 
-import eu.arrowhead.kalix.util.io.*;
+import eu.arrowhead.kalix.dto.*;
+import eu.arrowhead.kalix.dto.Readable;
 
 /**
  * A point in 2D space.
  */
-@DTO.Decodable
-@DTO.Encodable
+@Writable
+@Readable
 public interface Point {
     /**
      * @return X-coordinate.
      */
-    @DTO.NameJSON("_x")
-    int x();
+    @NameJSON("_x")
+    Integer x();
 
     /**
-     * @return Y-coordinate.
+     * @return Y-coordinate, if any.
      */
-    @DTO.NameJSON("_y")
-    @DTO.Optional
     int y();
 }

@@ -1,12 +1,14 @@
 package eu.arrowhead.kalix.processors.io;
 
 import com.squareup.javapoet.JavaFile;
-import eu.arrowhead.kalix.util.io.DTO;
+import eu.arrowhead.kalix.dto.Readable;
+import eu.arrowhead.kalix.dto.Writable;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -18,9 +20,7 @@ public class DTOProcessor extends AbstractProcessor {
     private Filer filer;
     private Messager messager;
     private Elements elementUtils;
-
-    private HashSet<DTOClass> dtoClasses = new HashSet<>();
-    private boolean dtoDecoderMapIsGenerated = false;
+    private Types typeUtils;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -28,6 +28,7 @@ public class DTOProcessor extends AbstractProcessor {
         filer = processingEnv.getFiler();
         messager = processingEnv.getMessager();
         elementUtils = processingEnv.getElementUtils();
+        typeUtils = processingEnv.getTypeUtils();
     }
 
     @Override
@@ -38,23 +39,13 @@ public class DTOProcessor extends AbstractProcessor {
         try {
             final var interfaceTypes = collectDTOsUsing(roundEnv);
             for (final var interfaceType : interfaceTypes) {
-                final var dtoClass = new DTOClass(interfaceType);
+                final var dtoClass = new DTOClass(interfaceType, elementUtils, typeUtils);
                 final var packageName = elementUtils.getPackageOf(interfaceType)
                     .getQualifiedName().toString();
                 final var dtoClassSpec = DTOSpecifier.specifyClass(dtoClass);
                 JavaFile.builder(packageName, dtoClassSpec)
                     .indent("    ").build()
                     .writeTo(filer);
-
-                dtoClasses.add(dtoClass);
-            }
-            if (!dtoDecoderMapIsGenerated && interfaceTypes.size() == 0) {
-                final var packageName = DTO.class.getPackageName();
-                final var dtoDecoderMapSpec = DTOSpecifier.specifyDecoderMap(dtoClasses);
-                JavaFile.builder(packageName, dtoDecoderMapSpec)
-                    .indent("    ").build()
-                    .writeTo(filer);
-                dtoDecoderMapIsGenerated = true;
             }
         }
         catch (final DTOException e) {
@@ -88,7 +79,7 @@ public class DTOProcessor extends AbstractProcessor {
     }
 
     private Stream<Class<? extends Annotation>> getSupportedAnnotationClasses() {
-        return Stream.of(DTO.Decodable.class, DTO.Encodable.class);
+        return Stream.of(Readable.class, Writable.class);
     }
 
     @Override
