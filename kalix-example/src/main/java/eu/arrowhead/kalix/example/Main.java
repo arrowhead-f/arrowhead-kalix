@@ -3,7 +3,6 @@ package eu.arrowhead.kalix.example;
 import eu.arrowhead.kalix.dto.WriteException;
 import eu.arrowhead.kalix.example.dto.PointBuilder;
 import eu.arrowhead.kalix.example.dto.ShapeBuilder;
-import eu.arrowhead.kalix.example.dto.ShapeDTO;
 import eu.arrowhead.kalix.example.dto.ShapeType;
 
 import java.nio.ByteBuffer;

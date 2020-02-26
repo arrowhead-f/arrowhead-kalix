@@ -1,7 +1,9 @@
 package eu.arrowhead.kalix.dto;
 
 import com.squareup.javapoet.*;
+import eu.arrowhead.kalix.dto.json.JSONReader;
 import eu.arrowhead.kalix.dto.json.JSONToken;
+import eu.arrowhead.kalix.dto.json.JSONType;
 import eu.arrowhead.kalix.dto.json.JSONWriter;
 import eu.arrowhead.kalix.dto.types.*;
 import eu.arrowhead.kalix.dto.util.ByteBufferPutBuilder;
@@ -23,35 +25,78 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
     @Override
     public void implementFor(final DTOTarget target, final TypeSpec.Builder implementation) throws DTOException {
         if (target.interfaceType().isReadable(Format.JSON)) {
-            putBuilder.clear();
             implementation.addSuperinterface(ReadableDTO.JSON.class);
-            implementDecodeMethodFor(target, implementation);
+            implementReadMethodsFor(target, implementation);
         }
         if (target.interfaceType().isWritable(Format.JSON)) {
-            putBuilder.clear();
             implementation.addSuperinterface(WritableDTO.JSON.class);
-            implementEncodeMethodFor(target, implementation);
+            implementWriteMethodFor(target, implementation);
         }
     }
 
-    private void implementDecodeMethodFor(final DTOTarget target, final TypeSpec.Builder implementation) {
-        final var decodeJSON = MethodSpec.methodBuilder("readJSON")
+    private void implementReadMethodsFor(final DTOTarget target, final TypeSpec.Builder implementation) {
+        final var targetClassName = ClassName.bestGuess(target.simpleName());
+
+        implementation.addMethod(MethodSpec.methodBuilder("readJSON")
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-            .returns(ClassName.bestGuess(target.simpleName()))
+            .returns(targetClassName)
+            .addParameter(ParameterSpec.builder(TypeName.get(ByteBuffer.class), "source")
+                .addModifiers(Modifier.FINAL)
+                .build())
+            .addException(ReadException.class)
+            .addStatement("final var tokens = $T.tokenize(source)", JSONReader.class)
+            .addStatement("return readJSON(tokens, 0, source)")
+            .build());
+
+        final var builder = MethodSpec.methodBuilder("readJSON")
+            .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+            .returns(targetClassName)
             .addParameter(ParameterSpec.builder(ParameterizedTypeName.get(List.class, JSONToken.class), "tokens")
                 .addModifiers(Modifier.FINAL)
                 .build())
+            .addParameter(ParameterSpec.builder(TypeName.INT, "offset").build())
             .addParameter(ParameterSpec.builder(ByteBuffer.class, "source")
                 .addModifiers(Modifier.FINAL)
                 .build())
             .addException(ReadException.class)
-            .addCode("return null; // TODO")
-            .build();
+            .addCode("if (tokens.size() >= offset) {\n")
+            .addCode("    throw new $T($T.JSON, \"Expected object\", \"\", 0);\n",
+                ReadException.class, Format.class)
+            .addCode("}\n")
+            .addCode("var token = tokens.get(offset++);\n")
+            .addCode("var error = \"\";\n")
+            .addCode("error: {\n")
+            .addCode("if (token.type() != $T.OBJECT) {\n", JSONType.class)
+            .addCode("    error = \"Expected object\"; break error;\n")
+            .addCode("}\n")
+            .addCode("var nChildren = token.nChildren();")
+            .addCode("final var builder = new $NBuilder();\n", target.interfaceType().simpleName())
+            .addCode("while (nChildren > 0 && offset < tokens.size()) {\n")
+            .addCode("    token = tokens.get(offset);\n")
+            .addCode("    if (token.type() != $T.STRING) {\n", JSONType.class)
+            .addCode("        error = \"Expected string key\"; break error;\n")
+            .addCode("    }\n")
+            .addCode("    final var name = token.readStringFrom(source);\n")
+            .addCode("    switch(name) {\n");
 
-        implementation.addMethod(decodeJSON);
+        for (final var property : target.properties()) {
+            builder.addCode("        case $S:\n", property.nameFor(Format.JSON));
+
+            builder.addCode("            break;\n");
+        }
+
+        builder
+            .addCode("    }\n")
+            .addCode("}\n")
+            .addCode("return builder.build();\n")
+            .addCode("}\n")
+            .addCode("throw new $T($T.JSON, error, token.readStringFrom(source), token.begin());\n",
+                ReadException.class, Format.class);
+
+        implementation.addMethod(builder.build());
     }
 
-    private void implementEncodeMethodFor(final DTOTarget target, final TypeSpec.Builder implementation) throws DTOException {
+    private void implementWriteMethodFor(final DTOTarget target, final TypeSpec.Builder implementation) throws DTOException {
         final var builder = MethodSpec.methodBuilder("writeJSON")
             .addAnnotation(Override.class)
             .addModifiers(Modifier.PUBLIC)
@@ -60,6 +105,7 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
                 .addModifiers(Modifier.FINAL)
                 .build());
 
+        putBuilder.clear();
         putBuilder.append('{');
 
         final var properties = target.properties();

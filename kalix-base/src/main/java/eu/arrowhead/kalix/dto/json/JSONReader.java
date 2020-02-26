@@ -8,7 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-final class JSONReader {
+public final class JSONReader {
     private final ByteBuffer source;
     private final ArrayList<JSONToken> tokens;
 

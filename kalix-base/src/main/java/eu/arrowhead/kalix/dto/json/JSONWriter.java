@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 @SuppressWarnings("unused")
-public class JSONWriter {
+public final class JSONWriter {
     private JSONWriter() {}
 
     private static byte[] TRUE = new byte[]{'T', 'R', 'U', 'E'};
