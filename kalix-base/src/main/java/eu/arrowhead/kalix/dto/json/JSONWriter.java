@@ -18,16 +18,16 @@ public class JSONWriter {
 
     private static byte[] NULL = new byte[]{'N', 'U', 'L', 'L'};
 
-    public static void writeTo(boolean bool, final ByteBuffer target) {
+    public static void writeTo(final boolean bool, final ByteBuffer target) {
         target.put(bool ? TRUE : FALSE);
     }
 
-    public static void writeTo(long number, final ByteBuffer target) {
+    public static void writeTo(final long number, final ByteBuffer target) {
         target.put(Long.toString(number)
             .getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    public static void writeTo(double number, final ByteBuffer target) throws WriteException {
+    public static void writeTo(final double number, final ByteBuffer target) throws WriteException {
         if (!Double.isFinite(number)) {
             throw new WriteException(Format.JSON, "NaN, +Infinify and " +
                 "-Infinity cannot be represented in JSON");

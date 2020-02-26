@@ -15,18 +15,17 @@ public class Main {
     public static void main(final String[] args) throws WriteException {
         System.out.println("Hello, Example!");
 
-        final var map = new HashMap<String, Map<String, Short>>();
+        final var map = new HashMap<String, Map<String, Integer>>();
 
-        final var map0 = new HashMap<String, Short>();
-        map0.put("hejsan", (short) 123);
-        map0.put("ojsan", (short) -127);
+        final var map0 = new HashMap<String, Integer>();
+        map0.put("hejsan", 1);
+        map0.put("ojsan", 2);
         map.put("hej", map0);
 
-        final var map1 = new HashMap<String, Short>();
+        final var map1 = new HashMap<String, Integer>();
         map.put("tomt", map1);
 
         final var shape = new ShapeBuilder()
-            .name("MyShape")
             .position(new PointBuilder()
                 .x(1423e134)
                 .y(352234.123432e-142)

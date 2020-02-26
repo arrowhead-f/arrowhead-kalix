@@ -1,7 +1,5 @@
 package eu.arrowhead.kalix.dto.types;
 
-import eu.arrowhead.kalix.dto.Format;
-
 import javax.lang.model.type.DeclaredType;
 
 public class DTOString implements DTOType {
@@ -12,7 +10,7 @@ public class DTOString implements DTOType {
     }
 
     @Override
-    public String name() {
+    public String typeName() {
         return "String";
     }
 
@@ -24,15 +22,5 @@ public class DTOString implements DTOType {
     @Override
     public boolean isCollection() {
         return false;
-    }
-
-    @Override
-    public boolean isReadable(final Format format) {
-        return true;
-    }
-
-    @Override
-    public boolean isWritable(final Format format) {
-        return true;
     }
 }

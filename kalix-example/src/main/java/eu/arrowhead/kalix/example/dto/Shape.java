@@ -13,7 +13,7 @@ public interface Shape {
     Point position();
     ShapeType type();
     Optional<String> name();
-    Map<String, Map<String, Short>> properties();
+    Map<String, Map<String, Integer>> properties();
     List<List<Byte>> attributes();
     int[] attributes2();
 }

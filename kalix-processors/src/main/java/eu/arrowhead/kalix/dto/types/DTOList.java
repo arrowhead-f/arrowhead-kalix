@@ -17,8 +17,8 @@ public class DTOList implements DTOArrayOrList {
     }
 
     @Override
-    public String name() {
-        return "List<" + element.name() + ">";
+    public String typeName() {
+        return "List<" + element.typeName() + ">";
     }
 
     @Override

@@ -1,7 +1,5 @@
 package eu.arrowhead.kalix.dto.types;
 
-import eu.arrowhead.kalix.dto.Format;
-
 import javax.lang.model.type.DeclaredType;
 
 public class DTOMap implements DTOType {
@@ -26,8 +24,8 @@ public class DTOMap implements DTOType {
     }
 
     @Override
-    public String name() {
-        return "Map<" + key.name() + ", " + value.name() + ">";
+    public String typeName() {
+        return "Map<" + key.typeName() + ", " + value.typeName() + ">";
     }
 
     @Override
@@ -38,31 +36,5 @@ public class DTOMap implements DTOType {
     @Override
     public boolean isCollection() {
         return true;
-    }
-
-    @Override
-    public boolean isReadable(final Format format) {
-        if (format == Format.JSON) {
-            if (!(key instanceof DTOEnum || key instanceof DTOString)) {
-                return false;
-            }
-        }
-        else if (!key.isReadable(format)) {
-            return false;
-        }
-        return value.isReadable(format);
-    }
-
-    @Override
-    public boolean isWritable(final Format format) {
-        if (format == Format.JSON) {
-            if (!(key instanceof DTOEnum || key instanceof DTOString)) {
-                return false;
-            }
-        }
-        else if (!key.isWritable(format)) {
-            return false;
-        }
-        return value.isWritable(format);
     }
 }

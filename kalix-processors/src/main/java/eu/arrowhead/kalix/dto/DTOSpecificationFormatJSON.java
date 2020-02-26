@@ -21,7 +21,7 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
     }
 
     @Override
-    public void implementFor(final DTOTarget target, final TypeSpec.Builder implementation) {
+    public void implementFor(final DTOTarget target, final TypeSpec.Builder implementation) throws DTOException {
         if (target.interfaceType().isReadable(Format.JSON)) {
             putBuilder.clear();
             implementation.addSuperinterface(ReadableDTO.JSON.class);
@@ -51,7 +51,7 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
         implementation.addMethod(decodeJSON);
     }
 
-    private void implementEncodeMethodFor(final DTOTarget target, final TypeSpec.Builder implementation) {
+    private void implementEncodeMethodFor(final DTOTarget target, final TypeSpec.Builder implementation) throws DTOException {
         final var builder = MethodSpec.methodBuilder("encodeJSON")
             .addAnnotation(Override.class)
             .addModifiers(Modifier.PUBLIC)
@@ -66,16 +66,30 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
         final var p1 = properties.size();
         for (var p0 = 0; p0 < p1; ++p0) {
             final var property = properties.get(p0);
+            try {
+                if (property.isOptional()) {
+                    putBuilder.addPutIfNotEmpty(builder);
+                    builder.addCode("if ($N != null) {\n", property.name());
+                }
 
-            putBuilder
-                .append('"')
-                .append(property.nameFor(Format.JSON))
-                .append("\":");
+                putBuilder
+                    .append('"')
+                    .append(property.nameFor(Format.JSON))
+                    .append("\":");
 
-            encodeValue(property.type(), property.name(), builder);
+                encodeValue(property.type(), property.name(), builder);
 
-            if (p0 + 1 != p1) {
-                putBuilder.append(',');
+                if (p0 + 1 != p1) {
+                    putBuilder.append(',');
+                }
+
+                if (property.isOptional()) {
+                    putBuilder.addPutIfNotEmpty(builder);
+                    builder.addCode("}\n");
+                }
+            }
+            catch (final IllegalStateException exception) {
+                throw new DTOException(property.parentElement(), exception.getMessage());
             }
         }
 
@@ -98,14 +112,14 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
             encodeEnum(name, builder);
         }
         else if (type instanceof DTOPrimitive) {
-            encodePrimitive(name, builder);
+            encodePrimitive(type, name, builder);
         }
         else if (type instanceof DTOString) {
             encodeString(name, builder);
         }
         else {
             throw new IllegalStateException("Unexpected DTO type: "
-                + type.name() + "(" + type + ")");
+                + type.typeName() + "(" + type + ")");
         }
     }
 
@@ -171,7 +185,13 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
         putBuilder.append('"');
     }
 
-    private void encodePrimitive(final String name, final MethodSpec.Builder builder) {
+    private void encodePrimitive(final DTOType type, final String name, final MethodSpec.Builder builder) {
+        if (((DTOPrimitive) type).primitiveType() == DTOPrimitiveType.CHARACTER) {
+            throw new IllegalStateException("The char and Characters types " +
+                "cannot be represented as JSON; either change the type or " +
+                "remove Format.JSON from the array of formats provided to " +
+                "the @Readable annotation");
+        }
         putBuilder.addPutIfNotEmpty(builder);
         builder.addStatement("$T.writeTo($N, target)", JSONWriter.class, name);
     }

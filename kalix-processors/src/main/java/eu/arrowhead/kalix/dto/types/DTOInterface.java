@@ -47,7 +47,7 @@ public class DTOInterface implements DTOType {
     }
 
     @Override
-    public String name() {
+    public String typeName() {
         return simpleName;
     }
 
@@ -61,12 +61,10 @@ public class DTOInterface implements DTOType {
         return false;
     }
 
-    @Override
     public boolean isReadable(final Format format) {
         return readableFormats.contains(format);
     }
 
-    @Override
     public boolean isWritable(final Format format) {
         return writableFormats.contains(format);
     }

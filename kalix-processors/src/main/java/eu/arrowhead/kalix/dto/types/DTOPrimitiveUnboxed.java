@@ -17,7 +17,7 @@ public class DTOPrimitiveUnboxed implements DTOPrimitive {
     }
 
     @Override
-    public String name() {
+    public String typeName() {
         return type.toString();
     }
 

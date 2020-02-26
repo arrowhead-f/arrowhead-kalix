@@ -17,7 +17,7 @@ public class DTOPrimitiveBoxed implements DTOPrimitive {
     }
 
     @Override
-    public String name() {
+    public String typeName() {
         return type.asElement().getSimpleName().toString();
     }
 

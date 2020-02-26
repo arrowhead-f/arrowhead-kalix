@@ -17,8 +17,8 @@ public class DTOArray implements DTOArrayOrList {
     }
 
     @Override
-    public String name() {
-        return element.name() + "[]";
+    public String typeName() {
+        return element.typeName() + "[]";
     }
 
     @Override
