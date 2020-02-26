@@ -35,7 +35,7 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
     }
 
     private void implementDecodeMethodFor(final DTOTarget target, final TypeSpec.Builder implementation) {
-        final var decodeJSON = MethodSpec.methodBuilder("decodeJSON")
+        final var decodeJSON = MethodSpec.methodBuilder("readJSON")
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
             .returns(ClassName.bestGuess(target.simpleName()))
             .addParameter(ParameterSpec.builder(ParameterizedTypeName.get(List.class, JSONToken.class), "tokens")
@@ -52,7 +52,7 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
     }
 
     private void implementEncodeMethodFor(final DTOTarget target, final TypeSpec.Builder implementation) throws DTOException {
-        final var builder = MethodSpec.methodBuilder("encodeJSON")
+        final var builder = MethodSpec.methodBuilder("writeJSON")
             .addAnnotation(Override.class)
             .addModifiers(Modifier.PUBLIC)
             .addException(WriteException.class)
@@ -126,7 +126,7 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
     private void encodeInterface(final String name, final MethodSpec.Builder builder) {
         putBuilder.addPutIfNotEmpty(builder);
 
-        builder.addStatement("$N.encodeJSON(target)", name);
+        builder.addStatement("$N.writeJSON(target)", name);
     }
 
     private void encodeMap(final DTOType type, final String name, final MethodSpec.Builder builder) {

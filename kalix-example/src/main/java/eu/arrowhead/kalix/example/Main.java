@@ -3,6 +3,7 @@ package eu.arrowhead.kalix.example;
 import eu.arrowhead.kalix.dto.WriteException;
 import eu.arrowhead.kalix.example.dto.PointBuilder;
 import eu.arrowhead.kalix.example.dto.ShapeBuilder;
+import eu.arrowhead.kalix.example.dto.ShapeDTO;
 import eu.arrowhead.kalix.example.dto.ShapeType;
 
 import java.nio.ByteBuffer;
@@ -39,7 +40,7 @@ public class Main {
             .build();
 
         final var byteBuffer = ByteBuffer.allocate(4096);
-        shape.encodeJSON(byteBuffer);
+        shape.writeJSON(byteBuffer);
         final var text = new String(byteBuffer.array(), 0, byteBuffer.position(), StandardCharsets.UTF_8);
 
         System.out.println(text);

@@ -4,6 +4,6 @@ import java.nio.ByteBuffer;
 
 public interface WritableDTO {
     interface JSON extends WritableDTO {
-        void encodeJSON(final ByteBuffer target) throws WriteException;
+        void writeJSON(final ByteBuffer target) throws WriteException;
     }
 }
