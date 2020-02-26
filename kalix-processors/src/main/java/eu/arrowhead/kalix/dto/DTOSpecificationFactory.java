@@ -27,23 +27,8 @@ public class DTOSpecificationFactory {
     }
 
     public DTOTargetSpecification createForTarget(final DTOTarget target) throws DTOException {
-        final var builder = new DTOTargetSpecification.Builder(target);
-        createImplementationAndBuilderFor(builder, target);
-        final var targetSpecification = builder.build();
-
-        final var targetFormats = target.formats();
-        for (final var specificationFormat : specificationFormats) {
-            if (targetFormats.contains(specificationFormat.format())) {
-                specificationFormat.implementFor(targetSpecification);
-            }
-        }
-
-        return targetSpecification;
-    }
-
-    private void createImplementationAndBuilderFor(final DTOTargetSpecification.Builder specBuilder,
-                                                   final DTOTarget target) {
         final var interfaceType = target.interfaceType();
+
         final var implementation = TypeSpec.classBuilder(target.simpleName())
             .addJavadoc("{@link $N} Data Transfer Object (DTO).", interfaceType.simpleName())
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
@@ -67,7 +52,6 @@ public class DTOSpecificationFactory {
 
             implementation.addField(FieldSpec.builder(type, name, Modifier.PRIVATE).build());
             implementation.addMethod(MethodSpec.methodBuilder(name)
-                .addJavadoc("{@inheritDoc}")
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
                 .returns(property.isOptional()
@@ -96,16 +80,25 @@ public class DTOSpecificationFactory {
             }
         });
 
-        specBuilder.implementation(implementation
-            .addMethod(constructor.build())
-            .build());
 
-        specBuilder.builder(builder
-            .addMethod(MethodSpec.methodBuilder("build")
-                .addModifiers(Modifier.PUBLIC)
-                .returns(ClassName.bestGuess(target.simpleName()))
-                .addStatement("return new $N(this)", target.simpleName())
+        final var targetFormats = target.formats();
+        for (final var specificationFormat : specificationFormats) {
+            if (targetFormats.contains(specificationFormat.format())) {
+                specificationFormat.implementFor(target, implementation);
+            }
+        }
+
+        return new DTOTargetSpecification.Builder(target)
+            .implementation(implementation
+                .addMethod(constructor.build())
                 .build())
-            .build());
+            .builder(builder
+                .addMethod(MethodSpec.methodBuilder("build")
+                    .addModifiers(Modifier.PUBLIC)
+                    .returns(ClassName.bestGuess(target.simpleName()))
+                    .addStatement("return new $N(this)", target.simpleName())
+                    .build())
+                .build())
+            .build();
     }
 }
