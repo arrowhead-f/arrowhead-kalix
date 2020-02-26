@@ -17,12 +17,17 @@ public class DTOArray implements DTOArrayOrList {
     }
 
     @Override
-    public String typeName() {
-        return element.typeName() + "[]";
+    public DTODescriptor descriptor() {
+        return DTODescriptor.ARRAY;
     }
 
     @Override
     public ArrayType asTypeMirror() {
         return type;
+    }
+
+    @Override
+    public String toString() {
+        return element + "[]";
     }
 }

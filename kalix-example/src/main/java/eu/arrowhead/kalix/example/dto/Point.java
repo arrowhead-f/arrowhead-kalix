@@ -3,8 +3,6 @@ package eu.arrowhead.kalix.example.dto;
 import eu.arrowhead.kalix.dto.*;
 import eu.arrowhead.kalix.dto.Readable;
 
-import java.util.Optional;
-
 /**
  * A point in 2D space.
  */

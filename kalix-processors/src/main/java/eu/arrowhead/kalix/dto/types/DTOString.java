@@ -10,8 +10,8 @@ public class DTOString implements DTOType {
     }
 
     @Override
-    public String typeName() {
-        return "String";
+    public DTODescriptor descriptor() {
+        return DTODescriptor.STRING;
     }
 
     @Override
@@ -20,7 +20,7 @@ public class DTOString implements DTOType {
     }
 
     @Override
-    public boolean isCollection() {
-        return false;
+    public String toString() {
+        return "String";
     }
 }

@@ -85,7 +85,7 @@ public class DTOPropertyFactory {
 
         if (type.getKind().isPrimitive()) {
             return builder
-                .type(toPrimitiveType(type, DTOPrimitiveType.valueOf(type.getKind())))
+                .type(toPrimitiveType(type, DTODescriptor.valueOf(type.getKind())))
                 .isOptional(false)
                 .build();
         }
@@ -122,34 +122,34 @@ public class DTOPropertyFactory {
 
     private DTOType resolveType(final ExecutableElement method, final TypeMirror type) throws DTOException {
         if (type.getKind().isPrimitive()) {
-            return toPrimitiveType(type, DTOPrimitiveType.valueOf(type.getKind()));
+            return toPrimitiveType(type, DTODescriptor.valueOf(type.getKind()));
         }
         if (type.getKind() == TypeKind.ARRAY) {
             return toArrayType(method, type);
         }
         if (typeUtils.isSameType(booleanType, type)) {
-            return toPrimitiveBoxedType(type, DTOPrimitiveType.BOOLEAN);
+            return toPrimitiveBoxedType(type, DTODescriptor.BOOLEAN_BOXED);
         }
         if (typeUtils.isSameType(byteType, type)) {
-            return toPrimitiveBoxedType(type, DTOPrimitiveType.BYTE);
+            return toPrimitiveBoxedType(type, DTODescriptor.BYTE_BOXED);
         }
         if (typeUtils.isSameType(characterType, type)) {
-            return toPrimitiveBoxedType(type, DTOPrimitiveType.CHARACTER);
+            return toPrimitiveBoxedType(type, DTODescriptor.CHARACTER_BOXED);
         }
         if (typeUtils.isSameType(doubleType, type)) {
-            return toPrimitiveBoxedType(type, DTOPrimitiveType.DOUBLE);
+            return toPrimitiveBoxedType(type, DTODescriptor.DOUBLE_BOXED);
         }
         if (typeUtils.isSameType(floatType, type)) {
-            return toPrimitiveBoxedType(type, DTOPrimitiveType.FLOAT);
+            return toPrimitiveBoxedType(type, DTODescriptor.FLOAT_BOXED);
         }
         if (typeUtils.isSameType(integerType, type)) {
-            return toPrimitiveBoxedType(type, DTOPrimitiveType.INTEGER);
+            return toPrimitiveBoxedType(type, DTODescriptor.INTEGER_BOXED);
         }
         if (typeUtils.isSameType(longType, type)) {
-            return toPrimitiveBoxedType(type, DTOPrimitiveType.LONG);
+            return toPrimitiveBoxedType(type, DTODescriptor.LONG_BOXED);
         }
         if (typeUtils.isSameType(shortType, type)) {
-            return toPrimitiveBoxedType(type, DTOPrimitiveType.SHORT);
+            return toPrimitiveBoxedType(type, DTODescriptor.SHORT_BOXED);
         }
         if (typeUtils.asElement(type).getKind() == ElementKind.ENUM) {
             return toEnumType(type);
@@ -261,7 +261,7 @@ public class DTOPropertyFactory {
         final var declaredType = (DeclaredType) type;
         final var typeArguments = declaredType.getTypeArguments();
         final var key = resolveType(method, typeArguments.get(0));
-        if (key.isCollection() || key instanceof DTOInterface) {
+        if (key.descriptor().isCollection() || key.descriptor() == DTODescriptor.INTERFACE) {
             throw new DTOException(method, "Only boxed primitives, enums, " +
                 "enum-likes and strings may be used as Map keys");
         }
@@ -269,11 +269,11 @@ public class DTOPropertyFactory {
         return new DTOMap(declaredType, key, value);
     }
 
-    private DTOPrimitiveUnboxed toPrimitiveType(final TypeMirror type, final DTOPrimitiveType primitiveType) {
+    private DTOPrimitiveUnboxed toPrimitiveType(final TypeMirror type, final DTODescriptor primitiveType) {
         return new DTOPrimitiveUnboxed((PrimitiveType) type, primitiveType);
     }
 
-    private DTOPrimitiveBoxed toPrimitiveBoxedType(final TypeMirror type, final DTOPrimitiveType primitiveType) {
+    private DTOPrimitiveBoxed toPrimitiveBoxedType(final TypeMirror type, final DTODescriptor primitiveType) {
         return new DTOPrimitiveBoxed((DeclaredType) type, primitiveType);
     }
 

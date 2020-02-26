@@ -47,18 +47,13 @@ public class DTOInterface implements DTOType {
     }
 
     @Override
-    public String typeName() {
-        return simpleName;
+    public DTODescriptor descriptor() {
+        return DTODescriptor.INTERFACE;
     }
 
     @Override
     public DeclaredType asTypeMirror() {
         return interfaceType;
-    }
-
-    @Override
-    public boolean isCollection() {
-        return false;
     }
 
     public boolean isReadable(final Format format) {
@@ -67,5 +62,10 @@ public class DTOInterface implements DTOType {
 
     public boolean isWritable(final Format format) {
         return writableFormats.contains(format);
+    }
+
+    @Override
+    public String toString() {
+        return simpleName;
     }
 }

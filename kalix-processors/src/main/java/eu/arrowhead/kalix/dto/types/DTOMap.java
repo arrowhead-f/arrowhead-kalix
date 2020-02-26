@@ -8,7 +8,7 @@ public class DTOMap implements DTOType {
     private final DTOType value;
 
     public DTOMap(final DeclaredType type, final DTOType key, final DTOType value) {
-        assert !key.isCollection() && !(key instanceof DTOInterface);
+        assert !key.descriptor().isCollection() && !(key instanceof DTOInterface);
 
         this.type = type;
         this.key = key;
@@ -24,8 +24,8 @@ public class DTOMap implements DTOType {
     }
 
     @Override
-    public String typeName() {
-        return "Map<" + key.typeName() + ", " + value.typeName() + ">";
+    public DTODescriptor descriptor() {
+        return DTODescriptor.MAP;
     }
 
     @Override
@@ -34,7 +34,7 @@ public class DTOMap implements DTOType {
     }
 
     @Override
-    public boolean isCollection() {
-        return true;
+    public String toString() {
+        return "Map<" + key + ", " + value + ">";
     }
 }

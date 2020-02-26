@@ -4,20 +4,20 @@ import com.squareup.javapoet.MethodSpec;
 
 import java.nio.charset.StandardCharsets;
 
-public class ByteBufferPutBuilder {
+public class ByteBufferPutCache {
     private final StringBuilder builder = new StringBuilder();
     private final String byteBufferName;
 
-    public ByteBufferPutBuilder(final String byteBufferName) {
+    public ByteBufferPutCache(final String byteBufferName) {
         this.byteBufferName = byteBufferName;
     }
 
-    public ByteBufferPutBuilder append(final char c) {
+    public ByteBufferPutCache append(final char c) {
         builder.append(c);
         return this;
     }
 
-    public ByteBufferPutBuilder append(final String string) {
+    public ByteBufferPutCache append(final String string) {
         builder.append(string);
         return this;
     }
@@ -26,10 +26,7 @@ public class ByteBufferPutBuilder {
         builder.setLength(0);
     }
 
-    public void addPutIfNotEmpty(final MethodSpec.Builder methodBuilder) {
-        if (builder.length() == 0) {
-            return;
-        }
+    public void addPut(final MethodSpec.Builder methodBuilder) {
         final var input = builder.toString().getBytes(StandardCharsets.UTF_8);
         if (input.length == 1) {
             methodBuilder.addStatement(byteBufferName + ".put((byte) " + literalOf(input[0]) + ")");
@@ -48,6 +45,13 @@ public class ByteBufferPutBuilder {
             methodBuilder.addStatement(output.toString());
         }
         builder.setLength(0);
+    }
+
+    public void addPutIfNotEmpty(final MethodSpec.Builder methodBuilder) {
+        if (builder.length() == 0) {
+            return;
+        }
+        addPut(methodBuilder);
     }
 
     private String literalOf(final byte b) {

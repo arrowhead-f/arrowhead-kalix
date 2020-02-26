@@ -37,12 +37,12 @@ public class DTOTargetSpecification {
             this.target = target;
         }
 
-        public Builder implementation(TypeSpec implementation) {
+        public Builder implementation(final TypeSpec implementation) {
             this.implementation = implementation;
             return this;
         }
 
-        public Builder builder(TypeSpec builder) {
+        public Builder builder(final TypeSpec builder) {
             this.builder = builder;
             return this;
         }

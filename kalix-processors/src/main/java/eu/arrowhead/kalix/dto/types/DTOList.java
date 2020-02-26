@@ -17,12 +17,17 @@ public class DTOList implements DTOArrayOrList {
     }
 
     @Override
-    public String typeName() {
-        return "List<" + element.typeName() + ">";
+    public DTODescriptor descriptor() {
+        return DTODescriptor.LIST;
     }
 
     @Override
     public DeclaredType asTypeMirror() {
         return type;
+    }
+
+    @Override
+    public String toString() {
+        return "List<" + element + ">";
     }
 }

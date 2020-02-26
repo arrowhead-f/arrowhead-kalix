@@ -6,14 +6,14 @@ import eu.arrowhead.kalix.dto.json.JSONToken;
 import eu.arrowhead.kalix.dto.json.JSONType;
 import eu.arrowhead.kalix.dto.json.JSONWriter;
 import eu.arrowhead.kalix.dto.types.*;
-import eu.arrowhead.kalix.dto.util.ByteBufferPutBuilder;
+import eu.arrowhead.kalix.dto.util.ByteBufferPutCache;
 
 import javax.lang.model.element.Modifier;
 import java.nio.ByteBuffer;
 import java.util.List;
 
 public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
-    private final ByteBufferPutBuilder putBuilder = new ByteBufferPutBuilder("target");
+    private final ByteBufferPutCache putCache = new ByteBufferPutCache("target");
 
     private int level = 0;
 
@@ -59,39 +59,41 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
                 .addModifiers(Modifier.FINAL)
                 .build())
             .addException(ReadException.class)
-            .addCode("if (tokens.size() >= offset) {\n")
-            .addCode("    throw new $T($T.JSON, \"Expected object\", \"\", 0);\n",
-                ReadException.class, Format.class)
-            .addCode("}\n")
-            .addCode("var token = tokens.get(offset++);\n")
-            .addCode("var error = \"\";\n")
-            .addCode("error: {\n")
-            .addCode("if (token.type() != $T.OBJECT) {\n", JSONType.class)
-            .addCode("    error = \"Expected object\"; break error;\n")
-            .addCode("}\n")
-            .addCode("var nChildren = token.nChildren();")
-            .addCode("final var builder = new $NBuilder();\n", target.interfaceType().simpleName())
-            .addCode("while (nChildren > 0 && offset < tokens.size()) {\n")
-            .addCode("    token = tokens.get(offset);\n")
-            .addCode("    if (token.type() != $T.STRING) {\n", JSONType.class)
-            .addCode("        error = \"Expected string key\"; break error;\n")
-            .addCode("    }\n")
-            .addCode("    final var name = token.readStringFrom(source);\n")
-            .addCode("    switch(name) {\n");
+            .addCode("" +
+                    "if (tokens.size() >= offset) {\n" +
+                    "    throw new $1T($2T.JSON, \"Expected object\", \"\", 0);\n" +
+                    "}\n" +
+                    "var token = tokens.get(offset++);\n" +
+                    "var error = \"\";\n" +
+                    "error: {\n" +
+                    "if (token.type() != $3T.OBJECT) {\n" +
+                    "    error = \"Expected object\"; break error;\n" +
+                    "}\n" +
+                    "var nChildren = token.nChildren();\n" +
+                    "final var builder = new $4NBuilder();\n" +
+                    "while (nChildren > 0 && offset < tokens.size()) {\n" +
+                    "    token = tokens.get(offset);\n" +
+                    "    if (token.type() != $3T.STRING) {\n" +
+                    "        error = \"Expected string key\"; break error;\n" +
+                    "    }\n" +
+                    "    final var name = token.readStringFrom(source);\n" +
+                    "    switch (name) {\n",
+                ReadException.class, Format.class, JSONType.class,
+                target.interfaceType().simpleName());
 
         for (final var property : target.properties()) {
-            builder.addCode("        case $S:\n", property.nameFor(Format.JSON));
+            builder.addCode("    case $S:\n", property.nameFor(Format.JSON));
 
-            builder.addCode("            break;\n");
+            builder.addCode("        break;\n");
         }
 
-        builder
-            .addCode("    }\n")
-            .addCode("}\n")
-            .addCode("return builder.build();\n")
-            .addCode("}\n")
-            .addCode("throw new $T($T.JSON, error, token.readStringFrom(source), token.begin());\n",
-                ReadException.class, Format.class);
+        builder.addCode("" +
+                "    }\n" +
+                "}\n" +
+                "return builder.build();\n" +
+                "}\n" +
+                "throw new $1T($2T.JSON, error, token.readStringFrom(source), token.begin());\n",
+            ReadException.class, Format.class);
 
         implementation.addMethod(builder.build());
     }
@@ -105,8 +107,8 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
                 .addModifiers(Modifier.FINAL)
                 .build());
 
-        putBuilder.clear();
-        putBuilder.append('{');
+        putCache.clear();
+        putCache.append('{');
 
         final var properties = target.properties();
         final var p1 = properties.size();
@@ -114,11 +116,11 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
             final var property = properties.get(p0);
             try {
                 if (property.isOptional()) {
-                    putBuilder.addPutIfNotEmpty(builder);
+                    putCache.addPutIfNotEmpty(builder);
                     builder.addCode("if ($N != null) {\n", property.name());
                 }
 
-                putBuilder
+                putCache
                     .append('"')
                     .append(property.nameFor(Format.JSON))
                     .append("\":");
@@ -126,11 +128,11 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
                 encodeValue(property.type(), property.name(), builder);
 
                 if (p0 + 1 != p1) {
-                    putBuilder.append(',');
+                    putCache.append(',');
                 }
 
                 if (property.isOptional()) {
-                    putBuilder.addPutIfNotEmpty(builder);
+                    putCache.addPutIfNotEmpty(builder);
                     builder.addCode("}\n");
                 }
             }
@@ -139,112 +141,129 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
             }
         }
 
-        putBuilder.append('}').addPutIfNotEmpty(builder);
+        putCache.append('}').addPutIfNotEmpty(builder);
 
         implementation.addMethod(builder.build());
     }
 
     private void encodeValue(final DTOType type, final String name, final MethodSpec.Builder builder) {
-        if (type instanceof DTOInterface) {
-            encodeInterface(name, builder);
-        }
-        else if (type instanceof DTOMap) {
-            encodeMap(type, name, builder);
-        }
-        else if (type instanceof DTOArrayOrList) {
+        final var descriptor = type.descriptor();
+        switch (descriptor) {
+        case ARRAY:
+        case LIST:
             encodeArray(type, name, builder);
-        }
-        else if (type instanceof DTOEnum) {
+            break;
+
+        case ENUM:
             encodeEnum(name, builder);
-        }
-        else if (type instanceof DTOPrimitive) {
-            encodePrimitive(type, name, builder);
-        }
-        else if (type instanceof DTOString) {
+            break;
+
+        case INTERFACE:
+            encodeInterface(name, builder);
+            break;
+
+        case MAP:
+            encodeMap(type, name, builder);
+            break;
+
+        case STRING:
             encodeString(name, builder);
-        }
-        else {
-            throw new IllegalStateException("Unexpected DTO type: "
-                + type.typeName() + "(" + type + ")");
+            break;
+
+        default:
+            if (descriptor.isPrimitive()) {
+                encodePrimitive(type, name, builder);
+            }
+            else {
+                throw new IllegalStateException("Unexpected type: " + type);
+            }
         }
     }
 
     private void encodeInterface(final String name, final MethodSpec.Builder builder) {
-        putBuilder.addPutIfNotEmpty(builder);
+        putCache.addPutIfNotEmpty(builder);
 
         builder.addStatement("$N.writeJSON(target)", name);
     }
 
     private void encodeMap(final DTOType type, final String name, final MethodSpec.Builder builder) {
-        putBuilder.append('{').addPutIfNotEmpty(builder);
+        putCache.append('{').addPutIfNotEmpty(builder);
 
         final var map = (DTOMap) type;
-        builder
-            .addCode("{final var entrySet$L = $N.entrySet();\n", level, name)
-            .addCode("final var size$1L = entrySet$1L.size();\n", level)
-            .addCode("var i$L = 0;\n", level)
-            .addCode("for (final var entry$1L : entrySet$1L) {\n", level);
+        builder.addCode("{" +
+                "final var entrySet$1L = $2N.entrySet();\n" +
+                "final var size$1L = entrySet$1L.size();\n" +
+                "var i$1L = 0;\n" +
+                "for (final var entry$1L : entrySet$1L) {\n",
+            level, name);
 
         encodeValue(map.key(), "entry" + level + ".getKey()", builder);
 
-        putBuilder.append(':');
+        putCache.append(':');
 
         final var valueName = "entry" + level + ".getValue()";
         level += 1;
         encodeValue(map.value(), valueName, builder);
         level -= 1;
 
-        putBuilder.addPutIfNotEmpty(builder);
-        builder.addCode("if (++i$1L != size$1L) { target.put((byte) ','); }}}\n", level);
+        putCache.addPutIfNotEmpty(builder);
+        builder.addCode("" +
+                "if (++i$1L != size$1L) {" +
+                "target.put((byte) ',');" +
+                "}}}\n",
+            level);
 
-        putBuilder.append('}');
+        putCache.append('}');
     }
 
     private void encodeArray(final DTOType type, final String name, final MethodSpec.Builder builder) {
-        putBuilder.append('[').addPutIfNotEmpty(builder);
+        putCache.append('[').addPut(builder);
 
-        final var arrayOrList = (DTOArrayOrList) type;
-        if (arrayOrList instanceof DTOArray) {
+        if (type.descriptor() == DTODescriptor.ARRAY) {
             builder.addCode("{final var size$L = $N.length;\n", level, name);
         }
         else {
             builder.addCode("{final var size$L = $N.size();\n", level, name);
         }
-        builder
-            .addCode("var i$L = 0;\n", level)
-            .addCode("for (final var item$1L : $2N) {\n", level, name);
+        builder.addCode("" +
+                "var i$1L = 0;\n" +
+                "for (final var item$1L : $2N) {\n",
+            level, name);
 
         final var itemName = "item" + level;
         level += 1;
-        encodeValue(arrayOrList.element(), itemName, builder);
+        encodeValue(((DTOArrayOrList) type).element(), itemName, builder);
         level -= 1;
 
-        putBuilder.addPutIfNotEmpty(builder);
-        builder.addCode("if (++i$1L != size$1L) { target.put((byte) ','); }}}\n", level);
+        putCache.addPutIfNotEmpty(builder);
+        builder.addCode("" +
+            "if (++i$1L != size$1L) {" +
+            "target.put((byte) ',');" +
+            "}}}\n", level);
 
-        putBuilder.append(']');
+        putCache.append(']');
     }
 
     private void encodeEnum(final String name, final MethodSpec.Builder builder) {
-        putBuilder.append('"').addPutIfNotEmpty(builder);
+        putCache.append('"').addPut(builder);
         builder.addStatement("$T.writeTo($N.toString(), target)", JSONWriter.class, name);
-        putBuilder.append('"');
+        putCache.append('"');
     }
 
     private void encodePrimitive(final DTOType type, final String name, final MethodSpec.Builder builder) {
-        if (((DTOPrimitive) type).primitiveType() == DTOPrimitiveType.CHARACTER) {
+        if (type.descriptor().isCharacter()) {
             throw new IllegalStateException("The char and Characters types " +
                 "cannot be represented as JSON; either change the type or " +
                 "remove Format.JSON from the array of formats provided to " +
                 "the @Readable annotation");
         }
-        putBuilder.addPutIfNotEmpty(builder);
+        putCache.addPutIfNotEmpty(builder);
         builder.addStatement("$T.writeTo($N, target)", JSONWriter.class, name);
     }
 
     private void encodeString(final String name, final MethodSpec.Builder builder) {
-        putBuilder.append('"').addPutIfNotEmpty(builder);
+        putCache.append('"').addPut(builder);
         builder.addStatement("$T.writeTo($N, target)", JSONWriter.class, name);
-        putBuilder.append('"');
+        putCache.append('"');
     }
 }

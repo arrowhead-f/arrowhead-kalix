@@ -10,8 +10,8 @@ public class DTOEnum implements DTOType {
     }
 
     @Override
-    public String typeName() {
-        return type.asElement().getSimpleName().toString();
+    public DTODescriptor descriptor() {
+        return DTODescriptor.ENUM;
     }
 
     @Override
@@ -20,7 +20,7 @@ public class DTOEnum implements DTOType {
     }
 
     @Override
-    public boolean isCollection() {
-        return false;
+    public String toString() {
+        return type.asElement().getSimpleName().toString();
     }
 }
