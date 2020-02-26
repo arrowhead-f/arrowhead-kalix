@@ -2,7 +2,7 @@ package eu.arrowhead.kalix.dto;
 
 import com.squareup.javapoet.*;
 import eu.arrowhead.kalix.dto.types.DTOInterface;
-import eu.arrowhead.kalix.dto.types.DTOPrimitive;
+import eu.arrowhead.kalix.dto.types.DTOPrimitiveUnboxed;
 
 import javax.lang.model.element.Modifier;
 import java.util.Objects;
@@ -21,7 +21,7 @@ public class DTOSpecificationFactory {
         final var implementation = TypeSpec.classBuilder(target.simpleName())
             .addJavadoc("{@link $N} Data Transfer Object (DTO).", interfaceType.simpleName())
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-            .addSuperinterface(TypeName.get(interfaceType.type()));
+            .addSuperinterface(TypeName.get(interfaceType.asTypeMirror()));
 
         final var builderSimpleName = interfaceType.simpleName() + "Builder";
         final var builderClassName = ClassName.bestGuess(builderSimpleName);
@@ -37,7 +37,7 @@ public class DTOSpecificationFactory {
             final var name = property.name();
             final var type = property.type() instanceof DTOInterface
                 ? ClassName.bestGuess(((DTOInterface) property.type()).simpleNameDTO())
-                : TypeName.get(property.typeMirror());
+                : TypeName.get(property.asTypeMirror());
 
             implementation.addField(FieldSpec.builder(type, name, Modifier.PRIVATE).build());
             implementation.addMethod(MethodSpec.methodBuilder(name)
@@ -60,7 +60,7 @@ public class DTOSpecificationFactory {
                 .addStatement("return this")
                 .build());
 
-            if (property.isOptional() || property.type() instanceof DTOPrimitive) {
+            if (property.isOptional() || property.type() instanceof DTOPrimitiveUnboxed) {
                 constructor.addStatement("this.$1N = builder.$1N", name);
             }
             else {

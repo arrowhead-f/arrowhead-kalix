@@ -2,21 +2,30 @@ package eu.arrowhead.kalix.dto;
 
 import eu.arrowhead.kalix.dto.types.DTOType;
 
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import java.util.Map;
 import java.util.Objects;
 
 public class DTOProperty {
+    private final ExecutableElement parentElement;
     private final String name;
     private final Map<Format, String> formatNames;
     private final DTOType type;
     private final boolean isOptional;
 
     private DTOProperty(final Builder builder) {
+        parentElement = Objects.requireNonNull(builder.parentElement, "parentElement");
         name = Objects.requireNonNull(builder.name, "name");
         formatNames = Objects.requireNonNull(builder.formatNames, "formatNames");
         type = Objects.requireNonNull(builder.type, "type");
         isOptional = builder.isOptional;
+    }
+
+    public ExecutableElement parentElement() {
+        return parentElement;
     }
 
     public String name() {
@@ -31,8 +40,8 @@ public class DTOProperty {
         return type;
     }
 
-    public TypeMirror typeMirror() {
-        return type.type();
+    public TypeMirror asTypeMirror() {
+        return type.asTypeMirror();
     }
 
     public boolean isOptional() {
@@ -40,10 +49,16 @@ public class DTOProperty {
     }
 
     public static class Builder {
+        private ExecutableElement parentElement;
         private String name;
         private Map<Format, String> formatNames;
         private DTOType type;
         private boolean isOptional;
+
+        public Builder parentElement(final ExecutableElement parentElement) {
+            this.parentElement = parentElement;
+            return this;
+        }
 
         public Builder name(final String name) {
             this.name = name;
@@ -69,36 +84,4 @@ public class DTOProperty {
             return new DTOProperty(this);
         }
     }
-
-    /*
-    public void addConstructorBuilderStatement(final MethodSpec.Builder constructor) {
-        if (isOptional() || (this instanceof PropertyPrimitive) && !((PropertyPrimitive) this).isBoxed()) {
-            constructor.addStatement("this.$N = builder.$N", name());
-        }
-        else {
-            constructor.addStatement("this." + name +
-                    " = $T.requireNonNull(builder." + name +
-                    ", \"Expected " + name + "\")",
-                Objects.class);
-        }
-    }
-
-    public MethodSpec specifyBuilderSetter() {
-        return MethodSpec.methodBuilder(name)
-            .addModifiers(Modifier.PUBLIC)
-            .returns(ClassName.bestGuess("Builder"))
-            .addParameter(ParameterSpec.builder(TypeName.get(type), name, Modifier.FINAL).build())
-            .addStatement("this.$N = $N", name)
-            .addStatement("return this")
-            .build();
-    }
-
-    public MethodSpec specifyGetter() {
-        return MethodSpec.methodBuilder(name)
-            .addModifiers(Modifier.PUBLIC)
-            .returns(TypeName.get(type))
-            .addStatement("return $N", name)
-            .build();
-    }
-    */
 }

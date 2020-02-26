@@ -1,10 +1,8 @@
 package eu.arrowhead.kalix.dto.types;
 
-import eu.arrowhead.kalix.dto.Format;
-
 import javax.lang.model.type.DeclaredType;
 
-public class DTOList implements DTOType {
+public class DTOList implements DTOArrayOrList {
     private final DeclaredType type;
     private final DTOType element;
 
@@ -14,36 +12,17 @@ public class DTOList implements DTOType {
     }
 
     @Override
-    public DeclaredType type() {
-        return type;
-    }
-
-    @Override
-    public boolean isCollection() {
-        return true;
-    }
-
-    @Override
-    public boolean isReadable() {
-        return element.isReadable();
-    }
-
     public DTOType element() {
         return element;
     }
 
     @Override
-    public boolean isReadable(final Format format) {
-        return element.isReadable(format);
+    public String name() {
+        return "List<" + element.name() + ">";
     }
 
     @Override
-    public boolean isWritable() {
-        return element.isWritable();
-    }
-
-    @Override
-    public boolean isWritable(final Format format) {
-        return element.isWritable(format);
+    public DeclaredType asTypeMirror() {
+        return type;
     }
 }

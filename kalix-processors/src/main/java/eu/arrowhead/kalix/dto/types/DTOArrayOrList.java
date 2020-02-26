@@ -2,21 +2,21 @@ package eu.arrowhead.kalix.dto.types;
 
 import eu.arrowhead.kalix.dto.Format;
 
-public interface DTOPrimitive extends DTOType {
-    DTOPrimitiveType primitiveType();
+public interface DTOArrayOrList extends DTOType {
+    DTOType element();
 
     @Override
     default boolean isCollection() {
-        return false;
+        return true;
     }
 
     @Override
     default boolean isReadable(final Format format) {
-        return format != Format.JSON || primitiveType() != DTOPrimitiveType.CHARACTER;
+        return element().isReadable(format);
     }
 
     @Override
     default boolean isWritable(final Format format) {
-        return format != Format.JSON || primitiveType() != DTOPrimitiveType.CHARACTER;
+        return element().isWritable(format);
     }
 }

@@ -15,10 +15,10 @@ public interface Point {
      * @return X-coordinate.
      */
     @NameJSON("_x")
-    int x();
+    double x();
 
     /**
      * @return Y-coordinate, if any.
      */
-    int y();
+    Double y();
 }

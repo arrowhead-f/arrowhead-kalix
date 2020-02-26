@@ -9,9 +9,23 @@ import java.nio.charset.StandardCharsets;
 public class JSONWriter {
     private JSONWriter() {}
 
+    private static byte[] TRUE = new byte[]{'T', 'R', 'U', 'E'};
+    private static byte[] FALSE = new byte[]{'F', 'A', 'L', 'S', 'E'};
+
     private static byte[] HEX = new byte[]{
         '0', '1', '2', '3', '4', '5', '6', '7',
         '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+
+    private static byte[] NULL = new byte[]{'N', 'U', 'L', 'L'};
+
+    public static void writeTo(boolean bool, final ByteBuffer target) {
+        target.put(bool ? TRUE : FALSE);
+    }
+
+    public static void writeTo(long number, final ByteBuffer target) {
+        target.put(Long.toString(number)
+            .getBytes(StandardCharsets.ISO_8859_1));
+    }
 
     public static void writeTo(double number, final ByteBuffer target) throws WriteException {
         if (!Double.isFinite(number)) {
@@ -44,4 +58,7 @@ public class JSONWriter {
         }
     }
 
+    public static void writeNullTo(final ByteBuffer target) {
+        target.put(NULL);
+    }
 }

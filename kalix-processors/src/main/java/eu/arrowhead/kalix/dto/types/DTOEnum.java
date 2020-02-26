@@ -12,7 +12,12 @@ public class DTOEnum implements DTOType {
     }
 
     @Override
-    public DeclaredType type() {
+    public String name() {
+        return type.asElement().getSimpleName().toString();
+    }
+
+    @Override
+    public DeclaredType asTypeMirror() {
         return type;
     }
 
@@ -22,17 +27,7 @@ public class DTOEnum implements DTOType {
     }
 
     @Override
-    public boolean isReadable() {
-        return true;
-    }
-
-    @Override
     public boolean isReadable(final Format format) {
-        return true;
-    }
-
-    @Override
-    public boolean isWritable() {
         return true;
     }
 
