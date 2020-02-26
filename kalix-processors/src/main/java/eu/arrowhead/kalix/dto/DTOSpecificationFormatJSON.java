@@ -11,11 +11,6 @@ import java.util.Optional;
 
 public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
     private static final String packageName = JSONWriter.class.getPackageName();
-    private final TypeSpec.Builder utilityBuilder = TypeSpec.classBuilder("JSONUtils")
-        .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-        .addMethod(MethodSpec.constructorBuilder()
-            .addModifiers(Modifier.PRIVATE)
-            .build());
 
     @Override
     public Format format() {
@@ -34,7 +29,7 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
         }
     }
 
-    private void implementDecodeMethodFor(final DTOTarget target, final TypeSpec.Builder implementation) {
+    private void implementDecodeMethodFor(final DTOTarget target, final TypeSpec.Builder implementation) throws DTOException {
         final var decodeJSON = MethodSpec.methodBuilder("decodeJSON")
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
             .returns(ClassName.bestGuess(target.simpleName()))
@@ -51,9 +46,8 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
         implementation.addMethod(decodeJSON);
     }
 
-    private void implementEncodeMethodFor(final DTOTarget target, final TypeSpec.Builder implementation) {
+    private void implementEncodeMethodFor(final DTOTarget target, final TypeSpec.Builder implementation) throws DTOException {
         final var encodeJSON = MethodSpec.methodBuilder("encodeJSON")
-            .addJavadoc("{@inheritDoc}")
             .addAnnotation(Override.class)
             .addModifiers(Modifier.PUBLIC)
             .addParameter(ParameterSpec.builder(TypeName.get(ByteBuffer.class), "target")
@@ -63,10 +57,5 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
             .build();
 
         implementation.addMethod(encodeJSON);
-    }
-
-    @Override
-    public Optional<DTOUtilitySpecification> utilitySpecification() {
-        return Optional.of(new DTOUtilitySpecification(packageName, utilityBuilder.build()));
     }
 }

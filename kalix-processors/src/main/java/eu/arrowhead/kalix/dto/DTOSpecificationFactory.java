@@ -5,8 +5,6 @@ import eu.arrowhead.kalix.dto.types.DTOInterface;
 import eu.arrowhead.kalix.dto.types.DTOPrimitive;
 
 import javax.lang.model.element.Modifier;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -15,15 +13,6 @@ public class DTOSpecificationFactory {
 
     public DTOSpecificationFactory(final DTOSpecificationFormat... specificationFormats) {
         this.specificationFormats = specificationFormats;
-    }
-
-    public List<DTOUtilitySpecification> utilitySpecifications() {
-        final var utilities = new ArrayList<DTOUtilitySpecification>();
-        for (final var specificationFormat : specificationFormats) {
-            specificationFormat.utilitySpecification()
-                .ifPresent(utilities::add);
-        }
-        return utilities;
     }
 
     public DTOTargetSpecification createForTarget(final DTOTarget target) throws DTOException {

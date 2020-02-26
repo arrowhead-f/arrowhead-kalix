@@ -24,7 +24,6 @@ public class DTOProcessor extends AbstractProcessor {
 
     private DTOTargetFactory targetFactory;
     private DTOSpecificationFactory specificationFactory;
-    private boolean hasCreatedUtilityClasses = false;
 
     @Override
     public synchronized void init(final ProcessingEnvironment processingEnv) {
@@ -61,14 +60,6 @@ public class DTOProcessor extends AbstractProcessor {
                 JavaFile.builder(packageName, specification.builder())
                     .indent("    ").build()
                     .writeTo(filer);
-            }
-            if (!hasCreatedUtilityClasses && interfaceTypes.size() == 0) {
-                for (final var utility : specificationFactory.utilitySpecifications()) {
-                    JavaFile.builder(utility.packageName(), utility.typeSpec())
-                        .indent("    ").build()
-                        .writeTo(filer);
-                }
-                hasCreatedUtilityClasses = true;
             }
         }
         catch (final DTOException e) {
