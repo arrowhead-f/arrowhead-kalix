@@ -9,6 +9,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+import java.util.ArrayList;
 
 public class DTOTargetFactory {
     private final DTOPropertyFactory propertyFactory;
@@ -35,10 +36,6 @@ public class DTOTargetFactory {
                 "interfaces may not have names ending with \"DTO\"");
         }
 
-        var builder = new DTOTarget.Builder()
-            .simpleName(interfaceElement.getSimpleName() + "DTO")
-            .qualifiedName(interfaceElement.getQualifiedName() + "DTO");
-
         final var readable = interfaceElement.getAnnotation(Readable.class);
         final var writable = interfaceElement.getAnnotation(Writable.class);
         final var readableFormats = readable != null ? readable.value() : new Format[0];
@@ -51,11 +48,10 @@ public class DTOTargetFactory {
                 "arguments");
         }
 
-        builder = builder.interfaceType(new DTOInterface(
-            (DeclaredType) interfaceElement.asType(),
-            readableFormats, writableFormats
-        ));
+        final var declaredType = (DeclaredType) interfaceElement.asType();
+        final var interfaceType = new DTOInterface(declaredType, readableFormats, writableFormats);
 
+        final var properties = new ArrayList<DTOProperty>();
         for (final var element : interfaceElement.getEnclosedElements()) {
             if (element.getEnclosingElement().getKind() != ElementKind.INTERFACE ||
                 element.getKind() != ElementKind.METHOD) {
@@ -67,9 +63,9 @@ public class DTOTargetFactory {
             }
             final var executable = (ExecutableElement) element;
             final var property = propertyFactory.createFromMethod(executable);
-            builder = builder.addProperty(property);
+            properties.add(property);
         }
 
-        return builder.build();
+        return new DTOTarget(interfaceType, properties);
     }
 }

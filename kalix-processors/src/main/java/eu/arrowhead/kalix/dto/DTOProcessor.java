@@ -8,7 +8,6 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
-import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -24,6 +23,7 @@ public class DTOProcessor extends AbstractProcessor {
     private Elements elementUtils;
 
     private DTOTargetFactory targetFactory;
+    private DTOSpecificationFactory specificationFactory;
 
     @Override
     public synchronized void init(final ProcessingEnvironment processingEnv) {
@@ -34,6 +34,9 @@ public class DTOProcessor extends AbstractProcessor {
         elementUtils = processingEnv.getElementUtils();
 
         targetFactory = new DTOTargetFactory(elementUtils, processingEnv.getTypeUtils());
+        specificationFactory = new DTOSpecificationFactory(
+            new DTOSpecificationFormatJSON()
+        );
     }
 
     @Override
@@ -45,21 +48,34 @@ public class DTOProcessor extends AbstractProcessor {
             final var interfaceTypes = findAnnotatedInterfaces(roundEnv);
             for (final var interfaceType : interfaceTypes) {
                 final var target = targetFactory.createFromInterface(interfaceType);
-/*
+                final var specification = specificationFactory.createForTarget(target);
+
                 final var packageName = elementUtils.getPackageOf(interfaceType)
                     .getQualifiedName().toString();
-                JavaFile.builder(packageName, dtoClassSpec)
+
+                JavaFile.builder(packageName, specification.implementation())
                     .indent("    ").build()
-                    .writeTo(filer);*/
+                    .writeTo(filer);
+
+                JavaFile.builder(packageName, specification.builder())
+                    .indent("    ").build()
+                    .writeTo(filer);
+            }
+            if (interfaceTypes.size() == 0) {
+                for (final var utility : specificationFactory.utilitySpecifications()) {
+                    JavaFile.builder(utility.packageName(), utility.typeSpec())
+                        .indent("    ").build()
+                        .writeTo(filer);
+                }
             }
         }
         catch (final DTOException e) {
             messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage(), e.offendingElement());
         }
-        /*catch (final IOException exception) {
+        catch (final IOException exception) {
             messager.printMessage(Diagnostic.Kind.ERROR, "@Readable/@Writable " +
                 "class could not be generated; reason: " + exception);
-        }*/
+        }
         return true;
     }
 

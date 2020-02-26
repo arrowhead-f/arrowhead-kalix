@@ -2,6 +2,7 @@ package eu.arrowhead.kalix.dto;
 
 import eu.arrowhead.kalix.dto.types.DTOType;
 
+import javax.lang.model.type.TypeMirror;
 import java.util.Map;
 import java.util.Objects;
 
@@ -28,6 +29,10 @@ public class DTOProperty {
 
     public DTOType type() {
         return type;
+    }
+
+    public TypeMirror typeMirror() {
+        return type.type();
     }
 
     public boolean isOptional() {

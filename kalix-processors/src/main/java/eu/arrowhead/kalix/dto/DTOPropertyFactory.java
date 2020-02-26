@@ -90,22 +90,22 @@ public class DTOPropertyFactory {
         }
         if (type.getKind() == TypeKind.ARRAY) {
             return builder
-                .type(toArrayType(type))
+                .type(toArrayType(method, type))
                 .isOptional(false)
                 .build();
         }
 
-        if (typeUtils.isSameType(typeUtils.erasure(type), optionalType)) {
+        if (typeUtils.isAssignable(typeUtils.erasure(type), optionalType)) {
             final var declaredType = (DeclaredType) type;
             final var argumentType = declaredType.getTypeArguments().get(0);
             return builder
-                .type(resolveType(argumentType))
+                .type(resolveType(method, argumentType))
                 .isOptional(true)
                 .build();
         }
 
         return builder
-            .type(resolveType(type))
+            .type(resolveType(method, type))
             .isOptional(false)
             .build();
     }
@@ -119,9 +119,12 @@ public class DTOPropertyFactory {
         return formatNames;
     }
 
-    private DTOType resolveType(final TypeMirror type) throws DTOException {
+    private DTOType resolveType(final ExecutableElement method, final TypeMirror type) throws DTOException {
+        if (type.getKind().isPrimitive()) {
+            return toPrimitiveType(type);
+        }
         if (type.getKind() == TypeKind.ARRAY) {
-            return toArrayType(type);
+            return toArrayType(method, type);
         }
         if (typeUtils.isSameType(booleanType, type) ||
             typeUtils.isSameType(byteType, type) ||
@@ -137,11 +140,11 @@ public class DTOPropertyFactory {
         if (typeUtils.asElement(type).getKind() == ElementKind.ENUM) {
             return toEnumType(type);
         }
-        if (typeUtils.isSameType(listType, typeUtils.erasure(type))) {
-            return toListType(type);
+        if (typeUtils.isAssignable(typeUtils.erasure(type), listType)) {
+            return toListType(method, type);
         }
-        if (typeUtils.isSameType(mapType, typeUtils.erasure(type))) {
-            return toMapType(type);
+        if (typeUtils.isAssignable(typeUtils.erasure(type), mapType)) {
+            return toMapType(method, type);
         }
         if (typeUtils.isSameType(stringType, type)) {
             return toStringType(type);
@@ -149,7 +152,7 @@ public class DTOPropertyFactory {
         if (isEnumLike(type)) {
             return toEnumLikeType(type);
         }
-        return toInterfaceType(type);
+        return toInterfaceType(method, type);
     }
 
     private boolean isEnumLike(final TypeMirror type) {
@@ -193,34 +196,35 @@ public class DTOPropertyFactory {
         return hasValueOf && hasToString;
     }
 
-    private DTOArray toArrayType(final TypeMirror type) throws DTOException {
+    private DTOArray toArrayType(final ExecutableElement method, final TypeMirror type) throws DTOException {
         final var arrayType = (ArrayType) type;
-        final var element = resolveType(arrayType.getComponentType());
+        final var element = resolveType(method, arrayType.getComponentType());
         return new DTOArray(arrayType, element);
     }
 
-    private DTOInterface toInterfaceType(final TypeMirror type) throws DTOException {
+    private DTOInterface toInterfaceType(final ExecutableElement method, final TypeMirror type) throws DTOException {
         final var declaredType = (DeclaredType) type;
+        final var element = declaredType.asElement();
 
-        final var readable = type.getAnnotation(Readable.class);
-        final var writable = type.getAnnotation(Writable.class);
+        final var readable = element.getAnnotation(Readable.class);
+        final var writable = element.getAnnotation(Writable.class);
 
         if (readable == null && writable == null) {
-            final var element = declaredType.asElement();
             if (typeUtils.isAssignable(type, readableDTOType) ||
                 typeUtils.isAssignable(type, writableDTOType)
             ) {
-                throw new DTOException(element, "Generated DTO classes may " +
+                throw new DTOException(method, "Generated DTO classes may " +
                     "not be used in interfaces annotated with @Readable or " +
                     "@Writable; rather use the interface types from which " +
                     "those DTO classes were generated");
             }
-            throw new DTOException(element, "Getter return type must be a" +
+            throw new DTOException(method, "Getter return type must be a " +
                 "primitive, a boxed primitive, a String, an array (T[]), " +
                 "a List<T>, a Map<K, V>, an enum, an enum-like class, which " +
-                "overrides toString() and has a public static" +
+                "overrides toString() and has a public static " +
                 "valueOf(String) method, or be annotated with @Readable " +
-                "and/or @Writable");
+                "and/or @Writable; if an array, list or map, their " +
+                "parameters must conform to the same requirements");
         }
 
         final var readableFormats = readable != null ? readable.value() : new Format[0];
@@ -237,22 +241,21 @@ public class DTOPropertyFactory {
         return new DTOEnumLike((DeclaredType) type);
     }
 
-    private DTOList toListType(final TypeMirror type) throws DTOException {
+    private DTOList toListType(final ExecutableElement method, final TypeMirror type) throws DTOException {
         final var declaredType = (DeclaredType) type;
-        final var element = resolveType(declaredType.getTypeArguments().get(0));
+        final var element = resolveType(method, declaredType.getTypeArguments().get(0));
         return new DTOList(declaredType, element);
     }
 
-    private DTOMap toMapType(final TypeMirror type) throws DTOException {
+    private DTOMap toMapType(final ExecutableElement method, final TypeMirror type) throws DTOException {
         final var declaredType = (DeclaredType) type;
         final var typeArguments = declaredType.getTypeArguments();
-        final var key = resolveType(typeArguments.get(0));
+        final var key = resolveType(method, typeArguments.get(0));
         if (key.isCollection() || key instanceof DTOInterface) {
-            throw new DTOException(typeUtils.asElement(key.type()), "Only " +
-                "primitives, boxed primitives, enums, enum-likes and " +
-                "strings may be used as Map keys");
+            throw new DTOException(method, "Only boxed primitives, enums, " +
+                "enum-likes and strings may be used as Map keys");
         }
-        final var value = resolveType(typeArguments.get(1));
+        final var value = resolveType(method, typeArguments.get(1));
         return new DTOMap(declaredType, key, value);
     }
 

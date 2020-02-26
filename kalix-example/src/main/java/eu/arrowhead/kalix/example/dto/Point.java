@@ -3,6 +3,8 @@ package eu.arrowhead.kalix.example.dto;
 import eu.arrowhead.kalix.dto.*;
 import eu.arrowhead.kalix.dto.Readable;
 
+import java.util.Optional;
+
 /**
  * A point in 2D space.
  */
@@ -13,7 +15,7 @@ public interface Point {
      * @return X-coordinate.
      */
     @NameJSON("_x")
-    Integer x();
+    int x();
 
     /**
      * @return Y-coordinate, if any.
