@@ -7,13 +7,10 @@ import eu.arrowhead.kalix.dto.json.JSONType;
 import eu.arrowhead.kalix.dto.json.JSONWriter;
 import eu.arrowhead.kalix.dto.types.*;
 import eu.arrowhead.kalix.dto.util.ByteBufferPutCache;
-import eu.arrowhead.kalix.dto.util.HashCodes;
 
 import javax.lang.model.element.Modifier;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
     private final ByteBufferPutCache putCache = new ByteBufferPutCache("target");
@@ -79,35 +76,19 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
                     "    if (token.type() != $3T.STRING) {\n" +
                     "        error = \"Expected string key\"; break error;\n" +
                     "    }\n" +
-                    "    final var name = token.readStringFrom(source);\n",
+                    "    final var name = token.readStringFrom(source);\n" +
+                    "    switch (name) {\n",
                 ReadException.class, Format.class, JSONType.class,
                 target.interfaceType().simpleName());
 
-        findSmallestUniqueHashCodesForTheNamesOf(target.properties()).ifPresentOrElse(unique -> {
-            final var properties = target.properties();
-            final var hashCodes = unique.hashCodes();
-            final var shiftRight = unique.shiftRight();
-
-            builder.addCode("    switch ((name.hashCode() >>> $L) & $L) {\n", shiftRight, unique.mask());
-
-            final var p1 = properties.size();
-            for (var p0 = 0; p0 < p1; ++p0) {
-                final var property = properties.get(p0);
-                builder.addCode("" +
-                    "    case $1L: if (!name.equals($2S)) { continue; }\n", hashCodes[p0], property.name());
-
-                builder.addCode("        break;\n");
-            }
-        }, () -> {
-            builder.addCode("    switch (name) {\n");
             for (final var property : target.properties()) {
                 builder.addCode("    case $S:\n", property.nameFor(Format.JSON));
 
                 builder.addCode("        break;\n");
             }
-        });
 
         builder.addCode("" +
+                "    default: /* Log debug? */ break;\n" +
                 "    }\n" +
                 "}\n" +
                 "return builder.build();\n" +
@@ -116,14 +97,6 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
             ReadException.class, Format.class);
 
         implementation.addMethod(builder.build());
-    }
-
-    private Optional<HashCodes.Unique> findSmallestUniqueHashCodesForTheNamesOf(final List<DTOProperty> properties) {
-        final var list = new ArrayList<String>(properties.size());
-        for (final var property : properties) {
-            list.add(property.nameFor(Format.JSON));
-        }
-        return HashCodes.findSmallestUniqueHashCodesFor(list);
     }
 
     private void implementWriteMethodFor(final DTOTarget target, final TypeSpec.Builder implementation) throws DTOException {
