@@ -1,10 +1,13 @@
 package eu.arrowhead.kalix.dto;
 
 import com.squareup.javapoet.*;
+import eu.arrowhead.kalix.dto.types.DtoDescriptor;
 import eu.arrowhead.kalix.dto.types.DtoInterface;
+import eu.arrowhead.kalix.dto.types.DtoList;
 import eu.arrowhead.kalix.dto.types.DtoPrimitiveUnboxed;
 
 import javax.lang.model.element.Modifier;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -34,6 +37,7 @@ public class DtoSpecificationFactory {
                 .build());
 
         target.properties().forEach(property -> {
+            final var descriptor = property.descriptor();
             final var name = property.name();
             final var type = property.type() instanceof DtoInterface
                 ? ClassName.bestGuess(((DtoInterface) property.type()).targetSimpleName())
@@ -52,13 +56,36 @@ public class DtoSpecificationFactory {
                 .build());
 
             builder.addField(FieldSpec.builder(type, name).build());
-            builder.addMethod(MethodSpec.methodBuilder(name)
+            final var fieldSetter = MethodSpec.methodBuilder(name)
                 .addModifiers(Modifier.PUBLIC)
-                .addParameter(ParameterSpec.builder(type, name, Modifier.FINAL).build())
+                .addParameter(type, name, Modifier.FINAL)
                 .returns(builderClassName)
                 .addStatement("this.$1N = $1N", name)
-                .addStatement("return this")
-                .build());
+                .addStatement("return this");
+
+            if (descriptor == DtoDescriptor.ARRAY) {
+                fieldSetter.varargs();
+            }
+
+            builder.addMethod(fieldSetter.build());
+
+            if (descriptor == DtoDescriptor.LIST) {
+                final var element = ((DtoList) property.type()).element();
+                if (!element.descriptor().isCollection()) {
+                    final var elementType = element instanceof DtoInterface
+                        ? ClassName.bestGuess(((DtoInterface) element).targetSimpleName())
+                        : TypeName.get(element.asTypeMirror());
+
+                    builder.addMethod(MethodSpec.methodBuilder(name)
+                        .addModifiers(Modifier.PUBLIC)
+                        .addParameter(ArrayTypeName.of(elementType), name, Modifier.FINAL)
+                        .varargs()
+                        .returns(builderClassName)
+                        .addStatement("this.$1N = $2T.asList($1N)", name, Arrays.class)
+                        .addStatement("return this")
+                        .build());
+                }
+            }
 
             if (property.isOptional() || property.type() instanceof DtoPrimitiveUnboxed) {
                 constructor.addStatement("this.$1N = builder.$1N", name);

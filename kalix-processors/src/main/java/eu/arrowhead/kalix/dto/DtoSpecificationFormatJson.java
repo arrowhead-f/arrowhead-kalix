@@ -377,10 +377,14 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
         final var p1 = properties.size();
         for (var p0 = 0; p0 < p1; ++p0) {
             final var property = properties.get(p0);
+            final var isOptional = property.isOptional();
             try {
-                if (property.isOptional()) {
-                    putCache.addPutIfNotEmpty(builder);
-                    builder.addCode("if ($N != null) {\n", property.name());
+                if (p0 != 0) {
+                    if (isOptional) {
+                        putCache.addPutIfNotEmpty(builder);
+                        builder.addCode("if ($N != null) {\n", property.name());
+                    }
+                    putCache.append(',');
                 }
 
                 putCache
@@ -390,11 +394,7 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
 
                 writeValue(property.type(), property.name(), builder);
 
-                if (p0 + 1 != p1) {
-                    putCache.append(',');
-                }
-
-                if (property.isOptional()) {
+                if (isOptional) {
                     putCache.addPutIfNotEmpty(builder);
                     builder.addCode("}\n");
                 }

@@ -16,4 +16,6 @@ public interface Shape {
     Map<String, Map<String, Integer>> properties();
     List<List<Byte>> attributes();
     int[] attributes2();
+    boolean[] bools();
+    Optional<List<String>> strangs();
 }

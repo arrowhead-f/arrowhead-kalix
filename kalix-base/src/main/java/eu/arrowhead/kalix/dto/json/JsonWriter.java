@@ -10,8 +10,8 @@ import java.nio.charset.StandardCharsets;
 public final class JsonWriter {
     private JsonWriter() {}
 
-    private static byte[] TRUE = new byte[]{'T', 'R', 'U', 'E'};
-    private static byte[] FALSE = new byte[]{'F', 'A', 'L', 'S', 'E'};
+    private static byte[] TRUE = new byte[]{'t', 'r', 'u', 'e'};
+    private static byte[] FALSE = new byte[]{'f', 'a', 'l', 's', 'e'};
     private static byte[] HEX = new byte[]{
         '0', '1', '2', '3', '4', '5', '6', '7',
         '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
