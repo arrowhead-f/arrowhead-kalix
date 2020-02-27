@@ -6,13 +6,14 @@ import eu.arrowhead.kalix.dto.Format;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-public final class JSONToken {
-    final JSONType type;
+@SuppressWarnings("unused")
+public final class JsonToken {
+    final JsonType type;
 
     int begin, end;
     int nChildren;
 
-    public JSONType type() {
+    public JsonType type() {
         return type;
     }
 
@@ -32,7 +33,7 @@ public final class JSONToken {
         return nChildren;
     }
 
-    JSONToken(final JSONType type, final int begin, final int end, final int nChildren) {
+    JsonToken(final JsonType type, final int begin, final int end, final int nChildren) {
         assert begin >= 0 && begin < end && nChildren >= 0;
 
         this.type = type;
@@ -41,25 +42,70 @@ public final class JSONToken {
         this.nChildren = nChildren;
     }
 
-    public double readNumberFrom(final ByteBuffer source) throws ReadException {
+    public boolean getBoolean() throws ReadException {
+        switch (type) {
+        case TRUE: return true;
+        case FALSE: return false;
+        default:
+            throw new ReadException(Format.JSON, "Bad boolean", "", begin);
+        }
+    }
+
+    public byte getByte(final ByteBuffer source) {
         final var buffer = new byte[length()];
         source.position(begin).get(buffer);
         final var string = new String(buffer, StandardCharsets.ISO_8859_1);
-        error:
-        try {
-            if (string.length() > 2 && string.charAt(0) == '0') {
-                final var x = string.charAt(1);
-                if (x == 'x' || x == 'X') {
-                    break error;
-                }
-            }
-            return Double.parseDouble(string);
-        }
-        catch (final NumberFormatException ignored) {}
-        throw new ReadException(Format.JSON, "Bad number", string, begin);
+        return Byte.parseByte(requireNotHex(string));
     }
 
-    public String readStringFrom(final ByteBuffer source) throws ReadException {
+    private static String requireNotHex(final String string) {
+        if (string.length() > 2 && string.charAt(0) == '0') {
+            final var x = string.charAt(1);
+            if (x == 'x' || x == 'X') {
+                throw new NumberFormatException("Unexpected x");
+            }
+        }
+        return string;
+    }
+
+    public double getDoubleFrom(final ByteBuffer source) {
+        final var buffer = new byte[length()];
+        source.position(begin).get(buffer);
+        final var string = new String(buffer, StandardCharsets.ISO_8859_1);
+        return Double.parseDouble(requireNotHex(string));
+    }
+
+    public float getFloatFrom(final ByteBuffer source) {
+        final var buffer = new byte[length()];
+        source.position(begin).get(buffer);
+        final var string = new String(buffer, StandardCharsets.ISO_8859_1);
+        return Float.parseFloat(requireNotHex(string));
+    }
+
+    public int getInteger(final ByteBuffer source) {
+        final var buffer = new byte[length()];
+        source.position(begin).get(buffer);
+        final var string = new String(buffer, StandardCharsets.ISO_8859_1);
+        return Integer.parseInt(requireNotHex(string));
+    }
+
+
+    public long getLong(final ByteBuffer source) {
+        final var buffer = new byte[length()];
+        source.position(begin).get(buffer);
+        final var string = new String(buffer, StandardCharsets.ISO_8859_1);
+        return Long.parseLong(requireNotHex(string));
+    }
+
+
+    public short getShort(final ByteBuffer source) {
+        final var buffer = new byte[length()];
+        source.position(begin).get(buffer);
+        final var string = new String(buffer, StandardCharsets.ISO_8859_1);
+        return Short.parseShort(requireNotHex(string));
+    }
+
+    public String getStringFrom(final ByteBuffer source) throws ReadException {
         source.position(begin);
 
         final var buffer = new byte[length()];

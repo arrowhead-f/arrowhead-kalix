@@ -2,23 +2,23 @@ package eu.arrowhead.kalix.dto.types;
 
 import javax.lang.model.type.ArrayType;
 
-public class DTOArray implements DTOArrayOrList {
+public class DtoArray implements DtoArrayOrList {
     private final ArrayType type;
-    private final DTOType element;
+    private final DtoType element;
 
-    public DTOArray(final ArrayType type, final DTOType element) {
+    public DtoArray(final ArrayType type, final DtoType element) {
         this.type = type;
         this.element = element;
     }
 
     @Override
-    public DTOType element() {
+    public DtoType element() {
         return element;
     }
 
     @Override
-    public DTODescriptor descriptor() {
-        return DTODescriptor.ARRAY;
+    public DtoDescriptor descriptor() {
+        return DtoDescriptor.ARRAY;
     }
 
     @Override

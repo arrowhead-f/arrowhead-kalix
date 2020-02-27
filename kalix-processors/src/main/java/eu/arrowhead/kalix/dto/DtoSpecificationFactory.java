@@ -1,21 +1,21 @@
 package eu.arrowhead.kalix.dto;
 
 import com.squareup.javapoet.*;
-import eu.arrowhead.kalix.dto.types.DTOInterface;
-import eu.arrowhead.kalix.dto.types.DTOPrimitiveUnboxed;
+import eu.arrowhead.kalix.dto.types.DtoInterface;
+import eu.arrowhead.kalix.dto.types.DtoPrimitiveUnboxed;
 
 import javax.lang.model.element.Modifier;
 import java.util.Objects;
 import java.util.Optional;
 
-public class DTOSpecificationFactory {
-    private final DTOSpecificationFormat[] specificationFormats;
+public class DtoSpecificationFactory {
+    private final DtoSpecificationFormat[] specificationFormats;
 
-    public DTOSpecificationFactory(final DTOSpecificationFormat... specificationFormats) {
+    public DtoSpecificationFactory(final DtoSpecificationFormat... specificationFormats) {
         this.specificationFormats = specificationFormats;
     }
 
-    public DTOTargetSpecification createForTarget(final DTOTarget target) throws DTOException {
+    public DtoTargetSpecification createForTarget(final DtoTarget target) throws DtoException {
         final var interfaceType = target.interfaceType();
 
         final var implementation = TypeSpec.classBuilder(target.simpleName())
@@ -35,8 +35,8 @@ public class DTOSpecificationFactory {
 
         target.properties().forEach(property -> {
             final var name = property.name();
-            final var type = property.type() instanceof DTOInterface
-                ? ClassName.bestGuess(((DTOInterface) property.type()).simpleNameDTO())
+            final var type = property.type() instanceof DtoInterface
+                ? ClassName.bestGuess(((DtoInterface) property.type()).targetSimpleName())
                 : TypeName.get(property.asTypeMirror());
 
             implementation.addField(FieldSpec.builder(type, name, Modifier.PRIVATE).build());
@@ -60,7 +60,7 @@ public class DTOSpecificationFactory {
                 .addStatement("return this")
                 .build());
 
-            if (property.isOptional() || property.type() instanceof DTOPrimitiveUnboxed) {
+            if (property.isOptional() || property.type() instanceof DtoPrimitiveUnboxed) {
                 constructor.addStatement("this.$1N = builder.$1N", name);
             }
             else {
@@ -77,7 +77,7 @@ public class DTOSpecificationFactory {
             }
         }
 
-        return new DTOTargetSpecification.Builder(target)
+        return new DtoTargetSpecification.Builder(target)
             .implementation(implementation
                 .addMethod(constructor.build())
                 .build())

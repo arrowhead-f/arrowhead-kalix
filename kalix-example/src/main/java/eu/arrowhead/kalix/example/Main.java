@@ -39,7 +39,7 @@ public class Main {
             .build();
 
         final var byteBuffer = ByteBuffer.allocate(4096);
-        shape.writeJSON(byteBuffer);
+        shape.writeJson(byteBuffer);
         final var text = new String(byteBuffer.array(), 0, byteBuffer.position(), StandardCharsets.UTF_8);
 
         System.out.println(text);

@@ -1,22 +1,20 @@
 package eu.arrowhead.kalix.dto;
 
-import eu.arrowhead.kalix.dto.types.DTOType;
+import eu.arrowhead.kalix.dto.types.DtoType;
 
-import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import java.util.Map;
 import java.util.Objects;
 
-public class DTOProperty {
+public class DtoProperty {
     private final ExecutableElement parentElement;
     private final String name;
     private final Map<Format, String> formatNames;
-    private final DTOType type;
+    private final DtoType type;
     private final boolean isOptional;
 
-    private DTOProperty(final Builder builder) {
+    private DtoProperty(final Builder builder) {
         parentElement = Objects.requireNonNull(builder.parentElement, "parentElement");
         name = Objects.requireNonNull(builder.name, "name");
         formatNames = Objects.requireNonNull(builder.formatNames, "formatNames");
@@ -36,7 +34,7 @@ public class DTOProperty {
         return formatNames.getOrDefault(format, name);
     }
 
-    public DTOType type() {
+    public DtoType type() {
         return type;
     }
 
@@ -52,7 +50,7 @@ public class DTOProperty {
         private ExecutableElement parentElement;
         private String name;
         private Map<Format, String> formatNames;
-        private DTOType type;
+        private DtoType type;
         private boolean isOptional;
 
         public Builder parentElement(final ExecutableElement parentElement) {
@@ -70,7 +68,7 @@ public class DTOProperty {
             return this;
         }
 
-        public Builder type(final DTOType type) {
+        public Builder type(final DtoType type) {
             this.type = type;
             return this;
         }
@@ -80,8 +78,8 @@ public class DTOProperty {
             return this;
         }
 
-        public DTOProperty build() {
-            return new DTOProperty(this);
+        public DtoProperty build() {
+            return new DtoProperty(this);
         }
     }
 }

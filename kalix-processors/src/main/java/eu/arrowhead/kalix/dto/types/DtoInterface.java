@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.dto.types;
 
+import eu.arrowhead.kalix.dto.DtoTarget;
 import eu.arrowhead.kalix.dto.Format;
 
 import javax.lang.model.element.TypeElement;
@@ -9,15 +10,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class DTOInterface implements DTOType {
+public class DtoInterface implements DtoType {
     private final DeclaredType interfaceType;
     private final Set<Format> readableFormats;
     private final Set<Format> writableFormats;
     private final String simpleName;
-    private final String simpleNameDTO;
+    private final String targetSimpleName;
     private final Set<Format> formats;
 
-    public DTOInterface(
+    public DtoInterface(
         final DeclaredType interfaceType,
         final Format[] readableFormats,
         final Format[] writableFormats
@@ -28,7 +29,7 @@ public class DTOInterface implements DTOType {
 
         final TypeElement interfaceElement = (TypeElement) interfaceType.asElement();
         simpleName = interfaceElement.getSimpleName().toString();
-        simpleNameDTO = simpleName + "DTO";
+        targetSimpleName = simpleName + DtoTarget.NAME_SUFFIX;
         formats = new HashSet<>();
         formats.addAll(this.readableFormats);
         formats.addAll(this.writableFormats);
@@ -38,8 +39,8 @@ public class DTOInterface implements DTOType {
         return simpleName;
     }
 
-    public String simpleNameDTO() {
-        return simpleNameDTO;
+    public String targetSimpleName() {
+        return targetSimpleName;
     }
 
     public Set<Format> formats() {
@@ -47,8 +48,8 @@ public class DTOInterface implements DTOType {
     }
 
     @Override
-    public DTODescriptor descriptor() {
-        return DTODescriptor.INTERFACE;
+    public DtoDescriptor descriptor() {
+        return DtoDescriptor.INTERFACE;
     }
 
     @Override

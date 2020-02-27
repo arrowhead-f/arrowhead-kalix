@@ -2,6 +2,7 @@ package eu.arrowhead.kalix.example.dto;
 
 import eu.arrowhead.kalix.dto.*;
 import eu.arrowhead.kalix.dto.Readable;
+import eu.arrowhead.kalix.dto.json.JsonName;
 
 /**
  * A point in 2D space.
@@ -12,7 +13,7 @@ public interface Point {
     /**
      * @return X-coordinate.
      */
-    @NameJSON("_x")
+    @JsonName("_x")
     double x();
 
     /**

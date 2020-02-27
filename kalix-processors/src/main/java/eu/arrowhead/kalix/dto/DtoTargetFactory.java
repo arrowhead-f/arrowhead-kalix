@@ -1,6 +1,6 @@
 package eu.arrowhead.kalix.dto;
 
-import eu.arrowhead.kalix.dto.types.DTOInterface;
+import eu.arrowhead.kalix.dto.types.DtoInterface;
 
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -11,29 +11,30 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import java.util.ArrayList;
 
-public class DTOTargetFactory {
-    private final DTOPropertyFactory propertyFactory;
+public class DtoTargetFactory {
+    private final DtoPropertyFactory propertyFactory;
 
-    public DTOTargetFactory(final Elements elementUtils, final Types typeUtils) {
-        propertyFactory = new DTOPropertyFactory(elementUtils, typeUtils);
+    public DtoTargetFactory(final Elements elementUtils, final Types typeUtils) {
+        propertyFactory = new DtoPropertyFactory(elementUtils, typeUtils);
     }
 
-    public DTOTarget createFromInterface(final TypeElement interfaceElement) throws DTOException {
+    public DtoTarget createFromInterface(final TypeElement interfaceElement) throws DtoException {
         if (interfaceElement.getKind() != ElementKind.INTERFACE) {
-            throw new DTOException(interfaceElement, "Only interfaces may " +
+            throw new DtoException(interfaceElement, "Only interfaces may " +
                 "be annotated with @Readable and/or @Writable");
         }
         if (interfaceElement.getTypeParameters().size() != 0) {
-            throw new DTOException(interfaceElement, "@Readable/@Writable " +
+            throw new DtoException(interfaceElement, "@Readable/@Writable " +
                 "interfaces may not have type parameters");
         }
         if (interfaceElement.getInterfaces().size() != 0) {
-            throw new DTOException(interfaceElement, "@Readable/@Writable " +
+            throw new DtoException(interfaceElement, "@Readable/@Writable " +
                 "interfaces may not extend other interfaces");
         }
-        if (interfaceElement.getSimpleName().toString().endsWith("DTO")) {
-            throw new DTOException(interfaceElement, "@Readable/@Writable " +
-                "interfaces may not have names ending with \"DTO\"");
+        if (interfaceElement.getSimpleName().toString().endsWith(DtoTarget.NAME_SUFFIX)) {
+            throw new DtoException(interfaceElement, "@Readable/@Writable " +
+                "interfaces may not have names ending with \"" +
+                DtoTarget.NAME_SUFFIX + "\"");
         }
 
         final var readable = interfaceElement.getAnnotation(Readable.class);
@@ -42,16 +43,16 @@ public class DTOTargetFactory {
         final var writableFormats = writable != null ? writable.value() : new Format[0];
 
         if (readableFormats.length == 0 && writableFormats.length == 0) {
-            throw new DTOException(interfaceElement, "@Readable/@Writable " +
+            throw new DtoException(interfaceElement, "@Readable/@Writable " +
                 "interfaces must have at least one readable or writable " +
                 "format, specified as @Readable/@Writable annotation " +
                 "arguments");
         }
 
         final var declaredType = (DeclaredType) interfaceElement.asType();
-        final var interfaceType = new DTOInterface(declaredType, readableFormats, writableFormats);
+        final var interfaceType = new DtoInterface(declaredType, readableFormats, writableFormats);
 
-        final var properties = new ArrayList<DTOProperty>();
+        final var properties = new ArrayList<DtoProperty>();
         for (final var element : interfaceElement.getEnclosedElements()) {
             if (element.getEnclosingElement().getKind() != ElementKind.INTERFACE ||
                 element.getKind() != ElementKind.METHOD) {
@@ -66,6 +67,6 @@ public class DTOTargetFactory {
             properties.add(property);
         }
 
-        return new DTOTarget(interfaceType, properties);
+        return new DtoTarget(interfaceType, properties);
     }
 }

@@ -2,16 +2,16 @@ package eu.arrowhead.kalix.dto.types;
 
 import javax.lang.model.type.DeclaredType;
 
-public class DTOEnum implements DTOType {
+public class DtoEnum implements DtoType {
     private final DeclaredType type;
 
-    public DTOEnum(final DeclaredType type) {
+    public DtoEnum(final DeclaredType type) {
         this.type = type;
     }
 
     @Override
-    public DTODescriptor descriptor() {
-        return DTODescriptor.ENUM;
+    public DtoDescriptor descriptor() {
+        return DtoDescriptor.ENUM;
     }
 
     @Override

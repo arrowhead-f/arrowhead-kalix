@@ -1,4 +1,4 @@
-package eu.arrowhead.kalix.dto;
+package eu.arrowhead.kalix.dto.json;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,6 +7,6 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.METHOD})
-public @interface NameJSON {
+public @interface JsonName {
     String value();
 }

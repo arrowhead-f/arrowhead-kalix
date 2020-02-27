@@ -2,7 +2,7 @@ package eu.arrowhead.kalix.dto.types;
 
 import javax.lang.model.type.TypeKind;
 
-public enum DTODescriptor {
+public enum DtoDescriptor {
     ARRAY(0x1100),
     BOOLEAN_BOXED(0x0601),
     BOOLEAN_UNBOXED(0x0201),
@@ -28,7 +28,7 @@ public enum DTODescriptor {
 
     private final short mask;
 
-    DTODescriptor(final int mask) {
+    DtoDescriptor(final int mask) {
         this.mask = (short) mask;
     }
 
@@ -88,7 +88,7 @@ public enum DTODescriptor {
         return (mask & 0x0800) == 0x0800;
     }
 
-    public static DTODescriptor valueOf(final TypeKind typeKind) {
+    public static DtoDescriptor valueOf(final TypeKind typeKind) {
         switch (typeKind) {
         case BOOLEAN: return BOOLEAN_UNBOXED;
         case BYTE: return BYTE_UNBOXED;

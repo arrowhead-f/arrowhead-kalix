@@ -1,10 +1,7 @@
 package eu.arrowhead.kalix.dto;
 
 import com.squareup.javapoet.*;
-import eu.arrowhead.kalix.dto.json.JSONReader;
-import eu.arrowhead.kalix.dto.json.JSONToken;
-import eu.arrowhead.kalix.dto.json.JSONType;
-import eu.arrowhead.kalix.dto.json.JSONWriter;
+import eu.arrowhead.kalix.dto.json.*;
 import eu.arrowhead.kalix.dto.types.*;
 import eu.arrowhead.kalix.dto.util.ByteBufferPutCache;
 
@@ -12,7 +9,7 @@ import javax.lang.model.element.Modifier;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
+public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
     private final ByteBufferPutCache putCache = new ByteBufferPutCache("target");
 
     private int level = 0;
@@ -23,35 +20,34 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
     }
 
     @Override
-    public void implementFor(final DTOTarget target, final TypeSpec.Builder implementation) throws DTOException {
+    public void implementFor(final DtoTarget target, final TypeSpec.Builder implementation) throws DtoException {
         if (target.interfaceType().isReadable(Format.JSON)) {
-            implementation.addSuperinterface(ReadableDTO.JSON.class);
             implementReadMethodsFor(target, implementation);
         }
         if (target.interfaceType().isWritable(Format.JSON)) {
-            implementation.addSuperinterface(WritableDTO.JSON.class);
+            implementation.addSuperinterface(JsonWritable.class);
             implementWriteMethodFor(target, implementation);
         }
     }
 
-    private void implementReadMethodsFor(final DTOTarget target, final TypeSpec.Builder implementation) {
+    private void implementReadMethodsFor(final DtoTarget target, final TypeSpec.Builder implementation) {
         final var targetClassName = ClassName.bestGuess(target.simpleName());
 
-        implementation.addMethod(MethodSpec.methodBuilder("readJSON")
+        implementation.addMethod(MethodSpec.methodBuilder("readJson")
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
             .returns(targetClassName)
             .addParameter(ParameterSpec.builder(TypeName.get(ByteBuffer.class), "source")
                 .addModifiers(Modifier.FINAL)
                 .build())
             .addException(ReadException.class)
-            .addStatement("final var tokens = $T.tokenize(source)", JSONReader.class)
-            .addStatement("return readJSON(tokens, 0, source)")
+            .addStatement("final var tokens = $T.tokenize(source)", JsonReader.class)
+            .addStatement("return readJson(tokens, 0, source)")
             .build());
 
-        final var builder = MethodSpec.methodBuilder("readJSON")
+        final var builder = MethodSpec.methodBuilder("readJson")
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
             .returns(targetClassName)
-            .addParameter(ParameterSpec.builder(ParameterizedTypeName.get(List.class, JSONToken.class), "tokens")
+            .addParameter(ParameterSpec.builder(ParameterizedTypeName.get(List.class, JsonToken.class), "tokens")
                 .addModifiers(Modifier.FINAL)
                 .build())
             .addParameter(ParameterSpec.builder(TypeName.INT, "offset").build())
@@ -76,16 +72,16 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
                     "    if (token.type() != $3T.STRING) {\n" +
                     "        error = \"Expected string key\"; break error;\n" +
                     "    }\n" +
-                    "    final var name = token.readStringFrom(source);\n" +
+                    "    final var name = token.getStringFrom(source);\n" +
                     "    switch (name) {\n",
-                ReadException.class, Format.class, JSONType.class,
+                ReadException.class, Format.class, JsonType.class,
                 target.interfaceType().simpleName());
 
-            for (final var property : target.properties()) {
-                builder.addCode("    case $S:\n", property.nameFor(Format.JSON));
+        for (final var property : target.properties()) {
+            builder.addCode("    case $S:\n", property.nameFor(Format.JSON));
 
-                builder.addCode("        break;\n");
-            }
+            builder.addCode("        break;\n");
+        }
 
         builder.addCode("" +
                 "    default: /* Log debug? */ break;\n" +
@@ -93,14 +89,14 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
                 "}\n" +
                 "return builder.build();\n" +
                 "}\n" +
-                "throw new $1T($2T.JSON, error, token.readStringFrom(source), token.begin());\n",
+                "throw new $1T($2T.JSON, error, token.getStringFrom(source), token.begin());\n",
             ReadException.class, Format.class);
 
         implementation.addMethod(builder.build());
     }
 
-    private void implementWriteMethodFor(final DTOTarget target, final TypeSpec.Builder implementation) throws DTOException {
-        final var builder = MethodSpec.methodBuilder("writeJSON")
+    private void implementWriteMethodFor(final DtoTarget target, final TypeSpec.Builder implementation) throws DtoException {
+        final var builder = MethodSpec.methodBuilder("writeJson")
             .addAnnotation(Override.class)
             .addModifiers(Modifier.PUBLIC)
             .addException(WriteException.class)
@@ -138,7 +134,7 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
                 }
             }
             catch (final IllegalStateException exception) {
-                throw new DTOException(property.parentElement(), exception.getMessage());
+                throw new DtoException(property.parentElement(), exception.getMessage());
             }
         }
 
@@ -147,7 +143,7 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
         implementation.addMethod(builder.build());
     }
 
-    private void encodeValue(final DTOType type, final String name, final MethodSpec.Builder builder) {
+    private void encodeValue(final DtoType type, final String name, final MethodSpec.Builder builder) {
         final var descriptor = type.descriptor();
         switch (descriptor) {
         case ARRAY:
@@ -184,13 +180,13 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
     private void encodeInterface(final String name, final MethodSpec.Builder builder) {
         putCache.addPutIfNotEmpty(builder);
 
-        builder.addStatement("$N.writeJSON(target)", name);
+        builder.addStatement("$N.writeJson(target)", name);
     }
 
-    private void encodeMap(final DTOType type, final String name, final MethodSpec.Builder builder) {
+    private void encodeMap(final DtoType type, final String name, final MethodSpec.Builder builder) {
         putCache.append('{').addPutIfNotEmpty(builder);
 
-        final var map = (DTOMap) type;
+        final var map = (DtoMap) type;
         builder.addCode("{" +
                 "final var entrySet$1L = $2N.entrySet();\n" +
                 "final var size$1L = entrySet$1L.size();\n" +
@@ -217,10 +213,10 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
         putCache.append('}');
     }
 
-    private void encodeArray(final DTOType type, final String name, final MethodSpec.Builder builder) {
+    private void encodeArray(final DtoType type, final String name, final MethodSpec.Builder builder) {
         putCache.append('[').addPut(builder);
 
-        if (type.descriptor() == DTODescriptor.ARRAY) {
+        if (type.descriptor() == DtoDescriptor.ARRAY) {
             builder.addCode("{final var size$L = $N.length;\n", level, name);
         }
         else {
@@ -233,7 +229,7 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
 
         final var itemName = "item" + level;
         level += 1;
-        encodeValue(((DTOArrayOrList) type).element(), itemName, builder);
+        encodeValue(((DtoArrayOrList) type).element(), itemName, builder);
         level -= 1;
 
         putCache.addPutIfNotEmpty(builder);
@@ -247,11 +243,11 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
 
     private void encodeEnum(final String name, final MethodSpec.Builder builder) {
         putCache.append('"').addPut(builder);
-        builder.addStatement("$T.writeTo($N.toString(), target)", JSONWriter.class, name);
+        builder.addStatement("$T.writeTo($N.toString(), target)", JsonWriter.class, name);
         putCache.append('"');
     }
 
-    private void encodePrimitive(final DTOType type, final String name, final MethodSpec.Builder builder) {
+    private void encodePrimitive(final DtoType type, final String name, final MethodSpec.Builder builder) {
         if (type.descriptor().isCharacter()) {
             throw new IllegalStateException("The char and Characters types " +
                 "cannot be represented as JSON; either change the type or " +
@@ -259,12 +255,12 @@ public class DTOSpecificationFormatJSON implements DTOSpecificationFormat {
                 "the @Readable annotation");
         }
         putCache.addPutIfNotEmpty(builder);
-        builder.addStatement("$T.writeTo($N, target)", JSONWriter.class, name);
+        builder.addStatement("$T.writeTo($N, target)", JsonWriter.class, name);
     }
 
     private void encodeString(final String name, final MethodSpec.Builder builder) {
         putCache.append('"').addPut(builder);
-        builder.addStatement("$T.writeTo($N, target)", JSONWriter.class, name);
+        builder.addStatement("$T.writeTo($N, target)", JsonWriter.class, name);
         putCache.append('"');
     }
 }

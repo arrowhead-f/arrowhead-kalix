@@ -2,30 +2,30 @@ package eu.arrowhead.kalix.dto.types;
 
 import javax.lang.model.type.DeclaredType;
 
-public class DTOMap implements DTOType {
+public class DtoMap implements DtoType {
     private final DeclaredType type;
-    private final DTOType key;
-    private final DTOType value;
+    private final DtoType key;
+    private final DtoType value;
 
-    public DTOMap(final DeclaredType type, final DTOType key, final DTOType value) {
-        assert !key.descriptor().isCollection() && !(key instanceof DTOInterface);
+    public DtoMap(final DeclaredType type, final DtoType key, final DtoType value) {
+        assert !key.descriptor().isCollection() && !(key instanceof DtoInterface);
 
         this.type = type;
         this.key = key;
         this.value = value;
     }
 
-    public DTOType key() {
+    public DtoType key() {
         return key;
     }
 
-    public DTOType value() {
+    public DtoType value() {
         return value;
     }
 
     @Override
-    public DTODescriptor descriptor() {
-        return DTODescriptor.MAP;
+    public DtoDescriptor descriptor() {
+        return DtoDescriptor.MAP;
     }
 
     @Override

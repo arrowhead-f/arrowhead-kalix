@@ -4,18 +4,18 @@ import com.squareup.javapoet.TypeSpec;
 
 import java.util.Objects;
 
-public class DTOTargetSpecification {
-    private final DTOTarget target;
+public class DtoTargetSpecification {
+    private final DtoTarget target;
     private final TypeSpec implementation;
     private final TypeSpec builder;
 
-    public DTOTargetSpecification(final Builder builder) {
+    public DtoTargetSpecification(final Builder builder) {
         this.target = builder.target;
         this.implementation = Objects.requireNonNull(builder.implementation);
         this.builder = Objects.requireNonNull(builder.builder);
     }
 
-    public DTOTarget target() {
+    public DtoTarget target() {
         return target;
     }
 
@@ -28,12 +28,12 @@ public class DTOTargetSpecification {
     }
 
     public static class Builder {
-        private final DTOTarget target;
+        private final DtoTarget target;
 
         private TypeSpec implementation;
         private TypeSpec builder;
 
-        public Builder(final DTOTarget target) {
+        public Builder(final DtoTarget target) {
             this.target = target;
         }
 
@@ -47,8 +47,8 @@ public class DTOTargetSpecification {
             return this;
         }
 
-        public DTOTargetSpecification build() {
-            return new DTOTargetSpecification(this);
+        public DtoTargetSpecification build() {
+            return new DtoTargetSpecification(this);
         }
     }
 }

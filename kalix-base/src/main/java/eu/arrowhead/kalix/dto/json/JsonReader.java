@@ -8,29 +8,30 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class JSONReader {
+@SuppressWarnings("unused")
+public final class JsonReader {
     private final ByteBuffer source;
-    private final ArrayList<JSONToken> tokens;
+    private final ArrayList<JsonToken> tokens;
 
     private int p0;
     private ReadException error = null;
 
-    private JSONReader(final ByteBuffer source) {
+    private JsonReader(final ByteBuffer source) {
         this.source = source;
         this.tokens = new ArrayList<>(source.remaining() / 16);
         this.p0 = source.position();
     }
 
-    public static List<JSONToken> tokenize(final ByteBuffer source) throws ReadException {
-        final var tokenizer = new JSONReader(source);
+    public static List<JsonToken> tokenize(final ByteBuffer source) throws ReadException {
+        final var tokenizer = new JsonReader(source);
         if (tokenizer.tokenizeRoot()) {
             return tokenizer.tokens;
         }
         throw tokenizer.error;
     }
 
-    private JSONToken collectCandidate(final JSONType type) {
-        final var token = new JSONToken(type, p0, source.position(), 0);
+    private JsonToken collectCandidate(final JsonType type) {
+        final var token = new JsonToken(type, p0, source.position(), 0);
         tokens.add(token);
         discardCandidate();
         return token;
@@ -128,7 +129,7 @@ public final class JSONReader {
     }
 
     private boolean tokenizeObject() {
-        final var object = collectCandidate(JSONType.OBJECT);
+        final var object = collectCandidate(JsonType.OBJECT);
 
         discardWhitespace();
 
@@ -180,7 +181,7 @@ public final class JSONReader {
     }
 
     private boolean tokenizeArray() {
-        final var array = collectCandidate(JSONType.ARRAY);
+        final var array = collectCandidate(JsonType.ARRAY);
 
         discardWhitespace();
 
@@ -214,7 +215,7 @@ public final class JSONReader {
         while (true) {
             byte b = next();
             if (b == '\"') {
-                final var token = collectCandidate(JSONType.STRING);
+                final var token = collectCandidate(JsonType.STRING);
 
                 // Remove leading and trailing double quotes `"` from token.
                 token.begin += 1;
@@ -241,7 +242,7 @@ public final class JSONReader {
             case '\r':
             case '\n':
             case ' ':
-                collectCandidate(JSONType.NUMBER);
+                collectCandidate(JsonType.NUMBER);
                 return true;
 
             default:
@@ -263,7 +264,7 @@ public final class JSONReader {
             if (next() != 'e') {
                 break error;
             }
-            collectCandidate(JSONType.TRUE);
+            collectCandidate(JsonType.TRUE);
             return true;
         }
         expandAndSaveCandidateAsError("Bad true token");
@@ -285,7 +286,7 @@ public final class JSONReader {
             if (next() != 'e') {
                 break error;
             }
-            collectCandidate(JSONType.FALSE);
+            collectCandidate(JsonType.FALSE);
             return true;
         }
         expandAndSaveCandidateAsError("Bad false token");
@@ -304,7 +305,7 @@ public final class JSONReader {
             if (next() != 'l') {
                 break error;
             }
-            collectCandidate(JSONType.NULL);
+            collectCandidate(JsonType.NULL);
             return true;
         }
         expandAndSaveCandidateAsError("Bad null token");

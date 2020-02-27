@@ -2,16 +2,16 @@ package eu.arrowhead.kalix.dto.types;
 
 import javax.lang.model.type.DeclaredType;
 
-public class DTOString implements DTOType {
+public class DtoString implements DtoType {
     private final DeclaredType type;
 
-    public DTOString(final DeclaredType type) {
+    public DtoString(final DeclaredType type) {
         this.type = type;
     }
 
     @Override
-    public DTODescriptor descriptor() {
-        return DTODescriptor.STRING;
+    public DtoDescriptor descriptor() {
+        return DtoDescriptor.STRING;
     }
 
     @Override

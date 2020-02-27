@@ -1,7 +1,8 @@
 package eu.arrowhead.kalix.dto;
 
+import eu.arrowhead.kalix.dto.json.JsonName;
 import eu.arrowhead.kalix.dto.types.*;
-import eu.arrowhead.kalix.dto.types.DTOInterface;
+import eu.arrowhead.kalix.dto.types.DtoInterface;
 
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
@@ -11,7 +12,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class DTOPropertyFactory {
+public class DtoPropertyFactory {
     private final Types typeUtils;
 
     private final DeclaredType booleanType;
@@ -27,12 +28,9 @@ public class DTOPropertyFactory {
     private final DeclaredType shortType;
     private final DeclaredType stringType;
 
-    private final DeclaredType readableDTOType;
-    private final DeclaredType writableDTOType;
-
     private final Set<Modifier> publicStaticModifiers;
 
-    public DTOPropertyFactory(final Elements elementUtils, final Types typeUtils) {
+    public DtoPropertyFactory(final Elements elementUtils, final Types typeUtils) {
         this.typeUtils = typeUtils;
 
         booleanType = getDeclaredTypeOf(elementUtils, Boolean.class);
@@ -48,9 +46,6 @@ public class DTOPropertyFactory {
         shortType = getDeclaredTypeOf(elementUtils, Short.class);
         stringType = getDeclaredTypeOf(elementUtils, String.class);
 
-        readableDTOType = getDeclaredTypeOf(elementUtils, ReadableDTO.class);
-        writableDTOType = getDeclaredTypeOf(elementUtils, WritableDTO.class);
-
         publicStaticModifiers = Stream.of(Modifier.PUBLIC, Modifier.STATIC)
             .collect(Collectors.toSet());
     }
@@ -59,7 +54,7 @@ public class DTOPropertyFactory {
         return (DeclaredType) elementUtils.getTypeElement(class_.getCanonicalName()).asType();
     }
 
-    public DTOProperty createFromMethod(final ExecutableElement method) throws DTOException {
+    public DtoProperty createFromMethod(final ExecutableElement method) throws DtoException {
         assert method.getKind() == ElementKind.METHOD;
         assert method.getEnclosingElement().getKind() == ElementKind.INTERFACE;
         assert !method.getModifiers().contains(Modifier.DEFAULT);
@@ -69,14 +64,14 @@ public class DTOPropertyFactory {
             method.getParameters().size() != 0 ||
             method.getTypeParameters().size() != 0
         ) {
-            throw new DTOException(method, "@Readable/@Writable interface " +
+            throw new DtoException(method, "@Readable/@Writable interface " +
                 "methods must either be static, provide a default " +
                 "implementation, or be simple getters, which means that " +
                 "they have a non-void return type, takes no arguments and " +
                 "does not require any type parameters");
         }
 
-        final var builder = new DTOProperty.Builder()
+        final var builder = new DtoProperty.Builder()
             .parentElement(method)
             .name(method.getSimpleName().toString())
             .formatNames(collectFormatNamesFrom(method));
@@ -85,7 +80,7 @@ public class DTOPropertyFactory {
 
         if (type.getKind().isPrimitive()) {
             return builder
-                .type(toPrimitiveType(type, DTODescriptor.valueOf(type.getKind())))
+                .type(toPrimitiveType(type, DtoDescriptor.valueOf(type.getKind())))
                 .isOptional(false)
                 .build();
         }
@@ -113,43 +108,43 @@ public class DTOPropertyFactory {
 
     private Map<Format, String> collectFormatNamesFrom(final Element method) {
         final var formatNames = new HashMap<Format, String>();
-        final var nameJSON = method.getAnnotation(NameJSON.class);
+        final var nameJSON = method.getAnnotation(JsonName.class);
         if (nameJSON != null) {
             formatNames.put(Format.JSON, nameJSON.value());
         }
         return formatNames;
     }
 
-    private DTOType resolveType(final ExecutableElement method, final TypeMirror type) throws DTOException {
+    private DtoType resolveType(final ExecutableElement method, final TypeMirror type) throws DtoException {
         if (type.getKind().isPrimitive()) {
-            return toPrimitiveType(type, DTODescriptor.valueOf(type.getKind()));
+            return toPrimitiveType(type, DtoDescriptor.valueOf(type.getKind()));
         }
         if (type.getKind() == TypeKind.ARRAY) {
             return toArrayType(method, type);
         }
         if (typeUtils.isSameType(booleanType, type)) {
-            return toPrimitiveBoxedType(type, DTODescriptor.BOOLEAN_BOXED);
+            return toPrimitiveBoxedType(type, DtoDescriptor.BOOLEAN_BOXED);
         }
         if (typeUtils.isSameType(byteType, type)) {
-            return toPrimitiveBoxedType(type, DTODescriptor.BYTE_BOXED);
+            return toPrimitiveBoxedType(type, DtoDescriptor.BYTE_BOXED);
         }
         if (typeUtils.isSameType(characterType, type)) {
-            return toPrimitiveBoxedType(type, DTODescriptor.CHARACTER_BOXED);
+            return toPrimitiveBoxedType(type, DtoDescriptor.CHARACTER_BOXED);
         }
         if (typeUtils.isSameType(doubleType, type)) {
-            return toPrimitiveBoxedType(type, DTODescriptor.DOUBLE_BOXED);
+            return toPrimitiveBoxedType(type, DtoDescriptor.DOUBLE_BOXED);
         }
         if (typeUtils.isSameType(floatType, type)) {
-            return toPrimitiveBoxedType(type, DTODescriptor.FLOAT_BOXED);
+            return toPrimitiveBoxedType(type, DtoDescriptor.FLOAT_BOXED);
         }
         if (typeUtils.isSameType(integerType, type)) {
-            return toPrimitiveBoxedType(type, DTODescriptor.INTEGER_BOXED);
+            return toPrimitiveBoxedType(type, DtoDescriptor.INTEGER_BOXED);
         }
         if (typeUtils.isSameType(longType, type)) {
-            return toPrimitiveBoxedType(type, DTODescriptor.LONG_BOXED);
+            return toPrimitiveBoxedType(type, DtoDescriptor.LONG_BOXED);
         }
         if (typeUtils.isSameType(shortType, type)) {
-            return toPrimitiveBoxedType(type, DTODescriptor.SHORT_BOXED);
+            return toPrimitiveBoxedType(type, DtoDescriptor.SHORT_BOXED);
         }
         if (typeUtils.asElement(type).getKind() == ElementKind.ENUM) {
             return toEnumType(type);
@@ -210,13 +205,13 @@ public class DTOPropertyFactory {
         return hasValueOf && hasToString;
     }
 
-    private DTOArray toArrayType(final ExecutableElement method, final TypeMirror type) throws DTOException {
+    private DtoArray toArrayType(final ExecutableElement method, final TypeMirror type) throws DtoException {
         final var arrayType = (ArrayType) type;
         final var element = resolveType(method, arrayType.getComponentType());
-        return new DTOArray(arrayType, element);
+        return new DtoArray(arrayType, element);
     }
 
-    private DTOInterface toInterfaceType(final ExecutableElement method, final TypeMirror type) throws DTOException {
+    private DtoInterface toInterfaceType(final ExecutableElement method, final TypeMirror type) throws DtoException {
         final var declaredType = (DeclaredType) type;
         final var element = declaredType.asElement();
 
@@ -224,15 +219,13 @@ public class DTOPropertyFactory {
         final var writable = element.getAnnotation(Writable.class);
 
         if (readable == null && writable == null) {
-            if (typeUtils.isAssignable(type, readableDTOType) ||
-                typeUtils.isAssignable(type, writableDTOType)
-            ) {
-                throw new DTOException(method, "Generated DTO classes may " +
+            if (element.getSimpleName().toString().endsWith(DtoTarget.NAME_SUFFIX)) {
+                throw new DtoException(method, "Generated DTO classes may " +
                     "not be used in interfaces annotated with @Readable or " +
                     "@Writable; rather use the interface types from which " +
                     "those DTO classes were generated");
             }
-            throw new DTOException(method, "Getter return type must be a " +
+            throw new DtoException(method, "Getter return type must be a " +
                 "primitive, a boxed primitive, a String, an array (T[]), " +
                 "a List<T>, a Map<K, V>, an enum, an enum-like class, which " +
                 "overrides toString() and has a public static " +
@@ -244,40 +237,40 @@ public class DTOPropertyFactory {
         final var readableFormats = readable != null ? readable.value() : new Format[0];
         final var writableFormats = writable != null ? writable.value() : new Format[0];
 
-        return new DTOInterface(declaredType, readableFormats, writableFormats);
+        return new DtoInterface(declaredType, readableFormats, writableFormats);
     }
 
-    private DTOEnum toEnumType(final TypeMirror type) {
-        return new DTOEnum((DeclaredType) type);
+    private DtoEnum toEnumType(final TypeMirror type) {
+        return new DtoEnum((DeclaredType) type);
     }
 
-    private DTOList toListType(final ExecutableElement method, final TypeMirror type) throws DTOException {
+    private DtoList toListType(final ExecutableElement method, final TypeMirror type) throws DtoException {
         final var declaredType = (DeclaredType) type;
         final var element = resolveType(method, declaredType.getTypeArguments().get(0));
-        return new DTOList(declaredType, element);
+        return new DtoList(declaredType, element);
     }
 
-    private DTOMap toMapType(final ExecutableElement method, final TypeMirror type) throws DTOException {
+    private DtoMap toMapType(final ExecutableElement method, final TypeMirror type) throws DtoException {
         final var declaredType = (DeclaredType) type;
         final var typeArguments = declaredType.getTypeArguments();
         final var key = resolveType(method, typeArguments.get(0));
-        if (key.descriptor().isCollection() || key.descriptor() == DTODescriptor.INTERFACE) {
-            throw new DTOException(method, "Only boxed primitives, enums, " +
+        if (key.descriptor().isCollection() || key.descriptor() == DtoDescriptor.INTERFACE) {
+            throw new DtoException(method, "Only boxed primitives, enums, " +
                 "enum-likes and strings may be used as Map keys");
         }
         final var value = resolveType(method, typeArguments.get(1));
-        return new DTOMap(declaredType, key, value);
+        return new DtoMap(declaredType, key, value);
     }
 
-    private DTOPrimitiveUnboxed toPrimitiveType(final TypeMirror type, final DTODescriptor primitiveType) {
-        return new DTOPrimitiveUnboxed((PrimitiveType) type, primitiveType);
+    private DtoPrimitiveUnboxed toPrimitiveType(final TypeMirror type, final DtoDescriptor primitiveType) {
+        return new DtoPrimitiveUnboxed((PrimitiveType) type, primitiveType);
     }
 
-    private DTOPrimitiveBoxed toPrimitiveBoxedType(final TypeMirror type, final DTODescriptor primitiveType) {
-        return new DTOPrimitiveBoxed((DeclaredType) type, primitiveType);
+    private DtoPrimitiveBoxed toPrimitiveBoxedType(final TypeMirror type, final DtoDescriptor primitiveType) {
+        return new DtoPrimitiveBoxed((DeclaredType) type, primitiveType);
     }
 
-    private DTOString toStringType(final TypeMirror type) {
-        return new DTOString((DeclaredType) type);
+    private DtoString toStringType(final TypeMirror type) {
+        return new DtoString((DeclaredType) type);
     }
 }

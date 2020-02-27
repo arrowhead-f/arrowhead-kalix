@@ -2,17 +2,17 @@ package eu.arrowhead.kalix.dto.types;
 
 import javax.lang.model.type.DeclaredType;
 
-public class DTOPrimitiveBoxed implements DTOType {
+public class DtoPrimitiveBoxed implements DtoType {
     private final DeclaredType type;
-    private final DTODescriptor descriptor;
+    private final DtoDescriptor descriptor;
 
-    public DTOPrimitiveBoxed(final DeclaredType type, final DTODescriptor descriptor) {
+    public DtoPrimitiveBoxed(final DeclaredType type, final DtoDescriptor descriptor) {
         this.type = type;
         this.descriptor = descriptor;
     }
 
     @Override
-    public DTODescriptor descriptor() {
+    public DtoDescriptor descriptor() {
         return descriptor;
     }
 

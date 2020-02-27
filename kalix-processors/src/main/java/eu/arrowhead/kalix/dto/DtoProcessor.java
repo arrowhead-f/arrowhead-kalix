@@ -17,13 +17,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class DTOProcessor extends AbstractProcessor {
+public class DtoProcessor extends AbstractProcessor {
     private Filer filer;
     private Messager messager;
     private Elements elementUtils;
 
-    private DTOTargetFactory targetFactory;
-    private DTOSpecificationFactory specificationFactory;
+    private DtoTargetFactory targetFactory;
+    private DtoSpecificationFactory specificationFactory;
 
     @Override
     public synchronized void init(final ProcessingEnvironment processingEnv) {
@@ -33,9 +33,9 @@ public class DTOProcessor extends AbstractProcessor {
         messager = processingEnv.getMessager();
         elementUtils = processingEnv.getElementUtils();
 
-        targetFactory = new DTOTargetFactory(elementUtils, processingEnv.getTypeUtils());
-        specificationFactory = new DTOSpecificationFactory(
-            new DTOSpecificationFormatJSON()
+        targetFactory = new DtoTargetFactory(elementUtils, processingEnv.getTypeUtils());
+        specificationFactory = new DtoSpecificationFactory(
+            new DtoSpecificationFormatJson()
         );
     }
 
@@ -62,7 +62,7 @@ public class DTOProcessor extends AbstractProcessor {
                     .writeTo(filer);
             }
         }
-        catch (final DTOException e) {
+        catch (final DtoException e) {
             messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage(), e.offendingElement());
         }
         catch (final IOException exception) {
