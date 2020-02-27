@@ -51,7 +51,7 @@ public final class JsonToken {
         }
     }
 
-    public byte getByte(final ByteBuffer source) {
+    public byte readByte(final ByteBuffer source) {
         final var buffer = new byte[length()];
         source.position(begin).get(buffer);
         final var string = new String(buffer, StandardCharsets.ISO_8859_1);
@@ -68,21 +68,21 @@ public final class JsonToken {
         return string;
     }
 
-    public double getDoubleFrom(final ByteBuffer source) {
+    public double readDouble(final ByteBuffer source) {
         final var buffer = new byte[length()];
         source.position(begin).get(buffer);
         final var string = new String(buffer, StandardCharsets.ISO_8859_1);
         return Double.parseDouble(requireNotHex(string));
     }
 
-    public float getFloatFrom(final ByteBuffer source) {
+    public float readFloat(final ByteBuffer source) {
         final var buffer = new byte[length()];
         source.position(begin).get(buffer);
         final var string = new String(buffer, StandardCharsets.ISO_8859_1);
         return Float.parseFloat(requireNotHex(string));
     }
 
-    public int getInteger(final ByteBuffer source) {
+    public int readInteger(final ByteBuffer source) {
         final var buffer = new byte[length()];
         source.position(begin).get(buffer);
         final var string = new String(buffer, StandardCharsets.ISO_8859_1);
@@ -90,7 +90,7 @@ public final class JsonToken {
     }
 
 
-    public long getLong(final ByteBuffer source) {
+    public long readLong(final ByteBuffer source) {
         final var buffer = new byte[length()];
         source.position(begin).get(buffer);
         final var string = new String(buffer, StandardCharsets.ISO_8859_1);
@@ -98,14 +98,14 @@ public final class JsonToken {
     }
 
 
-    public short getShort(final ByteBuffer source) {
+    public short readShort(final ByteBuffer source) {
         final var buffer = new byte[length()];
         source.position(begin).get(buffer);
         final var string = new String(buffer, StandardCharsets.ISO_8859_1);
         return Short.parseShort(requireNotHex(string));
     }
 
-    public String getStringFrom(final ByteBuffer source) throws ReadException {
+    public String readString(final ByteBuffer source) throws ReadException {
         source.position(begin);
 
         final var buffer = new byte[length()];
@@ -120,6 +120,7 @@ public final class JsonToken {
                     // Collect bytes before escape sequence into buffer.
                     {
                         final var length = source.position() - p0;
+                        source.position(p0);
                         source.get(buffer, b0, length);
                         b0 += length;
                         p0 = source.position();
@@ -174,7 +175,9 @@ public final class JsonToken {
                     buffer[b0++] = b;
                 }
             }
-            source.get(buffer, b0, source.position() - p0);
+            final var length = source.position() - p0;
+            source.position(p0);
+            source.get(buffer, b0, length);
             return new String(buffer, StandardCharsets.UTF_8);
         }
         throw new ReadException(Format.JSON, "Bad escape", badEscapeBuilder.toString(), p0);

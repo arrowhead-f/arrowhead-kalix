@@ -184,6 +184,9 @@ public class DtoPropertyFactory {
                 if (!executable.getModifiers().containsAll(publicStaticModifiers)) {
                     continue;
                 }
+                if (executable.getThrownTypes().size() != 0) {
+                    continue;
+                }
                 final var parameters = executable.getParameters();
                 if (parameters.size() != 1 || !typeUtils.isSameType(parameters.get(0).asType(), stringType)) {
                     continue;

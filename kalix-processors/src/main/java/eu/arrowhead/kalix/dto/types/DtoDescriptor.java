@@ -6,24 +6,24 @@ public enum DtoDescriptor {
     ARRAY(0x1100),
     BOOLEAN_BOXED(0x0601),
     BOOLEAN_UNBOXED(0x0201),
-    BYTE_BOXED(0x0602),
-    BYTE_UNBOXED(0x0202),
+    BYTE_BOXED(0x2602),
+    BYTE_UNBOXED(0x2202),
     CHARACTER_BOXED(0x0604),
     CHARACTER_UNBOXED(0x0204),
-    DOUBLE_BOXED(0x0608),
-    DOUBLE_UNBOXED(0x0208),
+    DOUBLE_BOXED(0x2608),
+    DOUBLE_UNBOXED(0x2208),
     ENUM(0x0800),
-    FLOAT_BOXED(0x0610),
-    FLOAT_UNBOXED(0x0210),
-    INTEGER_BOXED(0x0620),
-    INTEGER_UNBOXED(0x0220),
+    FLOAT_BOXED(0x2610),
+    FLOAT_UNBOXED(0x2210),
+    INTEGER_BOXED(0x2620),
+    INTEGER_UNBOXED(0x2220),
     INTERFACE(0x0000),
     LIST(0x1100),
-    LONG_BOXED(0x0640),
-    LONG_UNBOXED(0x0240),
+    LONG_BOXED(0x2640),
+    LONG_UNBOXED(0x2240),
     MAP(0x0100),
-    SHORT_BOXED(0x0680),
-    SHORT_UNBOXED(0x0280),
+    SHORT_BOXED(0x2680),
+    SHORT_UNBOXED(0x2280),
     STRING(0x0800);
 
     private final short mask;
@@ -66,6 +66,10 @@ public enum DtoDescriptor {
 
     public boolean isLong() {
         return (mask & 0x0040) == 0x0040;
+    }
+
+    public boolean isNumber() {
+        return (mask & 0x2000) == 0x2000;
     }
 
     public boolean isPrimitive() {

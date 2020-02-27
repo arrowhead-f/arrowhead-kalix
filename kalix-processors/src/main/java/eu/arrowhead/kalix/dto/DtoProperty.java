@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.dto;
 
+import eu.arrowhead.kalix.dto.types.DtoDescriptor;
 import eu.arrowhead.kalix.dto.types.DtoType;
 
 import javax.lang.model.element.ExecutableElement;
@@ -7,7 +8,7 @@ import javax.lang.model.type.TypeMirror;
 import java.util.Map;
 import java.util.Objects;
 
-public class DtoProperty {
+public class DtoProperty implements DtoType {
     private final ExecutableElement parentElement;
     private final String name;
     private final Map<Format, String> formatNames;
@@ -38,6 +39,12 @@ public class DtoProperty {
         return type;
     }
 
+    @Override
+    public DtoDescriptor descriptor() {
+        return type.descriptor();
+    }
+
+    @Override
     public TypeMirror asTypeMirror() {
         return type.asTypeMirror();
     }

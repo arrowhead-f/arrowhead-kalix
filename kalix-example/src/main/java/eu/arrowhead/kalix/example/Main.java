@@ -1,8 +1,8 @@
 package eu.arrowhead.kalix.example;
 
-import eu.arrowhead.kalix.dto.WriteException;
 import eu.arrowhead.kalix.example.dto.PointBuilder;
 import eu.arrowhead.kalix.example.dto.ShapeBuilder;
+import eu.arrowhead.kalix.example.dto.ShapeData;
 import eu.arrowhead.kalix.example.dto.ShapeType;
 
 import java.nio.ByteBuffer;
@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Main {
-    public static void main(final String[] args) throws WriteException {
+    public static void main(final String[] args) {
         System.out.println("Hello, Example!");
 
         final var map = new HashMap<String, Map<String, Integer>>();
@@ -25,7 +25,7 @@ public class Main {
         final var map1 = new HashMap<String, Integer>();
         map.put("tomt", map1);
 
-        final var shape = new ShapeBuilder()
+        final var shape0 = new ShapeBuilder()
             .position(new PointBuilder()
                 .x(1423e134)
                 .y(352234.123432e-142)
@@ -34,14 +34,31 @@ public class Main {
                 Arrays.asList((byte) 1, (byte) 2),
                 Arrays.asList((byte) 123, (byte) 0, (byte) -5)))
             .attributes2(new int[]{1, 2, 3, 4, 5, 6, 7})
+            .name("Jaime")
             .properties(map)
             .type(ShapeType.TRIANGLE)
             .build();
 
-        final var byteBuffer = ByteBuffer.allocate(4096);
-        shape.writeJson(byteBuffer);
-        final var text = new String(byteBuffer.array(), 0, byteBuffer.position(), StandardCharsets.UTF_8);
+        try {
+            final var byteBuffer = ByteBuffer.allocate(4096);
+            shape0.writeJson(byteBuffer);
 
-        System.out.println(text);
+            final var text0 = new String(byteBuffer.array(), 0, byteBuffer.position(), StandardCharsets.UTF_8);
+            System.out.println(text0);
+
+            byteBuffer.flip();
+            byteBuffer.position(0);
+            final var shape1 = ShapeData.readJson(byteBuffer);
+
+            byteBuffer.flip();
+            byteBuffer.position(0);
+            byteBuffer.limit(4096);
+            shape1.writeJson(byteBuffer);
+
+            final var text1 = new String(byteBuffer.array(), 0, byteBuffer.position(), StandardCharsets.UTF_8);
+            System.out.println(text1);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

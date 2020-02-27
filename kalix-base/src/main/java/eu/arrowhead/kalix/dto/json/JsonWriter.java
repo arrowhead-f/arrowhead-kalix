@@ -16,16 +16,22 @@ public final class JsonWriter {
         '0', '1', '2', '3', '4', '5', '6', '7',
         '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
-    public static void writeTo(final boolean bool, final ByteBuffer target) {
+    public static void write(final boolean bool, final ByteBuffer target) {
         target.put(bool ? TRUE : FALSE);
     }
 
-    public static void writeTo(final long number, final ByteBuffer target) {
+    public static void write(final long number, final ByteBuffer target) throws WriteException {
+        if (number < -9007199254740991L ||number > 9007199254740991L) {
+            throw new WriteException(Format.JSON, "Only integers in the " +
+                "range -(2^53 - 1) to (2^53 - 1) can be represented as JSON " +
+                "numbers without loss of precision; " + number + " is " +
+                "outside that range");
+        }
         target.put(Long.toString(number)
             .getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    public static void writeTo(final double number, final ByteBuffer target) throws WriteException {
+    public static void write(final double number, final ByteBuffer target) throws WriteException {
         if (!Double.isFinite(number)) {
             throw new WriteException(Format.JSON, "NaN, +Infinify and " +
                 "-Infinity cannot be represented in JSON");
@@ -34,7 +40,7 @@ public final class JsonWriter {
             .getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    public static void writeTo(final String string, final ByteBuffer target) {
+    public static void write(final String string, final ByteBuffer target) {
         for (var b : string.getBytes(StandardCharsets.UTF_8)) {
             if (b < ' ') {
                 target.put((byte) '\\');
