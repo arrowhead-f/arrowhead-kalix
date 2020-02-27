@@ -35,11 +35,10 @@ public class ByteBufferPutCache {
             final var output = new StringBuilder(builder.length() * 4);
             output.append(byteBufferName).append(".put(new byte[]{");
             for (var i = 0; i < input.length; ++i) {
-                final var b = input[i];
-                output.append(literalOf(b));
-                if (i + 1 != input.length) {
+                if (i != 0) {
                     output.append(", ");
                 }
+                output.append(literalOf(input[i]));
             }
             output.append("})");
             methodBuilder.addStatement(output.toString());
@@ -48,10 +47,9 @@ public class ByteBufferPutCache {
     }
 
     public void addPutIfNotEmpty(final MethodSpec.Builder methodBuilder) {
-        if (builder.length() == 0) {
-            return;
+        if (builder.length() > 0) {
+            addPut(methodBuilder);
         }
-        addPut(methodBuilder);
     }
 
     private String literalOf(final byte b) {

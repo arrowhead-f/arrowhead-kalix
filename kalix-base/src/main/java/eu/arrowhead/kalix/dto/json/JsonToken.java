@@ -42,15 +42,6 @@ public final class JsonToken {
         this.nChildren = nChildren;
     }
 
-    public boolean getBoolean() throws ReadException {
-        switch (type) {
-        case TRUE: return true;
-        case FALSE: return false;
-        default:
-            throw new ReadException(Format.JSON, "Bad boolean", "", begin);
-        }
-    }
-
     public byte readByte(final ByteBuffer source) {
         final var buffer = new byte[length()];
         source.position(begin).get(buffer);
@@ -89,14 +80,12 @@ public final class JsonToken {
         return Integer.parseInt(requireNotHex(string));
     }
 
-
     public long readLong(final ByteBuffer source) {
         final var buffer = new byte[length()];
         source.position(begin).get(buffer);
         final var string = new String(buffer, StandardCharsets.ISO_8859_1);
         return Long.parseLong(requireNotHex(string));
     }
-
 
     public short readShort(final ByteBuffer source) {
         final var buffer = new byte[length()];
