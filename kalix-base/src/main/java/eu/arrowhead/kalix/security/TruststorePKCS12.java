@@ -9,6 +9,9 @@ import java.util.Objects;
  * Represents the contents of some PKCS#12 truststore and its password.
  * <p>
  * The PKCS#12 truststore is expected to contain trusted x.509 certificates.
+ *
+ * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
+ * @see <a href="https://tools.ietf.org/html/rfc7292">RFC 7292</a>
  */
 public class TruststorePKCS12 implements Truststore {
     private final byte[] contents;

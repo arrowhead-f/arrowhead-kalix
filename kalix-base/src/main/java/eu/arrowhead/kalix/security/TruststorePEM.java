@@ -9,6 +9,9 @@ import java.util.List;
 
 /**
  * Represents a collection of trusted PEM encoded x.509 certificates.
+ *
+ * @see <a href="https://tools.ietf.org/html/rfc1421">RFC 1421</a>
+ * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
  */
 public class TruststorePEM implements Truststore {
     private final List<byte[]> trustedCertificates;

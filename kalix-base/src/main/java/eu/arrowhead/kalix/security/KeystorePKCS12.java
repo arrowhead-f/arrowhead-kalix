@@ -10,6 +10,9 @@ import java.util.Objects;
  * <p>
  * The PKCS#12 keystore must contain at least one x.509 certificate and its
  * corresponding private key.
+ *
+ * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
+ * @see <a href="https://tools.ietf.org/html/rfc7292">RFC 7292</a>
  */
 public class KeystorePKCS12 implements Keystore {
     private final byte[] contents;
@@ -43,8 +46,7 @@ public class KeystorePKCS12 implements Keystore {
      * @param password Password of PKCS#12 keystore.
      * @param alias    Alias of primary/preferred certificate, or {@code null}.
      */
-    public static KeystorePKCS12 read(final Path path, final String password, final String alias)
-        throws IOException {
+    public static KeystorePKCS12 read(final Path path, final String password, final String alias) throws IOException {
         return new KeystorePKCS12(Files.readAllBytes(path), password, alias);
     }
 

@@ -14,6 +14,10 @@ import java.util.Objects;
  * delimiter instead of the {@code -----BEGIN RSA PRIVATE KEY-----} that is
  * used by PKCS#1. If your private key is in PKCS#1, it must first be
  * converted into PKCS#8.
+ *
+ * @see <a href="https://tools.ietf.org/html/rfc1421">RFC 1421</a>
+ * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
+ * @see <a href="https://tools.ietf.org/html/rfc5958">RFC 5958</a>
  */
 public class KeystorePEM implements Keystore {
     private final byte[] certificateChain;
@@ -42,8 +46,7 @@ public class KeystorePEM implements Keystore {
      *                               {@code .pem} or {@code .key} file
      *                               extensions.
      */
-    public static KeystorePEM read(final Path pathToCertificateChain, final Path pathToPrivateKey)
-        throws IOException {
+    public static KeystorePEM read(final Path pathToCertificateChain, final Path pathToPrivateKey) throws IOException {
         return new KeystorePEM(
             Files.readAllBytes(pathToCertificateChain),
             Files.readAllBytes(pathToPrivateKey)
