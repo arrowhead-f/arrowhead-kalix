@@ -1,17 +1,11 @@
 package eu.arrowhead.kalix.descriptor;
 
-import eu.arrowhead.kalix.internal.util.PerfectCache;
-
 import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
  * Describes an application message protocol, in terms of its transport
  * protocol, security requirements and message payload encoding.
- * <p>
- * Often referred to as <i>"triplet"</i> throughout this library, primarily to
- * avoid conflicts with the Java compiler, which considers {@code interface} a
- * reserved keyword.
  */
 public class InterfaceDescriptor {
     private static final Pattern TRIPLET_PATTERN = Pattern.compile("([0-9A-Z_]+)-(IN)?SECURE-([0-9A-Z_]+)");
@@ -60,6 +54,96 @@ public class InterfaceDescriptor {
     public String text() {
         return text;
     }
+
+    /**
+     * AMPQ over TLS with ASN.1 payloads.
+     *
+     * @see TransportDescriptor#COAP
+     * @see EncodingDescriptor#ASN1
+     */
+    public static final InterfaceDescriptor AMPQ_SECURE_ASN1 = new InterfaceDescriptor(
+        TransportDescriptor.AMPQ, true, EncodingDescriptor.ASN1, "AMPQ-SECURE-ASN1");
+
+    /**
+     * AMPQ with ASN.1 payloads.
+     *
+     * @see TransportDescriptor#AMPQ
+     * @see EncodingDescriptor#ASN1
+     */
+    public static final InterfaceDescriptor AMPQ_INSECURE_ASN1 = new InterfaceDescriptor(
+        TransportDescriptor.AMPQ, false, EncodingDescriptor.CBOR, "AMPQ-INSECURE-ASN1");
+
+    /**
+     * AMPQ over TLS with CBOR payloads.
+     *
+     * @see TransportDescriptor#AMPQ
+     * @see EncodingDescriptor#CBOR
+     */
+    public static final InterfaceDescriptor AMPQ_SECURE_CBOR = new InterfaceDescriptor(
+        TransportDescriptor.AMPQ, true, EncodingDescriptor.CBOR, "AMPQ-SECURE-CBOR");
+
+    /**
+     * AMPQ with CBOR payloads.
+     *
+     * @see TransportDescriptor#AMPQ
+     * @see EncodingDescriptor#CBOR
+     */
+    public static final InterfaceDescriptor AMPQ_INSECURE_CBOR = new InterfaceDescriptor(
+        TransportDescriptor.AMPQ, false, EncodingDescriptor.CBOR, "AMPQ-INSECURE-CBOR");
+
+    /**
+     * AMPQ over TLS with JSON payloads.
+     *
+     * @see TransportDescriptor#AMPQ
+     * @see EncodingDescriptor#JSON
+     */
+    public static final InterfaceDescriptor AMPQ_SECURE_JSON = new InterfaceDescriptor(
+        TransportDescriptor.AMPQ, true, EncodingDescriptor.JSON, "AMPQ-SECURE-JSON");
+
+    /**
+     * AMPQ with JSON payloads.
+     *
+     * @see TransportDescriptor#AMPQ
+     * @see EncodingDescriptor#JSON
+     */
+    public static final InterfaceDescriptor AMPQ_INSECURE_JSON = new InterfaceDescriptor(
+        TransportDescriptor.AMPQ, false, EncodingDescriptor.JSON, "AMPQ-INSECURE-JSON");
+
+    /**
+     * AMPQ over TLS with XML payloads.
+     *
+     * @see TransportDescriptor#AMPQ
+     * @see EncodingDescriptor#XML
+     */
+    public static final InterfaceDescriptor AMPQ_SECURE_XML = new InterfaceDescriptor(
+        TransportDescriptor.AMPQ, true, EncodingDescriptor.XML, "AMPQ-SECURE-XML");
+
+    /**
+     * AMPQ with XML payloads.
+     *
+     * @see TransportDescriptor#AMPQ
+     * @see EncodingDescriptor#XML
+     */
+    public static final InterfaceDescriptor AMPQ_INSECURE_XML = new InterfaceDescriptor(
+        TransportDescriptor.AMPQ, false, EncodingDescriptor.XML, "AMPQ-INSECURE-XML");
+
+    /**
+     * AMPQ over TLS with XSI payloads.
+     *
+     * @see TransportDescriptor#AMPQ
+     * @see EncodingDescriptor#XSI
+     */
+    public static final InterfaceDescriptor AMPQ_SECURE_XSI = new InterfaceDescriptor(
+        TransportDescriptor.AMPQ, true, EncodingDescriptor.XSI, "AMPQ-SECURE-XSI");
+
+    /**
+     * AMPQ with XSI payloads.
+     *
+     * @see TransportDescriptor#AMPQ
+     * @see EncodingDescriptor#XSI
+     */
+    public static final InterfaceDescriptor AMPQ_INSECURE_XSI = new InterfaceDescriptor(
+        TransportDescriptor.AMPQ, false, EncodingDescriptor.XSI, "AMPQ-INSECURE-XSI");
 
     /**
      * CoAP over TLS with ASN.1 payloads.
@@ -421,49 +505,6 @@ public class InterfaceDescriptor {
     public static final InterfaceDescriptor XMPP_INSECURE_XSI = new InterfaceDescriptor(
         TransportDescriptor.HTTP, false, EncodingDescriptor.XSI, "XMPP-INSECURE-XSI");
 
-    private static final PerfectCache cache = new PerfectCache(5, 256,
-        new PerfectCache.Entry(COAP_SECURE_ASN1.text, COAP_SECURE_ASN1),
-        new PerfectCache.Entry(COAP_INSECURE_ASN1.text, COAP_INSECURE_ASN1),
-        new PerfectCache.Entry(COAP_SECURE_CBOR.text, COAP_SECURE_CBOR),
-        new PerfectCache.Entry(COAP_INSECURE_CBOR.text, COAP_INSECURE_CBOR),
-        new PerfectCache.Entry(COAP_SECURE_JSON.text, COAP_SECURE_JSON),
-        new PerfectCache.Entry(COAP_INSECURE_JSON.text, COAP_INSECURE_JSON),
-        new PerfectCache.Entry(COAP_SECURE_XML.text, COAP_SECURE_XML),
-        new PerfectCache.Entry(COAP_INSECURE_XML.text, COAP_INSECURE_XML),
-        new PerfectCache.Entry(COAP_SECURE_XSI.text, COAP_SECURE_XSI),
-        new PerfectCache.Entry(COAP_INSECURE_XSI.text, COAP_INSECURE_XSI),
-        new PerfectCache.Entry(HTTP_SECURE_ASN1.text, HTTP_SECURE_ASN1),
-        new PerfectCache.Entry(HTTP_INSECURE_ASN1.text, HTTP_INSECURE_ASN1),
-        new PerfectCache.Entry(HTTP_SECURE_CBOR.text, HTTP_SECURE_CBOR),
-        new PerfectCache.Entry(HTTP_INSECURE_CBOR.text, HTTP_INSECURE_CBOR),
-        new PerfectCache.Entry(HTTP_SECURE_JSON.text, HTTP_SECURE_JSON),
-        new PerfectCache.Entry(HTTP_INSECURE_JSON.text, HTTP_INSECURE_JSON),
-        new PerfectCache.Entry(HTTP_SECURE_XML.text, HTTP_SECURE_XML),
-        new PerfectCache.Entry(HTTP_INSECURE_XML.text, HTTP_INSECURE_XML),
-        new PerfectCache.Entry(HTTP_SECURE_XSI.text, HTTP_SECURE_XSI),
-        new PerfectCache.Entry(HTTP_INSECURE_XSI.text, HTTP_INSECURE_XSI),
-        new PerfectCache.Entry(MQTT_SECURE_ASN1.text, MQTT_SECURE_ASN1),
-        new PerfectCache.Entry(MQTT_INSECURE_ASN1.text, MQTT_INSECURE_ASN1),
-        new PerfectCache.Entry(MQTT_SECURE_CBOR.text, MQTT_SECURE_CBOR),
-        new PerfectCache.Entry(MQTT_INSECURE_CBOR.text, MQTT_INSECURE_CBOR),
-        new PerfectCache.Entry(MQTT_SECURE_JSON.text, MQTT_SECURE_JSON),
-        new PerfectCache.Entry(MQTT_INSECURE_JSON.text, MQTT_INSECURE_JSON),
-        new PerfectCache.Entry(MQTT_SECURE_XML.text, MQTT_SECURE_XML),
-        new PerfectCache.Entry(MQTT_INSECURE_XML.text, MQTT_INSECURE_XML),
-        new PerfectCache.Entry(MQTT_SECURE_XSI.text, MQTT_SECURE_XSI),
-        new PerfectCache.Entry(MQTT_INSECURE_XSI.text, MQTT_INSECURE_XSI),
-        new PerfectCache.Entry(XMPP_SECURE_ASN1.text, XMPP_SECURE_ASN1),
-        new PerfectCache.Entry(XMPP_INSECURE_ASN1.text, XMPP_INSECURE_ASN1),
-        new PerfectCache.Entry(XMPP_SECURE_CBOR.text, XMPP_SECURE_CBOR),
-        new PerfectCache.Entry(XMPP_INSECURE_CBOR.text, XMPP_INSECURE_CBOR),
-        new PerfectCache.Entry(XMPP_SECURE_JSON.text, XMPP_SECURE_JSON),
-        new PerfectCache.Entry(XMPP_INSECURE_JSON.text, XMPP_INSECURE_JSON),
-        new PerfectCache.Entry(XMPP_SECURE_XML.text, XMPP_SECURE_XML),
-        new PerfectCache.Entry(XMPP_INSECURE_XML.text, XMPP_INSECURE_XML),
-        new PerfectCache.Entry(XMPP_SECURE_XSI.text, XMPP_SECURE_XSI),
-        new PerfectCache.Entry(XMPP_INSECURE_XSI.text, XMPP_INSECURE_XSI)
-    );
-
     /**
      * Parses given string into interface triplet.
      * <p>
@@ -478,9 +519,57 @@ public class InterfaceDescriptor {
      */
     public static InterfaceDescriptor valueOf(String triplet) {
         triplet = Objects.requireNonNull(triplet, "Name required").toUpperCase();
-        final var value = cache.get(triplet);
-        if (value != null) {
-            return (InterfaceDescriptor) value;
+        switch (triplet) {
+        case "AMPQ-SECURE-ASN1": return AMPQ_SECURE_ASN1;
+        case "AMPQ-INSECURE-ASN1": return AMPQ_INSECURE_ASN1;
+        case "AMPQ-SECURE-CBOR": return AMPQ_SECURE_CBOR;
+        case "AMPQ-INSECURE-CBOR": return AMPQ_INSECURE_CBOR;
+        case "AMPQ-SECURE-JSON": return AMPQ_SECURE_JSON;
+        case "AMPQ-INSECURE-JSON": return AMPQ_INSECURE_JSON;
+        case "AMPQ-SECURE-XML": return AMPQ_SECURE_XML;
+        case "AMPQ-INSECURE-XML": return AMPQ_INSECURE_XML;
+        case "AMPQ-SECURE-XSI": return AMPQ_SECURE_XSI;
+        case "AMPQ-INSECURE-XSI": return AMPQ_INSECURE_XSI;
+        case "COAP-SECURE-ASN1": return COAP_SECURE_ASN1;
+        case "COAP-INSECURE-ASN1": return COAP_INSECURE_ASN1;
+        case "COAP-SECURE-CBOR": return COAP_SECURE_CBOR;
+        case "COAP-INSECURE-CBOR": return COAP_INSECURE_CBOR;
+        case "COAP-SECURE-JSON": return COAP_SECURE_JSON;
+        case "COAP-INSECURE-JSON": return COAP_INSECURE_JSON;
+        case "COAP-SECURE-XML": return COAP_SECURE_XML;
+        case "COAP-INSECURE-XML": return COAP_INSECURE_XML;
+        case "COAP-SECURE-XSI": return COAP_SECURE_XSI;
+        case "COAP-INSECURE-XSI": return COAP_INSECURE_XSI;
+        case "HTTP-SECURE-ASN1": return HTTP_SECURE_ASN1;
+        case "HTTP-INSECURE-ASN1": return HTTP_INSECURE_ASN1;
+        case "HTTP-SECURE-CBOR": return HTTP_SECURE_CBOR;
+        case "HTTP-INSECURE-CBOR": return HTTP_INSECURE_CBOR;
+        case "HTTP-SECURE-JSON": return HTTP_SECURE_JSON;
+        case "HTTP-INSECURE-JSON": return HTTP_INSECURE_JSON;
+        case "HTTP-SECURE-XML": return HTTP_SECURE_XML;
+        case "HTTP-INSECURE-XML": return HTTP_INSECURE_XML;
+        case "HTTP-SECURE-XSI": return HTTP_SECURE_XSI;
+        case "HTTP-INSECURE-XSI": return HTTP_INSECURE_XSI;
+        case "MQTT-SECURE-ASN1": return MQTT_SECURE_ASN1;
+        case "MQTT-INSECURE-ASN1": return MQTT_INSECURE_ASN1;
+        case "MQTT-SECURE-CBOR": return MQTT_SECURE_CBOR;
+        case "MQTT-INSECURE-CBOR": return MQTT_INSECURE_CBOR;
+        case "MQTT-SECURE-JSON": return MQTT_SECURE_JSON;
+        case "MQTT-INSECURE-JSON": return MQTT_INSECURE_JSON;
+        case "MQTT-SECURE-XML": return MQTT_SECURE_XML;
+        case "MQTT-INSECURE-XML": return MQTT_INSECURE_XML;
+        case "MQTT-SECURE-XSI": return MQTT_SECURE_XSI;
+        case "MQTT-INSECURE-XSI": return MQTT_INSECURE_XSI;
+        case "XMPP-SECURE-ASN1": return XMPP_SECURE_ASN1;
+        case "XMPP-INSECURE-ASN1": return XMPP_INSECURE_ASN1;
+        case "XMPP-SECURE-CBOR": return XMPP_SECURE_CBOR;
+        case "XMPP-INSECURE-CBOR": return XMPP_INSECURE_CBOR;
+        case "XMPP-SECURE-JSON": return XMPP_SECURE_JSON;
+        case "XMPP-INSECURE-JSON": return XMPP_INSECURE_JSON;
+        case "XMPP-SECURE-XML": return XMPP_SECURE_XML;
+        case "XMPP-INSECURE-XML": return XMPP_INSECURE_XML;
+        case "XMPP-SECURE-XSI": return XMPP_SECURE_XSI;
+        case "XMPP-INSECURE-XSI": return XMPP_INSECURE_XSI;
         }
 
         final var matcher = TRIPLET_PATTERN.matcher(triplet);

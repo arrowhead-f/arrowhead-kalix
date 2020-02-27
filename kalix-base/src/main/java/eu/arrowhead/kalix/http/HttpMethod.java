@@ -1,7 +1,5 @@
 package eu.arrowhead.kalix.http;
 
-import eu.arrowhead.kalix.internal.util.PerfectCache;
-
 import java.util.Objects;
 
 /**
@@ -110,18 +108,6 @@ public final class HttpMethod {
      */
     public static final HttpMethod TRACE = new HttpMethod("TRACE", true);
 
-    private static final PerfectCache cache = new PerfectCache(6, 0,
-        new PerfectCache.Entry(GET.name, GET),
-        new PerfectCache.Entry(POST.name, POST),
-        new PerfectCache.Entry(PUT.name, PUT),
-        new PerfectCache.Entry(DELETE.name, DELETE),
-        new PerfectCache.Entry(HEAD.name, HEAD),
-        new PerfectCache.Entry(OPTIONS.name, OPTIONS),
-        new PerfectCache.Entry(CONNECT.name, CONNECT),
-        new PerfectCache.Entry(PATCH.name, PATCH),
-        new PerfectCache.Entry(TRACE.name, TRACE)
-    );
-
     /**
      * Resolves {@link HttpMethod} from given status code.
      * <p>
@@ -134,10 +120,18 @@ public final class HttpMethod {
      * @see <a href="https://tools.ietf.org/html/rfc7230#section-3.1.1">RFC 7230, Section 3.1.1</a>
      */
     public static HttpMethod valueOf(final String name) {
-        final var value = cache.get(name);
-        return value != null
-            ? (HttpMethod) value
-            : new HttpMethod(name, false);
+        switch (name) {
+        case "GET": return GET;
+        case "POST": return POST;
+        case "PUT": return PUT;
+        case "DELETE": return DELETE;
+        case "HEAD": return HEAD;
+        case "OPTIONS": return OPTIONS;
+        case "CONNECT": return CONNECT;
+        case "PATCH": return PATCH;
+        case "TRACE": return TRACE;
+        }
+        return new HttpMethod(name, false);
     }
 
     @Override

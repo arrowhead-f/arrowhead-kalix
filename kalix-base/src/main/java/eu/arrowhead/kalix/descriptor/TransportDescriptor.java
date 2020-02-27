@@ -1,7 +1,5 @@
 package eu.arrowhead.kalix.descriptor;
 
-import eu.arrowhead.kalix.internal.util.PerfectCache;
-
 import java.util.Objects;
 
 public class TransportDescriptor {
@@ -17,6 +15,13 @@ public class TransportDescriptor {
     public String name() {
         return name;
     }
+
+    /**
+     * Advanced Message Queueing Protocol (AMPQ).
+     *
+     * @see <a href="http://docs.oasis-open.org/amqp/core/v1.0/amqp-core-overview-v1.0.html">OASIS Advanced Message Queuing Protocol (AMQP) Version 1.0</a>
+     */
+    public static final TransportDescriptor AMPQ = new TransportDescriptor("AMPQ");
 
     /**
      * Constrained Application Protocol (CoAP).
@@ -58,13 +63,6 @@ public class TransportDescriptor {
      */
     public static final TransportDescriptor XMPP = new TransportDescriptor("XMPP");
 
-    private static final PerfectCache cache = new PerfectCache(3, 0,
-        new PerfectCache.Entry(COAP.name, COAP),
-        new PerfectCache.Entry(HTTP.name, HTTP),
-        new PerfectCache.Entry(MQTT.name, MQTT),
-        new PerfectCache.Entry(XMPP.name, XMPP)
-    );
-
     /**
      * Resolves {@link TransportDescriptor} from given {@code name}.
      *
@@ -73,10 +71,14 @@ public class TransportDescriptor {
      */
     public static TransportDescriptor valueOf(String name) {
         name = Objects.requireNonNull(name, "Name required.").toUpperCase();
-        final var value = cache.get(name);
-        return value != null
-            ? (TransportDescriptor) value
-            : new TransportDescriptor(name);
+        switch (name) {
+        case "AMPQ": return AMPQ;
+        case "COAP": return COAP;
+        case "HTTP": return HTTP;
+        case "MQTT": return MQTT;
+        case "XMPP": return XMPP;
+        }
+        return new TransportDescriptor(name);
     }
 
     @Override

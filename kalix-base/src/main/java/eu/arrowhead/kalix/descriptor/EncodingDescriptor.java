@@ -1,7 +1,5 @@
 package eu.arrowhead.kalix.descriptor;
 
-import eu.arrowhead.kalix.internal.util.PerfectCache;
-
 import java.util.Objects;
 
 /**
@@ -57,14 +55,6 @@ public class EncodingDescriptor {
      */
     public static final EncodingDescriptor XSI = new EncodingDescriptor("XSI");
 
-    private static final PerfectCache cache = new PerfectCache(0, 0,
-        new PerfectCache.Entry(ASN1.name, ASN1),
-        new PerfectCache.Entry(CBOR.name, CBOR),
-        new PerfectCache.Entry(JSON.name, JSON),
-        new PerfectCache.Entry(XML.name, XML),
-        new PerfectCache.Entry(XSI.name, XSI)
-    );
-
     /**
      * Resolves {@link EncodingDescriptor} from given {@code name}.
      *
@@ -72,11 +62,15 @@ public class EncodingDescriptor {
      * @return Cached or new {@link EncodingDescriptor}.
      */
     public static EncodingDescriptor valueOf(String name) {
-        name = Objects.requireNonNull(name, "Name required.").toUpperCase();
-        final var value = cache.get(name);
-        return value != null
-            ? (EncodingDescriptor) value
-            : new EncodingDescriptor(name);
+        name = Objects.requireNonNull(name, "Expected name").toUpperCase();
+        switch (name) {
+        case "ASN1": return ASN1;
+        case "CBOR": return CBOR;
+        case "JSON": return JSON;
+        case "XML": return XML;
+        case "XSI": return XSI;
+        }
+        return new EncodingDescriptor(name);
     }
 
     @Override

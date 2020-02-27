@@ -35,6 +35,16 @@ public class TestInterfaceDescriptor {
 
     static Stream<Arguments> cachedTripletProvider() {
         return Stream.of(
+            arguments("AMPQ-INSECURE-ASN1", InterfaceDescriptor.AMPQ_INSECURE_ASN1),
+            arguments("AMPQ-INSECURE-CBOR", InterfaceDescriptor.AMPQ_INSECURE_CBOR),
+            arguments("AMPQ-INSECURE-JSON", InterfaceDescriptor.AMPQ_INSECURE_JSON),
+            arguments("AMPQ-INSECURE-XML", InterfaceDescriptor.AMPQ_INSECURE_XML),
+            arguments("AMPQ-INSECURE-XSI", InterfaceDescriptor.AMPQ_INSECURE_XSI),
+            arguments("AMPQ-SECURE-ASN1", InterfaceDescriptor.AMPQ_SECURE_ASN1),
+            arguments("AMPQ-SECURE-CBOR", InterfaceDescriptor.AMPQ_SECURE_CBOR),
+            arguments("AMPQ-SECURE-JSON", InterfaceDescriptor.AMPQ_SECURE_JSON),
+            arguments("AMPQ-SECURE-XML", InterfaceDescriptor.AMPQ_SECURE_XML),
+            arguments("AMPQ-SECURE-XSI", InterfaceDescriptor.AMPQ_SECURE_XSI),
             arguments("COAP-INSECURE-ASN1", InterfaceDescriptor.COAP_INSECURE_ASN1),
             arguments("COAP-INSECURE-CBOR", InterfaceDescriptor.COAP_INSECURE_CBOR),
             arguments("COAP-INSECURE-JSON", InterfaceDescriptor.COAP_INSECURE_JSON),
