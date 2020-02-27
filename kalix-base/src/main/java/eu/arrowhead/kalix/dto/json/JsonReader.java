@@ -22,10 +22,10 @@ public final class JsonReader {
         this.p0 = source.position();
     }
 
-    public static List<JsonToken> tokenize(final ByteBuffer source) throws ReadException {
+    public static JsonTokenReader tokenize(final ByteBuffer source) throws ReadException {
         final var tokenizer = new JsonReader(source);
         if (tokenizer.tokenizeRoot()) {
-            return tokenizer.tokens;
+            return new JsonTokenReader(tokenizer.tokens, source);
         }
         throw tokenizer.error;
     }

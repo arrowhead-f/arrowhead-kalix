@@ -41,20 +41,19 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
                 .addModifiers(Modifier.FINAL)
                 .build())
             .addException(ReadException.class)
-            .addStatement("final var tokens = $T.tokenize(source)", JsonReader.class)
-            .addStatement("return readJson(new $T(tokens, source))", JsonReadState.class)
+            .addStatement("return readJson($T.tokenize(source))", JsonReader.class)
             .build());
 
         final var builder = MethodSpec.methodBuilder("readJson")
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
             .returns(targetClassName)
-            .addParameter(ParameterSpec.builder(TypeName.get(JsonReadState.class), "state")
+            .addParameter(ParameterSpec.builder(TypeName.get(JsonTokenReader.class), "reader")
                 .addModifiers(Modifier.FINAL)
                 .build())
             .addException(ReadException.class)
             .addCode("" +
-                "final var source = state.source();\n" +
-                "var token = state.next();\n" +
+                "final var source = reader.source();\n" +
+                "var token = reader.next();\n" +
                 "var error = \"\";\n");
 
         final var hasNumber = target.properties().stream().anyMatch(property -> property.descriptor().isNumber());
@@ -72,7 +71,7 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
                 "var nChildren = token.nChildren();\n" +
                 "final var builder = new $2NBuilder();\n" +
                 "while (nChildren > 0) {\n" +
-                "    token = state.next();\n" +
+                "    token = reader.next();\n" +
                 "    if (token.type() != $1T.STRING) {\n" +
                 "        error = \"Expected string key\"; break error;\n" +
                 "    }\n" +
@@ -191,7 +190,7 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
         final var element = type.element();
 
         builder.addCode("" +
-                "token = state.next();\n" +
+                "token = reader.next();\n" +
                 "if (token.type() != $1T.ARRAY) {\n" +
                 "    error = \"Expected array\"; break error;\n" +
                 "}\n" +
@@ -213,7 +212,7 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
 
     private void readBoolean(final String lhs, final MethodSpec.Builder builder) {
         builder.addCode("" +
-                "token = state.next();\n" +
+                "token = reader.next();\n" +
                 "if (token.type() != $1T.TRUE && token.type() != $1T.FALSE) {\n" +
                 "    error = \"Expected true or false\"; break error;\n" +
                 "}\n" +
@@ -223,7 +222,7 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
 
     private void readByte(final String lhs, final MethodSpec.Builder builder) {
         builder.addCode("" +
-                "token = state.next();\n" +
+                "token = reader.next();\n" +
                 "if (token.type() != $1T.NUMBER) {\n" +
                 "    error = \"Expected number\"; break error;\n" +
                 "}\n" +
@@ -233,7 +232,7 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
 
     private void readDouble(final String lhs, final MethodSpec.Builder builder) {
         builder.addCode("" +
-                "token = state.next();\n" +
+                "token = reader.next();\n" +
                 "if (token.type() != $1T.NUMBER) {\n" +
                 "    error = \"Expected number\"; break error;\n" +
                 "}\n" +
@@ -243,7 +242,7 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
 
     private void readEnum(final DtoType type, final String lhs, final MethodSpec.Builder builder) {
         builder.addCode("" +
-                "token = state.next();\n" +
+                "token = reader.next();\n" +
                 "if (token.type() != $1T.STRING) {\n" +
                 "    error = \"Expected string\"; break error;\n" +
                 "}\n" +
@@ -253,7 +252,7 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
 
     private void readFloat(final String lhs, final MethodSpec.Builder builder) {
         builder.addCode("" +
-                "token = state.next();\n" +
+                "token = reader.next();\n" +
                 "if (token.type() != $1T.NUMBER) {\n" +
                 "    error = \"Expected number\"; break error;\n" +
                 "}\n" +
@@ -263,7 +262,7 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
 
     private void readInteger(final String lhs, final MethodSpec.Builder builder) {
         builder.addCode("" +
-                "token = state.next();\n" +
+                "token = reader.next();\n" +
                 "if (token.type() != $1T.NUMBER) {\n" +
                 "    error = \"Expected number\"; break error;\n" +
                 "}\n" +
@@ -273,14 +272,14 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
 
     private void readInterface(final DtoInterface type, final String lhs, final MethodSpec.Builder builder) {
         final var className = ClassName.bestGuess(type.targetSimpleName());
-        builder.addStatement(lhs + " = $T.readJson(state)", className);
+        builder.addStatement(lhs + " = $T.readJson(reader)", className);
     }
 
     private void readList(final DtoList type, final String lhs, final MethodSpec.Builder builder) {
         final var element = type.element();
 
         builder.addCode("" +
-                "token = state.next();\n" +
+                "token = reader.next();\n" +
                 "if (token.type() != $1T.ARRAY) {\n" +
                 "    error = \"Expected array\"; break error;\n" +
                 "}\n" +
@@ -304,7 +303,7 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
 
     private void readLong(final String lhs, final MethodSpec.Builder builder) {
         builder.addCode("" +
-                "token = state.next();\n" +
+                "token = reader.next();\n" +
                 "if (token.type() != $1T.NUMBER) {\n" +
                 "    error = \"Expected number\"; break error;\n" +
                 "}\n" +
@@ -317,7 +316,7 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
         final var value = type.value();
 
         builder.addCode("" +
-                "token = state.next();\n" +
+                "token = reader.next();\n" +
                 "if (token.type() != $1T.OBJECT) {\n" +
                 "    error = \"Expected object\"; break error;\n" +
                 "}\n" +
@@ -343,7 +342,7 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
 
     private void readShort(final String lhs, final MethodSpec.Builder builder) {
         builder.addCode("" +
-                "token = state.next();\n" +
+                "token = reader.next();\n" +
                 "if (token.type() != $1T.NUMBER) {\n" +
                 "    error = \"Expected number\"; break error;\n" +
                 "}\n" +
@@ -353,7 +352,7 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
 
     private void readString(final String lhs, final MethodSpec.Builder builder) {
         builder.addCode("" +
-                "token = state.next();\n" +
+                "token = reader.next();\n" +
                 "if (token.type() != $1T.STRING) {\n" +
                 "    error = \"Expected number\"; break error;\n" +
                 "}\n" +

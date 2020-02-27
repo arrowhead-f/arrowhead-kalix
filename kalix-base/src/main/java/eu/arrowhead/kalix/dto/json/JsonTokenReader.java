@@ -1,14 +1,16 @@
 package eu.arrowhead.kalix.dto.json;
 
+import eu.arrowhead.kalix.dto.ReadException;
+
 import java.nio.ByteBuffer;
 import java.util.List;
 
-public class JsonReadState {
+public class JsonTokenReader {
     private final List<JsonToken> tokens;
     private final ByteBuffer source;
     private int offset;
 
-    public JsonReadState(final List<JsonToken> tokens, final ByteBuffer source) {
+    JsonTokenReader(final List<JsonToken> tokens, final ByteBuffer source) {
         this.tokens = tokens;
         this.source = source;
 
