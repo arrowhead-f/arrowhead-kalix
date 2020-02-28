@@ -19,7 +19,7 @@ public class HttpResponder {
      * @return The hostname/port or IP-address/port of the sender of some HTTP
      * response.
      */
-    public InetSocketAddress host() {
+    public InetSocketAddress socketAddress() {
         return null;
     }
 }

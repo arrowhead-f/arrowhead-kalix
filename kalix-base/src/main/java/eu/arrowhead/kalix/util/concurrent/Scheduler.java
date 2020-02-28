@@ -11,6 +11,17 @@ import java.util.concurrent.ThreadFactory;
  */
 public interface Scheduler {
     /**
+     * @return Default {@code Scheduler} with a thread pool containing twice as
+     * many threads as available system CPU cores.
+     * <p>
+     * Note that the same scheduler will always be returned by this static
+     * method, no matter how many times it is called.
+     */
+    static Scheduler getDefault() {
+        return NettyScheduler.getDefault();
+    }
+
+    /**
      * @return New {@code Scheduler} with a thread pool containing twice as
      * many threads as available system CPU cores.
      */

@@ -24,6 +24,8 @@ import java.util.function.Consumer;
  * implementation is not.
  */
 public class NettyScheduler implements Scheduler {
+    private static NettyScheduler defaultScheduler = null;
+
     private final EventLoopGroup eventLoopGroup;
 
     /**
@@ -61,6 +63,20 @@ public class NettyScheduler implements Scheduler {
             eventLoopGroup = new NioEventLoopGroup(nThreads, threadFactory);
         }
         this.eventLoopGroup = eventLoopGroup;
+    }
+
+    /**
+     * @return Default {@code Scheduler} with a thread pool containing twice as
+     * many threads as available system CPU cores.
+     * <p>
+     * Note that the same scheduler will always be returned by this static
+     * method, no matter how many times it is called.
+     */
+    public static NettyScheduler getDefault() {
+        if (defaultScheduler == null) {
+            defaultScheduler = new NettyScheduler(null, 0);
+        }
+        return defaultScheduler;
     }
 
     @Override

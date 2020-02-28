@@ -1,5 +1,6 @@
-package eu.arrowhead.kalix;
+package eu.arrowhead.kalix.http;
 
+import eu.arrowhead.kalix.ArrowheadSystem;
 import eu.arrowhead.kalix.descriptor.ServiceDescriptor;
 import eu.arrowhead.kalix.http.service.HttpService;
 
@@ -7,11 +8,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class ArrowheadSystemHttp extends ArrowheadSystem<HttpService> {
+public class HttpArrowheadSystem extends ArrowheadSystem<HttpService> {
     private final HashSet<HttpService> providedServices = new HashSet<>();
     private final HashSet<ServiceDescriptor> providedServiceDescriptors = new HashSet<>();
 
-    private ArrowheadSystemHttp(final Builder builder) {
+    private HttpArrowheadSystem(final Builder builder) {
         super(builder);
     }
 
@@ -34,15 +35,15 @@ public class ArrowheadSystemHttp extends ArrowheadSystem<HttpService> {
         }
     }
 
-    public static class Builder extends ArrowheadSystem.Builder<Builder, ArrowheadSystemHttp> {
+    public static class Builder extends ArrowheadSystem.Builder<Builder, HttpArrowheadSystem> {
         @Override
         protected Builder self() {
             return this;
         }
 
         @Override
-        public ArrowheadSystemHttp build() {
-            return new ArrowheadSystemHttp(this);
+        public HttpArrowheadSystem build() {
+            return new HttpArrowheadSystem(this);
         }
     }
 }

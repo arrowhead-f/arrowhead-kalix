@@ -6,27 +6,29 @@ import eu.arrowhead.kalix.security.X509KeyStore;
 import eu.arrowhead.kalix.security.X509TrustStore;
 import eu.arrowhead.kalix.util.concurrent.Scheduler;
 
-import javax.naming.InvalidNameException;
-import javax.naming.ldap.LdapName;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.security.cert.X509Certificate;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Base class for all Arrowhead systems.
+ *
+ * @param <S> Type of service provided by this system.
+ */
 public abstract class ArrowheadSystem<S> {
     private final String name;
-    private final InetSocketAddress address;
+    private final InetSocketAddress socketAddress;
     private final X509KeyStore keyStore;
     private final X509TrustStore trustStore;
     private final Scheduler scheduler;
 
     protected ArrowheadSystem(final Builder<?, ? extends ArrowheadSystem<?>> builder) {
         var name = builder.name;
-        address = Objects.requireNonNullElseGet(builder.socketAddress, () -> new InetSocketAddress(0));
+        socketAddress = Objects.requireNonNullElseGet(builder.socketAddress, () -> new InetSocketAddress(0));
         keyStore = builder.keyStore;
         trustStore = builder.trustStore;
-        scheduler = Objects.requireNonNullElseGet(builder.scheduler, Scheduler::create);
+        scheduler = Objects.requireNonNullElseGet(builder.scheduler, Scheduler::getDefault);
 
         if (builder.isInsecure) {
             if (name == null || name.length() == 0) {
@@ -58,37 +60,86 @@ public abstract class ArrowheadSystem<S> {
         }
     }
 
+    /**
+     * @return Human and machine-readable name of this system.
+     */
     public String name() {
         return name;
     }
 
-    public InetSocketAddress address() {
-        return address;
+    /**
+     * @return Network interface address.
+     */
+    public InetAddress address() {
+        return socketAddress.getAddress();
     }
 
+    /**
+     * @return Port through which this system exposes its provided services.
+     */
     public int port() {
-        return address.getPort();
+        return socketAddress.getPort(); // TODO: Lookup bound port if 0 was specified.
     }
 
+    /**
+     * @return Key store provided during system creation if running in secure
+     * mode. Otherwise {@code null} is returned.
+     */
     public X509KeyStore keyStore() {
         return keyStore;
     }
 
+    /**
+     * @return Trust store provided during system creation if running in secure
+     * mode. Otherwise {@code null} is returned.
+     */
     public X509TrustStore trustStore() {
         return trustStore;
     }
 
+    /**
+     * @return Scheduler being used to handle asynchronous task execution.
+     */
     public Scheduler scheduler() {
         return scheduler;
     }
 
+    /**
+     * @return Descriptors representing all services currently provided by this
+     * system.
+     */
     public abstract Set<ServiceDescriptor> providedServices();
 
+    /**
+     * Registers given {@code service} with system and makes its immediately
+     * accessible to other system.
+     * <p>
+     * Calling this method with a service that is already being provided has no
+     * effect.
+     *
+     * @param service Service to be provided by this system.
+     */
     public abstract void provideService(final S service);
 
+    /**
+     * Deregisters given {@code service} from this system, immediately making
+     * it inaccessible to other systems.
+     * <p>
+     * Calling this method with a service that is not currently provided has no
+     * effect.
+     *
+     * @param service Service to no longer be provided by this system.
+     */
     public abstract void dismissService(final S service);
 
-    public static abstract class Builder<B extends Builder<?, AS>, AS> {
+    /**
+     * Builder useful for creating instances of classes extending the
+     * {@link ArrowheadSystem} class.
+     *
+     * @param <B>  Type of extending builder class.
+     * @param <AS> Type of created {@link ArrowheadSystem} class.
+     */
+    public static abstract class Builder<B extends Builder<?, AS>, AS extends ArrowheadSystem<?>> {
         private String name;
         private InetSocketAddress socketAddress;
         private X509KeyStore keyStore;
@@ -96,6 +147,9 @@ public abstract class ArrowheadSystem<S> {
         private Scheduler scheduler;
         private boolean isInsecure = false;
 
+        /**
+         * @return This builder.
+         */
         protected abstract B self();
 
         /**
@@ -227,11 +281,33 @@ public abstract class ArrowheadSystem<S> {
             return socketAddress(new InetSocketAddress(port));
         }
 
+        /**
+         * Sets key store to use for representing the created system and its
+         * services.
+         * <p>
+         * An {@link ArrowheadSystem} either must have or must not have a
+         * key store, depending on whether it is running in secure mode or not,
+         * respectively.
+         *
+         * @param keyStore Key store to use.
+         * @return This builder.
+         */
         public final B keyStore(final X509KeyStore keyStore) {
             this.keyStore = keyStore;
             return self();
         }
 
+        /**
+         * Sets trust store to use for determining what systems are trusted to
+         * be communicated by the created system.
+         * <p>
+         * An {@link ArrowheadSystem} either must have or must not have a
+         * trust store, depending on whether it is running in secure mode or
+         * not, respectively.
+         *
+         * @param trustStore Trust store to use.
+         * @return This builder.
+         */
         public final B trustStore(final X509TrustStore trustStore) {
             this.trustStore = trustStore;
             return self();
@@ -255,11 +331,25 @@ public abstract class ArrowheadSystem<S> {
             return self();
         }
 
+        /**
+         * Sets scheduler to be used by the created system.
+         * <p>
+         * If none is explicitly specified, the one returned by
+         * {@link Scheduler#getDefault()} is used. This means that if several
+         * systems are created without schedulers being explicitly set, the
+         * systems will all share the same scheduler.
+         *
+         * @param scheduler Asynchronous task scheduler.
+         * @return This builder.
+         */
         public final B scheduler(final Scheduler scheduler) {
             this.scheduler = scheduler;
             return self();
         }
 
+        /**
+         * @return New {@link ArrowheadSystem}.
+         */
         public abstract AS build();
     }
 }

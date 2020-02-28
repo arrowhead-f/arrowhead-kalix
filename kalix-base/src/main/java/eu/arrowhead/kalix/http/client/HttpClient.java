@@ -5,25 +5,26 @@ import eu.arrowhead.kalix.util.concurrent.Future;
 import java.net.InetSocketAddress;
 
 /**
- * Client useful for sending HTTP requests to a single remote host.
+ * Client useful for sending HTTP requests to a single remote socket address.
  */
 public class HttpClient {
-    private final InetSocketAddress host;
+    private final InetSocketAddress socketAddress;
 
     /**
-     * Creates new {@link HttpClient} for communicating with {@code host}.
+     * Creates new {@link HttpClient} for communicating with given
+     * {@code socketAddress}.
      *
-     * @param host Hostname/port or IP/port of target host.
+     * @param socketAddress Hostname/port or IP/port of target socketAddress.
      */
-    public HttpClient(final InetSocketAddress host) {
-        this.host = host;
+    public HttpClient(final InetSocketAddress socketAddress) {
+        this.socketAddress = socketAddress;
     }
 
     /**
-     * @return Host reachable via this client
+     * @return Host reachable via this client.
      */
-    public InetSocketAddress host() {
-        return host;
+    public InetSocketAddress socketAddress() {
+        return socketAddress;
     }
 
     /**
