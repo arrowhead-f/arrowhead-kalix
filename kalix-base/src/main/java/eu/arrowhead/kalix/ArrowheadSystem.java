@@ -1,7 +1,7 @@
 package eu.arrowhead.kalix;
 
-import eu.arrowhead.kalix.security.Keystore;
-import eu.arrowhead.kalix.security.Truststore;
+import eu.arrowhead.kalix.security.X509KeyStore;
+import eu.arrowhead.kalix.security.X509TrustStore;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -11,21 +11,20 @@ import java.util.*;
  * Represents an abstract Arrowhead Framework (AHF) system.
  * <p>
  * An instance of this class is used manage the existence of a single AHF
- * system, which exists to <i>provide</i> and <i>consume</i>
- * {@link Service}s.
+ * system, which exists to <i>provide</i> and <i>consume</i> {@link Service}s.
  */
 public class ArrowheadSystem {
     private final String name;
     private final InetSocketAddress host;
-    private final Keystore keystore;
-    private final Truststore truststore;
+    private final X509KeyStore keyStore;
+    private final X509TrustStore trustStore;
     private final List<Service> services;
 
     protected ArrowheadSystem(final Builder builder) {
         this.name = Objects.requireNonNull(builder.name, "System name is mandatory");
         this.host = Objects.requireNonNullElseGet(builder.host, () -> new InetSocketAddress(0));
-        this.keystore = builder.keystore;
-        this.truststore = builder.truststore;
+        this.keyStore = builder.keyStore;
+        this.trustStore = builder.trustStore;
         this.services = builder.services;
     }
 
@@ -40,8 +39,8 @@ public class ArrowheadSystem {
     public static class Builder {
         private String name;
         private InetSocketAddress host;
-        private Keystore keystore;
-        private Truststore truststore;
+        private X509KeyStore keyStore;
+        private X509TrustStore trustStore;
         private List<Service> services = new ArrayList<>(0);
 
         public final Builder name(final String name) {
@@ -62,13 +61,13 @@ public class ArrowheadSystem {
             return host(new InetSocketAddress(hostname, port));
         }
 
-        public final Builder keystore(final Keystore keystore) {
-            this.keystore = keystore;
+        public final Builder keyStore(final X509KeyStore keyStore) {
+            this.keyStore = keyStore;
             return this;
         }
 
-        public final Builder truststore(final Truststore truststore) {
-            this.truststore = truststore;
+        public final Builder trustStore(final X509TrustStore trustStore) {
+            this.trustStore = trustStore;
             return this;
         }
 
