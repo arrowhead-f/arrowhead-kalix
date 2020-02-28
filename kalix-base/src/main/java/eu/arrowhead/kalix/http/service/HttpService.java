@@ -1,11 +1,10 @@
 package eu.arrowhead.kalix.http.service;
 
-import eu.arrowhead.kalix.Service;
 import eu.arrowhead.kalix.http.HttpMethod;
 
 import java.util.ArrayList;
 
-public class HttpService implements Service {
+public class HttpService {
     private HttpService(final Builder builder) {
 
     }
