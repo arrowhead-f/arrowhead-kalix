@@ -1,7 +1,6 @@
 package eu.arrowhead.kalix;
 
 import eu.arrowhead.kalix.descriptor.ServiceDescriptor;
-import eu.arrowhead.kalix.security.X509Certificates;
 import eu.arrowhead.kalix.security.X509KeyStore;
 import eu.arrowhead.kalix.security.X509TrustStore;
 import eu.arrowhead.kalix.util.concurrent.Scheduler;
@@ -48,7 +47,8 @@ public abstract class ArrowheadSystem<S> {
                     "trustStore; required in secure mode");
             }
 
-            final var certificateName = X509Certificates.systemNameOf(keyStore.certificate());
+            /* TODO: Fix this.
+            final var certificateName = X509Certificates.subjectArrowheadNameOf(keyStore.certificate());
             if (name != null && !Objects.equals(name, certificateName)) {
                 throw new IllegalStateException("System name in provided " +
                     "keyStore certificate is \"" + certificateName + "\" " +
@@ -56,7 +56,8 @@ public abstract class ArrowheadSystem<S> {
                     "either do not provide a name or provide the same name " +
                     "as is stated in the certificate");
             }
-            this.name = certificateName;
+            this.name = certificateName; */
+            this.name = "TODO";
         }
     }
 
