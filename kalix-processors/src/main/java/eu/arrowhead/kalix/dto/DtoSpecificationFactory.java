@@ -43,7 +43,7 @@ public class DtoSpecificationFactory {
                 ? ClassName.bestGuess(((DtoInterface) property.type()).targetSimpleName())
                 : TypeName.get(property.asTypeMirror());
 
-            implementation.addField(FieldSpec.builder(type, name, Modifier.PRIVATE).build());
+            implementation.addField(type, name, Modifier.PRIVATE, Modifier.FINAL);
             implementation.addMethod(MethodSpec.methodBuilder(name)
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)

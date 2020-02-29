@@ -4,6 +4,7 @@ import com.squareup.javapoet.*;
 import eu.arrowhead.kalix.dto.json.*;
 import eu.arrowhead.kalix.dto.types.*;
 import eu.arrowhead.kalix.dto.util.ByteBufferPutCache;
+import eu.arrowhead.kalix.dto.util.Expander;
 
 import javax.lang.model.element.Modifier;
 import java.nio.ByteBuffer;
@@ -70,14 +71,10 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
             .beginControlFlow("switch (reader.next().readString(source))");
 
         for (final var property : target.properties()) {
-            builder
-                .beginControlFlow("case $S:", property.nameFor(Format.JSON));
-
-            readValue(property.type(), "final var value", builder);
-
-            builder
-                .addStatement("builder.$N(value)", property.name())
-                .endControlFlow("break");
+            builder.beginControlFlow("case $S:", property.nameFor(Format.JSON));
+            final var name = property.name();
+            readValue(property.type(), x -> "builder." + name + "(" + x + ")", builder);
+            builder.endControlFlow("break");
         }
 
         builder
@@ -102,21 +99,21 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
         implementation.addMethod(builder.build());
     }
 
-    private void readValue(final DtoType type, final String lhs, final MethodSpec.Builder builder) {
+    private void readValue(final DtoType type, final Expander assignment, final MethodSpec.Builder builder) {
         final var descriptor = type.descriptor();
         switch (descriptor) {
         case ARRAY:
-            readArray((DtoArray) type, lhs, builder);
+            readArray((DtoArray) type, assignment, builder);
             break;
 
         case BOOLEAN_BOXED:
         case BOOLEAN_UNBOXED:
-            readBoolean(lhs, builder);
+            readBoolean(assignment, builder);
             break;
 
         case BYTE_BOXED:
         case BYTE_UNBOXED:
-            readByte(lhs, builder);
+            readNumber("Byte", assignment, builder);
             break;
 
         case CHARACTER_BOXED:
@@ -125,47 +122,47 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
 
         case DOUBLE_BOXED:
         case DOUBLE_UNBOXED:
-            readDouble(lhs, builder);
+            readNumber("Double", assignment, builder);
             break;
 
         case ENUM:
-            readEnum(type, lhs, builder);
+            readEnum(type, assignment, builder);
             break;
 
         case FLOAT_BOXED:
         case FLOAT_UNBOXED:
-            readFloat(lhs, builder);
+            readNumber("Float", assignment, builder);
             break;
 
         case INTEGER_BOXED:
         case INTEGER_UNBOXED:
-            readInteger(lhs, builder);
+            readNumber("Integer", assignment, builder);
             break;
 
         case INTERFACE:
-            readInterface((DtoInterface) type, lhs, builder);
+            readInterface((DtoInterface) type, assignment, builder);
             break;
 
         case LIST:
-            readList((DtoList) type, lhs, builder);
+            readList((DtoList) type, assignment, builder);
             break;
 
         case LONG_BOXED:
         case LONG_UNBOXED:
-            readLong(lhs, builder);
+            readNumber("Long", assignment, builder);
             break;
 
         case MAP:
-            readMap((DtoMap) type, lhs, builder);
+            readMap((DtoMap) type, assignment, builder);
             break;
 
         case SHORT_BOXED:
         case SHORT_UNBOXED:
-            readShort(lhs, builder);
+            readNumber("Short", assignment, builder);
             break;
 
         case STRING:
-            readString(lhs, builder);
+            readString(assignment, builder);
             break;
 
         default:
@@ -173,7 +170,7 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
         }
     }
 
-    private void readArray(final DtoArray type, final String lhs, final MethodSpec.Builder builder) {
+    private void readArray(final DtoArray type, final Expander assignment, final MethodSpec.Builder builder) {
         final var element = type.element();
 
         builder
@@ -185,85 +182,46 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
             .addStatement("final var items$L = new $T[token.nChildren()]", level, element.asTypeMirror())
             .beginControlFlow("for (var i$1L = 0; i$1L < items$1L.length; ++i$1L)", level);
 
-        final var itemLhs = "items" + level + "[i" + level + "]";
-
+        final var lhs = "items" + level + "[i" + level + "] = ";
         level += 1;
-        readValue(element, itemLhs, builder);
+        readValue(element, x -> lhs + x, builder);
         level -= 1;
 
         builder
             .endControlFlow()
-            .addStatement(lhs + " = items$L", level);
+            .addStatement(assignment.expand("items$L"), level);
     }
 
-    private void readBoolean(final String lhs, final MethodSpec.Builder builder) {
+    private void readBoolean(final Expander assignment, final MethodSpec.Builder builder) {
         builder
+            .addStatement("boolean value$L", level)
             .beginControlFlow("switch (reader.next().type())")
-            .addStatement("case TRUE: " + lhs + " = true; break")
-            .addStatement("case FALSE: " + lhs + " = false; break")
+            .addStatement("case TRUE: value$L = true; break", level)
+            .addStatement("case FALSE: value$L = false; break", level)
             .beginControlFlow("default:")
             .addStatement("error = \"Expected true or false\"")
             .addStatement("break error")
             .endControlFlow()
-            .endControlFlow();
-    }
-
-    private void readByte(final String lhs, final MethodSpec.Builder builder) {
-        builder
-            .addStatement("token = reader.next()")
-            .beginControlFlow("if (token.type() != $T.NUMBER)", JsonType.class)
-            .addStatement("error = \"Expected number\"")
-            .addStatement("break error")
             .endControlFlow()
-            .addStatement(lhs + " = token.readByte(source)");
+            .addStatement(assignment.expand("value$L"), level);
     }
 
-    private void readDouble(final String lhs, final MethodSpec.Builder builder) {
-        builder
-            .addStatement("token = reader.next()")
-            .beginControlFlow("if (token.type() != $T.NUMBER)", JsonType.class)
-            .addStatement("error = \"Expected number\"")
-            .addStatement("break error")
-            .endControlFlow()
-            .addStatement(lhs + " = token.readDouble(source)");
-    }
-
-    private void readEnum(final DtoType type, final String lhs, final MethodSpec.Builder builder) {
+    private void readEnum(final DtoType type, final Expander assignment, final MethodSpec.Builder builder) {
         builder
             .addStatement("token = reader.next()")
             .beginControlFlow("if (token.type() != $T.STRING)", JsonType.class)
             .addStatement("error = \"Expected number\"")
             .addStatement("break error")
             .endControlFlow()
-            .addStatement(lhs + " = $T.valueOf(token.readString(source))", type.asTypeMirror());
+            .addStatement(assignment.expand("$T.valueOf(token.readString(source))"), type.asTypeMirror());
     }
 
-    private void readFloat(final String lhs, final MethodSpec.Builder builder) {
-        builder
-            .addStatement("token = reader.next()")
-            .beginControlFlow("if (token.type() != $T.NUMBER)", JsonType.class)
-            .addStatement("error = \"Expected number\"")
-            .addStatement("break error")
-            .endControlFlow()
-            .addStatement(lhs + " = token.readFloat(source)");
-    }
-
-    private void readInteger(final String lhs, final MethodSpec.Builder builder) {
-        builder
-            .addStatement("token = reader.next()")
-            .beginControlFlow("if (token.type() != $T.NUMBER)", JsonType.class)
-            .addStatement("error = \"Expected number\"")
-            .addStatement("break error")
-            .endControlFlow()
-            .addStatement(lhs + " = token.readInteger(source)");
-    }
-
-    private void readInterface(final DtoInterface type, final String lhs, final MethodSpec.Builder builder) {
+    private void readInterface(final DtoInterface type, final Expander assignment, final MethodSpec.Builder builder) {
         final var className = ClassName.bestGuess(type.targetSimpleName());
-        builder.addStatement(lhs + " = $T.readJson(reader)", className);
+        builder.addStatement(assignment.expand("$T.readJson(reader)"), className);
     }
 
-    private void readList(final DtoList type, final String lhs, final MethodSpec.Builder builder) {
+    private void readList(final DtoList type, final Expander assignment, final MethodSpec.Builder builder) {
         final var element = type.element();
 
         builder
@@ -276,29 +234,18 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
             .addStatement("final var items$1L = new $2T<$3T>(n$1L)", level, ArrayList.class, element.asTypeMirror())
             .beginControlFlow("while (n$L-- != 0)", level);
 
-        final var itemLhs = "final var item" + level;
-
+        final var lhs = "final var item" + level + " = ";
         level += 1;
-        readValue(element, itemLhs, builder);
+        readValue(element, x -> lhs + x, builder);
         level -= 1;
 
         builder
             .addStatement("items$1L.add(item$1L)", level)
             .endControlFlow()
-            .addStatement(lhs + " = items$L", level);
+            .addStatement(assignment.expand("items$L"), level);
     }
 
-    private void readLong(final String lhs, final MethodSpec.Builder builder) {
-        builder
-            .addStatement("token = reader.next()")
-            .beginControlFlow("if (token.type() != $T.NUMBER)", JsonType.class)
-            .addStatement("error = \"Expected number\"")
-            .addStatement("break error")
-            .endControlFlow()
-            .addStatement(lhs + " = token.readLong(source)");
-    }
-
-    private void readMap(final DtoMap type, final String lhs, final MethodSpec.Builder builder) {
+    private void readMap(final DtoMap type, final Expander assignment, final MethodSpec.Builder builder) {
         final var key = type.key();
         final var value = type.value();
 
@@ -314,39 +261,40 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
             .beginControlFlow("while (n$L-- != 0)", level)
             .addStatement("final var key$L = reader.next().readString(source)", level);
 
-        final var valueLhs = "final var value" + level;
-
+        final var lhs = "final var value" + level + " = ";
         level += 1;
-        readValue(value, valueLhs, builder);
+        readValue(value, x -> lhs + x, builder);
         level -= 1;
 
         builder
             .addStatement("entries$1L.put(key$1L, value$1L)", level)
             .endControlFlow()
-            .addStatement(lhs + " = entries$L", level);
+            .addStatement(assignment.expand("entries$L"), level);
     }
 
-    private void readShort(final String lhs, final MethodSpec.Builder builder) {
+    private void readNumber(final String type, final Expander assignment, final MethodSpec.Builder builder) {
         builder
             .addStatement("token = reader.next()")
             .beginControlFlow("if (token.type() != $T.NUMBER)", JsonType.class)
             .addStatement("error = \"Expected number\"")
             .addStatement("break error")
             .endControlFlow()
-            .addStatement(lhs + " = token.readShort(source)");
+            .addStatement(assignment.expand("token.read" + type + "(source)"));
     }
 
-    private void readString(final String lhs, final MethodSpec.Builder builder) {
+    private void readString(final Expander assignment, final MethodSpec.Builder builder) {
         builder
             .addStatement("token = reader.next()")
             .beginControlFlow("if (token.type() != $T.STRING)", JsonType.class)
             .addStatement("error = \"Expected number\"")
             .addStatement("break error")
             .endControlFlow()
-            .addStatement(lhs + " = token.readString(source)");
+            .addStatement(assignment.expand("token.readString(source)"));
     }
 
-    private void implementWriteMethodFor(final DtoTarget target, final TypeSpec.Builder implementation) throws DtoException {
+    private void implementWriteMethodFor(final DtoTarget target, final TypeSpec.Builder implementation)
+        throws DtoException
+    {
         final var builder = MethodSpec.methodBuilder("writeJson")
             .addAnnotation(Override.class)
             .addModifiers(Modifier.PUBLIC)
