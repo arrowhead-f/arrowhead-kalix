@@ -4,6 +4,7 @@ import eu.arrowhead.kalix.util.Result;
 import eu.arrowhead.kalix.util.function.ThrowingFunction;
 
 import java.util.Objects;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.*;
 import java.util.function.Consumer;
 
@@ -49,8 +50,9 @@ public interface Future<V> {
      * <p>
      * If this {@code Future} has already been cancelled or completed, calling
      * this method should do nothing. Calling this method on a {@code Future}
-     * that has not yet completed should prevent {@link #onResult(Consumer)}
-     * from ever being called.
+     * that has not yet completed does not prevent {@link #onResult(Consumer)}
+     * from being called, but rather ensures it will eventually be called with
+     * an error of type {@link CancellationException}.
      *
      * @param mayInterruptIfRunning Whether or not the thread executing the
      *                              task associated with this {@code Future},
@@ -66,8 +68,9 @@ public interface Future<V> {
      * <p>
      * If this {@code Future} has already been cancelled or completed, calling
      * this method should do nothing. Calling this method on a {@code Future}
-     * that has not yet completed should prevent {@link #onResult(Consumer)}
-     * from ever being called.
+     * that has not yet completed does not prevent {@link #onResult(Consumer)}
+     * from being called, but rather ensures it will eventually be called with
+     * an error of type {@link CancellationException}.
      */
     default void cancel() {
         cancel(false);
@@ -123,14 +126,14 @@ public interface Future<V> {
         return new Future<>() {
             @Override
             public void onResult(final Consumer<Result<U>> consumer) {
-                source.onResult(r0 -> {
-                    Result<U> r1;
+                source.onResult(result0 -> {
+                    Result<U> result1;
                     success:
                     {
                         Throwable err;
-                        if (r0.isSuccess()) {
+                        if (result0.isSuccess()) {
                             try {
-                                r1 = Result.success(mapper.apply(r0.value()));
+                                result1 = Result.success(mapper.apply(result0.value()));
                                 break success;
                             }
                             catch (final Throwable error) {
@@ -138,11 +141,11 @@ public interface Future<V> {
                             }
                         }
                         else {
-                            err = r0.error();
+                            err = result0.error();
                         }
-                        r1 = Result.failure(err);
+                        result1 = Result.failure(err);
                     }
-                    consumer.accept(r1);
+                    consumer.accept(result1);
                 });
             }
 

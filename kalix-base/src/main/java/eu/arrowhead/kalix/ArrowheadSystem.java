@@ -7,6 +7,7 @@ import eu.arrowhead.kalix.security.X509KeyStore;
 import eu.arrowhead.kalix.security.X509TrustStore;
 import eu.arrowhead.kalix.util.concurrent.Future;
 import eu.arrowhead.kalix.util.concurrent.Scheduler;
+import eu.arrowhead.kalix.util.logging.LogLevel;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -25,6 +26,7 @@ public abstract class ArrowheadSystem<S> {
     private final X509KeyStore keyStore;
     private final X509TrustStore trustStore;
     private final Scheduler scheduler;
+    private final LogLevel logLevel;
 
     protected ArrowheadSystem(final Builder<?, ? extends ArrowheadSystem<?>> builder) {
         var name = builder.name;
@@ -32,6 +34,7 @@ public abstract class ArrowheadSystem<S> {
         keyStore = builder.keyStore;
         trustStore = builder.trustStore;
         scheduler = Objects.requireNonNullElseGet(builder.scheduler, NettySchedulerReferenceCounted::getDefault);
+        logLevel = builder.logLevel;
 
         if (builder.isInsecure) {
             if (name == null || name.length() == 0) {
@@ -114,6 +117,13 @@ public abstract class ArrowheadSystem<S> {
     }
 
     /**
+     * @return Logging level configured for this system.
+     */
+    public LogLevel logLevel() {
+        return logLevel;
+    }
+
+    /**
      * @return Descriptors representing all services currently provided by this
      * system.
      */
@@ -147,6 +157,17 @@ public abstract class ArrowheadSystem<S> {
     public abstract void dismissAllServices();
 
     /**
+     * Starts Arrowhead system, making it serve any services registered via
+     * {@link #provideService(Object)} either before or after this method is
+     * called.
+     *
+     * @return Future completed only if (1) starting the system fails, (2) the
+     * system crashes or (3) the {@link #shutdown(Duration)} method of this
+     * system is called.
+     */
+    public abstract Future<?> serve();
+
+    /**
      * Dismisses all provided services and releases all resources held by the
      * system.
      *
@@ -171,8 +192,9 @@ public abstract class ArrowheadSystem<S> {
         private InetSocketAddress socketAddress;
         private X509KeyStore keyStore;
         private X509TrustStore trustStore;
-        private Scheduler scheduler;
         private boolean isInsecure = false;
+        private Scheduler scheduler;
+        private LogLevel logLevel = LogLevel.INFO;
 
         /**
          * @return This builder.
@@ -384,6 +406,20 @@ public abstract class ArrowheadSystem<S> {
          */
         public final B scheduler(final Scheduler scheduler) {
             this.scheduler = scheduler;
+            return self();
+        }
+
+        /**
+         * Determines what internal events will be logged while the system is
+         * running.
+         * <p>
+         * If never set, {@link LogLevel#INFO} will be used by default.
+         *
+         * @param logLevel Target logging level.
+         * @return This builder.
+         */
+        public final B logLevel(final LogLevel logLevel) {
+            this.logLevel = logLevel;
             return self();
         }
 
