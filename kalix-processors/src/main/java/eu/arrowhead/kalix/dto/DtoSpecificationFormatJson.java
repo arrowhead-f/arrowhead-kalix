@@ -52,8 +52,11 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
             .addStatement("var token = reader.next()")
             .addStatement("var error = \"\"");
 
-        final var hasNumber = target.properties().stream().anyMatch(property -> property.descriptor().isNumber());
-        if (hasNumber) {
+        var hasEnum = target.properties().stream().anyMatch(property -> property.descriptor() == DtoDescriptor.ENUM);
+        var hasMandatory = target.properties().stream().anyMatch(property -> !property.isOptional());
+        var hasNumber = target.properties().stream().anyMatch(property -> property.descriptor().isNumber());
+
+        if (hasEnum || hasMandatory || hasNumber) {
             builder.beginControlFlow("error: try");
         }
         else {
@@ -80,17 +83,26 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
         builder
             .endControlFlow()
             .endControlFlow()
-            .addStatement("return builder.build()");
+            .addStatement("return builder.build()")
+            .endControlFlow();
 
-        if (hasNumber) {
+        if (hasEnum) {
             builder
-                .endControlFlow()
-                .beginControlFlow("catch (final $1T exception) ", NumberFormatException.class)
-                .addStatement("error = exception.getMessage()")
+                .beginControlFlow("catch (final $T exception)", IllegalArgumentException.class)
+                .addStatement("error = \"Enumerator error: \" + exception.getMessage()")
                 .endControlFlow();
         }
-        else {
-            builder.endControlFlow();
+        if (hasMandatory) {
+            builder
+                .beginControlFlow("catch (final $T exception)", NullPointerException.class)
+                .addStatement("error = \"Field error: \" + exception.getMessage()")
+                .endControlFlow();
+        }
+        if (hasNumber) {
+            builder
+                .beginControlFlow("catch (final $T exception)", NumberFormatException.class)
+                .addStatement("error = \"Number error: \" + exception.getMessage()")
+                .endControlFlow();
         }
 
         builder.addCode("throw new $1T($2T.JSON, error, token.readString(source), token.begin());\n",
