@@ -1,21 +1,21 @@
-package eu.arrowhead.kalix.security;
+package eu.arrowhead.kalix.descriptor;
 
 import java.util.Optional;
 
-public class ArrowheadName {
+public class NameDescriptor {
     private final String system;
     private final String cloud;
     private final String company;
     private final String master;
 
-    public ArrowheadName(final String system, final String cloud, final String company, final String master) {
+    public NameDescriptor(final String system, final String cloud, final String company, final String master) {
         this.system = system;
         this.cloud = cloud;
         this.company = company;
         this.master = master;
     }
 
-    public static ArrowheadName fromCommonName(final String cn) {
+    public static NameDescriptor fromCommonName(final String cn) {
         throw new UnsupportedOperationException(); // TODO: Implement.
     }
 
