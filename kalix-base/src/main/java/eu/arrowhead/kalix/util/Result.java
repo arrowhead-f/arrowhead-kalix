@@ -118,8 +118,8 @@ public class Result<V> {
 
     /**
      * If this result is successful, applies given {@code mapper} to its value.
-     * Otherwise, a new {@code FutureResult} with the error contained in this
-     * one is returned.
+     * Otherwise, a new {@code Result} with the error contained in this one is
+     * returned.
      *
      * @param <U>    Type of return value of {@code mapper}.
      * @param mapper Function to apply to result value, if this result is
@@ -136,9 +136,9 @@ public class Result<V> {
 
     /**
      * If this result is successful, applies given {@code mapper} to its value,
-     * and then return the {@code FutureResult} returned by the {@code mapper}.
-     * If this result is not successful, a new {@code FutureResult} with the
-     * error it contains is returned.
+     * and then returns the {@code Result} returned by the {@code mapper}. If
+     * this result is not successful, a new {@code FutureResult} with the error
+     * it contains is returned.
      *
      * @param <U>    Type of value of {@code FutureResult} returned by
      *               {@code mapper}.
