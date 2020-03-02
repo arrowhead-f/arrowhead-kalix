@@ -4,7 +4,7 @@ package eu.arrowhead.kalix.security;
  * Represents the failure to parse an LDAP DN, potentially associated with some
  * x.509 certificate.
  */
-public class X509NameException extends Exception {
+public class X509NameException extends IllegalArgumentException {
     /**
      * Creates new name exception.
      *

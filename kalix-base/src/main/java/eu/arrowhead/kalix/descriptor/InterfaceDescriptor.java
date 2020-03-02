@@ -574,8 +574,8 @@ public class InterfaceDescriptor {
 
         final var matcher = TRIPLET_PATTERN.matcher(triplet);
         if (!matcher.matches()) {
-            throw new IllegalArgumentException("Invalid Arrowhead interface string `" + triplet
-                + "`; must match `([A-Z][0-9A-Z_]*)-(IN)?SECURE-([A-Z][0-9A-Z_]*)`");
+            throw new IllegalArgumentException("Invalid Arrowhead interface string \"" + triplet
+                + "\"; must match \"" + TRIPLET_PATTERN + "\"");
         }
         return new InterfaceDescriptor(
             TransportDescriptor.valueOf(matcher.group(1)),
