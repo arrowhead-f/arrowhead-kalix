@@ -15,29 +15,30 @@ import java.util.Collections;
  */
 public class X509KeyStore {
     private final X509Certificate[] certificateChain;
-    private final X509Certificate certificate;
     private final PrivateKey privateKey;
 
     /**
      * Creates new x.509 key store from provided certificates and private key.
      *
-     * @param chain       Certificate chain establishing credibility of
-     *                    {@code certificate}.
-     * @param certificate Owned certificate.
-     * @param key         Private key associated with {@code certificate}.
+     * @param certificateChain Certificate chain establishing the credibility
+     *                         of the certificate at index 0 of the array,
+     *                         which must be associated with given
+     *                         {@code privateKey}.
+     * @param privateKey       Private key associated with certificate at index
+     *                         0 in {@code certificateChain}.
      * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      */
-    public X509KeyStore(final X509Certificate[] chain, final X509Certificate certificate, final PrivateKey key) {
-        this.certificateChain = chain;
-        this.certificate = certificate;
-        this.privateKey = key;
+    public X509KeyStore(final X509Certificate[] certificateChain, final PrivateKey privateKey) {
+        if (certificateChain.length < 1) {
+            throw new IllegalArgumentException("Empty certificateChain");
+        }
+        this.certificateChain = certificateChain;
+        this.privateKey = privateKey;
     }
 
     /**
-     * @return Clone of chain of certificates, each being signed by the next
-     * that establish the credibility of the certificate returned by
-     * {@link #certificate()}, which will be located at index 0 of the returned
-     * array.
+     * @return Cloned chain of certificates, signing each other to form a chain
+     * ending with the certificate at index 0.
      * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      */
     public X509Certificate[] certificateChain() {
@@ -49,7 +50,7 @@ public class X509KeyStore {
      * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      */
     public X509Certificate certificate() {
-        return certificate;
+        return certificateChain[0];
     }
 
     /**
@@ -58,14 +59,6 @@ public class X509KeyStore {
      */
     public PrivateKey privateKey() {
         return privateKey;
-    }
-
-    /**
-     * @return Public key present in certificate returned by
-     * {@link #certificate()}.
-     */
-    public PublicKey publicKey() {
-        return certificate.getPublicKey();
     }
 
     /**
@@ -224,15 +217,7 @@ public class X509KeyStore {
                 x509chain[i] = (X509Certificate) chain[i];
             }
 
-            final var certificate = privateKeyEntry.getCertificate();
-            if (!(certificate instanceof X509Certificate)) {
-                throw certificateNotPermitted(certificate);
-            }
-            final var x509Certificate = (X509Certificate) certificate;
-
-            final var privateKey = privateKeyEntry.getPrivateKey();
-
-            return new X509KeyStore(x509chain, x509Certificate, privateKey);
+            return new X509KeyStore(x509chain, privateKeyEntry.getPrivateKey());
         }
 
         private KeyStoreException certificateNotPermitted(final Certificate certificate) {

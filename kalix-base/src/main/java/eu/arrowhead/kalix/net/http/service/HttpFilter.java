@@ -1,6 +1,5 @@
 package eu.arrowhead.kalix.net.http.service;
 
-import eu.arrowhead.kalix.util.concurrent.Future;
 import eu.arrowhead.kalix.net.http.HttpMethod;
 
 import java.util.Optional;
@@ -10,16 +9,7 @@ import java.util.Optional;
  * before or after they are handled, cancelling or responding to pending
  * responses, or modifying response headers.
  * <p>
- * Note that filters cannot modify requests. They can reply to requests with
- * their own response bodies, however. If a filter executed before a
- * {@link HttpRoute} handler returns any other value than null or a
- * {@link Future} yielding {@link Void}, no more handlers are invoked and the
- * original request is responded to as soon as the returned value has been
- * serialized into a response body.
- * <p>
- * Deserialization and serialization of request and response bodies is taken
- * care of by the {@link HttpService} handling the filter and the handler it
- * filters.
+ * Note that filters cannot modify requests.
  */
 public class HttpFilter implements HttpServiceHandler {
     private final int ordinal;
@@ -76,7 +66,7 @@ public class HttpFilter implements HttpServiceHandler {
     }
 
     @Override
-    public Object handle(HttpServiceRequest request, HttpServiceResponse response) throws Exception {
-        return handler.handle(request, response);
+    public void handle(HttpServiceRequest request, HttpServiceResponse response) throws Exception {
+        handler.handle(request, response);
     }
 }

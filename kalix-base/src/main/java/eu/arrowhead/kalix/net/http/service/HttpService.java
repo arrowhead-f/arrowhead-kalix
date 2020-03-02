@@ -4,9 +4,18 @@ import eu.arrowhead.kalix.net.http.HttpMethod;
 
 import java.util.ArrayList;
 
-public class HttpService {
-    private HttpService(final Builder builder) {
+public class HttpService implements HttpServiceHandler {
+    private final ArrayList<HttpFilter> filters;
+    private final ArrayList<HttpRoute> routes;
 
+    private HttpService(final Builder builder) {
+        filters = builder.filters;
+        routes = builder.routes;
+    }
+
+    @Override
+    public void handle(final HttpServiceRequest request, final HttpServiceResponse response) throws Exception {
+        // TODO.
     }
 
     public static class Builder {

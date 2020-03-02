@@ -14,16 +14,15 @@ public class X509Certificates {
 
     /**
      * Searches for and extracts the leftmost Common Name (CN) from the subject
-     * Distinguished Name (DN) from given x.509 {@code certificate}, which is
+     * Distinguished Name (DN) of the given x.509 {@code certificate}, which is
      * then converted into an Arrowhead {@link CertificateDescriptor}.
      * <p>
      * The current evaluation version of Arrowhead Framework demands that only
      * one CN is stated in the subject field of an x.509 certificate, and that
-     * it contains a so-called Arrowhead certificate descriptor, which is a
-     * four-part domain name consisting of (1) a system or operator identifier,
-     * (2) a cloud identifier, (3) a company identifier and (4) a master
-     * certificate identifier, which must be "arrowhead.eu".
-     * <p>
+     * it contains what we here refer to as an Arrowhead certificate
+     * descriptor, which is a four-part domain name consisting of (1) a system
+     * or operator identifier, (2) a cloud identifier, (3) a company identifier
+     * and (4) a master certificate identifier, which must be "arrowhead.eu".
      * While it is currently common for Internet servers to use the subject CN
      * attribute to tie their x.509 certificates to particular domain names,
      * the practice was deprecated already in RFC 2818, which requires that the

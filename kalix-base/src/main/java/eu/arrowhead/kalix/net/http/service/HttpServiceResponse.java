@@ -1,58 +1,95 @@
 package eu.arrowhead.kalix.net.http.service;
 
+import eu.arrowhead.kalix.dto.FormatWritable;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpStatus;
+import eu.arrowhead.kalix.net.http.HttpVersion;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 
 /**
- * A outgoing HTTP response, to be sent by a {@link HttpService}.
- * <p>
- * This class gives no opportunity for modifying any body sent in the response.
- * Bodies are set by returning a non-null value from a
- * {@link HttpServiceHandler}.
+ * An outgoing HTTP response, to be sent by an {@link HttpService}.
  */
 public class HttpServiceResponse {
     /**
-     * Schedules request response for cancellation.
+     * Sets response body, replacing any previously set such.
      * <p>
-     * No more {@link HttpServiceHandler}s are invoked if this method is
-     * called, and no response is sent to the requesting system.
+     * The provided byte array is scheduled for transmission to the response
+     * receiver as-is. It becomes the responsibility of the caller to ensure
+     * that the {@code "content-type"} header is set appropriately. The
+     * {@code "content-length"} header is, however, automatically set to the
+     * length of the byte array.
+     *
+     * @param bytes Bytes to send to response receiver.
+     * @return This response object.
      */
-    public void cancel() {
-        // TODO.
+    public HttpServiceResponse body(final byte[] bytes) {
+        return this;
     }
 
     /**
-     * Schedules request response for cancellation.
+     * Sets response body, replacing any previously set such.
      * <p>
-     * No more {@link HttpServiceHandler}s are invoked if this method is
-     * called. An HTTP response with given {@code status} is sent to the sender
-     * on a best-effort basis. No body will be present in the response, even if
-     * one would be returned from any {@link HttpServiceHandler} calling this
-     * method.
+     * The provided writable data transfer object is scheduled for encoding and
+     * transmission to the response receiver. Please refer to the Javadoc for
+     * the {@code @Writable} annotation for more information about writable
+     * data transfer objects.
      *
-     * @param status Status in sent HTTP response.
+     * @param body Data transfer object to send to response receiver.
+     * @return This response object.
+     * @see eu.arrowhead.kalix.dto.Writable @Writable
      */
-    public void cancel(final HttpStatus status) {
-        cancel(status, null);
+    public HttpServiceResponse body(final FormatWritable body) {
+        // TODO.
+        return this;
     }
 
     /**
-     * Schedules request response for cancellation.
+     * Sets response body, replacing any previously set such.
      * <p>
-     * No more {@link HttpServiceHandler}s are invoked if this method is
-     * called. An HTTP response with given {@code status} is sent to the sender
-     * on a best-effort basis. The provided message will be provided in the
-     * body of the response, even if another body would be returned from any
-     * {@link HttpServiceHandler} calling this method.
+     * The contents of the file at the provided file system path are scheduled
+     * for transmission to the response receiver as-is. It becomes the
+     * responsibility of the caller to ensure that the {@code "content-type"}
+     * header is set appropriately. The {@code "content-length"} header is,
+     * however, automatically set to the size of the file.
      *
-     * @param status  Status in sent HTTP response.
-     * @param message Message to provide in HTTP response body, if any.
+     * @param path Path to file to send to response receiver.
+     * @return This response object.
+     * @throws IOException If no file exists at {@code path}, or if it cannot
+     *                     be read for any other reason.
      */
-    public void cancel(final HttpStatus status, final String message) {
+    public HttpServiceResponse body(final Path path) throws IOException {
+        return this;
+    }
+
+    /**
+     * Sets response body, replacing any previously set such.
+     * <p>
+     * The provided string is scheduled for transmission to the response
+     * receiver as-is. It becomes the responsibility of the caller to ensure
+     * that the {@code "content-type"} header is set appropriately. If no
+     * charset is specified in the {@code "content-type"}, one that is
+     * acceptable to the response receiver will be used if possible. The
+     * {@code "content-length"} header is automatically set to the length of
+     * the string.
+     *
+     * @param string String to send to response receiver.
+     * @return This response object.
+     */
+    public HttpServiceResponse body(final String string) {
+        return this;
+    }
+
+    /**
+     * Prevents any further {@link HttpFilter}s or {@link HttpRoute} from
+     * processing this response.
+     */
+    public HttpServiceResponse eject() {
         // TODO.
+        return this;
     }
 
     /**
@@ -90,7 +127,7 @@ public class HttpServiceResponse {
      * @param headers New map of response headers.
      * @return This response object.
      */
-    public HttpServiceResponse headers(final Map<String, String> headers) {
+    public HttpServiceResponse headers(final HttpHeaders headers) {
         return null;
     }
 
@@ -106,6 +143,22 @@ public class HttpServiceResponse {
      * @return This response object.
      */
     public HttpServiceResponse status(final HttpStatus status) {
+        // TODO.
+        return this;
+    }
+
+    /**
+     * @return Currently set response {@link HttpVersion}.
+     */
+    public HttpVersion version() {
+        return null;
+    }
+
+    /**
+     * @param version New response {@link HttpVersion}.
+     * @return This response object.
+     */
+    public HttpServiceResponse version(final HttpVersion version) {
         // TODO.
         return this;
     }

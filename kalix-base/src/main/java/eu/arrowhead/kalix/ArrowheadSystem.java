@@ -4,6 +4,7 @@ import eu.arrowhead.kalix.descriptor.ServiceDescriptor;
 import eu.arrowhead.kalix.internal.util.concurrent.NettySchedulerReferenceCounted;
 import eu.arrowhead.kalix.security.X509Certificates;
 import eu.arrowhead.kalix.security.X509KeyStore;
+import eu.arrowhead.kalix.security.X509Profile;
 import eu.arrowhead.kalix.security.X509TrustStore;
 import eu.arrowhead.kalix.util.concurrent.Future;
 import eu.arrowhead.kalix.util.concurrent.Scheduler;
@@ -13,6 +14,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -23,38 +25,37 @@ import java.util.Set;
 public abstract class ArrowheadSystem<S> {
     private final String name;
     private final InetSocketAddress socketAddress;
-    private final X509KeyStore keyStore;
-    private final X509TrustStore trustStore;
+    private final X509Profile x509Profile;
     private final Scheduler scheduler;
     private final LogLevel logLevel;
 
     protected ArrowheadSystem(final Builder<?, ? extends ArrowheadSystem<?>> builder) {
         var name = builder.name;
         socketAddress = Objects.requireNonNullElseGet(builder.socketAddress, () -> new InetSocketAddress(0));
-        keyStore = builder.keyStore;
-        trustStore = builder.trustStore;
         scheduler = Objects.requireNonNullElseGet(builder.scheduler, NettySchedulerReferenceCounted::getDefault);
         logLevel = builder.logLevel;
 
         if (builder.isInsecure) {
+            if (builder.keyStore != null || builder.trustStore != null) {
+                throw new IllegalArgumentException("Unexpected keyStore or " +
+                    "trustStore; not permitted in insecure mode");
+            }
+            x509Profile = null;
+
             if (name == null || name.length() == 0) {
                 throw new IllegalArgumentException("Expected name; required " +
                     "in insecure mode");
             }
             this.name = name;
-
-            if (keyStore != null || trustStore != null) {
-                throw new IllegalArgumentException("Unexpected keyStore or " +
-                    "trustStore; not used in insecure mode");
-            }
         }
         else {
-            if (keyStore == null || trustStore == null) {
+            if (builder.keyStore == null || builder.trustStore == null) {
                 throw new IllegalArgumentException("Expected keyStore and " +
                     "trustStore; required in secure mode");
             }
+            this.x509Profile = new X509Profile(builder.keyStore, builder.trustStore);
 
-            final var descriptor = X509Certificates.subjectDescriptorOf(keyStore.certificate());
+            final var descriptor = X509Certificates.subjectDescriptorOf(builder.keyStore.certificate());
             if (descriptor.isEmpty()) {
                 throw new IllegalArgumentException("No subject common name " +
                     "in keyStore certificate; required to determine system " +
@@ -90,23 +91,15 @@ public abstract class ArrowheadSystem<S> {
      * @return Port through which this system exposes its provided services.
      */
     public int localPort() {
-        return socketAddress.getPort(); // TODO: Lookup bound port if 0 was specified.
+        return socketAddress.getPort();
     }
 
     /**
      * @return Key store provided during system creation if running in secure
      * mode. Otherwise {@code null} is returned.
      */
-    public X509KeyStore keyStore() {
-        return keyStore;
-    }
-
-    /**
-     * @return Trust store provided during system creation if running in secure
-     * mode. Otherwise {@code null} is returned.
-     */
-    public X509TrustStore trustStore() {
-        return trustStore;
+    public Optional<X509Profile> x509Profile() {
+        return Optional.ofNullable(x509Profile);
     }
 
     /**
