@@ -34,13 +34,14 @@ public class X509KeyStore {
     }
 
     /**
-     * @return Chain of certificates, each being signed by the next, that
-     * establish the credibility of the certificate returned by
-     * {@link #certificate()}.
+     * @return Clone of chain of certificates, each being signed by the next
+     * that establish the credibility of the certificate returned by
+     * {@link #certificate()}, which will be located at index 0 of the returned
+     * array.
      * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      */
     public X509Certificate[] certificateChain() {
-        return certificateChain;
+        return certificateChain.clone();
     }
 
     /**

@@ -80,10 +80,10 @@ public class X509TrustStore {
     }
 
     /**
-     * @return Trusted x.509 certificates.
+     * @return Clone of trusted x.509 certificates.
      * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      */
     public X509Certificate[] certificates() {
-        return certificates;
+        return certificates.clone();
     }
 }
