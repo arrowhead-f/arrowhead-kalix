@@ -1,4 +1,4 @@
-package eu.arrowhead.kalix.http.client;
+package eu.arrowhead.kalix.net.http.client;
 
 import eu.arrowhead.kalix.util.concurrent.Future;
 

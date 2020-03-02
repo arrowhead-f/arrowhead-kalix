@@ -2,6 +2,9 @@ package eu.arrowhead.kalix.descriptor;
 
 import java.util.Objects;
 
+/**
+ * Describes an application-level transport protocol.
+ */
 public class TransportDescriptor {
     private final String name;
 

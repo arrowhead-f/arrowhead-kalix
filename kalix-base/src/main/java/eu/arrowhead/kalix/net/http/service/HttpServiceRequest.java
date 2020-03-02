@@ -1,7 +1,7 @@
-package eu.arrowhead.kalix.http.service;
+package eu.arrowhead.kalix.net.http.service;
 
-import eu.arrowhead.kalix.http.HttpHeaders;
-import eu.arrowhead.kalix.http.HttpVersion;
+import eu.arrowhead.kalix.net.http.HttpHeaders;
+import eu.arrowhead.kalix.net.http.HttpVersion;
 import eu.arrowhead.kalix.util.concurrent.Future;
 
 import java.util.List;

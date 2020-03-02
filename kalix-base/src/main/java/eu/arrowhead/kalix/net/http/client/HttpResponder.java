@@ -1,4 +1,4 @@
-package eu.arrowhead.kalix.http.client;
+package eu.arrowhead.kalix.net.http.client;
 
 import java.net.InetSocketAddress;
 import java.security.cert.X509Certificate;

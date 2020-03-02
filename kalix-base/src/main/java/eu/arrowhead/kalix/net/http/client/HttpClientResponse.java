@@ -1,11 +1,10 @@
-package eu.arrowhead.kalix.http.client;
+package eu.arrowhead.kalix.net.http.client;
 
-import eu.arrowhead.kalix.http.HttpHeaders;
+import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.util.concurrent.Future;
-import eu.arrowhead.kalix.http.HttpStatus;
-import eu.arrowhead.kalix.http.HttpVersion;
+import eu.arrowhead.kalix.net.http.HttpStatus;
+import eu.arrowhead.kalix.net.http.HttpVersion;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 

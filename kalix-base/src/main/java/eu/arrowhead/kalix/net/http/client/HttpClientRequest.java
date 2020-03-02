@@ -1,7 +1,7 @@
-package eu.arrowhead.kalix.http.client;
+package eu.arrowhead.kalix.net.http.client;
 
-import eu.arrowhead.kalix.http.HttpHeaders;
-import eu.arrowhead.kalix.http.HttpVersion;
+import eu.arrowhead.kalix.net.http.HttpHeaders;
+import eu.arrowhead.kalix.net.http.HttpVersion;
 
 import java.util.HashMap;
 import java.util.Map;
