@@ -72,9 +72,9 @@ public class NettyScheduler implements Scheduler {
      * Note that the same scheduler will always be returned by this static
      * method, no matter how many times it is called.
      */
-    public static NettyScheduler getDefault() {
+    public static synchronized NettyScheduler getDefault() {
         if (defaultScheduler == null) {
-            defaultScheduler = new NettyScheduler(null, 0);
+            defaultScheduler = NettySchedulerReferenceCounted.getDefault();
         }
         return defaultScheduler;
     }

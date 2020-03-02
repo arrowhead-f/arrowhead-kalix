@@ -1,12 +1,16 @@
 package eu.arrowhead.kalix;
 
 import eu.arrowhead.kalix.descriptor.ServiceDescriptor;
+import eu.arrowhead.kalix.internal.util.concurrent.NettySchedulerReferenceCounted;
+import eu.arrowhead.kalix.security.X509Certificates;
 import eu.arrowhead.kalix.security.X509KeyStore;
 import eu.arrowhead.kalix.security.X509TrustStore;
+import eu.arrowhead.kalix.util.concurrent.Future;
 import eu.arrowhead.kalix.util.concurrent.Scheduler;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Set;
 
@@ -27,37 +31,41 @@ public abstract class ArrowheadSystem<S> {
         socketAddress = Objects.requireNonNullElseGet(builder.socketAddress, () -> new InetSocketAddress(0));
         keyStore = builder.keyStore;
         trustStore = builder.trustStore;
-        scheduler = Objects.requireNonNullElseGet(builder.scheduler, Scheduler::getDefault);
+        scheduler = Objects.requireNonNullElseGet(builder.scheduler, NettySchedulerReferenceCounted::getDefault);
 
         if (builder.isInsecure) {
             if (name == null || name.length() == 0) {
-                throw new IllegalStateException("Expected name; required in " +
-                    "insecure mode");
+                throw new IllegalArgumentException("Expected name; required " +
+                    "in insecure mode");
             }
             this.name = name;
 
             if (keyStore != null || trustStore != null) {
-                throw new IllegalStateException("Unexpected keyStore or " +
+                throw new IllegalArgumentException("Unexpected keyStore or " +
                     "trustStore; not used in insecure mode");
             }
         }
         else {
             if (keyStore == null || trustStore == null) {
-                throw new IllegalStateException("Expected keyStore and " +
+                throw new IllegalArgumentException("Expected keyStore and " +
                     "trustStore; required in secure mode");
             }
 
-            /* TODO: Fix this.
-            final var certificateName = X509Certificates.subjectArrowheadNameOf(keyStore.certificate());
-            if (name != null && !Objects.equals(name, certificateName)) {
-                throw new IllegalStateException("System name in provided " +
-                    "keyStore certificate is \"" + certificateName + "\" " +
-                    "while \"" + name + "\" was explicitly specified; " +
-                    "either do not provide a name or provide the same name " +
-                    "as is stated in the certificate");
+            final var descriptor = X509Certificates.subjectDescriptorOf(keyStore.certificate());
+            if (descriptor.isEmpty()) {
+                throw new IllegalArgumentException("No subject common name " +
+                    "in keyStore certificate; required to determine system " +
+                    "name");
             }
-            this.name = certificateName; */
-            this.name = "TODO";
+            final var descriptor0 = descriptor.get();
+            final var system = descriptor0.system();
+            if (system.isEmpty()) {
+                throw new IllegalArgumentException("No Arrowhead system " +
+                    "name in keyStore certificate common name \"" +
+                    descriptor0 + "\"; that name must match " +
+                    "`<system>.<cloud>.<company>.arrowhead.eu`");
+            }
+            this.name = system.get();
         }
     }
 
@@ -71,14 +79,14 @@ public abstract class ArrowheadSystem<S> {
     /**
      * @return Network interface address.
      */
-    public InetAddress address() {
+    public InetAddress localAddress() {
         return socketAddress.getAddress();
     }
 
     /**
      * @return Port through which this system exposes its provided services.
      */
-    public int port() {
+    public int localPort() {
         return socketAddress.getPort(); // TODO: Lookup bound port if 0 was specified.
     }
 
@@ -132,6 +140,24 @@ public abstract class ArrowheadSystem<S> {
      * @param service Service to no longer be provided by this system.
      */
     public abstract void dismissService(final S service);
+
+    /**
+     * Deregisters all currently registered services from this system.
+     */
+    public abstract void dismissAllServices();
+
+    /**
+     * Dismisses all provided services and releases all resources held by the
+     * system.
+     *
+     * @param timeout The duration after which the system is forcefully
+     *                terminated.
+     * @return {@code Future} completed after shutdown completion.
+     */
+    public Future<?> shutdown(final Duration timeout) {
+        dismissAllServices();
+        return scheduler.shutdown(timeout);
+    }
 
     /**
      * Builder useful for creating instances of classes extending the
@@ -193,11 +219,11 @@ public abstract class ArrowheadSystem<S> {
          *                network interface.
          * @return This builder.
          */
-        public final B address(final InetAddress address) {
+        public final B localAddress(final InetAddress address) {
             if (socketAddress != null) {
-                return socketAddress(address, socketAddress.getPort());
+                return localAddressPort(address, socketAddress.getPort());
             }
-            return socketAddress(new InetSocketAddress(address, 0));
+            return localSocketAddress(new InetSocketAddress(address, 0));
         }
 
         /**
@@ -212,7 +238,7 @@ public abstract class ArrowheadSystem<S> {
          *                      preferred network interface.
          * @return This builder.
          */
-        public final B socketAddress(final InetSocketAddress socketAddress) {
+        public final B localSocketAddress(final InetSocketAddress socketAddress) {
             this.socketAddress = socketAddress;
             return self();
         }
@@ -231,15 +257,18 @@ public abstract class ArrowheadSystem<S> {
          *                      system will choose a random port.
          * @return This builder.
          */
-        public final B socketAddress(final InetAddress socketAddress, final int port) {
-            return socketAddress(new InetSocketAddress(socketAddress, port));
+        public final B localAddressPort(final InetAddress socketAddress, final int port) {
+            return localSocketAddress(new InetSocketAddress(socketAddress, port));
         }
 
         /**
          * Sets the network interface by hostname and socket port number to be
          * used by this system when providing its services.
          * <p>
-         * If no socket address or port is specified, the wildcard network
+         * Calling this method with a non-null {@code hostname} will cause a
+         * blocking hostname resolution attempt to take place.
+         * <p>
+         * If no socket hostname or port is specified, the wildcard network
          * interface will be used and a random port will be selected by the
          * system.
          *
@@ -249,8 +278,8 @@ public abstract class ArrowheadSystem<S> {
          *                 will choose a random port.
          * @return This builder.
          */
-        public final B socketAddress(final String hostname, final int port) {
-            return socketAddress(new InetSocketAddress(hostname, port));
+        public final B localHostnamePort(final String hostname, final int port) {
+            return localSocketAddress(new InetSocketAddress(hostname, port));
         }
 
         /**
@@ -268,18 +297,18 @@ public abstract class ArrowheadSystem<S> {
          *             choose a random port.
          * @return This builder.
          */
-        public final B port(final int port) {
+        public final B localPort(final int port) {
             if (socketAddress != null) {
                 final var address = socketAddress.getAddress();
                 if (address != null) {
-                    return socketAddress(address, port);
+                    return localAddressPort(address, port);
                 }
                 final var hostname = socketAddress.getHostName();
                 if (hostname != null) {
-                    return socketAddress(hostname, port);
+                    return localHostnamePort(hostname, port);
                 }
             }
-            return socketAddress(new InetSocketAddress(port));
+            return localSocketAddress(new InetSocketAddress(port));
         }
 
         /**
@@ -335,10 +364,20 @@ public abstract class ArrowheadSystem<S> {
         /**
          * Sets scheduler to be used by the created system.
          * <p>
-         * If none is explicitly specified, the one returned by
-         * {@link Scheduler#getDefault()} is used. This means that if several
-         * systems are created without schedulers being explicitly set, the
-         * systems will all share the same scheduler.
+         * If a non-null scheduler is explicitly provided via this method, it
+         * becomes the responsibility of the caller to ensure that the
+         * scheduler is shut down when no longer in use.
+         * <p>
+         * If, on the other hand, no scheduler is explicitly specified, the one
+         * returned by {@link Scheduler#getDefault()} will be used instead.
+         * This means that if several systems are created without schedulers
+         * being explicitly set, the systems will all share the same scheduler.
+         * When the last system is shut down, the default scheduler will be
+         * shut down automatically, unless it has ever been explicitly acquired
+         * by the {@link Scheduler#getDefault()} method, which is not used
+         * directly by the {@link ArrowheadSystem} class. It then becomes the
+         * responsibility of the caller of that method to shut down the
+         * scheduler.
          *
          * @param scheduler Asynchronous task scheduler.
          * @return This builder.

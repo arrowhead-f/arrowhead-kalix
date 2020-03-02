@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
  * protocol, security requirements and message payload encoding.
  */
 public class InterfaceDescriptor {
-    private static final Pattern TRIPLET_PATTERN = Pattern.compile("([0-9A-Z_]+)-(IN)?SECURE-([0-9A-Z_]+)");
+    private static final Pattern TRIPLET_PATTERN = Pattern.compile("^([0-9A-Z_]+)-(IN)?SECURE-([0-9A-Z_]+)$");
 
     private final TransportDescriptor transport;
     private final boolean isSecure;

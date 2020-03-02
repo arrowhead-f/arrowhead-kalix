@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  */
 public class CertificateDescriptor {
     private static final Pattern NAME_PATTERN = Pattern.compile(
-        "(?:([^.\\s]+)\\.)?(?:([^.\\s]+)\\.)?([^.\\s]+)\\.arrowhead\\.eu"
+        "^(?:([^.\\s]+)\\.)?(?:([^.\\s]+)\\.)?([^.\\s]+)\\.arrowhead\\.eu$"
     );
 
     private final String system;

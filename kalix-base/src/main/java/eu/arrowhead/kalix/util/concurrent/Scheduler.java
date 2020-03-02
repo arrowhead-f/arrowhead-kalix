@@ -16,6 +16,9 @@ public interface Scheduler {
      * <p>
      * Note that the same scheduler will always be returned by this static
      * method, no matter how many times it is called.
+     * <p>
+     * If ever called, it becomes the responsibility of the caller to ensure
+     * that the scheduler is shut down exactly once when no longer in use.
      */
     static Scheduler getDefault() {
         return NettyScheduler.getDefault();
