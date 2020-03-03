@@ -17,16 +17,14 @@ import java.util.function.Consumer;
  * To make it convenient to act on the completion of this {@code Future}, the
  * receiver of it is expected to provide a {@code Consumer} to the
  * {@link #onResult(Consumer)} method, which should be invoked whenever the
- * {@link Result} of the operation becomes available. As an alternative, the
- * {@code Future} receiver may also decide to {@link #cancel(boolean)} it,
- * which should mean that any {@code Consumer}, if set, never will be invoked.
+ * {@link Result} of the operation becomes available.
  * <p>
  * It is the responsibility of the receiver of a {@code Future} to make sure
- * that either {@link #onResult(Consumer)} and/or {@link #cancel(boolean)} is
- * called, or any method that uses one of them internally, as it may be the
- * case that the operation represented by the future will not start running
- * until either of these methods are invoked. Failing to call any of these
- * methods may lead to memory never being reclaimed.
+ * that its {@link #onResult(Consumer)} is called, or any method listed here
+ * that uses it internally, as it may be the case that the operation
+ * represented by the future will not start running this method is invoked.
+ * Failing to call it may lead to memory or other resources never being
+ * reclaimed.
  *
  * @param <V> Type of value that can be retrieved if the operation succeeds.
  */
@@ -54,13 +52,14 @@ public interface Future<V> {
      * If this {@code Future} has already been cancelled or completed, calling
      * this method should do nothing. Calling this method on a {@code Future}
      * that has not yet completed does not prevent {@link #onResult(Consumer)}
-     * from being called, but rather ensures it will eventually be called with
+     * from being called, but rather ensures it eventually will be called with
      * an error of type {@link CancellationException}.
      *
      * @param mayInterruptIfRunning Whether or not the thread executing the
      *                              task associated with this {@code Future},
      *                              should be interrupted. If not, in-progress
-     *                              tasks are allowed to complete.
+     *                              tasks are allowed to complete. This
+     *                              parameter is not guaranteed to be honored.
      */
     void cancel(final boolean mayInterruptIfRunning);
 
@@ -81,9 +80,7 @@ public interface Future<V> {
 
     /**
      * Sets function to receive result of this {@code Future} only if its
-     * operation fails.
-     * <p>
-     * Successful results are ignored.
+     * operation fails. Successful results are ignored.
      * <p>
      * While it might seem like a logical addition, there is no corresponding
      * {@code #onValue(Consumer)} method. The reason for this is that there is
@@ -112,8 +109,16 @@ public interface Future<V> {
      * {@code Future} has become available and could be transformed into a
      * value of type {@code U} by {@code mapper}.
      * <p>
-     * Any exception thrown by {@code mapper} should lead to the returned
-     * future being failed with the same exception.
+     * In other words, this method performs the asynchronous counterpart to the
+     * following code:
+     * <pre>
+     *     V value0 = originalFutureOperation();
+     *     // Wait for value0 to become available.
+     *     U value1 = mapper.apply(value0);
+     *     return value1;
+     * </pre>
+     * Any exception thrown by {@code mapper} leads to the returned
+     * {@code Future} being failed with the same exception.
      *
      * @param <U>    The type of the value returned from the mapping function.
      * @param mapper The mapping function to apply to the value of this
@@ -160,12 +165,21 @@ public interface Future<V> {
     }
 
     /**
-     * Takes a function that is only executed if this future fails with an
-     * error. The function, or <i>mapper</i>, is expected to return a value
-     * with the same type as this {@code Future}.
+     * Catches any error produced by this {@code Future} and uses
+     * {@code mapper} to transform it into a new value.
      * <p>
-     * Any exception thrown by {@code mapper} should lead to the returned
-     * future being failed with the same exception.
+     * In other words, this method performs the asynchronous counterpart to the
+     * following code:
+     * <pre>
+     *     try {
+     *         return originalFutureOperation();
+     *     }
+     *     catch (final Throwable throwable) {
+     *         return mapper.apply(throwable);
+     *     }
+     * </pre>
+     * Any exception thrown by {@code mapper} leads to the returned
+     * {@code Future} being failed with the same exception.
      *
      * @param mapper The mapping function to apply to the error of this
      *               {@code Future}, if it becomes available.
@@ -208,12 +222,21 @@ public interface Future<V> {
      * returned by {@code mapper} completes, which, in turn, is not executed
      * until this {@code Future} completes.
      * <p>
-     * The difference between this method and {@link #map(ThrowingFunction)} is that the
-     * {@code mapper} provided here is expected to return a {@code Future}
-     * rather than a plain value. The returned {@code Future} completes after
-     * this {@code Future} and the {@code Future} returned by {@code mapper}
-     * have completed in sequence.
+     * The difference between this method and {@link #map(ThrowingFunction)} is
+     * that the {@code mapper} provided here is expected to return a
+     * {@code Future} rather than a plain value. The returned {@code Future}
+     * completes after this {@code Future} and the {@code Future} returned by
+     * {@code mapper} have completed in sequence.
      * <p>
+     * In other words, this method performs the asynchronous counterpart to the
+     * following code:
+     * <pre>
+     *     V value0 = originalFutureOperation();
+     *     // Wait for value0 to become available.
+     *     U value1 = mapper.apply(value0);
+     *     // Wait for value1 to become available.
+     *     return value1;
+     * </pre>
      * Any exception thrown by {@code mapper} should lead to the returned
      * future being failed with the same exception.
      *
@@ -232,16 +255,16 @@ public interface Future<V> {
         return new Future<>() {
             @Override
             public void onResult(final Consumer<Result<U>> consumer) {
-                source.onResult(r0 -> {
+                source.onResult(result0 -> {
                     Throwable err;
                     if (cancelTarget.get() == null) {
                         err = new CancellationException();
                     }
-                    else if (r0.isSuccess()) {
+                    else if (result0.isSuccess()) {
                         try {
-                            final var f1 = mapper.apply(r0.value());
-                            f1.onResult(consumer);
-                            cancelTarget.set(f1);
+                            final var future1 = mapper.apply(result0.value());
+                            future1.onResult(consumer);
+                            cancelTarget.set(future1);
                             return;
                         }
                         catch (final Throwable error) {
@@ -249,7 +272,7 @@ public interface Future<V> {
                         }
                     }
                     else {
-                        err = r0.error();
+                        err = result0.error();
                     }
                     consumer.accept(Result.failure(err));
                 });
@@ -266,13 +289,27 @@ public interface Future<V> {
     }
 
     /**
-     * Takes a function that is only executed if this future fails with an
-     * error. The function, or <i>mapper</i>, is expected to return a
-     * {@code Future} that completes with a value with the same type as this
-     * {@code Future}.
+     * Catches any error produced by this {@code Future} and uses
+     * {@code mapper} to transform it into a new value.
      * <p>
-     * Any exception thrown by {@code mapper} should lead to the returned
-     * future being failed with the same exception.
+     * The difference between this method and
+     * {@link #mapError(ThrowingFunction)} is that this method expects its
+     * {@code mapper} to return a {@code Future} rather than a plain value.
+     * <p>
+     * In other words, this method performs the asynchronous counterpart to the
+     * following code:
+     * <pre>
+     *     try {
+     *         return originalFutureOperation();
+     *     }
+     *     catch (final Throwable throwable) {
+     *         V value = mapper.apply(throwable);
+     *         // Wait for new value to become available.
+     *         return value;
+     *     }
+     * </pre>
+     * Any exception thrown by {@code mapper} leads to the returned
+     * {@code Future} being failed with the same exception.
      *
      * @param mapper The mapping function to apply to the error of this
      *               {@code Future}, if it becomes available.
@@ -327,39 +364,6 @@ public interface Future<V> {
         };
     }
 
-    static <T, U> Future<U> serialize(
-        final U initialValue,
-        final T[] array,
-        final ThrowingBiFunction<? super T, ? super U, ? extends Future<U>> mapper)
-    {
-        return serialize(initialValue, Arrays.asList(array), mapper);
-    }
-
-    static <T, U> Future<U> serialize(
-        final U initialValue,
-        final Iterable<T> iterable,
-        final ThrowingBiFunction<? super T, ? super U, ? extends Future<U>> mapper)
-    {
-        return serialize(initialValue, iterable.iterator(), mapper);
-    }
-
-    static <T, U> Future<U> serialize(
-        final U initialValue,
-        final Iterator<T> iterator,
-        final ThrowingBiFunction<? super T, ? super U, ? extends Future<U>> mapper)
-    {
-        if (!iterator.hasNext()) {
-            return Future.success(initialValue);
-        }
-        try {
-            return mapper.apply(iterator.next(), initialValue)
-                .flatMap(value -> serialize(value, iterator, mapper));
-        }
-        catch (final Throwable throwable) {
-            return Future.failure(throwable);
-        }
-    }
-
     /**
      * Creates new {@code Future} that always succeeds with {@code null}.
      *
@@ -389,5 +393,372 @@ public interface Future<V> {
      */
     static <V> Future<V> failure(final Throwable error) {
         return new FutureFailure<>(error);
+    }
+
+    /**
+     * Applies given {@code accumulator} to every element in {@code array} in
+     * a way that corresponds with the following code:
+     * <pre>
+     *     U value = identity;
+     *     for (T element : array) {
+     *         // Wait for element to become available.
+     *         value = accumulator.apply(value, element);
+     *     }
+     *     return value; // Accumulated value.
+     * </pre>
+     * In other words, the array elements are processed <i>serially</i>, from
+     * the first to the last. The waiting for each element to become available
+     * is performed in a non-blocking manner.
+     *
+     * @param array       Array of futures.
+     * @param identity    Initial input to the accumulator function.
+     * @param accumulator Function used to combine the last identity value with
+     *                    the successful result of a {@code Future} into the
+     *                    next identity value.
+     * @param <T>         Type of value provided by futures in array if they
+     *                    complete successfully.
+     * @param <U>         Type of identity value and accumulated value.
+     * @return Future, completed with accumulated value only if all futures in
+     * {@code array} completes successfully. Otherwise it is failed with the
+     * first encountered error.
+     */
+    static <T, U> Future<U> reduce(
+        final Future<T>[] array,
+        final U identity,
+        final ThrowingBiFunction<? super U, ? super T, ? extends U> accumulator)
+    {
+        return reduce(Arrays.asList(array), identity, accumulator);
+    }
+
+    /**
+     * Applies given {@code accumulator} to every element in {@code iterable}
+     * in a way that corresponds with the following code:
+     * <pre>
+     *     U value = identity;
+     *     Iterator&lt;T&gt; iterator = iterable.iterator();
+     *     while (iterator.hasNext()) {
+     *         T element = iterator.next();
+     *         // Wait for element to become available.
+     *         value = accumulator.apply(value, element);
+     *     }
+     *     return value; // Accumulated value.
+     * </pre>
+     * In other words, the elements of the {@code iterable} are processed
+     * <i>serially</i>, from the first to the last. The waiting for each
+     * element to become available is performed in a non-blocking manner.
+     *
+     * @param iterable    Iterable of futures.
+     * @param identity    Initial input to the accumulator function.
+     * @param accumulator Function used to combine the last identity value with
+     *                    the successful result of a {@code Future} into the
+     *                    next identity value.
+     * @param <T>         Type of value provided by futures in array if they
+     *                    complete successfully.
+     * @param <U>         Type of identity value and accumulated value.
+     * @return Future, completed with accumulated value only if all futures in
+     * {@code array} completes successfully. Otherwise it is failed with the
+     * first encountered error.
+     */
+    static <T, U> Future<U> reduce(
+        final Iterable<Future<T>> iterable,
+        final U identity,
+        final ThrowingBiFunction<? super U, ? super T, ? extends U> accumulator)
+    {
+        return reduce(iterable.iterator(), identity, accumulator);
+    }
+
+    /**
+     * Applies given {@code accumulator} to every element in {@code iterator}
+     * in a way that corresponds with the following code:
+     * <pre>
+     *     U value = identity;
+     *     while (iterator.hasNext()) {
+     *         T element = iterator.next();
+     *         // Wait for element to become available.
+     *         value = accumulator.apply(value, element);
+     *     }
+     *     return value; // Accumulated value.
+     * </pre>
+     * In other words, the elements of the {@code iterator} are processed
+     * <i>serially</i>, from the first to the last. The waiting for each
+     * element to become available is performed in a non-blocking manner.
+     *
+     * @param iterator    Iterator of futures.
+     * @param identity    Initial input to the accumulator function.
+     * @param accumulator Function used to combine the last identity value with
+     *                    the successful result of a {@code Future} into the
+     *                    next identity value.
+     * @param <T>         Type of value provided by futures in array if they
+     *                    complete successfully.
+     * @param <U>         Type of identity value and accumulated value.
+     * @return Future, completed with accumulated value only if all futures in
+     * {@code array} completes successfully. Otherwise it is failed with the
+     * first encountered error.
+     */
+    static <T, U> Future<U> reduce(
+        final Iterator<Future<T>> iterator,
+        final U identity,
+        final ThrowingBiFunction<? super U, ? super T, ? extends U> accumulator)
+    {
+        if (!iterator.hasNext()) {
+            return Future.success(identity);
+        }
+        try {
+            return iterator.next()
+                .flatMap(element -> reduce(iterator, accumulator.apply(identity, element), accumulator));
+        }
+        catch (final Throwable throwable) {
+            return Future.failure(throwable);
+        }
+    }
+
+    /**
+     * Applies given {@code accumulator} to every element in {@code array} in
+     * a way that corresponds with the following code:
+     * <pre>
+     *     U value0 = identity;
+     *     for (T element : array) {
+     *         // Wait for element to become available.
+     *         U value1 = accumulator.apply(value0, element);
+     *         // Wait for value1 to become available.
+     *         value0 = value1;
+     *     }
+     *     return value0; // Accumulated value.
+     * </pre>
+     * In other words, the array elements are processed <i>serially</i>, from
+     * the first to the last. The waiting for each element to become available
+     * is performed in a non-blocking manner.
+     *
+     * @param array       Array of futures.
+     * @param identity    Initial input to the accumulator function.
+     * @param accumulator Function used to combine the last identity value with
+     *                    the successful result of a {@code Future} into
+     *                    another {@code Future}, which in turn completes with
+     *                    the next identity value.
+     * @param <T>         Type of value provided by futures in array if they
+     *                    complete successfully.
+     * @param <U>         Type of identity value and accumulated value.
+     * @return Future, completed with accumulated value only if all futures in
+     * {@code array} completes successfully. Otherwise it is failed with the
+     * first encountered error.
+     */
+    static <T, U> Future<U> flatReduce(
+        final Future<T>[] array,
+        final U identity,
+        final ThrowingBiFunction<? super U, ? super T, ? extends Future<U>> accumulator)
+    {
+        return flatReduce(Arrays.asList(array), identity, accumulator);
+    }
+
+    /**
+     * Applies given {@code accumulator} to every element of {@code iterable}
+     * in a way that corresponds with the following code:
+     * <pre>
+     *     U value0 = identity;
+     *     Iterator&lt;T&gt; iterator = iterable.iterator();
+     *     while (iterator.hasNext()) {
+     *         T element = iterator.next();
+     *         // Wait for element to become available.
+     *         U value1 = accumulator.apply(value0, element);
+     *         // Wait for value1 to become available.
+     *         value0 = value1;
+     *     }
+     *     return value0; // Accumulated value.
+     * </pre>
+     * In other words, the elements of the iterable are processed
+     * <i>serially</i>, from the first to the last. The waiting for each
+     * element to become available is performed in a non-blocking manner.
+     *
+     * @param iterable    Iterable of futures.
+     * @param identity    Initial input to the accumulator function.
+     * @param accumulator Function used to combine the last identity value with
+     *                    the successful result of a {@code Future} into
+     *                    another {@code Future}, which in turn completes with
+     *                    the next identity value.
+     * @param <T>         Type of value provided by futures in array if they
+     *                    complete successfully.
+     * @param <U>         Type of identity value and accumulated value.
+     * @return Future, completed with accumulated value only if all futures of
+     * {@code iterable} completes successfully. Otherwise it is failed with the
+     * first encountered error.
+     */
+    static <T, U> Future<U> flatReduce(
+        final Iterable<Future<T>> iterable,
+        final U identity,
+        final ThrowingBiFunction<? super U, ? super T, ? extends Future<U>> accumulator)
+    {
+        return flatReduce(iterable.iterator(), identity, accumulator);
+    }
+
+    /**
+     * Applies given {@code accumulator} to every element in {@code iterator}
+     * in a way that corresponds with the following code:
+     * <pre>
+     *     U value0 = identity;
+     *     while (iterator.hasNext()) {
+     *         T element = iterator.next();
+     *         // Wait for element to become available.
+     *         U value1 = accumulator.apply(value0, element);
+     *         // Wait for value1 to become available.
+     *         value0 = value1;
+     *     }
+     *     return value0; // Accumulated value.
+     * </pre>
+     * In other words, the elements of the iterator are processed
+     * <i>serially</i>, from the first to the last. The waiting for each
+     * element to become available is performed in a non-blocking manner.
+     *
+     * @param iterator    Iterator of futures.
+     * @param identity    Initial input to the accumulator function.
+     * @param accumulator Function used to combine the last identity value with
+     *                    the successful result of a {@code Future} into
+     *                    another {@code Future}, which in turn completes with
+     *                    the next identity value.
+     * @param <T>         Type of value provided by futures in array if they
+     *                    complete successfully.
+     * @param <U>         Type of identity value and accumulated value.
+     * @return Future, completed with accumulated value only if all futures in
+     * {@code iterator} completes successfully. Otherwise it is failed with the
+     * first encountered error.
+     */
+    static <T, U> Future<U> flatReduce(
+        final Iterator<Future<T>> iterator,
+        final U identity,
+        final ThrowingBiFunction<? super U, ? super T, ? extends Future<U>> accumulator)
+    {
+        if (!iterator.hasNext()) {
+            return Future.success(identity);
+        }
+        try {
+            return iterator.next()
+                .flatMap(element -> accumulator.apply(identity, element))
+                .flatMap(element -> flatReduce(iterator, element, accumulator));
+        }
+        catch (final Throwable throwable) {
+            return Future.failure(throwable);
+        }
+    }
+
+    /**
+     * Applies given {@code accumulator} to every element in {@code array} in
+     * a way that corresponds with the following code:
+     * <pre>
+     *     U value0 = identity;
+     *     for (T element : array) {
+     *         U value1 = accumulator.apply(value0, element);
+     *         // Wait for value1 to become available.
+     *         value0 = value1;
+     *     }
+     *     return value0; // Accumulated value.
+     * </pre>
+     * In other words, the array elements are processed <i>serially</i>, from
+     * the first to the last. The waiting for each element to become available
+     * is performed in a non-blocking manner.
+     *
+     * @param array       Array of plain elements.
+     * @param identity    Initial input to the accumulator function.
+     * @param accumulator Function used to combine the last identity value with
+     *                    the successful result of a {@code Future} into
+     *                    another {@code Future}, which in turn completes with
+     *                    the next identity value.
+     * @param <T>         Type of value provided by futures in array if they
+     *                    complete successfully.
+     * @param <U>         Type of identity value and accumulated value.
+     * @return Future, completed with accumulated value only if all futures in
+     * {@code array} completes successfully. Otherwise it is failed with the
+     * first encountered error.
+     */
+    static <T, U> Future<U> flatReducePlain(
+        final T[] array,
+        final U identity,
+        final ThrowingBiFunction<? super U, ? super T, ? extends Future<U>> accumulator)
+    {
+        return flatReducePlain(Arrays.asList(array), identity, accumulator);
+    }
+
+    /**
+     * Applies given {@code accumulator} to every element of {@code iterable}
+     * in a way that corresponds with the following code:
+     * <pre>
+     *     U value0 = identity;
+     *     Iterator&lt;T&gt; iterator = iterable.iterator();
+     *     while (iterator.hasNext()) {
+     *         T element = iterator.next();
+     *         U value1 = accumulator.apply(value0, element);
+     *         // Wait for value1 to become available.
+     *         value0 = value1;
+     *     }
+     *     return value0; // Accumulated value.
+     * </pre>
+     * In other words, the elements of the iterable are processed
+     * <i>serially</i>, from the first to the last. The waiting for each
+     * element to become available is performed in a non-blocking manner.
+     *
+     * @param iterable    Iterable of plain elements.
+     * @param identity    Initial input to the accumulator function.
+     * @param accumulator Function used to combine the last identity value with
+     *                    the successful result of a {@code Future} into
+     *                    another {@code Future}, which in turn completes with
+     *                    the next identity value.
+     * @param <T>         Type of value provided by futures in array if they
+     *                    complete successfully.
+     * @param <U>         Type of identity value and accumulated value.
+     * @return Future, completed with accumulated value only if all futures of
+     * {@code iterable} completes successfully. Otherwise it is failed with the
+     * first encountered error.
+     */
+    static <T, U> Future<U> flatReducePlain(
+        final Iterable<T> iterable,
+        final U identity,
+        final ThrowingBiFunction<? super U, ? super T, ? extends Future<U>> accumulator)
+    {
+        return flatReducePlain(iterable.iterator(), identity, accumulator);
+    }
+
+    /**
+     * Applies given {@code accumulator} to every element in {@code iterator}
+     * in a way that corresponds with the following code:
+     * <pre>
+     *     U value0 = identity;
+     *     while (iterator.hasNext()) {
+     *         T element = iterator.next();
+     *         U value1 = accumulator.apply(value0, element);
+     *         // Wait for value1 to become available.
+     *         value0 = value1;
+     *     }
+     *     return value0; // Accumulated value.
+     * </pre>
+     * In other words, the elements of the iterator are processed
+     * <i>serially</i>, from the first to the last. The waiting for each
+     * element to become available is performed in a non-blocking manner.
+     *
+     * @param iterator    Iterator of plain elements.
+     * @param identity    Initial input to the accumulator function.
+     * @param accumulator Function used to combine the last identity value with
+     *                    the successful result of a {@code Future} into
+     *                    another {@code Future}, which in turn completes with
+     *                    the next identity value.
+     * @param <T>         Type of value provided by futures in array if they
+     *                    complete successfully.
+     * @param <U>         Type of identity value and accumulated value.
+     * @return Future, completed with accumulated value only if all futures in
+     * {@code iterator} completes successfully. Otherwise it is failed with the
+     * first encountered error.
+     */
+    static <T, U> Future<U> flatReducePlain(
+        final Iterator<T> iterator,
+        final U identity,
+        final ThrowingBiFunction<? super U, ? super T, ? extends Future<U>> accumulator)
+    {
+        if (!iterator.hasNext()) {
+            return Future.success(identity);
+        }
+        try {
+            return accumulator.apply(identity, iterator.next())
+                .flatMap(element -> flatReducePlain(iterator, element, accumulator));
+        }
+        catch (final Throwable throwable) {
+            return Future.failure(throwable);
+        }
     }
 }

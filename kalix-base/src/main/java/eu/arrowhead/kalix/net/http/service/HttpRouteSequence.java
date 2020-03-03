@@ -37,13 +37,14 @@ class HttpRouteSequence {
     }
 
     /**
-     * Offers this route sequence the opportunity to handle the given request.
+     * Offers this route sequence the opportunity to handle given request.
      *
      * @param request  Information about the incoming HTTP request, including
      *                 its header and body.
      * @param response An object useful for indicating how the request is to be
      *                 responded to.
-     * @return {@code true} only if given request was handled.
+     * @return Future completed with {@code true} only if given request was
+     * handled.
      */
     Future<Boolean> tryHandle(final HttpServiceRequest request, final HttpServiceResponse response) {
         final var pathParameters = new ArrayList<String>(route.pattern().map(HttpPattern::nParameters).orElse(0));
@@ -51,7 +52,7 @@ class HttpRouteSequence {
             return Future.success(false);
         }
         return Future
-            .serialize(false, validators, (validator, isHandled) -> {
+            .flatReducePlain(validators, false, (isHandled, validator) -> {
                 if (isHandled) {
                     return Future.success(true);
                 }
@@ -65,7 +66,11 @@ class HttpRouteSequence {
                     .handle(request.wrapFullWithPathParameters(pathParameters), response)
                     .map(ignored -> true);
             })
-            .flatMapError(throwable -> Future.serialize(false, catchers, (catcher, isHandled) ->
-                catcher.tryHandle(throwable, request, response)));
+            .flatMapError(throwable -> Future.flatReducePlain(catchers, false, (isHandled, catcher) -> {
+                if (isHandled) {
+                    return Future.success(true);
+                }
+                return catcher.tryHandle(throwable, request, response);
+            }));
     }
 }
