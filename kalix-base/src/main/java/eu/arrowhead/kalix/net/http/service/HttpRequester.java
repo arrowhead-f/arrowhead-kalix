@@ -1,5 +1,7 @@
 package eu.arrowhead.kalix.net.http.service;
 
+import eu.arrowhead.kalix.net.http.HttpArrowheadSystem;
+
 import java.net.InetSocketAddress;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
@@ -9,9 +11,12 @@ import java.util.Optional;
  */
 public class HttpRequester {
     /**
-     * @return Certificate of request sender, if available.
+     * @return Certificate of request sender.
+     * @throws UnsupportedOperationException If the {@link HttpArrowheadSystem}
+     *                                       providing this object is not
+     *                                       running in secure mode.
      */
-    public Optional<X509Certificate> certificate() {
+    public X509Certificate certificate() {
         return null;
     }
 
@@ -24,9 +29,10 @@ public class HttpRequester {
     }
 
     /**
-     * @return Maybe?
+     * @return Authorization token included in {@link HttpServiceRequest}, if
+     * any.
      */
-    public String token() {
+    public Optional<String> token() {
         return null;
     }
 

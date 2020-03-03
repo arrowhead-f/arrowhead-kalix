@@ -5,7 +5,7 @@ import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpStatus;
 import eu.arrowhead.kalix.net.http.HttpVersion;
 
-import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
@@ -22,12 +22,16 @@ public class HttpServiceResponse {
      * that the {@code "content-type"} header is set appropriately. The
      * {@code "content-length"} header is, however, automatically set to the
      * length of the byte array.
+     * <p>
+     * If a response body is explicitly set by a
+     * {@link HttpValidatorHandler}, the associated request will <i>not</i> be
+     * passed on to any further validator handlers or a route handler. If no
+     * response status is explicitly set, {@code 400 Bad Request} will be used.
      *
      * @param bytes Bytes to send to response receiver.
-     * @return This response object.
      */
-    public HttpServiceResponse body(final byte[] bytes) {
-        return this;
+    public void body(final byte[] bytes) {
+        // TODO.
     }
 
     /**
@@ -37,14 +41,37 @@ public class HttpServiceResponse {
      * transmission to the response receiver. Please refer to the Javadoc for
      * the {@code @Writable} annotation for more information about writable
      * data transfer objects.
+     * <p>
+     * If a response body is explicitly set by a
+     * {@link HttpValidatorHandler}, the associated request will <i>not</i> be
+     * passed on to any further validator handlers or a route handler. If no
+     * response status is explicitly set, {@code 400 Bad Request} will be used.
      *
      * @param body Data transfer object to send to response receiver.
-     * @return This response object.
      * @see eu.arrowhead.kalix.dto.Writable @Writable
      */
-    public HttpServiceResponse body(final DataWritable body) {
+    public void body(final DataWritable body) {
         // TODO.
-        return this;
+    }
+
+    /**
+     * Sets response body, replacing any previously set such.
+     * <p>
+     * The provided stream is scheduled for reading and transmission to the
+     * response receiver. It becomes the responsibility of the caller to ensure
+     * that that {@code "content-type"} header is set appropriately. The
+     * {@code "content-length"} header may be set if the final length of the
+     * stream is known.
+     * <p>
+     * If a response body is explicitly set by a
+     * {@link HttpValidatorHandler}, the associated request will <i>not</i> be
+     * passed on to any further validator handlers or a route handler. If no
+     * response status is explicitly set, {@code 400 Bad Request} will be used.
+     *
+     * @param stream Input stream to send to response receiver.
+     */
+    public void body(final InputStream stream) {
+        // TODO.
     }
 
     /**
@@ -55,14 +82,16 @@ public class HttpServiceResponse {
      * responsibility of the caller to ensure that the {@code "content-type"}
      * header is set appropriately. The {@code "content-length"} header is,
      * however, automatically set to the size of the file.
+     * <p>
+     * If a response body is explicitly set by a
+     * {@link HttpValidatorHandler}, the associated request will <i>not</i> be
+     * passed on to any further validator handlers or a route handler. If no
+     * response status is explicitly set, {@code 400 Bad Request} will be used.
      *
      * @param path Path to file to send to response receiver.
-     * @return This response object.
-     * @throws IOException If no file exists at {@code path}, or if it cannot
-     *                     be read for any other reason.
      */
-    public HttpServiceResponse body(final Path path) throws IOException {
-        return this;
+    public void body(final Path path) {
+        // TODO.
     }
 
     /**
@@ -75,21 +104,16 @@ public class HttpServiceResponse {
      * acceptable to the response receiver will be used if possible. The
      * {@code "content-length"} header is automatically set to the length of
      * the string.
+     * <p>
+     * If a response body is explicitly set by a
+     * {@link HttpValidatorHandler}, the associated request will <i>not</i> be
+     * passed on to any further validator handlers or a route handler. If no
+     * response status is explicitly set, {@code 400 Bad Request} will be used.
      *
      * @param string String to send to response receiver.
-     * @return This response object.
      */
-    public HttpServiceResponse body(final String string) {
-        return this;
-    }
-
-    /**
-     * Prevents any further {@link HttpFilter}s or {@link HttpRoute} from
-     * processing this response.
-     */
-    public HttpServiceResponse eject() {
+    public void body(final String string) {
         // TODO.
-        return this;
     }
 
     /**
@@ -139,6 +163,12 @@ public class HttpServiceResponse {
     }
 
     /**
+     * Sets response status.
+     * <p>
+     * If a response status is explicitly set by a
+     * {@link HttpValidatorHandler}, the associated request will <i>not</i> be
+     * passed on to any further validator handlers or a route handler.
+     *
      * @param status New response {@link HttpStatus}.
      * @return This response object.
      */
@@ -148,18 +178,9 @@ public class HttpServiceResponse {
     }
 
     /**
-     * @return Currently set response {@link HttpVersion}.
+     * @return Designated response {@link HttpVersion}.
      */
     public HttpVersion version() {
         return null;
-    }
-
-    /**
-     * @param version New response {@link HttpVersion}.
-     * @return This response object.
-     */
-    public HttpServiceResponse version(final HttpVersion version) {
-        // TODO.
-        return this;
     }
 }

@@ -1,11 +1,11 @@
 package eu.arrowhead.kalix.net.http.service;
 
 /**
- * A service handler, meant to process incoming HTTP requests matching some
+ * A route handler, meant to process incoming HTTP requests matching some
  * arbitrary set of preconditions.
  */
 @FunctionalInterface
-public interface HttpServiceHandler {
+public interface HttpRouteHandler {
     /**
      * Called with an incoming HTTP request and a response handler.
      *
