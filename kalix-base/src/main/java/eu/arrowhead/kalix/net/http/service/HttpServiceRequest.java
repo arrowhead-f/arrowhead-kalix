@@ -48,6 +48,14 @@ public class HttpServiceRequest {
     }
 
     /**
+     * @return Request URL path. Will always start with a leading forward
+     * slash ({@code /}).
+     */
+    public String path() {
+        return null;
+    }
+
+    /**
      * Gets value of identified path parameter, if set.
      * <p>
      * This operation accesses an arbitrary list that has exactly the same size

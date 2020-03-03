@@ -35,14 +35,14 @@ public class TestHttpPattern {
             arguments("/#A/#B/#C/", "/x/y/z", new String[]{"x", "y", "z"}),
             arguments("/#A/#B/#C/", "/x/y/z/", new String[]{"x", "y", "z"}),
             arguments("/123/#B/@:", "/123/y/@:", new String[]{"y"}),
-            arguments("/#A/>", "/x/y/z", new String[]{"x"}),
-            arguments("/>", "/x/y/z", new String[0]),
+            arguments("/#A/>", "/x/y/z", new String[]{"x", "/y/z"}),
+            arguments("/>", "/x/y/z", new String[]{"/x/y/z"}),
             arguments("/base/#id/thing", "/base//thing", new String[]{""}),
             arguments("//#id/thing", "///thing", new String[]{""}),
             arguments("///thing", "///thing", new String[0]),
             arguments("///", "///", new String[0]),
             arguments("///#", "///maybe", new String[]{"maybe"}),
-            arguments("///>", "///hello", new String[0])
+            arguments("///>", "///hello", new String[]{"/hello"})
         );
     }
 

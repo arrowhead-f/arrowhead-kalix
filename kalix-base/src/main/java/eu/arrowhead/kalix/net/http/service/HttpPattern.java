@@ -11,26 +11,28 @@ import java.util.*;
  * optional forward slash may be located at the end. While it is recommended
  * for segments to contain only the alphanumeric ASCII characters and hyphens
  * to maximize compatibility with various HTTP libraries and frameworks, RFC
- * 3986 explicitly allows the following characters, and so-called <i>percent
- * encodings</i> to be used:
+ * 3986 explicitly allows the following characters, as well as so-called
+ * <i>percent encodings</i> to be used:
  * <pre>
  * A–Z a–z 0–9 - . _ ~ ! $ & ' ( ) * + , ; = : @
  * </pre>
- * While all these characters are allowed in segments by this pattern
+ * While all these characters are allowed in segments provided to this pattern
  * implementation, percent encodings are not (e.g. {@code %20} as a
  * representation for ASCII space).
  * <p>
  * It is frequently useful to allow certain pattern segments to match any
- * segment at the corresponding position in given paths. For this reason,
- * pattern segments may be qualified as <i>path parameters</i> by adding a hash
+ * segment at their positions in provided paths. For this reason, pattern
+ * segments may be qualified as <i>path parameters</i> by adding a hash
  * ({@code #}) at the beginning of the segment (e.g. {@code /some/#parameter}
  * or {@code /some/other/#parameter/path}). When a path is successfully matched
  * against a pattern, any path parameter segments are collected from the path
- * into a list.
+ * into a path parameter list.
  * <p>
  * A pattern may optionally end with a right angle bracket ({@code >}) to
  * denote that the pattern is to be considered a prefix. Prefix patterns match
- * all paths with matching segments up until the right angle bracket.
+ * all paths with matching segments up until the right angle bracket. When such
+ * a prefix pattern is matched successfully against a path, the segments after
+ * the prefix is collected into the path parameter list.
  *
  * @see <a href="https://tools.ietf.org/html/rfc3986#section-3.3">RFC 3986, Section 3.3</a>
  */
@@ -82,7 +84,11 @@ class HttpPattern {
         final var q1 = pattern.length();
 
         if (nParameters == 0) { // Fast path for patterns without parameters.
-            return (isPrefix ? p1 > q1 : p1 == q1) && pattern.regionMatches(0, path, 0, q1);
+            if (isPrefix && p1 > q1 && pattern.regionMatches(0, path, 0, q1)) {
+                parameters.add(path.substring(q1 - 1));
+                return true;
+            }
+            return p1 == q1 && pattern.regionMatches(0, path, 0, q1);
         }
 
         int np = 0; // Number of found path parameters.
@@ -96,12 +102,20 @@ class HttpPattern {
             // Are we done?
             final var pAtEnd = p0 == p1;
             final var qAtEnd = q0 == q1;
-            if (pAtEnd && qAtEnd || isPrefix && qAtEnd) {
-                return np == nParameters;
-            }
-            if (pAtEnd || qAtEnd) {
+            if (qAtEnd) {
+                if (pAtEnd) {
+                    return np == nParameters;
+                }
+                if (isPrefix) {
+                    parameters.add(path.substring(p0 - 1));
+                    return np == nParameters;
+                }
                 return false;
             }
+            if (pAtEnd) {
+                return false;
+            }
+
             // We must be at a path parameter. Collect segment from path.
             int px = p0;
             while (px < p1 && path.charAt(px) != '/') {
@@ -213,7 +227,7 @@ class HttpPattern {
                         break outer;
                     }
                     throw new IllegalArgumentException("`>` may only occur at the very end of a pattern, right " +
-                        "after the last `/`, to make the pattern allow subpaths");
+                        "after the last `/`, to make the pattern allow any subpaths");
                 }
                 break;
             }
