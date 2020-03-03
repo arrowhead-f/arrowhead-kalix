@@ -1,97 +1,84 @@
 package eu.arrowhead.kalix.net.http.service;
 
 import eu.arrowhead.kalix.net.http.HttpHeaders;
+import eu.arrowhead.kalix.net.http.HttpMethod;
 import eu.arrowhead.kalix.net.http.HttpVersion;
-import eu.arrowhead.kalix.util.concurrent.Future;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 /**
- * An incoming HTTP request, handled by a {@link HttpService}.
+ * The head part of an incoming HTTP request, handled by a {@link HttpService}.
  */
-public class HttpServiceRequestHead {
+public interface HttpServiceRequestHead {
     /**
      * Gets value of named header, if set.
      *
-     * @param name Name of header. Case is ignored.
+     * @param name Name of header. Case is ignored. Prefer lowercase.
      * @return Header value, or {@code null}.
      */
-    public Optional<String> header(final String name) {
-        return null;
-    }
+    Optional<String> header(final String name);
 
     /**
-     * @return Map of all request headers.
+     * @return <i>Modifiable</i> map of all request headers.
      */
-    public HttpHeaders headers() {
-        return null;
-    }
+    HttpHeaders headers();
+
+    /**
+     * @return Request HTTP method.
+     */
+    HttpMethod method();
 
     /**
      * @return Request URL path. Will always start with a leading forward
      * slash ({@code /}).
      */
-    public String path() {
-        return null;
-    }
+    String path();
 
     /**
-     * Gets value of identified path parameter, if set.
+     * Gets value of identified path parameter.
      * <p>
      * This operation accesses an arbitrary list that has exactly the same size
      * as the number of path parameters of the {@link HttpPattern} matched
-     * prior to this request becoming available. If an index is given outside
-     * the bounds of this list, {@code null} is returned.
+     * prior to this request becoming available.
      * <p>
      * Note that it is possible to match a path parameter with an empty string.
-     * It should never be assumed that a non-null value returned by this method
-     * has a length larger than 0.
+     * It should never be assumed that a non-empty value returned by this
+     * method has a length larger than 0.
      *
      * @param index Position of path parameter in original pattern.
      * @return Path parameter value, if any.
+     * @throws IndexOutOfBoundsException If provided index is out of the bounds
+     *                                   of the request path parameter list.
      */
-    public Optional<String> pathParameter(final int index) {
-        return null;
-    }
+    String pathParameter(final int index);
 
     /**
-     * @return List of all path parameters.
+     * @return Unmodifiable list of all path parameters.
      */
-    public List<String> pathParameters() {
-        return null;
-    }
+    List<String> pathParameters();
 
     /**
      * Gets value of named query parameter, if set.
      *
      * @param name Name of query parameter. Case sensitive.
-     * @return Query parameter value, or {@code null}.
+     * @return Query parameter value, if a corresponding parameter name exists.
      */
-    public Optional<String> queryParameter(final String name) {
-        return null;
-    }
+    Optional<String> queryParameter(final String name);
 
     /**
-     * @return Map of all query parameters.
+     * @return Unmodifiable map of all query parameters.
      */
-    public Map<String, String> queryParameters() {
-        return null;
-    }
+    Map<String, String> queryParameters();
 
     /**
      * @return Information about the request sender.
      */
-    public HttpRequester requester() {
-        return null;
-    }
+    HttpRequester requester();
 
     /**
      * @return HTTP version used by request.
      */
-    public HttpVersion version() {
-        return null;
-    }
+    HttpVersion version();
 }

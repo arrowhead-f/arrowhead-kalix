@@ -4,7 +4,6 @@ import eu.arrowhead.kalix.descriptor.ServiceDescriptor;
 import eu.arrowhead.kalix.internal.util.concurrent.NettySchedulerReferenceCounted;
 import eu.arrowhead.kalix.security.X509Certificates;
 import eu.arrowhead.kalix.security.X509KeyStore;
-import eu.arrowhead.kalix.security.X509Profile;
 import eu.arrowhead.kalix.security.X509TrustStore;
 import eu.arrowhead.kalix.util.concurrent.Future;
 import eu.arrowhead.kalix.util.concurrent.Scheduler;
@@ -14,7 +13,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 /**

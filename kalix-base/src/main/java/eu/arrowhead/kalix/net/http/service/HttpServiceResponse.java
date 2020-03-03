@@ -1,6 +1,10 @@
 package eu.arrowhead.kalix.net.http.service;
 
 import eu.arrowhead.kalix.dto.DataWritable;
+import eu.arrowhead.kalix.dto.util.ByteArrayWritable;
+import eu.arrowhead.kalix.dto.util.PathWritable;
+import eu.arrowhead.kalix.dto.util.StreamWritable;
+import eu.arrowhead.kalix.dto.util.StringWritable;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpStatus;
 import eu.arrowhead.kalix.net.http.HttpVersion;
@@ -8,12 +12,35 @@ import eu.arrowhead.kalix.net.http.HttpVersion;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
  * An outgoing HTTP response, to be sent by an {@link HttpService}.
  */
 public class HttpServiceResponse {
+    private final HttpVersion version;
+
+    private HttpStatus status;
+    private HttpHeaders headers = new HttpHeaders();
+    private DataWritable body;
+
+    /**
+     * Creates new outgoing HTTP response.
+     *
+     * @param version Target HTTP version.
+     */
+    public HttpServiceResponse(final HttpVersion version) {
+        this.version = Objects.requireNonNull(version, "Expected version");
+    }
+
+    /**
+     * @return Response body, if any has been set.
+     */
+    public Optional<DataWritable> body() {
+        return Optional.ofNullable(body);
+    }
+
     /**
      * Sets response body, replacing any previously set such.
      * <p>
@@ -28,10 +55,11 @@ public class HttpServiceResponse {
      * passed on to any further validator handlers or a route handler. If no
      * response status is explicitly set, {@code 400 Bad Request} will be used.
      *
-     * @param bytes Bytes to send to response receiver.
+     * @param byteArray Bytes to send to response receiver.
+     * @throws NullPointerException If {@code byteArray} is {@code null}.
      */
-    public void body(final byte[] bytes) {
-        // TODO.
+    public void body(final byte[] byteArray) {
+        body = new ByteArrayWritable(byteArray);
     }
 
     /**
@@ -48,10 +76,11 @@ public class HttpServiceResponse {
      * response status is explicitly set, {@code 400 Bad Request} will be used.
      *
      * @param body Data transfer object to send to response receiver.
+     * @throws NullPointerException If {@code body} is {@code null}.
      * @see eu.arrowhead.kalix.dto.Writable @Writable
      */
     public void body(final DataWritable body) {
-        // TODO.
+        this.body = Objects.requireNonNull(body, "Expected body");
     }
 
     /**
@@ -69,9 +98,10 @@ public class HttpServiceResponse {
      * response status is explicitly set, {@code 400 Bad Request} will be used.
      *
      * @param stream Input stream to send to response receiver.
+     * @throws NullPointerException If {@code stream} is {@code null}.
      */
     public void body(final InputStream stream) {
-        // TODO.
+        body = new StreamWritable(stream);
     }
 
     /**
@@ -89,9 +119,10 @@ public class HttpServiceResponse {
      * response status is explicitly set, {@code 400 Bad Request} will be used.
      *
      * @param path Path to file to send to response receiver.
+     * @throws NullPointerException If {@code path} is {@code null}.
      */
     public void body(final Path path) {
-        // TODO.
+        body = new PathWritable(path);
     }
 
     /**
@@ -111,38 +142,39 @@ public class HttpServiceResponse {
      * response status is explicitly set, {@code 400 Bad Request} will be used.
      *
      * @param string String to send to response receiver.
+     * @throws NullPointerException If {@code string} is {@code null}.
      */
     public void body(final String string) {
-        // TODO.
+        body = new StringWritable(string);
     }
 
     /**
      * Gets a response header value by name.
      *
-     * @param name Name of header. Case sensitive. Should be lower-case.
+     * @param name Name of header. Case insensitive. Should be lower-case.
      * @return Header value, if any.
      */
     public Optional<String> header(final String name) {
-        return null;
+        return headers.get(name);
     }
 
     /**
      * Sets a response header.
      *
-     * @param name  Name of header. Case sensitive. Should be lower-case.
+     * @param name  Name of header. Case insensitive. Should be lower-case.
      * @param value Header value.
      * @return This response object.
      */
     public HttpServiceResponse header(final String name, final String value) {
-        // TODO.
+        headers.set(name, value);
         return this;
     }
 
     /**
-     * @return Mutable {@link Map} of all response headers.
+     * @return Modifiable {@link Map} of all response headers.
      */
     public HttpHeaders headers() {
-        return null;
+        return headers;
     }
 
     /**
@@ -152,14 +184,15 @@ public class HttpServiceResponse {
      * @return This response object.
      */
     public HttpServiceResponse headers(final HttpHeaders headers) {
-        return null;
+        this.headers = headers;
+        return this;
     }
 
     /**
-     * @return Currently set response {@link HttpStatus}.
+     * @return Currently set response {@link HttpStatus}, if any.
      */
-    public HttpStatus status() {
-        return null;
+    public Optional<HttpStatus> status() {
+        return Optional.ofNullable(status);
     }
 
     /**
@@ -173,7 +206,7 @@ public class HttpServiceResponse {
      * @return This response object.
      */
     public HttpServiceResponse status(final HttpStatus status) {
-        // TODO.
+        this.status = status;
         return this;
     }
 
@@ -181,6 +214,6 @@ public class HttpServiceResponse {
      * @return Designated response {@link HttpVersion}.
      */
     public HttpVersion version() {
-        return null;
+        return version;
     }
 }

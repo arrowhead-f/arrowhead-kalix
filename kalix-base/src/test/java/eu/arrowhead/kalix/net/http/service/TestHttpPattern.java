@@ -64,7 +64,11 @@ public class TestHttpPattern {
             arguments("/x/>", "/x/"),
             arguments("/#/hello", "/#/hello"),
             arguments("/#id/hello", "/#/hello"),
-            arguments("/#id", "/#")
+            arguments("/#id", "/#"),
+            arguments("/lo", "/longer"),
+            arguments("/longer", "/lo"),
+            arguments("/lo/>", "/longer"),
+            arguments("/longer/>", "/lo")
         );
     }
 
@@ -90,6 +94,42 @@ public class TestHttpPattern {
             "/x/y/../z",
             "/x/y/.",
             "/x/y/.."
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("intersectingPatternPairs")
+    void shouldConsiderAToIntersectWithB(final String a, final String b) {
+        final var a0 = HttpPattern.valueOf(a);
+        final var b0 = HttpPattern.valueOf(b);
+        assertTrue(a0.intersectsWith(b0));
+    }
+
+    static Stream<Arguments> intersectingPatternPairs() {
+        return Stream.of(
+            //arguments("/", "/"),
+            arguments("/hello", "/#/"),
+            arguments("/x/y", "/x/>"),
+            arguments("//#1", "/>"),
+            arguments("/>", "/hello/there"),
+            arguments("/x/>", "/x/y/z")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("disjointPatternPairs")
+    void shouldConsiderADisjointFromB(final String a, final String b) {
+        final var a0 = HttpPattern.valueOf(a);
+        final var b0 = HttpPattern.valueOf(b);
+        assertFalse(a0.intersectsWith(b0));
+    }
+
+    static Stream<Arguments> disjointPatternPairs() {
+        return Stream.of(
+            arguments("/", "/x"),
+            arguments("/hello", "/"),
+            arguments("/z/y", "/x/>"),
+            arguments("/x/", "/x/y/z")
         );
     }
 }

@@ -29,18 +29,10 @@ public class HttpRequester {
     }
 
     /**
-     * @return Authorization token included in {@link HttpServiceRequest}, if
+     * @return Authorization token included in {@link HttpServiceRequest0}, if
      * any.
      */
     public Optional<String> token() {
-        return null;
-    }
-
-    /**
-     * @return The {@code User-Agent} string of some HTTP request header, or
-     * {@code null}.
-     */
-    public String userAgent() {
         return null;
     }
 }

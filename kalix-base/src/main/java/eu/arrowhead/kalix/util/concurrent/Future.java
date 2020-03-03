@@ -1,8 +1,11 @@
 package eu.arrowhead.kalix.util.concurrent;
 
 import eu.arrowhead.kalix.util.Result;
+import eu.arrowhead.kalix.util.function.ThrowingBiFunction;
 import eu.arrowhead.kalix.util.function.ThrowingFunction;
 
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.*;
@@ -157,6 +160,50 @@ public interface Future<V> {
     }
 
     /**
+     * Takes a function that is only executed if this future fails with an
+     * error. The function, or <i>mapper</i>, is expected to return a value
+     * with the same type as this {@code Future}.
+     * <p>
+     * Any exception thrown by {@code mapper} should lead to the returned
+     * future being failed with the same exception.
+     *
+     * @param mapper The mapping function to apply to the error of this
+     *               {@code Future}, if it becomes available.
+     * @return A {@code Future} that may eventually hold the result of applying
+     * a mapping function to the error of this {@code Future}.
+     * @throws NullPointerException If the mapping function is {@code null}.
+     */
+    default Future<V> mapError(final ThrowingFunction<Throwable, ? extends V> mapper) {
+        Objects.requireNonNull(mapper);
+        final var source = this;
+        return new Future<>() {
+            @Override
+            public void onResult(final Consumer<Result<V>> consumer) {
+                source.onResult(result0 -> {
+                    Result<V> result1;
+                    if (result0.isSuccess()) {
+                        result1 = result0;
+                    }
+                    else {
+                        try {
+                            result1 = Result.success(mapper.apply(result0.error()));
+                        }
+                        catch (final Throwable error) {
+                            result1 = Result.failure(error);
+                        }
+                    }
+                    consumer.accept(result1);
+                });
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                source.cancel(mayInterruptIfRunning);
+            }
+        };
+    }
+
+    /**
      * Returns new {@code Future} that is completed when the {@code Future}
      * returned by {@code mapper} completes, which, in turn, is not executed
      * until this {@code Future} completes.
@@ -187,7 +234,10 @@ public interface Future<V> {
             public void onResult(final Consumer<Result<U>> consumer) {
                 source.onResult(r0 -> {
                     Throwable err;
-                    if (r0.isSuccess()) {
+                    if (cancelTarget.get() == null) {
+                        err = new CancellationException();
+                    }
+                    else if (r0.isSuccess()) {
                         try {
                             final var f1 = mapper.apply(r0.value());
                             f1.onResult(consumer);
@@ -213,6 +263,110 @@ public interface Future<V> {
                 }
             }
         };
+    }
+
+    /**
+     * Takes a function that is only executed if this future fails with an
+     * error. The function, or <i>mapper</i>, is expected to return a
+     * {@code Future} that completes with a value with the same type as this
+     * {@code Future}.
+     * <p>
+     * Any exception thrown by {@code mapper} should lead to the returned
+     * future being failed with the same exception.
+     *
+     * @param mapper The mapping function to apply to the error of this
+     *               {@code Future}, if it becomes available.
+     * @return A {@code Future} that may eventually hold the result of applying
+     * a mapping function to the error of this {@code Future}, and then waiting
+     * for the {@code Future} returned by the mapper to complete.
+     * @throws NullPointerException If the mapping function is {@code null}.
+     */
+    default Future<V> flatMapError(final ThrowingFunction<Throwable, ? extends Future<V>> mapper) {
+        Objects.requireNonNull(mapper);
+        final var source = this;
+        final var cancelTarget = new AtomicReference<Future<?>>(this);
+        return new Future<>() {
+            @Override
+            public void onResult(final Consumer<Result<V>> consumer) {
+                source.onResult(result0 -> {
+                    Result<V> result1;
+                    done:
+                    {
+                        Throwable err;
+                        if (cancelTarget.get() == null) {
+                            err = new CancellationException();
+                        }
+                        else {
+                            if (result0.isSuccess()) {
+                                result1 = result0;
+                                break done;
+                            }
+                            try {
+                                final var f1 = mapper.apply(result0.error());
+                                f1.onResult(consumer);
+                                cancelTarget.set(f1);
+                                return;
+                            }
+                            catch (final Throwable error) {
+                                err = error;
+                            }
+                        }
+                        result1 = Result.failure(err);
+                    }
+                    consumer.accept(result1);
+                });
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                final var target = cancelTarget.getAndSet(null);
+                if (target != null) {
+                    target.cancel(mayInterruptIfRunning);
+                }
+            }
+        };
+    }
+
+    static <T, U> Future<U> serialize(
+        final U initialValue,
+        final T[] array,
+        final ThrowingBiFunction<? super T, ? super U, ? extends Future<U>> mapper)
+    {
+        return serialize(initialValue, Arrays.asList(array), mapper);
+    }
+
+    static <T, U> Future<U> serialize(
+        final U initialValue,
+        final Iterable<T> iterable,
+        final ThrowingBiFunction<? super T, ? super U, ? extends Future<U>> mapper)
+    {
+        return serialize(initialValue, iterable.iterator(), mapper);
+    }
+
+    static <T, U> Future<U> serialize(
+        final U initialValue,
+        final Iterator<T> iterator,
+        final ThrowingBiFunction<? super T, ? super U, ? extends Future<U>> mapper)
+    {
+        if (!iterator.hasNext()) {
+            return Future.success(initialValue);
+        }
+        try {
+            return mapper.apply(iterator.next(), initialValue)
+                .flatMap(value -> serialize(value, iterator, mapper));
+        }
+        catch (final Throwable throwable) {
+            return Future.failure(throwable);
+        }
+    }
+
+    /**
+     * Creates new {@code Future} that always succeeds with {@code null}.
+     *
+     * @return New {@code Future}.
+     */
+    static Future<?> done() {
+        return new FutureSuccess<>(null);
     }
 
     /**

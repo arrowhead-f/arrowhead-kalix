@@ -1,5 +1,7 @@
 package eu.arrowhead.kalix.net.http.service;
 
+import eu.arrowhead.kalix.util.concurrent.Future;
+
 /**
  * A route handler, meant to process incoming HTTP requests matching some
  * arbitrary set of preconditions.
@@ -13,6 +15,7 @@ public interface HttpRouteHandler {
      *                 its header and body.
      * @param response An object useful for indicating how the request is to be
      *                 responded to.
+     * @return Future completed when handling is complete.
      * @throws Exception Whatever exception the handle may want to throw. If
      *                   the HTTP service owning this handle knows how to
      *                   translate the exception into a certain kind of HTTP
@@ -21,5 +24,5 @@ public interface HttpRouteHandler {
      *                   any details and the exception be logged (if logging is
      *                   enabled).
      */
-    void handle(HttpServiceRequest request, HttpServiceResponse response) throws Exception;
+    Future<?> handle(HttpServiceRequestFull request, HttpServiceResponse response) throws Exception;
 }

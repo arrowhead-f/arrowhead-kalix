@@ -1,15 +1,17 @@
 package eu.arrowhead.kalix.net.http.service;
 
 import eu.arrowhead.kalix.net.http.HttpMethod;
+import eu.arrowhead.kalix.util.concurrent.Future;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 /**
  * A {@link HttpService} validator, useful for verifying and/or responding to
- * incoming HTTP requests before they are provided to their target
+ * incoming HTTP requests before they are provided to their designated
  * {@link HttpRoute}s.
- * <p>
- * Note that filters cannot modify requests.
  */
 public class HttpValidator {
     private final int ordinal;
@@ -65,12 +67,40 @@ public class HttpValidator {
     }
 
     /**
-     * Allows this filter to handle the given incoming HTTP request.
+     * Determines whether there are method/path pairs that would match both
+     * this validator and the provided route.
+     *
+     * @param route Route to test.
+     * @return {@code true} only if an intersection of matching method/path
+     * pairs exists between this catcher and the given route.
+     */
+    public boolean matchesIntersectionOf(final HttpRoute route) {
+        if (method != null) {
+            final var method0 = route.method();
+            if (method0.isPresent() && method0.get() != method) {
+                return false;
+            }
+        }
+        if (pattern != null) {
+            final var pattern0 = route.pattern();
+            return pattern0.isEmpty() || pattern.intersectsWith(pattern0.get());
+        }
+        return true;
+    }
+
+    /**
+     * Offers this validator the opportunity to respond to this request. If it
+     * does, it is assumed to the request needs no more processing and a
+     * response is to be immediately scheduled to the requester.
+     * <p>
+     * A validator will typically only handle a request if it is invalid.
      *
      * @param request  Information about the incoming HTTP request, including
      *                 its header and body.
      * @param response An object useful for indicating how the request is to be
      *                 responded to.
+     * @return Future completed when validation is complete. Its value is
+     * {@code true} only if the request was handled.
      * @throws Exception Whatever exception the handle may want to throw. If
      *                   the HTTP service owning this handle knows how to
      *                   translate the exception into a certain kind of HTTP
@@ -79,7 +109,27 @@ public class HttpValidator {
      *                   any details and the exception be logged (if logging is
      *                   enabled).
      */
-    public void handle(HttpServiceRequest request, HttpServiceResponse response) throws Exception {
-        handler.handle(request, response);
+    public Future<Boolean> tryHandle(final HttpServiceRequest request, final HttpServiceResponse response)
+        throws Exception
+    {
+        mismatch:
+        {
+            if (method != null && !method.equals(request.method())) {
+                break mismatch;
+            }
+            final List<String> pathParameters;
+            if (pattern != null) {
+                pathParameters = new ArrayList<>(pattern.nParameters());
+                if (!pattern.match(request.path(), pathParameters)) {
+                    break mismatch;
+                }
+            }
+            else {
+                pathParameters = Collections.emptyList();
+            }
+            return handler.handle(request.wrapHeadWithPathParameters(pathParameters), response)
+                .map(ignored -> response.body().isPresent() || response.status().isPresent());
+        }
+        return Future.success(false);
     }
 }

@@ -50,7 +50,7 @@ class HttpPattern {
     /**
      * The root pattern, only matching the "/" path.
      */
-    public static final HttpPattern ROOT = new HttpPattern("/", 0, false);
+    static final HttpPattern ROOT = new HttpPattern("/", 0, false);
 
     /**
      * Matches this pattern against given path, and collects any path
@@ -72,7 +72,7 @@ class HttpPattern {
      * @see HttpPattern
      * @see <a href="https://tools.ietf.org/html/rfc3986#section-3.3">RFC 3986, Section 3.3</a>
      */
-    public boolean match(final String path, final List<String> parameters) {
+    boolean match(final String path, final List<String> parameters) {
         // p0 = start of path;    p1 = end of path.
         // q0 = start of pattern; q1 = end of pattern.
 
@@ -134,6 +134,66 @@ class HttpPattern {
     }
 
     /**
+     * Determines whether this pattern matches at least some paths that are
+     * also matched by the provided other pattern.
+     *
+     * @param other Pattern to compare to.
+     * @return {@code true} only if this pattern matches some of the paths
+     * that the other pattern does.
+     */
+    boolean intersectsWith(final HttpPattern other) {
+        // q  = this pattern.
+        // q0 = start of this pattern;  q1 = end of this pattern.
+
+        // r = other pattern.
+        // r0 = start of other pattern; r1 = end of other pattern.
+
+        final var q = pattern;
+        var q0 = 0;
+        final var q1 = q.length();
+
+        final var r = other.pattern;
+        var r0 = 0;
+        final var r1 = other.pattern.length();
+
+        while (true) {
+            // Find first non-identical character.
+            while (q0 < q1 && r0 < r1 && q.charAt(q0) == r.charAt(r0)) {
+                q0 += 1;
+                r0 += 1;
+            }
+
+            // Are we done?
+            final var qAtEnd = q0 == q1;
+            final var rAtEnd = r0 == r1;
+            if (rAtEnd) {
+                return qAtEnd || other.isPrefix;
+            }
+            if (qAtEnd) {
+                return isPrefix;
+            }
+            if (q.charAt(q0) != '#' && r.charAt(r0) != '#') {
+                return false;
+            }
+
+            // One of is at a path parameter. Skip current segment.
+            while (q0 < q1 && q.charAt(q0) != '/') {
+                q0 += 1;
+            }
+            while (r0 < r1 && r.charAt(r0) != '/') {
+                r0 += 1;
+            }
+        }
+    }
+
+    /**
+     * @return Number of path parameters.
+     */
+    int nParameters() {
+        return nParameters;
+    }
+
+    /**
      * Produces {@link HttpPattern} from given pattern string.
      * <p>
      * Valid patterns must start with a forward slash and consist of zero or
@@ -150,7 +210,7 @@ class HttpPattern {
      * @see HttpPattern
      * @see <a href="https://tools.ietf.org/html/rfc3986#section-3.3">RFC 3986, Section 3.3</a>
      */
-    public static HttpPattern valueOf(final String pattern) {
+    static HttpPattern valueOf(final String pattern) {
         // q0 = start of pattern; q1 = end of pattern
         var q1 = pattern.length();
         if (q1 == 0 || pattern.charAt(0) != '/') {

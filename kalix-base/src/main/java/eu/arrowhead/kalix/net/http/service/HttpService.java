@@ -4,7 +4,7 @@ import eu.arrowhead.kalix.net.http.HttpMethod;
 
 import java.util.ArrayList;
 
-public class HttpService implements HttpRouteHandler {
+public class HttpService {
     private final ArrayList<HttpCatcher<?>> catchers;
     private final ArrayList<HttpValidator> validators;
     private final ArrayList<HttpRoute> routes;
@@ -15,7 +15,6 @@ public class HttpService implements HttpRouteHandler {
         routes = builder.routes;
     }
 
-    @Override
     public void handle(final HttpServiceRequest request, final HttpServiceResponse response) throws Exception {
         // TODO.
     }

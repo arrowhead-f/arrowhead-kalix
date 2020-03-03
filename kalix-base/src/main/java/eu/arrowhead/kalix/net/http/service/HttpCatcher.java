@@ -1,9 +1,9 @@
 package eu.arrowhead.kalix.net.http.service;
 
 import eu.arrowhead.kalix.net.http.HttpMethod;
+import eu.arrowhead.kalix.util.concurrent.Future;
 
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * A {@link HttpService} exception catcher, useful for handling errors
@@ -76,16 +76,77 @@ public class HttpCatcher<T extends Throwable> {
     }
 
     /**
-     * Makes this catcher handle the given exception.
+     * Determines whether there are method/path pairs that would match both
+     * this catcher and the provided route.
+     *
+     * @param route Route to test.
+     * @return {@code true} only if an intersection of matching method/path
+     * pairs exists between this catcher and the given route.
+     */
+    public boolean matchesIntersectionOf(final HttpRoute route) {
+        if (method != null) {
+            final var method0 = route.method();
+            if (method0.isPresent() && method0.get() != method) {
+                return false;
+            }
+        }
+        if (pattern != null) {
+            final var pattern0 = route.pattern();
+            return pattern0.isEmpty() || pattern.intersectsWith(pattern0.get());
+        }
+        return true;
+    }
+
+    /**
+     * Tries to make this catcher handle the given exception.
+     * <p>
+     * The exception will only be handled if the given request matches the
+     * method, pattern and exception class of this catcher, and the handler
+     * this class wraps reports that it did handle it.
      *
      * @param throwable Exception causing this handler to be invoked.
      * @param request   Information about the incoming HTTP request, including
      *                  its header and body.
      * @param response  An object useful for indicating how the original
      *                  request is to be responded to.
-     * @throws Exception Whatever exception the handle may want to throw.
+     * @return Future completed when catching is complete. Its value is
+     * {@code true} only if the throwable was handled.
+     * @throws Exception Whatever exception the handle may want to throw. This
+     *                   exception is only thrown if the handle is executed.
      */
-    public void handle(final Throwable throwable, final HttpServiceRequest request, final HttpServiceResponse response) throws Exception {
-        handler.handle(throwable, request, response);
+    @SuppressWarnings("unchecked")
+    public Future<Boolean> tryHandle(
+        final Throwable throwable,
+        final HttpServiceRequest request,
+        final HttpServiceResponse response)
+        throws Exception
+    {
+        mismatch:
+        {
+            if (method != null && !method.equals(request.method())) {
+                break mismatch;
+            }
+
+            if (exceptionClass != null && !exceptionClass.isAssignableFrom(throwable.getClass())) {
+                break mismatch;
+            }
+            final var throwable0 = exceptionClass != null
+                ? exceptionClass.cast(throwable)
+                : (T) throwable; // This only happens if we match all throwables.
+
+            final List<String> pathParameters;
+            if (pattern != null) {
+                pathParameters = new ArrayList<>(pattern.nParameters());
+                if (!pattern.match(request.path(), pathParameters)) {
+                    break mismatch;
+                }
+            }
+            else {
+                pathParameters = Collections.emptyList();
+            }
+
+            return handler.handle(throwable0, request.wrapHeadWithPathParameters(pathParameters), response);
+        }
+        return Future.success(false);
     }
 }
