@@ -1,6 +1,6 @@
 package eu.arrowhead.kalix.net.http.service;
 
-import eu.arrowhead.kalix.dto.FormatWritable;
+import eu.arrowhead.kalix.dto.DataWritable;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpStatus;
 import eu.arrowhead.kalix.net.http.HttpVersion;
@@ -42,7 +42,7 @@ public class HttpServiceResponse {
      * @return This response object.
      * @see eu.arrowhead.kalix.dto.Writable @Writable
      */
-    public HttpServiceResponse body(final FormatWritable body) {
+    public HttpServiceResponse body(final DataWritable body) {
         // TODO.
         return this;
     }

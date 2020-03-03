@@ -24,6 +24,7 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
     @Override
     public void implementFor(final DtoTarget target, final TypeSpec.Builder implementation) throws DtoException {
         if (target.interfaceType().isReadable(Format.JSON)) {
+            implementation.addSuperinterface(JsonReadable.class);
             implementReadMethodsFor(target, implementation);
         }
         if (target.interfaceType().isWritable(Format.JSON)) {
@@ -32,7 +33,7 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
         }
     }
 
-    private void implementReadMethodsFor(final DtoTarget target, final TypeSpec.Builder implementation) {
+    private void implementReadMethodsFor(final DtoTarget target, final TypeSpec.Builder implementation) throws DtoException {
         final var targetClassName = ClassName.bestGuess(target.simpleName());
 
         implementation.addMethod(MethodSpec.methodBuilder("readJson")
@@ -74,10 +75,15 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
             .beginControlFlow("switch (reader.next().readString(source))");
 
         for (final var property : target.properties()) {
-            builder.beginControlFlow("case $S:", property.nameFor(Format.JSON));
-            final var name = property.name();
-            readValue(property.type(), x -> "builder." + name + "(" + x + ")", builder);
-            builder.endControlFlow("break");
+            try {
+                builder.beginControlFlow("case $S:", property.nameFor(Format.JSON));
+                final var name = property.name();
+                readValue(property.type(), x -> "builder." + name + "(" + x + ")", builder);
+                builder.endControlFlow("break");
+            }
+            catch (final IllegalStateException exception) {
+                throw new DtoException(property.parentElement(), exception.getMessage());
+            }
         }
 
         builder
@@ -229,6 +235,10 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
     }
 
     private void readInterface(final DtoInterface type, final Expander assignment, final MethodSpec.Builder builder) {
+        if (!type.isReadable(Format.JSON)) {
+            throw new IllegalStateException(type.simpleName() + " is not annotated with " +
+                "@Readable, or lacks Format.JSON as annotation argument");
+        }
         final var className = ClassName.bestGuess(type.targetSimpleName());
         builder.addStatement(assignment.expand("$T.readJson(reader)"), className);
     }
@@ -371,7 +381,7 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
             break;
 
         case INTERFACE:
-            writeInterface(name, builder);
+            writeInterface((DtoInterface) type, name, builder);
             break;
 
         case MAP:
@@ -426,7 +436,12 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
         putCache.append('"');
     }
 
-    private void writeInterface(final String name, final MethodSpec.Builder builder) {
+    private void writeInterface(final DtoInterface type, final String name, final MethodSpec.Builder builder) {
+        if (!type.isWritable(Format.JSON)) {
+            throw new IllegalStateException(type.simpleName() + " is not " +
+                "annotated with @Writable, or lacks Format.JSON as " +
+                "annotation argument");
+        }
         putCache.addPutIfNotEmpty(builder);
         builder.addStatement("$N.writeJson(target)", name);
     }
