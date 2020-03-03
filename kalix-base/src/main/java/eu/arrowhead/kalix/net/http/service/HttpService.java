@@ -1,22 +1,41 @@
 package eu.arrowhead.kalix.net.http.service;
 
+import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpMethod;
+import eu.arrowhead.kalix.net.http.HttpStatus;
+import eu.arrowhead.kalix.util.concurrent.Future;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class HttpService {
-    private final ArrayList<HttpCatcher<?>> catchers;
-    private final ArrayList<HttpValidator> validators;
-    private final ArrayList<HttpRoute> routes;
+    private final List<HttpRouteSequence> routeSequences;
 
     private HttpService(final Builder builder) {
-        catchers = builder.catchers;
-        validators = builder.validators;
-        routes = builder.routes;
+        final var routeSequenceFactory = new HttpRouteSequenceFactory(builder.catchers, builder.validators);
+        routeSequences = builder.routes.stream()
+            .map(routeSequenceFactory::createRouteSequenceFor)
+            .collect(Collectors.toList());
     }
 
-    public void handle(final HttpServiceRequest request, final HttpServiceResponse response) throws Exception {
-        // TODO.
+    public Future<?> handle(final HttpServiceRequest request, final HttpServiceResponse response) {
+        return Future
+            .flatReducePlain(routeSequences, false, (isHandled, routeSequence) -> {
+                if (isHandled) {
+                    return Future.success(true);
+                }
+                return routeSequence.tryHandle(request, response);
+            })
+            .flatMap(isHandled -> {
+                if (!isHandled) {
+                    response
+                        .status(HttpStatus.NOT_FOUND)
+                        .headers(new HttpHeaders())
+                        .body(new byte[0]);
+                }
+                return null;
+            });
     }
 
     public static class Builder {
@@ -33,23 +52,26 @@ public class HttpService {
 
         public <T extends Throwable> Builder catcher(
             final HttpMethod method,
-            final HttpPattern pattern,
+            final String pattern,
             final Class<T> exceptionClass,
             final HttpCatcherHandler<T> handler)
         {
-            return catcher(new HttpCatcher<>(catcherOrdinal++, method, pattern, exceptionClass, handler));
+            return catcher(new HttpCatcher<>(
+                catcherOrdinal++,
+                method,
+                pattern != null
+                    ? HttpPattern.valueOf(pattern)
+                    : null,
+                exceptionClass,
+                handler));
         }
 
-        public <T extends Throwable> Builder catcher(
-            final HttpMethod method,
-            final String pattern,
-            final HttpCatcherHandler<T> handler)
-        {
-            return catcher(method, HttpPattern.valueOf(pattern), null, handler);
+        public Builder catcher(final HttpMethod method, final String pattern, final HttpCatcherHandler<?> handler) {
+            return catcher(method, pattern, null, handler);
         }
 
         public Builder catcher(final String pattern, final HttpCatcherHandler<?> handler) {
-            return catcher(null, HttpPattern.valueOf(pattern), null, handler);
+            return catcher(null, pattern, null, handler);
         }
 
         public <T extends Throwable> Builder catcher(
@@ -57,7 +79,7 @@ public class HttpService {
             final Class<T> exceptionClass,
             final HttpCatcherHandler<T> handler)
         {
-            return catcher(null, HttpPattern.valueOf(pattern), exceptionClass, handler);
+            return catcher(null, pattern, exceptionClass, handler);
         }
 
         public Builder catcher(final HttpMethod method, final HttpCatcherHandler<?> handler) {
