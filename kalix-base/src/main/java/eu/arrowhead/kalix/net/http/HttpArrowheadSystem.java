@@ -90,14 +90,11 @@ public class HttpArrowheadSystem extends ArrowheadSystem<HttpService> {
         try {
             SslContext sslContext = null;
             {
-                final var x509Profile = x509Profile();
-                if (x509Profile.isPresent()) {
-                    final var profile = x509Profile.get();
-                    final var keyStore = profile.keyStore();
-                    final var trustStore = profile.trustStore();
+                if (isSecured()) {
+                    final var keyStore = keyStore();
                     sslContext = SslContextBuilder
                         .forServer(keyStore.privateKey(), keyStore.certificateChain())
-                        .trustManager(trustStore.certificates())
+                        .trustManager(trustStore().certificates())
                         .clientAuth(ClientAuth.REQUIRE)
                         .startTls(false)
                         .build();

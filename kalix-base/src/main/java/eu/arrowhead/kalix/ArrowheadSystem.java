@@ -25,7 +25,9 @@ import java.util.Set;
 public abstract class ArrowheadSystem<S> {
     private final String name;
     private final InetSocketAddress socketAddress;
-    private final X509Profile x509Profile;
+    private final boolean isSecured;
+    private final X509KeyStore keyStore;
+    private final X509TrustStore trustStore;
     private final Scheduler scheduler;
     private final LogLevel logLevel;
 
@@ -36,11 +38,13 @@ public abstract class ArrowheadSystem<S> {
         logLevel = builder.logLevel;
 
         if (builder.isInsecure) {
+            isSecured = false;
             if (builder.keyStore != null || builder.trustStore != null) {
                 throw new IllegalArgumentException("Unexpected keyStore or " +
                     "trustStore; not permitted in insecure mode");
             }
-            x509Profile = null;
+            keyStore = null;
+            trustStore = null;
 
             if (name == null || name.length() == 0) {
                 throw new IllegalArgumentException("Expected name; required " +
@@ -49,13 +53,15 @@ public abstract class ArrowheadSystem<S> {
             this.name = name;
         }
         else {
+            isSecured = true;
             if (builder.keyStore == null || builder.trustStore == null) {
                 throw new IllegalArgumentException("Expected keyStore and " +
                     "trustStore; required in secure mode");
             }
-            this.x509Profile = new X509Profile(builder.keyStore, builder.trustStore);
+            keyStore = builder.keyStore;
+            trustStore = builder.trustStore;
 
-            final var descriptor = X509Certificates.subjectDescriptorOf(builder.keyStore.certificate());
+            final var descriptor = X509Certificates.subjectDescriptorOf(keyStore.certificate());
             if (descriptor.isEmpty()) {
                 throw new IllegalArgumentException("No subject common name " +
                     "in keyStore certificate; required to determine system " +
@@ -95,11 +101,35 @@ public abstract class ArrowheadSystem<S> {
     }
 
     /**
-     * @return Key store provided during system creation if running in secure
-     * mode. Otherwise {@code null} is returned.
+     * @return {@code true} if and only if this system is configured to run
+     * in secure mode.
      */
-    public Optional<X509Profile> x509Profile() {
-        return Optional.ofNullable(x509Profile);
+    public boolean isSecured() {
+        return isSecured;
+    }
+
+    /**
+     * @return Key store, which represents the identity of this system.
+     * @throws UnsupportedOperationException If this system is not running in
+     *                                       secure mode.
+     */
+    public X509KeyStore keyStore() {
+        if (!isSecured) {
+            throw new UnsupportedOperationException("System \"" + name() + "\" not in secure mode");
+        }
+        return keyStore;
+    }
+
+    /**
+     * @return Trust store, which contains the identities of trusted systems.
+     * @throws UnsupportedOperationException If this system is not running in
+     *                                       secure mode.
+     */
+    public X509TrustStore trustStore() {
+        if (!isSecured) {
+            throw new UnsupportedOperationException("System \"" + name() + "\" not in secure mode");
+        }
+        return trustStore;
     }
 
     /**
