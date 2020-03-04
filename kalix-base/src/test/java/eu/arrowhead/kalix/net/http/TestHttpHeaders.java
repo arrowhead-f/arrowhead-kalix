@@ -39,7 +39,7 @@ public class TestHttpHeaders {
             .add("ACCEPT", "application/xml")
             .add("Accept", "*");
 
-        final var values = headers.getAndSplit("accept");
+        final var values = headers.getAll("accept");
         assertTrue(values.isPresent());
         final var values0 = values.get();
         assertEquals(3, values0.length);
@@ -54,7 +54,7 @@ public class TestHttpHeaders {
         final var headers = new HttpHeaders()
             .set("dummy", value);
 
-        final var values = headers.getAndSplit("dummy");
+        final var values = headers.getAll("dummy");
         assertTrue(values.isPresent());
         assertArrayEquals(expected, values.get());
     }

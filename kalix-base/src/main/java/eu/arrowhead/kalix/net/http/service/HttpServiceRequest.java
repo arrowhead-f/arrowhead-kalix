@@ -20,7 +20,7 @@ public abstract class HttpServiceRequest implements HttpServiceRequestFull {
     private final HttpHeaders headers;
     private final HttpMethod method;
     private final String path;
-    private final Map<String, String> queryParameters;
+    private final Map<String, List<String>> queryParameters;
     private final Supplier<HttpRequester> requesterSupplier;
 
     protected HttpServiceRequest(final Builder<?, ? extends HttpServiceRequest> builder) {
@@ -63,12 +63,15 @@ public abstract class HttpServiceRequest implements HttpServiceRequestFull {
     }
 
     @Override
-    public Optional<String> queryParameter(final String name) {
-        return Optional.ofNullable(queryParameters.get(name));
+    public List<String> queryParameters(final String name) {
+        final var parameters =  queryParameters.get(name);
+        return parameters != null
+            ? Collections.unmodifiableList(parameters)
+            : Collections.emptyList();
     }
 
     @Override
-    public Map<String, String> queryParameters() {
+    public Map<String, List<String>> queryParameters() {
         return Collections.unmodifiableMap(queryParameters);
     }
 
@@ -146,12 +149,12 @@ public abstract class HttpServiceRequest implements HttpServiceRequestFull {
             }
 
             @Override
-            public Optional<String> queryParameter(final String name) {
-                return self.queryParameter(name);
+            public List<String> queryParameters(final String name) {
+                return self.queryParameters(name);
             }
 
             @Override
-            public Map<String, String> queryParameters() {
+            public Map<String, List<String>> queryParameters() {
                 return self.queryParameters();
             }
 
@@ -206,12 +209,12 @@ public abstract class HttpServiceRequest implements HttpServiceRequestFull {
             }
 
             @Override
-            public Optional<String> queryParameter(final String name) {
-                return self.queryParameter(name);
+            public List<String> queryParameters(final String name) {
+                return self.queryParameters(name);
             }
 
             @Override
-            public Map<String, String> queryParameters() {
+            public Map<String, List<String>> queryParameters() {
                 return self.queryParameters();
             }
 
@@ -235,7 +238,7 @@ public abstract class HttpServiceRequest implements HttpServiceRequestFull {
         private HttpHeaders headers;
         private HttpMethod method;
         private String path;
-        private Map<String, String> queryParameters;
+        private Map<String, List<String>> queryParameters;
         private Supplier<HttpRequester> requesterSupplier;
 
         protected abstract B self();
@@ -280,7 +283,7 @@ public abstract class HttpServiceRequest implements HttpServiceRequestFull {
          * @param queryParameters Request query parameters.
          * @return This builder.
          */
-        public B queryParameters(final Map<String, String> queryParameters) {
+        public B queryParameters(final Map<String, List<String>> queryParameters) {
             this.queryParameters = queryParameters;
             return self();
         }

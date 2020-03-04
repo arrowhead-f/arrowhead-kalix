@@ -24,7 +24,7 @@ public interface HttpServiceRequestFull extends HttpServiceRequestHead {
      * As the body may not have been fully received when this method is called,
      * a {@link Future} is returned whose {@link Future#onResult(Consumer)}
      * method will be called when the body is either ready or it is known that
-     * it cannot be received and/or serialized.
+     * it cannot be received and/or decoded.
      *
      * @param class_ Class to serialize request body into.
      * @param <R>    Type of {@code class_}.

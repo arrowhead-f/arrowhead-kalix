@@ -24,23 +24,25 @@ public class HttpHeaders implements Iterable<Map.Entry<String, String>> {
 
     /**
      * Adds name/value pair to collection without replacing any existing pair
-     * with the same name. In the case of a name already existing, a comma
-     * ({@code ,}) and the provided value are appended to the value associated
-     * with that name.
+     * with the same name.
      * <p>
-     * This behavior is in line with what is permitted by RFC 7230, Section
-     * 3.2.2, which states that <i>"recipients MAY combine multiple header
-     * fields with the same field name into one 'field-name: field-value' pair,
-     * without changing the semantics of the message, by appending each
-     * subsequent field value to the combined field value in order, separated
-     * by a comma."</i> As this behavior is allowed by message recipients, it
-     * must, as a consequence, also be allowed by message senders. Enforcing
-     * this policy comes with one complication, however, and that is properly
-     * supporting "set-cookie" headers, as their value syntax does not lend
-     * itself to joining values by commas. It is, however, highly questionable
-     * whether cookies has a place at all in the context of Arrowhead
-     * Framework, for which reason no room is provided by this collection type
-     * for properly representing more than one "set-cookie" pair.
+     * Internally, instances of this class <i>may</i> resolve the situation of
+     * a name already existing by joining their values with a comma
+     * ({@code ,}). This behavior is in line with what is permitted by RFC
+     * 7230, Section 3.2.2, which states that <i>"recipients MAY combine
+     * multiple header fields with the same field name into one 'field-name:
+     * field-value' pair, without changing the semantics of the message, by
+     * appending each subsequent field value to the combined field value in
+     * order, separated by a comma."</i> As this behavior is allowed by message
+     * recipients, it must, as a consequence, also be allowed by message
+     * senders.
+     * <p>
+     * Adhering to this policy comes with one complication, however, and that
+     * is properly supporting "set-cookie" headers, as their value syntax does
+     * not lend itself to joining values by commas. It is, however, highly
+     * questionable whether cookies have a place at all in the context of
+     * Arrowhead Framework, for which reason no guarantees about supporting
+     * them properly are given here.
      *
      * @param name  Name of header. Not case sensitive.
      * @param value Value of header.
@@ -48,7 +50,8 @@ public class HttpHeaders implements Iterable<Map.Entry<String, String>> {
      * @see <a href="https://tools.ietf.org/html/rfc7230#section-3.2.2">RFC 7230, Section 3.2.2</a>
      */
     public HttpHeaders add(final String name, final String value) {
-        Objects.requireNonNull(name);
+        Objects.requireNonNull(name, "Expected name");
+        Objects.requireNonNull(value, "Expected value");
         map.compute(name.toLowerCase(), (k, v) -> v == null ? value : v + "," + value);
         return this;
     }
@@ -58,7 +61,7 @@ public class HttpHeaders implements Iterable<Map.Entry<String, String>> {
      * <p>
      * Note that HTTP headers are allowed to have multiple values separated by
      * commas ({@code ,}). If you expect a name to be associated with multiple
-     * values, consider using {@link #getAndSplit(String)} to ensure that they
+     * values, consider using {@link #getAll(String)} to ensure that they
      * are extracted properly.
      *
      * @param name Name associated with desired value. Not case sensitive.
@@ -70,19 +73,20 @@ public class HttpHeaders implements Iterable<Map.Entry<String, String>> {
     }
 
     /**
-     * Acquires values, separated by commas ({@code ,}), associated with given
-     * name.
+     * Acquires all values associated with provided header name.
      * <p>
-     * While RFC 7230, Section 3.2.6 lists all of <i>(),/:;<=>?@[\]{}</i> as
-     * possible value delimiters, only the comma is guaranteed to always
-     * function as a delimiter for all types of values (see Section 3.2.2).
-     * Furthermore, Section 3.2.6 states that a <i>"string of text is parsed as
-     * a single value if it is quoted using double-quote marks"</i>, as well as
-     * describing an escaping mechanism for including quotes inside double
-     * quoted values. While this method takes care of commas and double quoted
-     * strings, it does nothing with the other delimiters. Finally, values are
-     * assumed to be well-formed, which means no time is spent verifying them
-     * and no exceptions are ever thrown due to syntax inconsistencies.
+     * Internally, instances of this class <i>may</i> store values associated
+     * with the same name as comma-separated strings of text. If so, then this
+     * method locates the sought-after header name and, if found, splits it
+     * value and returns the chunks. Splitting is performed according to the
+     * rules outlined in RFC 7230, Section 3.2.6, which means that escapes and
+     * double quotes are honored. While RFC 7230, Section 3.2.6 lists all of
+     * <i>(),/:;<=>?@[\]{}</i> as possible value delimiters, only the comma is
+     * guaranteed to always function as a delimiter for all types of values
+     * (see Section 3.2.2), with the exception of the "set-cookie" header.
+     * However, "set-cookie" headers are not guaranteed to be given any special
+     * treatment by this implementation, as their use within the Arrowhead
+     * Framework is highly questionable.
      *
      * @param name Name of header value to get and split, as described above.
      *             Note that header names are not case sensitive.
@@ -90,7 +94,7 @@ public class HttpHeaders implements Iterable<Map.Entry<String, String>> {
      * @see <a href="https://tools.ietf.org/html/rfc7230#section-3.2.2">RFC 7230, Section 3.2.2</a>
      * @see <a href="https://tools.ietf.org/html/rfc7230#section-3.2.6">RFC 7230, Section 3.2.6</a>
      */
-    public Optional<String[]> getAndSplit(final String name) {
+    public List<String> getAll(final String name) {
         empty:
         {
             Objects.requireNonNull(name);
@@ -130,9 +134,9 @@ public class HttpHeaders implements Iterable<Map.Entry<String, String>> {
             if (result.size() == 0) {
                 break empty;
             }
-            return Optional.of(result.toArray(new String[0]));
+            return result;
         }
-        return Optional.empty();
+        return Collections.emptyList();
     }
 
     /**

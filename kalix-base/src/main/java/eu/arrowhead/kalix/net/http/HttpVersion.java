@@ -28,6 +28,36 @@ public class HttpVersion {
     }
 
     /**
+     * Either acquires a cached HTTP version object matching the given
+     * major and minor versions or creates a new one.
+     *
+     * @param major Major HTTP version.
+     * @param minor Minor HTTP version.
+     * @return New or existing HTTP version object.
+     */
+    public static HttpVersion getOrCreate(final int major, final int minor) {
+        switch (major) {
+        case 1:
+            switch (minor) {
+            case 0: return HTTP_10;
+            case 1: return HTTP_11;
+            }
+            break;
+        case 2:
+            if (minor == 0) {
+                return HTTP_20;
+            }
+            break;
+        case 3:
+            if (minor == 0) {
+                return HTTP_30;
+            }
+            break;
+        }
+        return new HttpVersion(major, minor, "HTTP/" + major + "." + minor, false);
+    }
+
+    /**
      * @return HTTP protocol major version.
      */
     public int major() {
@@ -80,6 +110,11 @@ public class HttpVersion {
     public static final HttpVersion HTTP_20 = new HttpVersion(2, 0, "HTTP/2.0", true);
 
     /**
+     * HTTP version 3.0.
+     */
+    public static final HttpVersion HTTP_30 = new HttpVersion(3, 0, "HTTP/3.0", false);
+
+    /**
      * Resolves {@link HttpVersion} from given version string, expected to be
      * on the form {@code "HTTP/<major>.<minor>"}.
      * <p>
@@ -99,9 +134,10 @@ public class HttpVersion {
             }
             final var majorDotMinor = version.substring(5);
             switch (majorDotMinor) {
-            case "2.0": return HTTP_20;
-            case "1.1": return HTTP_11;
             case "1.0": return HTTP_10;
+            case "1.1": return HTTP_11;
+            case "2.0": return HTTP_20;
+            case "3.0": return HTTP_30;
             }
             final var dotIndex = majorDotMinor.indexOf('.');
             if (dotIndex == -1 || dotIndex == majorDotMinor.length() - 1) {

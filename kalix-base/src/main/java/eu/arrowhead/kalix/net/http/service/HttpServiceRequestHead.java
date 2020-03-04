@@ -60,17 +60,28 @@ public interface HttpServiceRequestHead {
     List<String> pathParameters();
 
     /**
-     * Gets value of named query parameter, if set.
+     * Gets first query parameter with given name, if any such.
      *
      * @param name Name of query parameter. Case sensitive.
      * @return Query parameter value, if a corresponding parameter name exists.
      */
-    Optional<String> queryParameter(final String name);
+    default Optional<String> queryParameter(final String name) {
+        final var values = queryParameters(name);
+        return Optional.ofNullable(values.size() > 0 ? values.get(0) : null);
+    }
+
+    /**
+     * Gets all query parameters with given name.
+     *
+     * @param name Name of query parameter. Case sensitive.
+     * @return Unmodifiable list of query parameter values. May be empty.
+     */
+    List<String> queryParameters(final String name);
 
     /**
      * @return Unmodifiable map of all query parameters.
      */
-    Map<String, String> queryParameters();
+    Map<String, List<String>> queryParameters();
 
     /**
      * @return Information about the request sender.
