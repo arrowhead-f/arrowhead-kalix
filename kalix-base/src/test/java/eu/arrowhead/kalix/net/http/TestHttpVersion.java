@@ -38,7 +38,7 @@ public class TestHttpVersion {
         return Stream.of(
             "HTTP/1.2",
             "HTTP/2.1",
-            "HTTP/3.0"
+            "HTTP/3.2"
         );
     }
 

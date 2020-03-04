@@ -5,6 +5,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -40,12 +41,10 @@ public class TestHttpHeaders {
             .add("Accept", "*");
 
         final var values = headers.getAll("accept");
-        assertTrue(values.isPresent());
-        final var values0 = values.get();
-        assertEquals(3, values0.length);
-        assertEquals("application/json", values0[0]);
-        assertEquals("application/xml", values0[1]);
-        assertEquals("*", values0[2]);
+        assertEquals(3, values.size());
+        assertEquals("application/json", values.get(0));
+        assertEquals("application/xml", values.get(1));
+        assertEquals("*", values.get(2));
     }
 
     @ParameterizedTest
@@ -55,8 +54,7 @@ public class TestHttpHeaders {
             .set("dummy", value);
 
         final var values = headers.getAll("dummy");
-        assertTrue(values.isPresent());
-        assertArrayEquals(expected, values.get());
+        assertEquals(Arrays.asList(expected), values);
     }
 
     static Stream<Arguments> mergeSplitValueProvider() {

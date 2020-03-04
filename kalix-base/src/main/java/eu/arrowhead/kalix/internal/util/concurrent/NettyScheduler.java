@@ -1,19 +1,18 @@
 package eu.arrowhead.kalix.internal.util.concurrent;
 
-import eu.arrowhead.kalix.util.Result;
 import eu.arrowhead.kalix.util.concurrent.Future;
 import eu.arrowhead.kalix.util.concurrent.Scheduler;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.util.concurrent.GenericFutureListener;
 
 import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
+
+import static eu.arrowhead.kalix.internal.util.concurrent.NettyFutures.adapt;
 
 /**
  * A {@code Scheduler} wrapping a Netty {@link EventLoopGroup}.
@@ -92,33 +91,33 @@ public class NettyScheduler implements Scheduler {
     @Override
     public Future<?> scheduleAfter(final Runnable command, final Duration delay) {
         final var millis = delay.toMillis();
-        return wrap(eventLoopGroup.schedule(command, millis, TimeUnit.MILLISECONDS));
+        return adapt(eventLoopGroup.schedule(command, millis, TimeUnit.MILLISECONDS));
     }
 
     @Override
     public <V> Future<V> scheduleAfter(final Callable<V> callable, final Duration delay) {
         final var millis = delay.toMillis();
-        return wrap(eventLoopGroup.schedule(callable, millis, TimeUnit.MILLISECONDS));
+        return adapt(eventLoopGroup.schedule(callable, millis, TimeUnit.MILLISECONDS));
     }
 
     @Override
     public Future<?> scheduleAtFixedRate(final Runnable command, final Duration delay, final Duration rate) {
         final var delayMillis = delay.toMillis();
         final var rateMillis = rate.toMillis();
-        return wrap(eventLoopGroup.scheduleAtFixedRate(command, delayMillis, rateMillis, TimeUnit.MILLISECONDS));
+        return adapt(eventLoopGroup.scheduleAtFixedRate(command, delayMillis, rateMillis, TimeUnit.MILLISECONDS));
     }
 
     @Override
     public Future<?> scheduleWithFixedDelay(final Runnable command, final Duration delay, final Duration rate) {
         final var delayMillis = delay.toMillis();
         final var rateMillis = rate.toMillis();
-        return wrap(eventLoopGroup.scheduleWithFixedDelay(command, delayMillis, rateMillis, TimeUnit.MILLISECONDS));
+        return adapt(eventLoopGroup.scheduleWithFixedDelay(command, delayMillis, rateMillis, TimeUnit.MILLISECONDS));
     }
 
     @Override
     public Future<?> shutdown(final Duration timeout) {
         final var millis = timeout.toMillis();
-        return wrap(eventLoopGroup.shutdownGracefully(millis / 5, millis, TimeUnit.MILLISECONDS));
+        return adapt(eventLoopGroup.shutdownGracefully(millis / 5, millis, TimeUnit.MILLISECONDS));
     }
 
     /**
@@ -126,38 +125,5 @@ public class NettyScheduler implements Scheduler {
      */
     public EventLoopGroup eventLoopGroup() {
         return eventLoopGroup;
-    }
-
-    private static <V> Future<V> wrap(final io.netty.util.concurrent.Future<V> future) {
-        return new FutureAdapter<>(future);
-    }
-
-    static class FutureAdapter<V> implements Future<V> {
-        private final io.netty.util.concurrent.Future<V> future;
-        private GenericFutureListener<io.netty.util.concurrent.Future<V>> listener = null;
-
-        FutureAdapter(final io.netty.util.concurrent.Future<V> future) {
-            this.future = future;
-        }
-
-        @Override
-        public void onResult(final Consumer<Result<V>> consumer) {
-            if (listener != null) {
-                future.removeListener(listener);
-            }
-            future.addListener(listener = future -> consumer.accept(future.isSuccess()
-                ? Result.success(future.get())
-                : Result.failure(future.cause())));
-        }
-
-        @Override
-        public void cancel(final boolean mayInterruptIfRunning) {
-            if (future.isCancellable()) {
-                future.cancel(mayInterruptIfRunning);
-            }
-            if (listener != null) {
-                future.removeListener(listener);
-            }
-        }
     }
 }
