@@ -66,7 +66,7 @@ class HttpRouteSequence {
                     .handle(request.wrapFullWithPathParameters(pathParameters), response)
                     .map(ignored -> true);
             })
-            .flatMapError(throwable -> Future.flatReducePlain(catchers, false, (isHandled, catcher) -> {
+            .flatMapCatch(throwable -> Future.flatReducePlain(catchers, false, (isHandled, catcher) -> {
                 if (isHandled) {
                     return Future.success(true);
                 }

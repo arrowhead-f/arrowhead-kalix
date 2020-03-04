@@ -187,7 +187,7 @@ public interface Future<V> {
      * a mapping function to the error of this {@code Future}.
      * @throws NullPointerException If the mapping function is {@code null}.
      */
-    default Future<V> mapError(final ThrowingFunction<Throwable, ? extends V> mapper) {
+    default Future<V> mapCatch(final ThrowingFunction<Throwable, ? extends V> mapper) {
         Objects.requireNonNull(mapper);
         final var source = this;
         return new Future<>() {
@@ -205,6 +205,62 @@ public interface Future<V> {
                         catch (final Throwable error) {
                             result1 = Result.failure(error);
                         }
+                    }
+                    consumer.accept(result1);
+                });
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                source.cancel(mayInterruptIfRunning);
+            }
+        };
+    }
+
+    /**
+     * Applies any error produced by this {@code Future} to {@code mapper} and
+     * then fails the returned future with the {@code Throwable} it returns.
+     * <p>
+     * In other words, this method performs the asynchronous counterpart to the
+     * following code:
+     * <pre>
+     *     try {
+     *         return originalFutureOperation();
+     *     }
+     *     catch (final Throwable throwable) {
+     *         throw mapper.apply(throwable);
+     *     }
+     * </pre>
+     * Any exception thrown by {@code mapper} leads to the returned
+     * {@code Future} being failed with the same exception, meaning it is
+     * functionally equivalent to returning the exception.
+     *
+     * @param mapper The mapping function to apply to the error of this
+     *               {@code Future}, if it becomes available.
+     * @return A {@code Future} that may eventually hold the result of applying
+     * a mapping function to the error of this {@code Future}.
+     * @throws NullPointerException If the mapping function is {@code null}.
+     */
+    default Future<V> mapError(final ThrowingFunction<Throwable, Throwable> mapper) {
+        Objects.requireNonNull(mapper);
+        final var source = this;
+        return new Future<>() {
+            @Override
+            public void onResult(final Consumer<Result<V>> consumer) {
+                source.onResult(result0 -> {
+                    Result<V> result1;
+                    if (result0.isSuccess()) {
+                        result1 = result0;
+                    }
+                    else {
+                        Throwable error1;
+                        try {
+                            error1 = mapper.apply(result0.error());
+                        }
+                        catch (final Throwable error) {
+                            error1 = error;
+                        }
+                        result1 = Result.failure(error1);
                     }
                     consumer.accept(result1);
                 });
@@ -293,7 +349,7 @@ public interface Future<V> {
      * {@code mapper} to transform it into a new value.
      * <p>
      * The difference between this method and
-     * {@link #mapError(ThrowingFunction)} is that this method expects its
+     * {@link #mapCatch(ThrowingFunction)} is that this method expects its
      * {@code mapper} to return a {@code Future} rather than a plain value.
      * <p>
      * In other words, this method performs the asynchronous counterpart to the
@@ -318,7 +374,7 @@ public interface Future<V> {
      * for the {@code Future} returned by the mapper to complete.
      * @throws NullPointerException If the mapping function is {@code null}.
      */
-    default Future<V> flatMapError(final ThrowingFunction<Throwable, ? extends Future<V>> mapper) {
+    default Future<V> flatMapCatch(final ThrowingFunction<Throwable, ? extends Future<V>> mapper) {
         Objects.requireNonNull(mapper);
         final var source = this;
         final var cancelTarget = new AtomicReference<Future<?>>(this);
@@ -339,9 +395,90 @@ public interface Future<V> {
                                 break done;
                             }
                             try {
-                                final var f1 = mapper.apply(result0.error());
-                                f1.onResult(consumer);
-                                cancelTarget.set(f1);
+                                final var future1 = mapper.apply(result0.error());
+                                future1.onResult(consumer);
+                                cancelTarget.set(future1);
+                                return;
+                            }
+                            catch (final Throwable error) {
+                                err = error;
+                            }
+                        }
+                        result1 = Result.failure(err);
+                    }
+                    consumer.accept(result1);
+                });
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                final var target = cancelTarget.getAndSet(null);
+                if (target != null) {
+                    target.cancel(mayInterruptIfRunning);
+                }
+            }
+        };
+    }
+
+    /**
+     * Applies any error produced by this {@code Future} to {@code mapper}, and
+     * then fails the returned future with the {@code Throwable} it returns.
+     * <p>
+     * The difference between this method and
+     * {@link #mapError(ThrowingFunction)} is that this method expects its
+     * {@code mapper} to return a {@code Future<Throwable>} rather than a plain
+     * {@code Throwable}.
+     * <p>
+     * In other words, this method performs the asynchronous counterpart to the
+     * following code:
+     * <pre>
+     *     try {
+     *         return originalFutureOperation();
+     *     }
+     *     catch (final Throwable throwable) {
+     *         Throwable error = mapper.apply(throwable);
+     *         // Wait for error to become available.
+     *         throw error;
+     *     }
+     * </pre>
+     * Any exception thrown by {@code mapper} leads to the returned
+     * {@code Future} being failed with the same exception. Furthermore, if
+     * the {@code Future} returned by mapper fails, the {@code Future} returned
+     * by this method is failed with that exception.
+     *
+     * @param mapper The mapping function to apply to the error of this
+     *               {@code Future}, if it becomes available.
+     * @return A {@code Future} that may eventually hold the result of applying
+     * a mapping function to the error of this {@code Future}, and then waiting
+     * for the {@code Future} returned by the mapper to complete.
+     * @throws NullPointerException If the mapping function is {@code null}.
+     */
+    default Future<V> flatMapError(final ThrowingFunction<Throwable, ? extends Future<? extends Throwable>> mapper) {
+        Objects.requireNonNull(mapper);
+        final var source = this;
+        final var cancelTarget = new AtomicReference<Future<?>>(this);
+        return new Future<>() {
+            @Override
+            public void onResult(final Consumer<Result<V>> consumer) {
+                source.onResult(result0 -> {
+                    Result<V> result1;
+                    done:
+                    {
+                        Throwable err;
+                        if (cancelTarget.get() == null) {
+                            err = new CancellationException();
+                        }
+                        else {
+                            if (result0.isSuccess()) {
+                                result1 = result0;
+                                break done;
+                            }
+                            try {
+                                final var future1 = mapper.apply(result0.error());
+                                future1.onResult(result -> consumer.accept(Result.failure(result.isSuccess()
+                                    ? result.value()
+                                    : result.error())));
+                                cancelTarget.set(future1);
                                 return;
                             }
                             catch (final Throwable error) {
