@@ -1,7 +1,6 @@
 package eu.arrowhead.kalix.net.http.service;
 
 import eu.arrowhead.kalix.dto.Format;
-import eu.arrowhead.kalix.dto.Readable;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpMethod;
 import eu.arrowhead.kalix.net.http.HttpStatus;
@@ -14,6 +13,9 @@ import java.util.stream.Collectors;
 
 /**
  * A concrete Arrowhead service, exposing its functions as HTTP endpoints.
+ * <p>
+ * TODO: Write more extensive documentation, including about validators, routes
+ * and catchers, as well as about patterns and matching.
  */
 public class HttpService {
     private final String basePath;
@@ -33,7 +35,7 @@ public class HttpService {
                 "forward slash (/) unless it is the root path \"/\"");
         }
 
-        formats = Objects.requireNonNullElseGet(builder.formats, () -> new Format[]{Format.JSON});
+        formats = Objects.requireNonNull(builder.formats, "Expected formats");
 
         final var routeSequenceFactory = new HttpRouteSequenceFactory(builder.catchers, builder.validators);
         routeSequences = builder.routes.stream()
@@ -129,7 +131,7 @@ public class HttpService {
 
         /**
          * Declares what data encodings this service can read and write.
-         * <i>JSON is declared by default if this method is never called.</i>
+         * <b>Must be specified.</b>
          * <p>
          * While the {@code HttpArrowheadSystem} that will own this service
          * will prevent messages claimed to be encoded with other formats from
@@ -353,86 +355,404 @@ public class HttpService {
             return catcher(null, null, null, handler);
         }
 
+        /**
+         * Adds incoming HTTP request validator to the created
+         * {@link HttpService}.
+         * <p>
+         * Validators are executed with incoming HTTP requests before they
+         * end up at their designated routes. Each validator matching the
+         * method and path of the request is given the opportunity read the
+         * request, modify its headers and, potentially, respond to the
+         * request. If a response is generated, no more handler are invoked
+         * with the request, unless sending the response fails and a catcher is
+         * executed.
+         * <p>
+         * If multiple validators are created with matching methods or path
+         * patterns, the one with the smallest ordinal will be executed first.
+         * If no validator responds to the request, all matching validators are
+         * executed before the request is provided to its designated route.
+         *
+         * @param validator HTTP request validator to add.
+         * @return This builder.
+         */
         public Builder validator(final HttpValidator validator) {
             validators.add(validator);
             return this;
         }
 
+        /**
+         * Adds incoming HTTP request validator to the created
+         * {@link HttpService}.
+         * <p>
+         * Validators are executed with incoming HTTP requests before they
+         * end up at their designated routes. Each validator matching the
+         * method and path of the request is given the opportunity read the
+         * request, modify its headers and, potentially, respond to the
+         * request. If a response is generated, no more handler are invoked
+         * with the request, unless sending the response fails and a catcher is
+         * executed.
+         *
+         * @param method  Request method to match.
+         * @param pattern Request path pattern to match.
+         * @param handler Handler to invoke with matching requests.
+         * @return This builder.
+         * @see #validator(HttpValidator)
+         */
         public Builder validator(final HttpMethod method, final String pattern, final HttpValidatorHandler handler) {
             return validator(new HttpValidator(filterOrdinal++, method, pattern != null
                 ? HttpPattern.valueOf(pattern)
                 : null, handler));
         }
 
+        /**
+         * Adds incoming HTTP request validator to the created
+         * {@link HttpService}.
+         * <p>
+         * Validators are executed with incoming HTTP requests before they
+         * end up at their designated routes. Each validator matching the
+         * method and path of the request is given the opportunity read the
+         * request, modify its headers and, potentially, respond to the
+         * request. If a response is generated, no more handler are invoked
+         * with the request, unless sending the response fails and a catcher is
+         * executed.
+         * <p>
+         * <i>This method creates a validator that matches any method.</i>
+         *
+         * @param pattern Request path pattern to match.
+         * @param handler Handler to invoke with matching requests.
+         * @return This builder.
+         * @see #validator(HttpValidator)
+         */
         public Builder validator(final String pattern, final HttpValidatorHandler handler) {
             return validator(null, pattern, handler);
         }
 
+        /**
+         * Adds incoming HTTP request validator to the created
+         * {@link HttpService}.
+         * <p>
+         * Validators are executed with incoming HTTP requests before they
+         * end up at their designated routes. Each validator matching the
+         * method and path of the request is given the opportunity read the
+         * request, modify its headers and, potentially, respond to the
+         * request. If a response is generated, no more handler are invoked
+         * with the request, unless sending the response fails and a catcher is
+         * executed.
+         * <p>
+         * <i>This method creates a validator that matches any path.</i>
+         *
+         * @param method  Request method to match.
+         * @param handler Handler to invoke with matching requests.
+         * @return This builder.
+         * @see #validator(HttpValidator)
+         */
         public Builder validator(final HttpMethod method, final HttpValidatorHandler handler) {
             return validator(method, null, handler);
         }
 
+        /**
+         * Adds incoming HTTP request validator to the created
+         * {@link HttpService}.
+         * <p>
+         * Validators are executed with incoming HTTP requests before they
+         * end up at their designated routes. Each validator matching the
+         * method and path of the request is given the opportunity read the
+         * request, modify its headers and, potentially, respond to the
+         * request. If a response is generated, no more handler are invoked
+         * with the request, unless sending the response fails and a catcher is
+         * executed.
+         * <p>
+         * <i>This method creates a validator that matches any method or
+         * path.</i>
+         *
+         * @param handler Handler to invoke with matching requests.
+         * @return This builder.
+         * @see #validator(HttpValidator)
+         */
         public Builder validator(final HttpValidatorHandler handler) {
             return validator(null, null, handler);
         }
 
+        /**
+         * Adds incoming HTTP request route to the created {@link HttpService}.
+         * <p>
+         * A route is a primary handler for a particular set of HTTP requests.
+         * If an incoming HTTP request matches its method and path pattern, it
+         * is executed with the expectation that it will specify an HTTP
+         * response. However, if a {@link HttpValidator validator} executed
+         * before the route responds to the request or throws an exception, it
+         * is never invoked. In the case of either a validator or a route
+         * throwing an exception, any registered {@link HttpCatcher catcher}
+         * matching the request and exception will be given a chance to handle
+         * the exception.
+         *
+         * @param route HTTP route to add.
+         * @return This builder.
+         * @see #get(String, HttpRouteHandler) GET
+         * @see #post(String, HttpRouteHandler) POST
+         * @see #put(String, HttpRouteHandler) PUT
+         * @see #delete(String, HttpRouteHandler) DELETE
+         * @see #head(String, HttpRouteHandler) HEAD
+         * @see #options(String, HttpRouteHandler) OPTIONS
+         * @see #connect(String, HttpRouteHandler) CONNECT
+         * @see #patch(String, HttpRouteHandler) PATCH
+         * @see #trace(String, HttpRouteHandler) TRACE
+         */
         public Builder route(final HttpRoute route) {
             routes.add(route);
             return this;
         }
 
+        /**
+         * Adds incoming HTTP request route to the created {@link HttpService}.
+         * <p>
+         * A route is a primary handler for a particular set of HTTP requests.
+         * If an incoming HTTP request matches its method and path pattern, it
+         * is executed with the expectation that it will specify an HTTP
+         * response. However, if a {@link HttpValidator validator} executed
+         * before the route responds to the request or throws an exception, it
+         * is never invoked. In the case of either a validator or a route
+         * throwing an exception, any registered {@link HttpCatcher catcher}
+         * matching the request and exception will be given a chance to handle
+         * the exception.
+         *
+         * @param method  Request method to match.
+         * @param pattern Request path pattern to match.
+         * @param handler Handler to invoke with matching requests.
+         * @return This builder.
+         * @see #get(String, HttpRouteHandler) GET
+         * @see #post(String, HttpRouteHandler) POST
+         * @see #put(String, HttpRouteHandler) PUT
+         * @see #delete(String, HttpRouteHandler) DELETE
+         * @see #head(String, HttpRouteHandler) HEAD
+         * @see #options(String, HttpRouteHandler) OPTIONS
+         * @see #connect(String, HttpRouteHandler) CONNECT
+         * @see #patch(String, HttpRouteHandler) PATCH
+         * @see #trace(String, HttpRouteHandler) TRACE
+         */
         public Builder route(final HttpMethod method, final String pattern, final HttpRouteHandler handler) {
             return route(new HttpRoute(method, pattern != null ? HttpPattern.valueOf(pattern) : null, handler));
         }
 
+        /**
+         * Adds incoming HTTP request route to the created {@link HttpService}.
+         * <p>
+         * A route is a primary handler for a particular set of HTTP requests.
+         * If an incoming HTTP request matches its method and path pattern, it
+         * is executed with the expectation that it will specify an HTTP
+         * response. However, if a {@link HttpValidator validator} executed
+         * before the route responds to the request or throws an exception, it
+         * is never invoked. In the case of either a validator or a route
+         * throwing an exception, any registered {@link HttpCatcher catcher}
+         * matching the request and exception will be given a chance to handle
+         * the exception.
+         * <p>
+         * <i>This method creates a route that matches any method.</i>
+         *
+         * @param pattern Request path pattern to match.
+         * @param handler Handler to invoke with matching requests.
+         * @return This builder.
+         * @see #get(String, HttpRouteHandler) GET
+         * @see #post(String, HttpRouteHandler) POST
+         * @see #put(String, HttpRouteHandler) PUT
+         * @see #delete(String, HttpRouteHandler) DELETE
+         * @see #head(String, HttpRouteHandler) HEAD
+         * @see #options(String, HttpRouteHandler) OPTIONS
+         * @see #connect(String, HttpRouteHandler) CONNECT
+         * @see #patch(String, HttpRouteHandler) PATCH
+         * @see #trace(String, HttpRouteHandler) TRACE
+         */
         public Builder route(final String pattern, final HttpRouteHandler handler) {
             return route(null, pattern, handler);
         }
 
+        /**
+         * Adds incoming HTTP request route to the created {@link HttpService}.
+         * <p>
+         * A route is a primary handler for a particular set of HTTP requests.
+         * If an incoming HTTP request matches its method and path pattern, it
+         * is executed with the expectation that it will specify an HTTP
+         * response. However, if a {@link HttpValidator validator} executed
+         * before the route responds to the request or throws an exception, it
+         * is never invoked. In the case of either a validator or a route
+         * throwing an exception, any registered {@link HttpCatcher catcher}
+         * matching the request and exception will be given a chance to handle
+         * the exception.
+         * <p>
+         * <i>This method creates a route that matches any path.</i>
+         *
+         * @param method  Request method to match.
+         * @param handler Handler to invoke with matching requests.
+         * @return This builder.
+         * @see #get(String, HttpRouteHandler) GET
+         * @see #post(String, HttpRouteHandler) POST
+         * @see #put(String, HttpRouteHandler) PUT
+         * @see #delete(String, HttpRouteHandler) DELETE
+         * @see #head(String, HttpRouteHandler) HEAD
+         * @see #options(String, HttpRouteHandler) OPTIONS
+         * @see #connect(String, HttpRouteHandler) CONNECT
+         * @see #patch(String, HttpRouteHandler) PATCH
+         * @see #trace(String, HttpRouteHandler) TRACE
+         */
         public Builder route(final HttpMethod method, final HttpRouteHandler handler) {
             return route(method, null, handler);
         }
 
+        /**
+         * Adds incoming HTTP request route to the created {@link HttpService}.
+         * <p>
+         * A route is a primary handler for a particular set of HTTP requests.
+         * If an incoming HTTP request matches its method and path pattern, it
+         * is executed with the expectation that it will specify an HTTP
+         * response. However, if a {@link HttpValidator validator} executed
+         * before the route responds to the request or throws an exception, it
+         * is never invoked. In the case of either a validator or a route
+         * throwing an exception, any registered {@link HttpCatcher catcher}
+         * matching the request and exception will be given a chance to handle
+         * the exception.
+         * <p>
+         * <i>This method creates a route that matches any method or path.</i>
+         *
+         * @param handler Handler to invoke with matching requests.
+         * @return This builder.
+         * @see #get(String, HttpRouteHandler) GET
+         * @see #post(String, HttpRouteHandler) POST
+         * @see #put(String, HttpRouteHandler) PUT
+         * @see #delete(String, HttpRouteHandler) DELETE
+         * @see #head(String, HttpRouteHandler) HEAD
+         * @see #options(String, HttpRouteHandler) OPTIONS
+         * @see #connect(String, HttpRouteHandler) CONNECT
+         * @see #patch(String, HttpRouteHandler) PATCH
+         * @see #trace(String, HttpRouteHandler) TRACE
+         */
         public Builder route(final HttpRouteHandler handler) {
             return route(null, null, handler);
         }
 
+        /**
+         * Adds incoming HTTP request route to the created {@link HttpService},
+         * handling GET requests matching given pattern.
+         *
+         * @param handler Handler to invoke with matching requests.
+         * @return This builder.
+         * @see #route(HttpRoute)
+         * @see <a href="https://tools.ietf.org/html/rfc7231#section-4.3.1">RFC 7231, Section 4.3.1</a>
+         */
         public Builder get(final String path, final HttpRouteHandler handler) {
             return route(HttpMethod.GET, path, handler);
         }
 
+        /**
+         * Adds incoming HTTP request route to the created {@link HttpService},
+         * handling POST requests matching given pattern.
+         *
+         * @param handler Handler to invoke with matching requests.
+         * @return This builder.
+         * @see #route(HttpRoute)
+         * @see <a href="https://tools.ietf.org/html/rfc7231#section-4.3.3">RFC 7231, Section 4.3.3</a>
+         */
         public Builder post(final String path, final HttpRouteHandler handler) {
             return route(HttpMethod.POST, path, handler);
         }
 
+        /**
+         * Adds incoming HTTP request route to the created {@link HttpService},
+         * handling PUT requests matching given pattern.
+         *
+         * @param handler Handler to invoke with matching requests.
+         * @return This builder.
+         * @see #route(HttpRoute)
+         * @see <a href="https://tools.ietf.org/html/rfc7231#section-4.3.4">RFC 7231, Section 4.3.4</a>
+         */
         public Builder put(final String path, final HttpRouteHandler handler) {
             return route(HttpMethod.PUT, path, handler);
         }
 
+        /**
+         * Adds incoming HTTP request route to the created {@link HttpService},
+         * handling DELETE requests matching given pattern.
+         *
+         * @param handler Handler to invoke with matching requests.
+         * @return This builder.
+         * @see #route(HttpRoute)
+         * @see <a href="https://tools.ietf.org/html/rfc7231#section-4.3.5">RFC 7231, Section 4.3.5</a>
+         */
         public Builder delete(final String path, final HttpRouteHandler handler) {
             return route(HttpMethod.DELETE, path, handler);
         }
 
+        /**
+         * Adds incoming HTTP request route to the created {@link HttpService},
+         * handling HEAD requests matching given pattern.
+         *
+         * @param handler Handler to invoke with matching requests.
+         * @return This builder.
+         * @see #route(HttpRoute)
+         * @see <a href="https://tools.ietf.org/html/rfc7231#section-4.3.2">RFC 7231, Section 4.3.2</a>
+         */
         public Builder head(final String path, final HttpRouteHandler handler) {
             return route(HttpMethod.HEAD, path, handler);
         }
 
+        /**
+         * Adds incoming HTTP request route to the created {@link HttpService},
+         * handling OPTIONS requests matching given pattern.
+         *
+         * @param handler Handler to invoke with matching requests.
+         * @return This builder.
+         * @see #route(HttpRoute)
+         * @see <a href="https://tools.ietf.org/html/rfc7231#section-4.3.7">RFC 7231, Section 4.3.7</a>
+         */
         public Builder options(final String path, final HttpRouteHandler handler) {
             return route(HttpMethod.OPTIONS, path, handler);
         }
 
+        /**
+         * Adds incoming HTTP request route to the created {@link HttpService},
+         * handling CONNECT requests matching given pattern.
+         *
+         * @param handler Handler to invoke with matching requests.
+         * @return This builder.
+         * @see #route(HttpRoute)
+         * @see <a href="https://tools.ietf.org/html/rfc7231#section-4.3.6">RFC 7231, Section 4.3.6</a>
+         * @see eu.arrowhead.kalix.net.http.HttpArrowheadSystem HttpArrowheadSystem
+         */
         public Builder connect(final String path, final HttpRouteHandler handler) {
             return route(HttpMethod.CONNECT, path, handler);
         }
 
+        /**
+         * Adds incoming HTTP request route to the created {@link HttpService},
+         * handling PATCH requests matching given pattern.
+         *
+         * @param handler Handler to invoke with matching requests.
+         * @return This builder.
+         * @see #route(HttpRoute)
+         * @see <a href="https://tools.ietf.org/html/rfc5789">RFC 5789</a>
+         */
         public Builder patch(final String path, final HttpRouteHandler handler) {
             return route(HttpMethod.PATCH, path, handler);
         }
 
+        /**
+         * Adds incoming HTTP request route to the created {@link HttpService},
+         * handling TRACE requests matching given pattern.
+         *
+         * @param handler Handler to invoke with matching requests.
+         * @return This builder.
+         * @see #route(HttpRoute)
+         * @see <a href="https://tools.ietf.org/html/rfc7231#section-4.3.8">RFC 7231, Section 4.3.8</a>
+         */
         public Builder trace(final String path, final HttpRouteHandler handler) {
             return route(HttpMethod.TRACE, path, handler);
         }
 
+        /**
+         * @return New {@link HttpService}.
+         * @throws IllegalArgumentException If {@code basePath} is invalid.
+         * @throws NullPointerException     If no {@code basePath} or
+         *                                  {@code formats} are specified.
+         */
         public HttpService build() {
             return new HttpService(this);
         }
