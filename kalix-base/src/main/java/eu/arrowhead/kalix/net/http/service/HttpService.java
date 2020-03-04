@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.net.http.service;
 
+import eu.arrowhead.kalix.descriptor.ServiceDescriptor;
 import eu.arrowhead.kalix.dto.Format;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpMethod;
@@ -18,11 +19,13 @@ import java.util.stream.Collectors;
  * and catchers, as well as about patterns and matching.
  */
 public class HttpService {
+    private final String name;
     private final String basePath;
     private final Format[] formats;
     private final List<HttpRouteSequence> routeSequences;
 
     private HttpService(final Builder builder) {
+        name = Objects.requireNonNull(builder.name, "Expected name");
         basePath = Objects.requireNonNull(builder.basePath, "Expected basePath");
         if (!HttpPaths.isValidPathWithoutPercentEncodings(basePath)) {
             throw new IllegalArgumentException("basePath \"" + basePath +
@@ -42,6 +45,13 @@ public class HttpService {
             .sorted()
             .map(routeSequenceFactory::createRouteSequenceFor)
             .collect(Collectors.toList());
+    }
+
+    /**
+     * @return Name, or <i>service definition</i>, of this service.
+     */
+    public String name() {
+        return name;
     }
 
     /**
@@ -95,11 +105,25 @@ public class HttpService {
         private final ArrayList<HttpRoute> routes = new ArrayList<>(0);
         private final ArrayList<HttpValidator> validators = new ArrayList<>(0);
 
+        private String name;
         private String basePath;
         private Format[] formats;
 
         private int catcherOrdinal = 0;
         private int filterOrdinal = 0;
+
+        /**
+         * Sets service name. <b>Must be specified.</b>
+         * <p>
+         * Service names are also referred to as <i>service definitions</i>.
+         *
+         * @param name Desired service name.
+         * @return This builder.
+         */
+        public Builder name(final String name) {
+            this.name = name;
+            return this;
+        }
 
         /**
          * Sets base path that must be matched by HTTP requests received by the

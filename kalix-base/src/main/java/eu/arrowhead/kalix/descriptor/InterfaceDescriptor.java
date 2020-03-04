@@ -1,5 +1,9 @@
 package eu.arrowhead.kalix.descriptor;
 
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -10,6 +14,29 @@ import java.util.regex.Pattern;
 public class InterfaceDescriptor {
     private static final Pattern TRIPLET_PATTERN = Pattern.compile("^([0-9A-Z_]+)-(IN)?SECURE-([0-9A-Z_]+)$");
 
+    private static final HashMap<TransportDescriptor, List<InterfaceDescriptor>> registry;
+
+    static {
+        registry = new HashMap<>();
+        try {
+            for (final var field : InterfaceDescriptor.class.getFields()) {
+                if (Modifier.isStatic(field.getModifiers()) && field.getType() == TransportDescriptor.class) {
+                    final var descriptor = (InterfaceDescriptor) field.get(null);
+                    registry.compute(descriptor.transport, (key, value) -> {
+                        if (value == null) {
+                            value = new ArrayList<>();
+                        }
+                        value.add(descriptor);
+                        return value;
+                    });
+                }
+            }
+        }
+        catch (final Throwable throwable) {
+            throw new RuntimeException("Interface registry initialization failed", throwable);
+        }
+    }
+
     private final TransportDescriptor transport;
     private final boolean isSecure;
     private final EncodingDescriptor encoding;
@@ -19,12 +46,33 @@ public class InterfaceDescriptor {
         final TransportDescriptor transport,
         final boolean isSecure,
         final EncodingDescriptor encoding,
-        final String text
-    ) {
+        final String text)
+    {
         this.transport = transport;
         this.isSecure = isSecure;
         this.encoding = encoding;
         this.text = text;
+    }
+
+    public static InterfaceDescriptor getOrCreate(
+        final TransportDescriptor transport,
+        final boolean isSecure,
+        final EncodingDescriptor encoding)
+    {
+        unregistered:
+        {
+            final var candidates = registry.get(transport);
+            if (candidates == null) {
+                break unregistered;
+            }
+            for (final var candidate : candidates) {
+                if (candidate.isSecure == isSecure && candidate.encoding == encoding) {
+                    return candidate;
+                }
+            }
+        }
+        return new InterfaceDescriptor(transport, isSecure, encoding,
+            transport + (isSecure ? "-SECURE-" : "-INSECURE-") + encoding);
     }
 
     /**

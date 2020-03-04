@@ -1,7 +1,9 @@
 package eu.arrowhead.kalix.net.http;
 
 import eu.arrowhead.kalix.ArrowheadSystem;
+import eu.arrowhead.kalix.descriptor.InterfaceDescriptor;
 import eu.arrowhead.kalix.descriptor.ServiceDescriptor;
+import eu.arrowhead.kalix.descriptor.TransportDescriptor;
 import eu.arrowhead.kalix.internal.net.NettyBootstraps;
 import eu.arrowhead.kalix.internal.util.concurrent.NettyScheduler;
 import eu.arrowhead.kalix.internal.util.logging.LogLevels;
@@ -24,13 +26,13 @@ import io.netty.handler.ssl.SslContextBuilder;
 import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * An {@link ArrowheadSystem} that provides {@link HttpService}s.
@@ -38,7 +40,9 @@ import java.util.function.Consumer;
 public class HttpArrowheadSystem extends ArrowheadSystem<HttpService> {
     private final AtomicReference<InetSocketAddress> localSocketAddress = new AtomicReference<>();
     private final HashSet<HttpService> providedServices = new HashSet<>();
-    private final HashSet<ServiceDescriptor> providedServiceDescriptors = new HashSet<>();
+
+    // Created when requested.
+    private ServiceDescriptor[] providedServiceDescriptors = null;
 
     private HttpArrowheadSystem(final Builder builder) {
         super(builder);
@@ -61,28 +65,39 @@ public class HttpArrowheadSystem extends ArrowheadSystem<HttpService> {
     }
 
     @Override
-    public synchronized Set<ServiceDescriptor> providedServices() {
-        return Collections.unmodifiableSet(providedServiceDescriptors);
+    public synchronized ServiceDescriptor[] providedServices() {
+        if (providedServiceDescriptors != null) {
+            return providedServiceDescriptors;
+        }
+        final var descriptors = new ServiceDescriptor[providedServices.size()];
+        var i = 0;
+        for (final var service : providedServices) {
+            descriptors[i++] = new ServiceDescriptor(
+                service.name(),
+                Stream.of(service.formats())
+                    .map(format -> InterfaceDescriptor
+                        .getOrCreate(TransportDescriptor.HTTP, isSecured(), format.asDescriptor()))
+                    .collect(Collectors.toList()));
+        }
+        return providedServiceDescriptors = descriptors;
     }
 
     @Override
     public synchronized void provideService(final HttpService service) {
-        if (providedServices.add(service)) {
-            // TODO: Start service.
-        }
+        providedServices.add(service);
+        providedServiceDescriptors = null; // Force recreation.
     }
 
     @Override
     public synchronized void dismissService(final HttpService service) {
-        if (providedServices.remove(service)) {
-            // TODO: Stop service.
-        }
+        providedServices.remove(service);
+        providedServiceDescriptors = null; // Force recreation.
     }
 
     @Override
     public synchronized void dismissAllServices() {
         providedServices.clear();
-        providedServiceDescriptors.clear();
+        providedServiceDescriptors = null; // Force recreation.
     }
 
     @Override

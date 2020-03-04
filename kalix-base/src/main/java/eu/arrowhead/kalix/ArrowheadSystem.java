@@ -146,9 +146,10 @@ public abstract class ArrowheadSystem<S> {
 
     /**
      * @return Descriptors representing all services currently provided by this
-     * system.
+     * system. The returned array should be a copy that can be modified without
+     * having any impact on the set kept internally by this class.
      */
-    public abstract Set<ServiceDescriptor> providedServices();
+    public abstract ServiceDescriptor[] providedServices();
 
     /**
      * Registers given {@code service} with system and makes its immediately
