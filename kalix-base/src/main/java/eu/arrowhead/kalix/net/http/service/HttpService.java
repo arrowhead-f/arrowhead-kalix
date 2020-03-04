@@ -1,7 +1,6 @@
 package eu.arrowhead.kalix.net.http.service;
 
-import eu.arrowhead.kalix.descriptor.ServiceDescriptor;
-import eu.arrowhead.kalix.dto.Format;
+import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpMethod;
 import eu.arrowhead.kalix.net.http.HttpStatus;
@@ -21,7 +20,7 @@ import java.util.stream.Collectors;
 public class HttpService {
     private final String name;
     private final String basePath;
-    private final Format[] formats;
+    private final EncodingDescriptor[] encodings;
     private final List<HttpRouteSequence> routeSequences;
 
     private HttpService(final Builder builder) {
@@ -38,7 +37,7 @@ public class HttpService {
                 "forward slash (/) unless it is the root path \"/\"");
         }
 
-        formats = Objects.requireNonNull(builder.formats, "Expected formats");
+        encodings = Objects.requireNonNull(builder.encodings, "Expected encodings");
 
         final var routeSequenceFactory = new HttpRouteSequenceFactory(builder.catchers, builder.validators);
         routeSequences = builder.routes.stream()
@@ -63,10 +62,10 @@ public class HttpService {
     }
 
     /**
-     * @return Data formats supported by this service.
+     * @return Data encodings supported by this service.
      */
-    public Format[] formats() {
-        return formats.clone();
+    public EncodingDescriptor[] encodings() {
+        return encodings.clone();
     }
 
     /**
@@ -107,7 +106,7 @@ public class HttpService {
 
         private String name;
         private String basePath;
-        private Format[] formats;
+        private EncodingDescriptor[] encodings;
 
         private int catcherOrdinal = 0;
         private int filterOrdinal = 0;
@@ -158,7 +157,7 @@ public class HttpService {
          * <b>Must be specified.</b>
          * <p>
          * While the {@code HttpArrowheadSystem} that will own this service
-         * will prevent messages claimed to be encoded with other formats from
+         * will prevent messages claimed to be encoded with other encodings from
          * being received, stating that an encoding can be read and written
          * does not itself guarantee it. It is up to the {@link HttpService}
          * creator to ensure that such capabilities are indeed available. For
@@ -167,13 +166,13 @@ public class HttpService {
          * about in the package documentation for the
          * {@code eu.arrowhead.kalix.dto} package.
          *
-         * @param formats Encoding formats declared to be supported.
+         * @param encodings Encoding encodings declared to be supported.
          * @return This builder.
          * @see eu.arrowhead.kalix.net.http.HttpArrowheadSystem HttpArrowheadSystem
          * @see eu.arrowhead.kalix.dto
          */
-        public Builder formats(final Format... formats) {
-            this.formats = formats;
+        public Builder encodings(final EncodingDescriptor... encodings) {
+            this.encodings = encodings;
             return this;
         }
 
@@ -775,7 +774,7 @@ public class HttpService {
          * @return New {@link HttpService}.
          * @throws IllegalArgumentException If {@code basePath} is invalid.
          * @throws NullPointerException     If no {@code basePath} or
-         *                                  {@code formats} are specified.
+         *                                  {@code encodings} are specified.
          */
         public HttpService build() {
             return new HttpService(this);

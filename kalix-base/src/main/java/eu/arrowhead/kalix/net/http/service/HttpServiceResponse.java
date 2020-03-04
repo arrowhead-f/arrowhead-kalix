@@ -56,10 +56,12 @@ public class HttpServiceResponse {
      * response status is explicitly set, {@code 400 Bad Request} will be used.
      *
      * @param byteArray Bytes to send to response receiver.
+     * @return This response object.
      * @throws NullPointerException If {@code byteArray} is {@code null}.
      */
-    public void body(final byte[] byteArray) {
+    public HttpServiceResponse body(final byte[] byteArray) {
         body = new ByteArrayWritable(byteArray);
+        return this;
     }
 
     /**
@@ -76,11 +78,13 @@ public class HttpServiceResponse {
      * response status is explicitly set, {@code 400 Bad Request} will be used.
      *
      * @param body Data transfer object to send to response receiver.
+     * @return This response object.
      * @throws NullPointerException If {@code body} is {@code null}.
      * @see eu.arrowhead.kalix.dto.Writable @Writable
      */
-    public void body(final DataWritable body) {
+    public HttpServiceResponse body(final DataWritable body) {
         this.body = Objects.requireNonNull(body, "Expected body");
+        return this;
     }
 
     /**
@@ -98,10 +102,12 @@ public class HttpServiceResponse {
      * response status is explicitly set, {@code 400 Bad Request} will be used.
      *
      * @param stream Input stream to send to response receiver.
+     * @return This response object.
      * @throws NullPointerException If {@code stream} is {@code null}.
      */
-    public void body(final InputStream stream) {
+    public HttpServiceResponse body(final InputStream stream) {
         body = new StreamWritable(stream);
+        return this;
     }
 
     /**
@@ -119,10 +125,12 @@ public class HttpServiceResponse {
      * response status is explicitly set, {@code 400 Bad Request} will be used.
      *
      * @param path Path to file to send to response receiver.
+     * @return This response object.
      * @throws NullPointerException If {@code path} is {@code null}.
      */
-    public void body(final Path path) {
+    public HttpServiceResponse body(final Path path) {
         body = new PathWritable(path);
+        return this;
     }
 
     /**
@@ -142,10 +150,12 @@ public class HttpServiceResponse {
      * response status is explicitly set, {@code 400 Bad Request} will be used.
      *
      * @param string String to send to response receiver.
+     * @return This response object.
      * @throws NullPointerException If {@code string} is {@code null}.
      */
-    public void body(final String string) {
+    public HttpServiceResponse body(final String string) {
         body = new StringWritable(string);
+        return this;
     }
 
     /**

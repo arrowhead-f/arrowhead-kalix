@@ -8,6 +8,8 @@ import eu.arrowhead.kalix.internal.net.NettyBootstraps;
 import eu.arrowhead.kalix.internal.util.concurrent.NettyScheduler;
 import eu.arrowhead.kalix.internal.util.logging.LogLevels;
 import eu.arrowhead.kalix.net.http.service.HttpService;
+import eu.arrowhead.kalix.net.http.service.HttpServiceRequest;
+import eu.arrowhead.kalix.net.http.service.HttpServiceResponse;
 import eu.arrowhead.kalix.util.Result;
 import eu.arrowhead.kalix.util.concurrent.Future;
 import io.netty.buffer.Unpooled;
@@ -26,7 +28,8 @@ import io.netty.handler.ssl.SslContextBuilder;
 import javax.net.ssl.SSLEngine;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.HashSet;
+import java.util.Objects;
+import java.util.TreeMap;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -39,7 +42,7 @@ import java.util.stream.Stream;
  */
 public class HttpArrowheadSystem extends ArrowheadSystem<HttpService> {
     private final AtomicReference<InetSocketAddress> localSocketAddress = new AtomicReference<>();
-    private final HashSet<HttpService> providedServices = new HashSet<>();
+    private final TreeMap<String, HttpService> providedServices = new TreeMap<>();
 
     // Created when requested.
     private ServiceDescriptor[] providedServiceDescriptors = null;
@@ -66,38 +69,76 @@ public class HttpArrowheadSystem extends ArrowheadSystem<HttpService> {
 
     @Override
     public synchronized ServiceDescriptor[] providedServices() {
-        if (providedServiceDescriptors != null) {
-            return providedServiceDescriptors;
+        if (providedServiceDescriptors == null) {
+            final var descriptors = new ServiceDescriptor[providedServices.size()];
+            var i = 0;
+            for (final var service : providedServices.values()) {
+                descriptors[i++] = new ServiceDescriptor(
+                    service.name(),
+                    Stream.of(service.encodings())
+                        .map(encoding -> InterfaceDescriptor
+                            .getOrCreate(TransportDescriptor.HTTP, isSecured(), encoding))
+                        .collect(Collectors.toList()));
+            }
+            providedServiceDescriptors = descriptors;
         }
-        final var descriptors = new ServiceDescriptor[providedServices.size()];
-        var i = 0;
-        for (final var service : providedServices) {
-            descriptors[i++] = new ServiceDescriptor(
-                service.name(),
-                Stream.of(service.formats())
-                    .map(format -> InterfaceDescriptor
-                        .getOrCreate(TransportDescriptor.HTTP, isSecured(), format.asDescriptor()))
-                    .collect(Collectors.toList()));
-        }
-        return providedServiceDescriptors = descriptors;
+        return providedServiceDescriptors.clone();
     }
 
     @Override
     public synchronized void provideService(final HttpService service) {
-        providedServices.add(service);
+        Objects.requireNonNull(service, "Expected service");
+        final var existingService = providedServices.putIfAbsent(service.basePath(), service);
+        if (existingService != null) {
+            if (existingService == service) {
+                return;
+            }
+            throw new IllegalStateException("Base path \"" +
+                service.basePath() + "\" already in use by  \"" +
+                existingService.name() + "\"; cannot provide \"" +
+                service.name() + "\"");
+        }
         providedServiceDescriptors = null; // Force recreation.
     }
 
     @Override
     public synchronized void dismissService(final HttpService service) {
-        providedServices.remove(service);
-        providedServiceDescriptors = null; // Force recreation.
+        if (providedServices.remove(service.basePath()) != null) {
+            providedServiceDescriptors = null; // Force recreation.
+        }
     }
 
     @Override
     public synchronized void dismissAllServices() {
         providedServices.clear();
         providedServiceDescriptors = null; // Force recreation.
+    }
+
+    private Future<HttpServiceResponse> handle(final HttpServiceRequest request) {
+        final var response = new HttpServiceResponse(request.version());
+        for (final var entry : providedServices.entrySet()) {
+            if (request.path().startsWith(entry.getKey())) {
+                final var name = entry.getValue().name();
+                return entry.getValue()
+                    .handle(request, response)
+                    .map(ignored -> response)
+                    .mapCatch(throwable -> {
+                        // TODO: Log properly.
+                        System.err.println("HTTP service \"" + name + "\" never handled:");
+                        throwable.printStackTrace();
+
+                        return response
+                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .headers(new HttpHeaders())
+                            .body(new byte[0]);
+                    });
+            }
+        }
+        // TODO: Allow user to set the function that handles this outcome.
+        return Future.success(response
+            .status(HttpStatus.NOT_FOUND)
+            .headers(new HttpHeaders())
+            .body(new byte[0]));
     }
 
     @Override

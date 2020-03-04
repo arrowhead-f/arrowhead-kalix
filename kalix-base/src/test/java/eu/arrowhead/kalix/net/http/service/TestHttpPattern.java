@@ -107,7 +107,7 @@ public class TestHttpPattern {
 
     static Stream<Arguments> intersectingPatternPairs() {
         return Stream.of(
-            //arguments("/", "/"),
+            arguments("/", "/"),
             arguments("/hello", "/#/"),
             arguments("/x/y", "/x/>"),
             arguments("//#1", "/>"),

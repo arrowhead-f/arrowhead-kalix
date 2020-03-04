@@ -13,7 +13,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * Base class for all Arrowhead systems.
@@ -159,6 +158,9 @@ public abstract class ArrowheadSystem<S> {
      * effect.
      *
      * @param service Service to be provided by this system.
+     * @throws NullPointerException  If {@code service} is {@code null}.
+     * @throws IllegalStateException If {@code service} configuration conflicts
+     *                               with an already provided service.
      */
     public abstract void provideService(final S service);
 
@@ -170,6 +172,7 @@ public abstract class ArrowheadSystem<S> {
      * effect.
      *
      * @param service Service to no longer be provided by this system.
+     * @throws NullPointerException If {@code service} is {@code null}.
      */
     public abstract void dismissService(final S service);
 
