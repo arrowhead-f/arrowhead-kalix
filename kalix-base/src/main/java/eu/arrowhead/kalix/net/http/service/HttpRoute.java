@@ -10,7 +10,7 @@ import java.util.Optional;
  * Describes the conditions for and where to route matching incoming
  * {@link HttpServiceRequest}s.
  */
-public class HttpRoute {
+public class HttpRoute implements Comparable<HttpRoute> {
     private final HttpMethod method;
     private final HttpPattern pattern;
     private final HttpRouteHandler handler;
@@ -79,5 +79,28 @@ public class HttpRoute {
      */
     public Future<?> handle(final HttpServiceRequestFull request, final HttpServiceResponse response) throws Exception {
         return handler.handle(request, response);
+    }
+
+    @Override
+    public int compareTo(final HttpRoute other) {
+        if (method != null) {
+            if (other.method == null) {
+                return 1;
+            }
+            final var c0 = method.compareTo(other.method);
+            if (c0 != 0) {
+                return c0;
+            }
+        }
+        else if (other.method == null) {
+            return -1;
+        }
+        if (pattern != null) {
+            if (other.pattern == null) {
+                return 1;
+            }
+            return pattern.compareTo(other.pattern);
+        }
+        return 0;
     }
 }

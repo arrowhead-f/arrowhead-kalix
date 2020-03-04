@@ -9,7 +9,7 @@ import java.util.*;
  * A {@link HttpService} exception catcher, useful for handling errors
  * occurring while receiving or responding to HTTP requests.
  */
-public class HttpCatcher<T extends Throwable> {
+public class HttpCatcher<T extends Throwable> implements Comparable<HttpCatcher<?>> {
     private final int ordinal;
     private final HttpMethod method;
     private final HttpPattern pattern;
@@ -148,5 +148,46 @@ public class HttpCatcher<T extends Throwable> {
             return handler.handle(throwable0, request.wrapHeadWithPathParameters(pathParameters), response);
         }
         return Future.success(false);
+    }
+
+    @Override
+    public int compareTo(final HttpCatcher<?> other) {
+        if (method != null) {
+            if (other.method == null) {
+                return 1;
+            }
+            final var c0 = method.compareTo(other.method);
+            if (c0 != 0) {
+                return c0;
+            }
+        }
+        else if (other.method == null) {
+            return -1;
+        }
+        if (pattern != null) {
+            if (other.pattern == null) {
+                return 1;
+            }
+            final var c1 = pattern.compareTo(other.pattern);
+            if (c1 != 0) {
+                return c1;
+            }
+        }
+        if (exceptionClass != null) {
+            if (other.exceptionClass == null) {
+                return 1;
+            }
+            if (exceptionClass == other.exceptionClass) {
+                return 0;
+            }
+            if (exceptionClass.isAssignableFrom(other.exceptionClass)) {
+                return -1;
+            }
+            return 1;
+        }
+        else if (other.exceptionClass == null) {
+            return -1;
+        }
+        return ordinal - other.ordinal;
     }
 }

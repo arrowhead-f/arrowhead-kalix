@@ -36,7 +36,7 @@ import java.util.*;
  *
  * @see <a href="https://tools.ietf.org/html/rfc3986#section-3.3">RFC 3986, Section 3.3</a>
  */
-class HttpPattern {
+class HttpPattern implements Comparable<HttpPattern> {
     private final String pattern;
     private final int nParameters;
     private final boolean isPrefix;
@@ -299,5 +299,38 @@ class HttpPattern {
     private static boolean isRFC3986PathChar(final char c) {
         return c >= 'a' && c <= 'z' || c >= '$' && c <= ';' || c >= '@' && c <= 'Z' ||
             c == '_' || c == '~' || c == '=' || c == '!';
+    }
+
+    /**
+     * <i>If this method is used to sort a list of patterns, then should trying
+     * a path against all the patterns of that list, beginning with the first,
+     * lead to the pattern matching the smallest possible set of paths
+     * including the given path to be tried first.</i>
+     * <p>
+     * {@inheritDoc}
+     */
+    @Override
+    public int compareTo(final HttpPattern other) {
+        final var cmp0 = Boolean.compare(isPrefix, other.isPrefix);
+        if (cmp0 != 0) {
+            return cmp0;
+        }
+        final var limit = Math.min(pattern.length(), other.pattern.length());
+        for (var i = 0; i < limit; i++) {
+            final var c0 = pattern.charAt(i);
+            final var c1 = other.pattern.charAt(i);
+            if (c0 != c1) {
+                // Ensure that paths with parameters always come after those
+                // without parameters.
+                if (c0 == '#') {
+                    return 1;
+                }
+                if (c1 == '#') {
+                    return -1;
+                }
+                return c0 - c1;
+            }
+        }
+        return pattern.length() - other.pattern.length();
     }
 }

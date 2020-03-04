@@ -13,7 +13,7 @@ import java.util.Optional;
  * incoming HTTP requests before they are provided to their designated
  * {@link HttpRoute}s.
  */
-public class HttpValidator {
+public class HttpValidator implements Comparable<HttpValidator> {
     private final int ordinal;
     private final HttpMethod method;
     private final HttpPattern pattern;
@@ -131,5 +131,31 @@ public class HttpValidator {
                 .map(ignored -> response.body().isPresent() || response.status().isPresent());
         }
         return Future.success(false);
+    }
+
+    @Override
+    public int compareTo(final HttpValidator other) {
+        if (method != null) {
+            if (other.method == null) {
+                return 1;
+            }
+            final var c0 = method.compareTo(other.method);
+            if (c0 != 0) {
+                return c0;
+            }
+        }
+        else if (other.method == null) {
+            return -1;
+        }
+        if (pattern != null) {
+            if (other.pattern == null) {
+                return 1;
+            }
+            final var c1 = pattern.compareTo(other.pattern);
+            if (c1 != 0) {
+                return c1;
+            }
+        }
+        return ordinal - other.ordinal;
     }
 }

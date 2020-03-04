@@ -27,8 +27,8 @@ class HttpRouteSequenceFactory {
         this.catchers = catchers;
         this.validators = validators;
 
-        this.catchers.sort(Comparator.comparingInt(HttpCatcher::ordinal));
-        this.validators.sort(Comparator.comparingInt(HttpValidator::ordinal));
+        this.catchers.sort(HttpCatcher::compareTo);
+        this.validators.sort(HttpValidator::compareTo);
     }
 
     /**

@@ -8,7 +8,7 @@ import java.util.Objects;
  * @see <a href="https://tools.ietf.org/html/rfc7231#section-4">RFC 7231, Section 4</a>
  * @see <a href="https://tools.ietf.org/html/rfc5789">RFC 5789</a>
  */
-public final class HttpMethod {
+public final class HttpMethod implements Comparable<HttpMethod> {
     private final String name;
     private final boolean isStandard;
 
@@ -151,5 +151,10 @@ public final class HttpMethod {
     @Override
     public String toString() {
         return name;
+    }
+
+    @Override
+    public int compareTo(final HttpMethod other) {
+        return name.compareTo(other.name);
     }
 }
