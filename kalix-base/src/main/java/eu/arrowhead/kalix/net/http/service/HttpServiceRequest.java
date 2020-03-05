@@ -6,6 +6,7 @@ import eu.arrowhead.kalix.net.http.HttpMethod;
 import eu.arrowhead.kalix.net.http.HttpVersion;
 import eu.arrowhead.kalix.util.concurrent.Future;
 
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -35,6 +36,11 @@ public class HttpServiceRequest implements HttpServiceRequestFull {
     @Override
     public <R extends DataReadable> Future<? extends R> bodyAs(final Class<R> class_) {
         return body.bodyAs(class_);
+    }
+
+    @Override
+    public Future<Path> bodyTo(final Path path, final boolean append) {
+        return body.bodyTo(path, append);
     }
 
     @Override
@@ -101,6 +107,11 @@ public class HttpServiceRequest implements HttpServiceRequestFull {
             @Override
             public <R extends DataReadable> Future<? extends R> bodyAs(final Class<R> class_) {
                 return self.bodyAs(class_);
+            }
+
+            @Override
+            public Future<Path> bodyTo(final Path path, final boolean append) {
+                return self.bodyTo(path, append);
             }
 
             @Override
