@@ -13,6 +13,17 @@ public class TransportDescriptor {
     }
 
     /**
+     * Either acquires a cached transport descriptor matching the given name or
+     * creates a new one.
+     *
+     * @param name  Desired transport descriptor name.
+     * @return New or existing transport descriptor.
+     */
+    public TransportDescriptor getOrCreate(final String name) {
+        return valueOf(name);
+    }
+
+    /**
      * @return Transport identifier.
      */
     public String name() {

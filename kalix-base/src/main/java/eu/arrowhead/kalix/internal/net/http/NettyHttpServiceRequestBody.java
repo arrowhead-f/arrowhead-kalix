@@ -44,10 +44,10 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
 
     public void abort(final Throwable throwable) {
         if (isAborted) {
-            throw new IllegalStateException("Already aborted");
+            throw new IllegalStateException("Already aborted", throwable);
         }
         if (isFinished) {
-            throw new IllegalStateException("Cannot abort; body finished");
+            throw new IllegalStateException("Cannot abort; body finished", throwable);
         }
         isAborted = true;
 
@@ -66,6 +66,8 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
         if (isFinished) {
             throw new IllegalStateException("Cannot append; body finished");
         }
+
+        // TODO: Ensure body size does not exceed some configured limit.
 
         if (!isBodyRequested) {
             if (pendingContent == null) {
@@ -86,7 +88,6 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
             pendingContent = null;
         }
 
-        // TODO: Ensure body size does not exceed some configured limit.
         body.append(content);
     }
 
@@ -114,19 +115,19 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
     public <R extends DataReadable> FutureProgress<? extends R> bodyAs(final Class<R> class_) {
         return handleBodyRequest(() -> {
             throw new IllegalStateException("Unexpected class \"" + class_ +
-                "\"; only generated and special DTO classes may be " +
-                "requested as response bodies");
+                "\"; only generated DTO classes may be requested as " +
+                "response bodies");
         });
     }
 
     @Override
     public FutureProgress<byte[]> bodyAsByteArray() {
-        return handleBodyRequest(() -> new FutureBodyAsByteArray(alloc));
+        return handleBodyRequest(() -> new FutureBodyAsByteArray(alloc, headers));
     }
 
     @Override
     public FutureProgress<? extends InputStream> bodyAsStream() {
-        return handleBodyRequest(() -> new FutureBodyAsStream(alloc));
+        return handleBodyRequest(() -> new FutureBodyAsStream(alloc, headers));
     }
 
     @Override
@@ -176,8 +177,8 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
         private boolean isCompleted = false;
         private int currentProgress = 0;
 
-        protected FutureBody(final int expectedContentLength) {
-            this.expectedContentLength = expectedContentLength;
+        protected FutureBody(final HttpHeaders headers) {
+            this.expectedContentLength = headers.getInt("content-length", 0);
         }
 
         public void abort(final Throwable throwable) {
@@ -247,8 +248,8 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
     private static abstract class FutureBodyBuffered<V> extends FutureBody<V> {
         private final CompositeByteBuf buffer;
 
-        private FutureBodyBuffered(final ByteBufAllocator alloc) {
-            super(0);
+        private FutureBodyBuffered(final ByteBufAllocator alloc, final HttpHeaders headers) {
+            super(headers);
             buffer = alloc.compositeBuffer();
         }
 
@@ -265,9 +266,21 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
         }
     }
 
+    private static class FutureBodyAs<V> extends FutureBodyBuffered<V> {
+        private FutureBodyAs(final ByteBufAllocator alloc, final HttpHeaders headers) {
+            super(alloc, headers);
+        }
+
+        @Override
+        public V assembleValue(final ByteBuf buffer) {
+            buffer.release();
+            return null;
+        }
+    }
+
     private static class FutureBodyAsByteArray extends FutureBodyBuffered<byte[]> {
-        public FutureBodyAsByteArray(final ByteBufAllocator alloc) {
-            super(alloc);
+        public FutureBodyAsByteArray(final ByteBufAllocator alloc, final HttpHeaders headers) {
+            super(alloc, headers);
         }
 
         @Override
@@ -285,7 +298,7 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
         private FileOutputStream stream;
 
         public FutureBodyToPath(final Path path, final boolean append, final HttpHeaders headers) {
-            super(headers.getInt("content-length", 0));
+            super(headers);
             FileOutputStream stream;
             try {
                 stream = new FileOutputStream(path.toFile(), append);
@@ -331,8 +344,8 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
     }
 
     private static class FutureBodyAsStream extends FutureBodyBuffered<InputStream> {
-        private FutureBodyAsStream(final ByteBufAllocator alloc) {
-            super(alloc);
+        private FutureBodyAsStream(final ByteBufAllocator alloc, final HttpHeaders headers) {
+            super(alloc, headers);
         }
 
         @Override
@@ -345,7 +358,7 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
         private final Charset charset;
 
         public FutureBodyAsString(final ByteBufAllocator alloc, final HttpHeaders headers) {
-            super(alloc);
+            super(alloc, headers);
             charset = HttpUtil.getCharset(headers.get("content-type"), StandardCharsets.UTF_8);
         }
 

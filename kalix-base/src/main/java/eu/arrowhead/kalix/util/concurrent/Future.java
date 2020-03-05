@@ -95,11 +95,11 @@ public interface Future<V> {
      *                 an error.
      * @throws NullPointerException If {@code consumer} is {@code null}.
      */
-    default void onError(final Consumer<Throwable> consumer) {
+    default void onFailure(final Consumer<Throwable> consumer) {
         Objects.requireNonNull(consumer);
         onResult(result -> {
             if (!result.isSuccess()) {
-                consumer.accept(result.error());
+                consumer.accept(result.fault());
             }
         });
     }
@@ -138,20 +138,20 @@ public interface Future<V> {
                     Result<U> result1;
                     success:
                     {
-                        Throwable err;
+                        Throwable cause;
                         if (result0.isSuccess()) {
                             try {
                                 result1 = Result.success(mapper.apply(result0.value()));
                                 break success;
                             }
-                            catch (final Throwable error) {
-                                err = error;
+                            catch (final Throwable throwable) {
+                                cause = throwable;
                             }
                         }
                         else {
-                            err = result0.error();
+                            cause = result0.fault();
                         }
-                        result1 = Result.failure(err);
+                        result1 = Result.failure(cause);
                     }
                     consumer.accept(result1);
                 });
@@ -200,10 +200,10 @@ public interface Future<V> {
                     }
                     else {
                         try {
-                            result1 = Result.success(mapper.apply(result0.error()));
+                            result1 = Result.success(mapper.apply(result0.fault()));
                         }
-                        catch (final Throwable error) {
-                            result1 = Result.failure(error);
+                        catch (final Throwable throwable) {
+                            result1 = Result.failure(throwable);
                         }
                     }
                     consumer.accept(result1);
@@ -253,14 +253,14 @@ public interface Future<V> {
                         result1 = result0;
                     }
                     else {
-                        Throwable error1;
+                        Throwable cause1;
                         try {
-                            error1 = mapper.apply(result0.error());
+                            cause1 = mapper.apply(result0.fault());
                         }
-                        catch (final Throwable error) {
-                            error1 = error;
+                        catch (final Throwable throwable) {
+                            cause1 = throwable;
                         }
-                        result1 = Result.failure(error1);
+                        result1 = Result.failure(cause1);
                     }
                     consumer.accept(result1);
                 });
@@ -312,9 +312,9 @@ public interface Future<V> {
             @Override
             public void onResult(final Consumer<Result<U>> consumer) {
                 source.onResult(result0 -> {
-                    Throwable err;
+                    Throwable cause;
                     if (cancelTarget.get() == null) {
-                        err = new CancellationException();
+                        cause = new CancellationException();
                     }
                     else if (result0.isSuccess()) {
                         try {
@@ -323,14 +323,14 @@ public interface Future<V> {
                             cancelTarget.set(future1);
                             return;
                         }
-                        catch (final Throwable error) {
-                            err = error;
+                        catch (final Throwable throwable) {
+                            cause = throwable;
                         }
                     }
                     else {
-                        err = result0.error();
+                        cause = result0.fault();
                     }
-                    consumer.accept(Result.failure(err));
+                    consumer.accept(Result.failure(cause));
                 });
             }
 
@@ -385,9 +385,9 @@ public interface Future<V> {
                     Result<V> result1;
                     done:
                     {
-                        Throwable err;
+                        Throwable cause;
                         if (cancelTarget.get() == null) {
-                            err = new CancellationException();
+                            cause = new CancellationException();
                         }
                         else {
                             if (result0.isSuccess()) {
@@ -395,16 +395,16 @@ public interface Future<V> {
                                 break done;
                             }
                             try {
-                                final var future1 = mapper.apply(result0.error());
+                                final var future1 = mapper.apply(result0.fault());
                                 future1.onResult(consumer);
                                 cancelTarget.set(future1);
                                 return;
                             }
-                            catch (final Throwable error) {
-                                err = error;
+                            catch (final Throwable throwable) {
+                                cause = throwable;
                             }
                         }
-                        result1 = Result.failure(err);
+                        result1 = Result.failure(cause);
                     }
                     consumer.accept(result1);
                 });
@@ -464,9 +464,9 @@ public interface Future<V> {
                     Result<V> result1;
                     done:
                     {
-                        Throwable err;
+                        Throwable cause;
                         if (cancelTarget.get() == null) {
-                            err = new CancellationException();
+                            cause = new CancellationException();
                         }
                         else {
                             if (result0.isSuccess()) {
@@ -474,18 +474,18 @@ public interface Future<V> {
                                 break done;
                             }
                             try {
-                                final var future1 = mapper.apply(result0.error());
+                                final var future1 = mapper.apply(result0.fault());
                                 future1.onResult(result -> consumer.accept(Result.failure(result.isSuccess()
                                     ? result.value()
-                                    : result.error())));
+                                    : result.fault())));
                                 cancelTarget.set(future1);
                                 return;
                             }
-                            catch (final Throwable error) {
-                                err = error;
+                            catch (final Throwable throwable) {
+                                cause = throwable;
                             }
                         }
-                        result1 = Result.failure(err);
+                        result1 = Result.failure(cause);
                     }
                     consumer.accept(result1);
                 });

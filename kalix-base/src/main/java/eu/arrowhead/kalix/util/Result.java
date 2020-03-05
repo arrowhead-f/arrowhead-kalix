@@ -11,7 +11,7 @@ import java.util.function.Function;
  * <i>value</i> is available, or a <i>failure</i>, which makes an
  * <i>error</i> available. The {@link #isSuccess()} method is used to
  * determine which of the two situations is the case. The {@link #value()}
- * and {@link #error()} methods are used to collect the value or error,
+ * and {@link #fault()} methods are used to collect the value or error,
  * respectively.
  *
  * @param <V> Type of value provided by {@code Result} if successful.
@@ -19,12 +19,12 @@ import java.util.function.Function;
 public class Result<V> {
     private final boolean isSuccess;
     private final V value;
-    private final Throwable error;
+    private final Throwable throwable;
 
-    private Result(final boolean isSuccess, final V value, final Throwable error) {
+    private Result(final boolean isSuccess, final V value, final Throwable throwable) {
         this.isSuccess = isSuccess;
         this.value = value;
-        this.error = error;
+        this.throwable = throwable;
     }
 
     /**
@@ -41,13 +41,13 @@ public class Result<V> {
     /**
      * Creates new failure {@code Result}.
      *
-     * @param error Reason for failure.
+     * @param throwable Reason for failure.
      * @param <V>   Type of value that would have been provided by the
      *              created {@code Result}, if it were successful.
      * @return New {@code Result}.
      */
-    public static <V> Result<V> failure(final Throwable error) {
-        return new Result<>(false, null, error);
+    public static <V> Result<V> failure(final Throwable throwable) {
+        return new Result<>(false, null, throwable);
     }
 
     /**
@@ -58,11 +58,11 @@ public class Result<V> {
     }
 
     /**
-     * @return Some exception if this {@code Result} is a failure.
+     * @return A {@code Throwable} if this {@code Result} is a failure.
      * {@code null} otherwise.
      */
-    public Throwable error() {
-        return error;
+    public Throwable fault() {
+        return throwable;
     }
 
     /**
@@ -88,10 +88,10 @@ public class Result<V> {
         if (isSuccess()) {
             return value();
         }
-        if (error instanceof RuntimeException) {
-            throw (RuntimeException) error;
+        if (throwable instanceof RuntimeException) {
+            throw (RuntimeException) throwable;
         }
-        throw new RuntimeException(error());
+        throw new RuntimeException(fault());
     }
 
     /**
@@ -112,7 +112,7 @@ public class Result<V> {
      */
     public void ifFailure(final Consumer<Throwable> consumer) {
         if (!isSuccess()) {
-            consumer.accept(error());
+            consumer.accept(fault());
         }
     }
 
@@ -131,7 +131,7 @@ public class Result<V> {
         if (isSuccess()) {
             return success(mapper.apply(value()));
         }
-        return failure(error());
+        return failure(fault());
     }
 
     /**
@@ -151,6 +151,6 @@ public class Result<V> {
         if (isSuccess()) {
             return mapper.apply(value());
         }
-        return failure(error());
+        return failure(fault());
     }
 }

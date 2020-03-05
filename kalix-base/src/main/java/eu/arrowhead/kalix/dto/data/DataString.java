@@ -1,11 +1,10 @@
 package eu.arrowhead.kalix.dto.data;
 
-import eu.arrowhead.kalix.dto.DataReadable;
 import eu.arrowhead.kalix.dto.DataWritable;
 
 import java.util.Objects;
 
-public final class DataString implements DataReadable, DataWritable {
+public final class DataString implements DataWritable {
     private final String string;
 
     public DataString(final String string) {

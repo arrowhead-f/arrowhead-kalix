@@ -2,7 +2,7 @@ package eu.arrowhead.kalix.util.function;
 
 /**
  * A function, converting an input value into an output value. May throw
- * any {@link Throwable} while being executed.
+ * any {@link Exception} while being executed.
  *
  * @param <V> Type of value to be provided to mapper.
  * @param <U> Type of value returned from mapper.
@@ -14,7 +14,7 @@ public interface ThrowingFunction<V, U> {
      *
      * @param v Value to provide.
      * @return Output value.
-     * @throws Throwable Any kind of exception.
+     * @throws Exception Any kind of exception.
      */
-    U apply(V v) throws Throwable;
+    U apply(V v) throws Exception;
 }

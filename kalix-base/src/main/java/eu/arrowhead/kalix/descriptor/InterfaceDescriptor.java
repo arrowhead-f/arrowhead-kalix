@@ -32,8 +32,8 @@ public class InterfaceDescriptor {
                 }
             }
         }
-        catch (final Throwable throwable) {
-            throw new RuntimeException("Interface cache initialization failed", throwable);
+        catch (final Exception exception) {
+            throw new RuntimeException("Interface cache initialization failed", exception);
         }
     }
 
@@ -111,15 +111,6 @@ public class InterfaceDescriptor {
     }
 
     /**
-     * AMPQ over TLS with ASN.1 payloads.
-     *
-     * @see TransportDescriptor#COAP
-     * @see EncodingDescriptor#ASN1
-     */
-    public static final InterfaceDescriptor AMPQ_SECURE_ASN1 = new InterfaceDescriptor(
-        TransportDescriptor.AMPQ, true, EncodingDescriptor.ASN1, "AMPQ-SECURE-ASN1");
-
-    /**
      * AMPQ over TLS with CBOR payloads.
      *
      * @see TransportDescriptor#AMPQ
@@ -150,19 +141,10 @@ public class InterfaceDescriptor {
      * AMPQ over TLS with XSI payloads.
      *
      * @see TransportDescriptor#AMPQ
-     * @see EncodingDescriptor#XSI
+     * @see EncodingDescriptor#EXI
      */
     public static final InterfaceDescriptor AMPQ_SECURE_XSI = new InterfaceDescriptor(
-        TransportDescriptor.AMPQ, true, EncodingDescriptor.XSI, "AMPQ-SECURE-XSI");
-
-    /**
-     * CoAP over TLS with ASN.1 payloads.
-     *
-     * @see TransportDescriptor#COAP
-     * @see EncodingDescriptor#ASN1
-     */
-    public static final InterfaceDescriptor COAP_SECURE_ASN1 = new InterfaceDescriptor(
-        TransportDescriptor.COAP, true, EncodingDescriptor.ASN1, "COAP-SECURE-ASN1");
+        TransportDescriptor.AMPQ, true, EncodingDescriptor.EXI, "AMPQ-SECURE-XSI");
 
     /**
      * CoAP over TLS with CBOR payloads.
@@ -195,19 +177,10 @@ public class InterfaceDescriptor {
      * CoAP over TLS with XSI payloads.
      *
      * @see TransportDescriptor#COAP
-     * @see EncodingDescriptor#XSI
+     * @see EncodingDescriptor#EXI
      */
     public static final InterfaceDescriptor COAP_SECURE_XSI = new InterfaceDescriptor(
-        TransportDescriptor.COAP, true, EncodingDescriptor.XSI, "COAP-SECURE-XSI");
-
-    /**
-     * HTTPS with ASN.1 payloads.
-     *
-     * @see TransportDescriptor#HTTP
-     * @see EncodingDescriptor#ASN1
-     */
-    public static final InterfaceDescriptor HTTP_SECURE_ASN1 = new InterfaceDescriptor(
-        TransportDescriptor.HTTP, true, EncodingDescriptor.ASN1, "HTTP-SECURE-ASN1");
+        TransportDescriptor.COAP, true, EncodingDescriptor.EXI, "COAP-SECURE-XSI");
 
     /**
      * HTTPS with CBOR payloads.
@@ -240,18 +213,11 @@ public class InterfaceDescriptor {
      * HTTPS with XSI payloads.
      *
      * @see TransportDescriptor#HTTP
-     * @see EncodingDescriptor#XSI
+     * @see EncodingDescriptor#EXI
      */
     public static final InterfaceDescriptor HTTP_SECURE_XSI = new InterfaceDescriptor(
-        TransportDescriptor.HTTP, true, EncodingDescriptor.XSI, "HTTP-SECURE-XSI");
-    /**
-     * MQTT over TLS with ASN.1 payloads.
-     *
-     * @see TransportDescriptor#MQTT
-     * @see EncodingDescriptor#ASN1
-     */
-    public static final InterfaceDescriptor MQTT_SECURE_ASN1 = new InterfaceDescriptor(
-        TransportDescriptor.MQTT, true, EncodingDescriptor.ASN1, "MQTT-SECURE-ASN1");
+        TransportDescriptor.HTTP, true, EncodingDescriptor.EXI, "HTTP-SECURE-XSI");
+
     /**
      * MQTT over TLS with CBOR payloads.
      *
@@ -282,19 +248,10 @@ public class InterfaceDescriptor {
      * MQTT over TLS with XSI payloads.
      *
      * @see TransportDescriptor#MQTT
-     * @see EncodingDescriptor#XSI
+     * @see EncodingDescriptor#EXI
      */
     public static final InterfaceDescriptor MQTT_SECURE_XSI = new InterfaceDescriptor(
-        TransportDescriptor.MQTT, true, EncodingDescriptor.XSI, "MQTT-SECURE-XSI");
-
-    /**
-     * XMPP over TLS with ASN.1 payloads.
-     *
-     * @see TransportDescriptor#XMPP
-     * @see EncodingDescriptor#ASN1
-     */
-    public static final InterfaceDescriptor XMPP_SECURE_ASN1 = new InterfaceDescriptor(
-        TransportDescriptor.XMPP, true, EncodingDescriptor.ASN1, "XMPP-SECURE-ASN1");
+        TransportDescriptor.MQTT, true, EncodingDescriptor.EXI, "MQTT-SECURE-XSI");
 
     /**
      * XMPP over TLS with CBOR payloads.
@@ -327,10 +284,10 @@ public class InterfaceDescriptor {
      * XMPP over TLS with XSI payloads.
      *
      * @see TransportDescriptor#XMPP
-     * @see EncodingDescriptor#XSI
+     * @see EncodingDescriptor#EXI
      */
     public static final InterfaceDescriptor XMPP_SECURE_XSI = new InterfaceDescriptor(
-        TransportDescriptor.XMPP, true, EncodingDescriptor.XSI, "XMPP-SECURE-XSI");
+        TransportDescriptor.XMPP, true, EncodingDescriptor.EXI, "XMPP-SECURE-XSI");
 
     /**
      * Parses given string into interface triplet.
@@ -347,27 +304,22 @@ public class InterfaceDescriptor {
     public static InterfaceDescriptor valueOf(String triplet) {
         triplet = Objects.requireNonNull(triplet, "Name required").toUpperCase();
         switch (triplet) {
-        case "AMPQ-SECURE-ASN1": return AMPQ_SECURE_ASN1;
         case "AMPQ-SECURE-CBOR": return AMPQ_SECURE_CBOR;
         case "AMPQ-SECURE-JSON": return AMPQ_SECURE_JSON;
         case "AMPQ-SECURE-XML": return AMPQ_SECURE_XML;
         case "AMPQ-SECURE-XSI": return AMPQ_SECURE_XSI;
-        case "COAP-SECURE-ASN1": return COAP_SECURE_ASN1;
         case "COAP-SECURE-CBOR": return COAP_SECURE_CBOR;
         case "COAP-SECURE-JSON": return COAP_SECURE_JSON;
         case "COAP-SECURE-XML": return COAP_SECURE_XML;
         case "COAP-SECURE-XSI": return COAP_SECURE_XSI;
-        case "HTTP-SECURE-ASN1": return HTTP_SECURE_ASN1;
         case "HTTP-SECURE-CBOR": return HTTP_SECURE_CBOR;
         case "HTTP-SECURE-JSON": return HTTP_SECURE_JSON;
         case "HTTP-SECURE-XML": return HTTP_SECURE_XML;
         case "HTTP-SECURE-XSI": return HTTP_SECURE_XSI;
-        case "MQTT-SECURE-ASN1": return MQTT_SECURE_ASN1;
         case "MQTT-SECURE-CBOR": return MQTT_SECURE_CBOR;
         case "MQTT-SECURE-JSON": return MQTT_SECURE_JSON;
         case "MQTT-SECURE-XML": return MQTT_SECURE_XML;
         case "MQTT-SECURE-XSI": return MQTT_SECURE_XSI;
-        case "XMPP-SECURE-ASN1": return XMPP_SECURE_ASN1;
         case "XMPP-SECURE-CBOR": return XMPP_SECURE_CBOR;
         case "XMPP-SECURE-JSON": return XMPP_SECURE_JSON;
         case "XMPP-SECURE-XML": return XMPP_SECURE_XML;

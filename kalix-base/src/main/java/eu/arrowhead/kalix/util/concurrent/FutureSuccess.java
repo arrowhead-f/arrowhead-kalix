@@ -50,8 +50,8 @@ class FutureSuccess<V> implements FutureProgress<V> {
         try {
             return Future.success(mapper.apply(value));
         }
-        catch (final Throwable error) {
-            return Future.failure(error);
+        catch (final Throwable throwable) {
+            return Future.failure(throwable);
         }
     }
 

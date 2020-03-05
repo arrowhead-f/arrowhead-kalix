@@ -166,10 +166,10 @@ public class HttpService {
          * about in the package documentation for the
          * {@code eu.arrowhead.kalix.dto} package.
          *
-         * @param encodings Encoding encodings declared to be supported.
+         * @param encodings Encodings declared to be supported.
          * @return This builder.
-         * @see eu.arrowhead.kalix.net.http.HttpArrowheadSystem HttpArrowheadSystem
          * @see eu.arrowhead.kalix.dto
+         * @see eu.arrowhead.kalix.net.http.HttpArrowheadSystem HttpArrowheadSystem
          */
         public Builder encodings(final EncodingDescriptor... encodings) {
             this.encodings = encodings;

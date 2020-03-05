@@ -2,7 +2,7 @@ package eu.arrowhead.kalix.util.function;
 
 /**
  * A function, converting two input values into an output value. May throw
- * any {@link Throwable} while being executed.
+ * any {@link Exception} while being executed.
  *
  * @param <T> Type of first value to be provided to mapper.
  * @param <U> Type of second value to be provided to mapper.
@@ -16,7 +16,7 @@ public interface ThrowingBiFunction<T, U, R> {
      * @param t First value to provide.
      * @param u Second value to provide.
      * @return Output value.
-     * @throws Throwable Any kind of exception.
+     * @throws Exception Any kind of exception.
      */
-    R apply(T t, U u) throws Throwable;
+    R apply(T t, U u) throws Exception;
 }
