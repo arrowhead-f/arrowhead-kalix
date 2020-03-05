@@ -1,7 +1,6 @@
 package eu.arrowhead.kalix.internal.net.http;
 
 import eu.arrowhead.kalix.internal.util.logging.LogLevels;
-import eu.arrowhead.kalix.net.http.HttpArrowheadSystem;
 import eu.arrowhead.kalix.util.logging.LogLevel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;

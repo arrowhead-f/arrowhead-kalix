@@ -1,16 +1,13 @@
 package eu.arrowhead.kalix.net.http.service;
 
+import eu.arrowhead.kalix.dto.data.DataByteArray;
+import eu.arrowhead.kalix.dto.data.DataPath;
+import eu.arrowhead.kalix.dto.data.DataString;
 import eu.arrowhead.kalix.dto.DataWritable;
-import eu.arrowhead.kalix.dto.util.ByteArrayWritable;
-import eu.arrowhead.kalix.dto.util.PathWritable;
-import eu.arrowhead.kalix.dto.util.StreamWritable;
-import eu.arrowhead.kalix.dto.util.StringWritable;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpStatus;
 import eu.arrowhead.kalix.net.http.HttpVersion;
 
-import java.io.InputStream;
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -60,7 +57,7 @@ public class HttpServiceResponse {
      * @throws NullPointerException If {@code byteArray} is {@code null}.
      */
     public HttpServiceResponse body(final byte[] byteArray) {
-        body = new ByteArrayWritable(byteArray);
+        body = new DataByteArray(byteArray);
         return this;
     }
 
@@ -90,29 +87,6 @@ public class HttpServiceResponse {
     /**
      * Sets response body, replacing any previously set such.
      * <p>
-     * The provided stream is scheduled for reading and transmission to the
-     * response receiver. It becomes the responsibility of the caller to ensure
-     * that that {@code "content-type"} header is set appropriately. The
-     * {@code "content-length"} header may be set if the final length of the
-     * stream is known.
-     * <p>
-     * If a response body is explicitly set by a
-     * {@link HttpValidatorHandler}, the associated request will <i>not</i> be
-     * passed on to any further validator handlers or a route handler. If no
-     * response status is explicitly set, {@code 400 Bad Request} will be used.
-     *
-     * @param stream Input stream to send to response receiver.
-     * @return This response object.
-     * @throws NullPointerException If {@code stream} is {@code null}.
-     */
-    public HttpServiceResponse body(final InputStream stream) {
-        body = new StreamWritable(stream);
-        return this;
-    }
-
-    /**
-     * Sets response body, replacing any previously set such.
-     * <p>
      * The contents of the file at the provided file system path are scheduled
      * for transmission to the response receiver as-is. It becomes the
      * responsibility of the caller to ensure that the {@code "content-type"}
@@ -128,8 +102,8 @@ public class HttpServiceResponse {
      * @return This response object.
      * @throws NullPointerException If {@code path} is {@code null}.
      */
-    public HttpServiceResponse body(final Path path) {
-        body = new PathWritable(path);
+    public HttpServiceResponse body(final java.nio.file.Path path) {
+        body = new DataPath(path);
         return this;
     }
 
@@ -154,7 +128,7 @@ public class HttpServiceResponse {
      * @throws NullPointerException If {@code string} is {@code null}.
      */
     public HttpServiceResponse body(final String string) {
-        body = new StringWritable(string);
+        body = new DataString(string);
         return this;
     }
 

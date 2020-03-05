@@ -39,7 +39,7 @@ public class HttpCatcher<T extends Throwable> implements Comparable<HttpCatcher<
         this.ordinal = ordinal;
         this.method = method;
         this.pattern = pattern;
-        this.exceptionClass = exceptionClass;
+        this.exceptionClass = Objects.requireNonNull(exceptionClass, "Expected exceptionClass");
         this.handler = Objects.requireNonNull(handler, "Expected handler");
     }
 
@@ -114,7 +114,6 @@ public class HttpCatcher<T extends Throwable> implements Comparable<HttpCatcher<
      * @throws Exception Whatever exception the handle may want to throw. This
      *                   exception is only thrown if the handle is executed.
      */
-    @SuppressWarnings("unchecked")
     public Future<Boolean> tryHandle(
         final Throwable throwable,
         final HttpServiceRequest request,
@@ -127,12 +126,10 @@ public class HttpCatcher<T extends Throwable> implements Comparable<HttpCatcher<
                 break mismatch;
             }
 
-            if (exceptionClass != null && !exceptionClass.isAssignableFrom(throwable.getClass())) {
+            if (!exceptionClass.isAssignableFrom(throwable.getClass())) {
                 break mismatch;
             }
-            final var throwable0 = exceptionClass != null
-                ? exceptionClass.cast(throwable)
-                : (T) throwable; // This only happens if we match all throwables.
+            final var throwable0 = exceptionClass.cast(throwable);
 
             final List<String> pathParameters;
             if (pattern != null) {
@@ -145,7 +142,8 @@ public class HttpCatcher<T extends Throwable> implements Comparable<HttpCatcher<
                 pathParameters = Collections.emptyList();
             }
 
-            return handler.handle(throwable0, request.wrapHeadWithPathParameters(pathParameters), response);
+            return handler.handle(throwable0, request.wrapHeadWithPathParameters(pathParameters), response)
+                .map(ignored -> response.body().isPresent() || response.status().isPresent());
         }
         return Future.success(false);
     }
@@ -173,21 +171,17 @@ public class HttpCatcher<T extends Throwable> implements Comparable<HttpCatcher<
                 return c1;
             }
         }
-        if (exceptionClass != null) {
-            if (other.exceptionClass == null) {
-                return 1;
-            }
-            if (exceptionClass == other.exceptionClass) {
-                return 0;
-            }
-            if (exceptionClass.isAssignableFrom(other.exceptionClass)) {
-                return -1;
-            }
-            return 1;
+        if (exceptionClass == other.exceptionClass) {
+            return ordinal - other.ordinal;
         }
-        else if (other.exceptionClass == null) {
+        if (exceptionClass.isAssignableFrom(other.exceptionClass)) {
             return -1;
         }
-        return ordinal - other.ordinal;
+        if (other.exceptionClass.isAssignableFrom(exceptionClass)) {
+            return 1;
+        }
+        throw new IllegalStateException("Either of \"" + exceptionClass +
+            "\" and \"" + other.exceptionClass +
+            "\" does not extend \"Throwable\"");
     }
 }

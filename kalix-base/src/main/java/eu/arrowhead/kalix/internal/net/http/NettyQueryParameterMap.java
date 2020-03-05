@@ -6,8 +6,7 @@ import java.util.*;
 import java.util.function.Supplier;
 
 /**
- * An unmodifiable map of query parameters that is lazily initialized when
- * first accessed.
+ * A map of query parameters that is lazily initialized when first accessed.
  */
 public class NettyQueryParameterMap implements Map<String, List<String>> {
     private final Supplier<Map<String, List<String>>> mapSupplier;
@@ -58,31 +57,39 @@ public class NettyQueryParameterMap implements Map<String, List<String>> {
         if (map == null) {
             map = mapSupplier.get();
         }
-        final var value = map.get(key);
-        if (value == null) {
-            return null;
-        }
-        return Collections.unmodifiableList(value);
+        return map.get(key);
     }
 
     @Override
     public List<String> put(final String key, final List<String> value) {
-        throw new UnsupportedOperationException();
+        if (map == null) {
+            map = mapSupplier.get();
+        }
+        return map.put(key, value);
     }
 
     @Override
     public List<String> remove(final Object key) {
-        throw new UnsupportedOperationException();
+        if (map == null) {
+            map = mapSupplier.get();
+        }
+        return map.remove(key);
     }
 
     @Override
     public void putAll(final Map<? extends String, ? extends List<String>> m) {
-        throw new UnsupportedOperationException();
+        if (map == null) {
+            map = mapSupplier.get();
+        }
+        map.putAll(m);
     }
 
     @Override
     public void clear() {
-        throw new UnsupportedOperationException();
+        if (map == null) {
+            map = mapSupplier.get();
+        }
+        map.clear();
     }
 
     @Override
@@ -90,7 +97,7 @@ public class NettyQueryParameterMap implements Map<String, List<String>> {
         if (map == null) {
             map = mapSupplier.get();
         }
-        return Collections.unmodifiableSet(map.keySet());
+        return map.keySet();
     }
 
     @Override
@@ -98,7 +105,7 @@ public class NettyQueryParameterMap implements Map<String, List<String>> {
         if (map == null) {
             map = mapSupplier.get();
         }
-        return Collections.unmodifiableCollection(map.values());
+        return map.values();
     }
 
     @Override
@@ -106,6 +113,6 @@ public class NettyQueryParameterMap implements Map<String, List<String>> {
         if (map == null) {
             map = mapSupplier.get();
         }
-        return Collections.unmodifiableSet(map.entrySet());
+        return map.entrySet();
     }
 }

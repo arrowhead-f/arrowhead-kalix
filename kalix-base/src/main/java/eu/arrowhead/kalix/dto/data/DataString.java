@@ -1,13 +1,14 @@
-package eu.arrowhead.kalix.dto.util;
+package eu.arrowhead.kalix.dto.data;
 
+import eu.arrowhead.kalix.dto.DataReadable;
 import eu.arrowhead.kalix.dto.DataWritable;
 
 import java.util.Objects;
 
-public class StringWritable implements DataWritable {
+public class DataString implements DataReadable, DataWritable {
     private final String string;
 
-    public StringWritable(final String string) {
+    public DataString(final String string) {
         this.string = Objects.requireNonNull(string, "Expected string");
     }
 

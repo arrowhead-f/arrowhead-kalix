@@ -16,9 +16,11 @@ public interface HttpCatcherHandler<T extends Throwable> {
      * @param request   Information about the incoming HTTP request, excluding
      *                  its body.
      * @param response  An object useful for indicating how the request is to
-     *                  be responded to.
-     * @return Future completed when catching is complete. Its value should be
-     * {@code true} only if the throwable was handled.
+     *                  be responded to. If a status code or body is set by
+     *                  this handler, the provided request is responded to
+     *                  immediately, which implies that no more catchers are
+     *                  invoked with the request.
+     * @return Future completed when catching is complete.
      * @throws Exception Whatever exception the handle may want to throw. If
      *                   the HTTP service owning this handle knows how to
      *                   translate the exception into a certain kind of HTTP
@@ -27,5 +29,5 @@ public interface HttpCatcherHandler<T extends Throwable> {
      *                   any details and the exception be logged (if logging is
      *                   enabled).
      */
-    Future<Boolean> handle(T throwable, HttpServiceRequestHead request, HttpServiceResponse response) throws Exception;
+    Future<?> handle(T throwable, HttpServiceRequestHead request, HttpServiceResponse response) throws Exception;
 }

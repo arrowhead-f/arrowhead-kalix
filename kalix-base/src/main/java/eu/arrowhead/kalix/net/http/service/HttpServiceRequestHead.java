@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * The head part of an incoming HTTP request, handled by a {@link HttpService}.
+ * The head part of an incoming HTTP request.
  */
 public interface HttpServiceRequestHead {
     /**

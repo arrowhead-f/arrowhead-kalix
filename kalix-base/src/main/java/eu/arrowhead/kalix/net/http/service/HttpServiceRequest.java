@@ -6,8 +6,6 @@ import eu.arrowhead.kalix.net.http.HttpMethod;
 import eu.arrowhead.kalix.net.http.HttpVersion;
 import eu.arrowhead.kalix.util.concurrent.Future;
 
-import java.io.InputStream;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -15,21 +13,28 @@ import java.util.function.Supplier;
  * An incoming HTTP request, handled by a {@link HttpService}, that has not yet
  * been matched against any validator, route or catcher.
  */
-public abstract class HttpServiceRequest implements HttpServiceRequestFull {
+public class HttpServiceRequest implements HttpServiceRequestFull {
     private final HttpVersion version;
-    private final HttpHeaders headers;
     private final HttpMethod method;
     private final String path;
     private final Map<String, List<String>> queryParameters;
+    private final HttpHeaders headers;
+    private final HttpServiceRequestBody body;
     private final Supplier<HttpRequester> requesterSupplier;
 
-    protected HttpServiceRequest(final Builder<?, ? extends HttpServiceRequest> builder) {
+    protected HttpServiceRequest(final Builder builder) {
         version = Objects.requireNonNull(builder.version, "Expected version");
-        headers = Objects.requireNonNull(builder.headers, "Expected headers");
         method = Objects.requireNonNull(builder.method, "Expected method");
         path = Objects.requireNonNull(builder.path, "Expected path");
         queryParameters = Objects.requireNonNull(builder.queryParameters, "Expected queryParameters");
+        headers = Objects.requireNonNull(builder.headers, "Expected headers");
+        body = Objects.requireNonNull(builder.body, "Expected body");
         requesterSupplier = Objects.requireNonNull(builder.requesterSupplier, "Expected requesterSupplier");
+    }
+
+    @Override
+    public <R extends DataReadable> Future<R> bodyAs(final Class<R> class_) {
+        return body.bodyAs(class_);
     }
 
     @Override
@@ -58,16 +63,16 @@ public abstract class HttpServiceRequest implements HttpServiceRequestFull {
     }
 
     @Override
-    public List<String> pathParameters() {
-        return Collections.emptyList();
-    }
-
-    @Override
     public List<String> queryParameters(final String name) {
-        final var parameters =  queryParameters.get(name);
+        final var parameters = queryParameters.get(name);
         return parameters != null
             ? Collections.unmodifiableList(parameters)
             : Collections.emptyList();
+    }
+
+    @Override
+    public List<String> pathParameters() {
+        return Collections.emptyList();
     }
 
     @Override
@@ -96,26 +101,6 @@ public abstract class HttpServiceRequest implements HttpServiceRequestFull {
             @Override
             public <R extends DataReadable> Future<R> bodyAs(final Class<R> class_) {
                 return self.bodyAs(class_);
-            }
-
-            @Override
-            public Future<byte[]> bodyAsBytes() {
-                return self.bodyAsBytes();
-            }
-
-            @Override
-            public InputStream bodyAsStream() {
-                return self.bodyAsStream();
-            }
-
-            @Override
-            public Future<String> bodyAsString() {
-                return self.bodyAsString();
-            }
-
-            @Override
-            public Future<?> bodyToPath(final Path path) {
-                return self.bodyToPath(path);
             }
 
             @Override
@@ -233,74 +218,86 @@ public abstract class HttpServiceRequest implements HttpServiceRequestFull {
     /**
      * Builder for constructing {@link HttpServiceRequest} instances.
      */
-    public static abstract class Builder<B extends Builder<?, ? extends R>, R extends HttpServiceRequest> {
+    public static class Builder {
         private HttpVersion version;
-        private HttpHeaders headers;
         private HttpMethod method;
         private String path;
         private Map<String, List<String>> queryParameters;
+        private HttpHeaders headers;
+        private HttpServiceRequestBody body;
         private Supplier<HttpRequester> requesterSupplier;
-
-        protected abstract B self();
 
         /**
          * @param version Request HTTP version.
          * @return This builder.
          */
-        public B version(final HttpVersion version) {
+        public Builder version(final HttpVersion version) {
             this.version = version;
-            return self();
-        }
-
-        /**
-         * @param headers Request headers.
-         * @return This builder.
-         */
-        public B headers(final HttpHeaders headers) {
-            this.headers = headers;
-            return self();
+            return this;
         }
 
         /**
          * @param method Request method.
          * @return This builder.
          */
-        public B method(final HttpMethod method) {
+        public Builder method(final HttpMethod method) {
             this.method = method;
-            return self();
+            return this;
         }
 
         /**
          * @param path Request path.
          * @return This builder.
          */
-        public B path(final String path) {
+        public Builder path(final String path) {
             this.path = path;
-            return self();
+            return this;
         }
 
         /**
          * @param queryParameters Request query parameters.
          * @return This builder.
          */
-        public B queryParameters(final Map<String, List<String>> queryParameters) {
+        public Builder queryParameters(final Map<String, List<String>> queryParameters) {
             this.queryParameters = queryParameters;
-            return self();
+            return this;
         }
 
         /**
-         * @param requesterSupplier Function useful for resolving the original
-         *                          sender of the built request.
+         * @param headers Request headers.
          * @return This builder.
          */
-        public B requesterSupplier(final Supplier<HttpRequester> requesterSupplier) {
+        public Builder headers(final HttpHeaders headers) {
+            this.headers = headers;
+            return this;
+        }
+
+        /**
+         * @param body Handler used to execute one out of several possible
+         *             request body retrieval strategies.
+         * @return This builder.
+         */
+        public Builder body(final HttpServiceRequestBody body) {
+            this.body = body;
+            return this;
+        }
+
+        /**
+         * @param requesterSupplier Function useful for lazily assembling data
+         *                          about the original sender of the built
+         *                          request.
+         * @return This builder.
+         */
+        public Builder requesterSupplier(final Supplier<HttpRequester> requesterSupplier) {
             this.requesterSupplier = requesterSupplier;
-            return self();
+            return this;
         }
 
         /**
          * @return New HTTP request object.
          */
-        public abstract R build();
+        public HttpServiceRequest build() {
+            return new HttpServiceRequest(this);
+        }
     }
 }

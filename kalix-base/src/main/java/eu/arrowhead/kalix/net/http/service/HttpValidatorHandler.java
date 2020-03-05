@@ -14,7 +14,10 @@ public interface HttpValidatorHandler {
      * @param request  Information about the incoming HTTP request, excluding
      *                 its body.
      * @param response An object useful for indicating how the request is to be
-     *                 responded to.
+     *                 responded to. If a status code or body is set by this
+     *                 handler, the provided request is responded to
+     *                 immediately, which implies that no more validators or
+     *                 any route is invoked with the request.
      * @return Future completed when validation is complete.
      * @throws Exception Whatever exception the handle may want to throw. If
      *                   the HTTP service owning this handle knows how to

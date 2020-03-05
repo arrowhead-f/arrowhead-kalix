@@ -244,8 +244,12 @@ public class HttpService {
          * @return This builder.
          * @see #catcher(HttpCatcher)
          */
-        public Builder catcher(final HttpMethod method, final String pattern, final HttpCatcherHandler<?> handler) {
-            return catcher(method, pattern, null, handler);
+        public Builder catcher(
+            final HttpMethod method,
+            final String pattern,
+            final HttpCatcherHandler<Throwable> handler)
+        {
+            return catcher(method, pattern, Throwable.class, handler);
         }
 
         /**
@@ -264,8 +268,8 @@ public class HttpService {
          * @return This builder.
          * @see #catcher(HttpCatcher)
          */
-        public Builder catcher(final String pattern, final HttpCatcherHandler<?> handler) {
-            return catcher(null, pattern, null, handler);
+        public Builder catcher(final String pattern, final HttpCatcherHandler<Throwable> handler) {
+            return catcher(null, pattern, Throwable.class, handler);
         }
 
         /**
@@ -308,8 +312,8 @@ public class HttpService {
          * @return This builder.
          * @see #catcher(HttpCatcher)
          */
-        public Builder catcher(final HttpMethod method, final HttpCatcherHandler<?> handler) {
-            return catcher(method, null, null, handler);
+        public Builder catcher(final HttpMethod method, final HttpCatcherHandler<Throwable> handler) {
+            return catcher(method, null, Throwable.class, handler);
         }
 
         /**
@@ -374,8 +378,8 @@ public class HttpService {
          * @return This builder.
          * @see #catcher(HttpCatcher)
          */
-        public Builder catcher(final HttpCatcherHandler<?> handler) {
-            return catcher(null, null, null, handler);
+        public Builder catcher(final HttpCatcherHandler<Throwable> handler) {
+            return catcher(null, null, Throwable.class, handler);
         }
 
         /**

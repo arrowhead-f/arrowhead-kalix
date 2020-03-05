@@ -44,7 +44,7 @@ public class HttpHeaders implements Iterable<Map.Entry<String, String>> {
      * Arrowhead Framework, for which reason no guarantees about supporting
      * them properly are given here.
      *
-     * @param name  Name of header. Not case sensitive.
+     * @param name  Name of header. Not case sensitive. Prefer lowercase.
      * @param value Value of header.
      * @return This collection.
      * @see <a href="https://tools.ietf.org/html/rfc7230#section-3.2.2">RFC 7230, Section 3.2.2</a>
@@ -62,7 +62,7 @@ public class HttpHeaders implements Iterable<Map.Entry<String, String>> {
      * Note that HTTP headers are allowed to have multiple values separated by
      * commas ({@code ,}). If you expect a name to be associated with multiple
      * values, consider using {@link #getAll(String)} to ensure that they
-     * are extracted properly.
+     * are all extracted.
      *
      * @param name Name associated with desired value. Not case sensitive.
      * @return Desired value, if available.
@@ -90,7 +90,7 @@ public class HttpHeaders implements Iterable<Map.Entry<String, String>> {
      *
      * @param name Name of header value to get and split, as described above.
      *             Note that header names are not case sensitive.
-     * @return List of values, if any.
+     * @return List of values, which may be empty.
      * @see <a href="https://tools.ietf.org/html/rfc7230#section-3.2.2">RFC 7230, Section 3.2.2</a>
      * @see <a href="https://tools.ietf.org/html/rfc7230#section-3.2.6">RFC 7230, Section 3.2.6</a>
      */
