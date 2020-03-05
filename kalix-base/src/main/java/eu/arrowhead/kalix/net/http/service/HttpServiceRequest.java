@@ -33,7 +33,7 @@ public class HttpServiceRequest implements HttpServiceRequestFull {
     }
 
     @Override
-    public <R extends DataReadable> Future<R> bodyAs(final Class<R> class_) {
+    public <R extends DataReadable> Future<? extends R> bodyAs(final Class<R> class_) {
         return body.bodyAs(class_);
     }
 
@@ -99,7 +99,7 @@ public class HttpServiceRequest implements HttpServiceRequestFull {
         final var self = this;
         return new HttpServiceRequestFull() {
             @Override
-            public <R extends DataReadable> Future<R> bodyAs(final Class<R> class_) {
+            public <R extends DataReadable> Future<? extends R> bodyAs(final Class<R> class_) {
                 return self.bodyAs(class_);
             }
 

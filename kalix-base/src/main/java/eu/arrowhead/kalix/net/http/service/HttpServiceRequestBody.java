@@ -25,5 +25,5 @@ public interface HttpServiceRequestBody {
      * @param <R>    Type of {@code class_}.
      * @return Future completed when request body becomes available for usage.
      */
-    <R extends DataReadable> Future<R> bodyAs(final Class<R> class_);
+    <R extends DataReadable> Future<? extends R> bodyAs(final Class<R> class_);
 }

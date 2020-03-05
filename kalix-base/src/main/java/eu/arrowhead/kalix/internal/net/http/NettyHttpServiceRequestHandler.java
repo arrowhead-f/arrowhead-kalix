@@ -45,7 +45,7 @@ public class NettyHttpServiceRequestHandler extends SimpleChannelInboundHandler<
 
     private void handleRequest(final ChannelHandlerContext ctx, final HttpRequest request) {
         this.request = request;
-        this.body = new NettyHttpServiceRequestBody();
+        this.body = new NettyHttpServiceRequestBody(ctx.alloc(), request.headers());
 
         // TODO: Make sure configured size restrictions are honored by request headers.
         if (HttpUtil.is100ContinueExpected(request)) {

@@ -6,7 +6,7 @@ import eu.arrowhead.kalix.dto.DataWritable;
 import java.nio.file.Path;
 import java.util.Objects;
 
-public class DataPath implements DataReadable, DataWritable {
+public final class DataPath implements DataReadable, DataWritable {
     private final Path path;
 
     public DataPath(final Path path) {
