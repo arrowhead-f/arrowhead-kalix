@@ -3,6 +3,7 @@ package eu.arrowhead.kalix.util.concurrent;
 import eu.arrowhead.kalix.util.Result;
 import eu.arrowhead.kalix.util.function.ThrowingFunction;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -10,7 +11,7 @@ import java.util.function.Consumer;
  *
  * @param <V> Type of value.
  */
-class FutureSuccess<V> implements Future<V> {
+class FutureSuccess<V> implements FutureProgress<V> {
     private final V value;
     private boolean isDone = false;
 
@@ -25,6 +26,7 @@ class FutureSuccess<V> implements Future<V> {
 
     @Override
     public void onResult(final Consumer<Result<V>> consumer) {
+        Objects.requireNonNull(consumer, "Expected consumer");
         if (!isDone) {
             consumer.accept(Result.success(value));
             isDone = true;
@@ -37,7 +39,14 @@ class FutureSuccess<V> implements Future<V> {
     }
 
     @Override
+    public FutureProgress<V> onProgress(final Listener listener) {
+        Objects.requireNonNull(listener, "Expected listener");
+        return this;
+    }
+
+    @Override
     public <U> Future<U> map(final ThrowingFunction<? super V, ? extends U> mapper) {
+        Objects.requireNonNull(mapper, "Expected mapper");
         try {
             return Future.success(mapper.apply(value));
         }
@@ -47,12 +56,37 @@ class FutureSuccess<V> implements Future<V> {
     }
 
     @Override
+    public Future<V> mapCatch(final ThrowingFunction<Throwable, ? extends V> mapper) {
+        Objects.requireNonNull(mapper, "Expected mapper");
+        return new FutureSuccess<>(value);
+    }
+
+    @Override
+    public Future<V> mapError(final ThrowingFunction<Throwable, Throwable> mapper) {
+        Objects.requireNonNull(mapper, "Expected mapper");
+        return new FutureSuccess<>(value);
+    }
+
+    @Override
     public <U> Future<U> flatMap(final ThrowingFunction<? super V, ? extends Future<U>> mapper) {
+        Objects.requireNonNull(mapper, "Expected mapper");
         try {
             return mapper.apply(value);
         }
         catch (final Throwable error) {
             return Future.failure(error);
         }
+    }
+
+    @Override
+    public Future<V> flatMapCatch(final ThrowingFunction<Throwable, ? extends Future<V>> mapper) {
+        Objects.requireNonNull(mapper, "Expected mapper");
+        return new FutureSuccess<>(value);
+    }
+
+    @Override
+    public Future<V> flatMapError(final ThrowingFunction<Throwable, ? extends Future<? extends Throwable>> mapper) {
+        Objects.requireNonNull(mapper, "Expected mapper");
+        return new FutureSuccess<>(value);
     }
 }

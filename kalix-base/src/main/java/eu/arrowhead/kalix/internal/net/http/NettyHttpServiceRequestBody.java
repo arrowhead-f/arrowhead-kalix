@@ -1,12 +1,10 @@
 package eu.arrowhead.kalix.internal.net.http;
 
 import eu.arrowhead.kalix.dto.DataReadable;
-import eu.arrowhead.kalix.dto.data.DataByteArray;
-import eu.arrowhead.kalix.dto.data.DataStream;
-import eu.arrowhead.kalix.dto.data.DataString;
 import eu.arrowhead.kalix.net.http.service.HttpServiceRequestBody;
 import eu.arrowhead.kalix.util.Result;
 import eu.arrowhead.kalix.util.concurrent.Future;
+import eu.arrowhead.kalix.util.concurrent.FutureProgress;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufInputStream;
@@ -17,6 +15,7 @@ import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
 
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -24,12 +23,13 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.CancellationException;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
     private final ByteBufAllocator alloc;
     private final HttpHeaders headers;
 
-    private BodyFuture<?> body;
+    private FutureBody<?> body;
     private Queue<HttpContent> pendingContent;
     private Throwable pendingThrowable;
 
@@ -111,32 +111,47 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
     }
 
     @Override
-    public <R extends DataReadable> Future<? extends R> bodyAs(final Class<R> class_) {
+    public <R extends DataReadable> FutureProgress<? extends R> bodyAs(final Class<R> class_) {
+        return handleBodyRequest(() -> {
+            throw new IllegalStateException("Unexpected class \"" + class_ +
+                "\"; only generated and special DTO classes may be " +
+                "requested as response bodies");
+        });
+    }
+
+    @Override
+    public FutureProgress<byte[]> bodyAsByteArray() {
+        return handleBodyRequest(() -> new FutureBodyAsByteArray(alloc));
+    }
+
+    @Override
+    public FutureProgress<? extends InputStream> bodyAsStream() {
+        return handleBodyRequest(() -> new FutureBodyAsStream(alloc));
+    }
+
+    @Override
+    public FutureProgress<String> bodyAsString() {
+        return handleBodyRequest(() -> new FutureBodyAsString(alloc, headers));
+    }
+
+    @Override
+    public FutureProgress<Path> bodyTo(final Path path, final boolean append) {
+        return handleBodyRequest(() -> new FutureBodyToPath(path, append, headers));
+    }
+
+    private <V> FutureProgress<V> handleBodyRequest(final Supplier<FutureBody<V>> futureBodySupplier) {
         if (isBodyRequested) {
-            throw new IllegalStateException("The body of this request has " +
-                "already been requested");
+            throw new IllegalStateException("HTTP request body has already " +
+                "been requested");
         }
         isBodyRequested = true;
 
         if (isAborted) {
-            return Future.failure(pendingThrowable);
+            return FutureProgress.failure(pendingThrowable);
         }
 
-        if (class_ == DataByteArray.class) {
-            body = new BodyFutureDataByteArray(alloc);
-        }
-        else if (class_ == DataStream.class) {
-            body = new BodyFutureDataStream(alloc);
-        }
-        else if (class_ == DataString.class) {
-            body = new BodyFutureDataString(alloc, headers);
-        }
-        // TODO: Handle generated DTO classes.
-        if (body == null) {
-            throw new IllegalStateException("Unexpected class \"" + class_ +
-                "\"; only generated and special DTO classes may be " +
-                "requested as response bodies");
-        }
+        final var body = futureBodySupplier.get();
+        this.body = body;
 
         if (isFinished) {
             if (pendingContent != null) {
@@ -148,50 +163,49 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
             body.finish();
         }
 
-        return uncheckedCast(body);
+        return body;
     }
 
-    @SuppressWarnings("unchecked")
-    private <R> Future<? extends R> uncheckedCast(BodyFuture<?> bodyFuture) {
-        return (Future<? extends R>) bodyFuture;
-    }
+    private static abstract class FutureBody<V> implements FutureProgress<V> {
+        private final int expectedContentLength;
 
-    @Override
-    public Future<Path> bodyTo(final Path path, final boolean append) {
-        if (isBodyRequested) {
-            throw new IllegalStateException("The body of this request has " +
-                "already been requested");
-        }
-        isBodyRequested = true;
-
-        if (isAborted) {
-            return Future.failure(pendingThrowable);
-        }
-
-        final var appender = new BodyFutureDataPath(path, append);
-
-        if (isFinished) {
-            if (pendingContent != null) {
-                for (final var content : pendingContent) {
-                    appender.append(content);
-                }
-                pendingContent = null;
-            }
-            appender.finish();
-        }
-        else {
-            this.body = appender;
-        }
-
-        return appender;
-    }
-
-    private static abstract class BodyFuture<V> implements Future<V> {
         private Consumer<Result<V>> consumer = null;
         private Result<V> pendingResult = null;
+        private Listener listener = null;
         private boolean isCancelled = false;
+        private boolean isCompleted = false;
+        private int currentProgress = 0;
 
-        protected void fulfill(final Result<V> result) {
+        protected FutureBody(final int expectedContentLength) {
+            this.expectedContentLength = expectedContentLength;
+        }
+
+        public void abort(final Throwable throwable) {
+            complete(Result.failure(throwable));
+        }
+
+        public void append(final HttpContent content) {
+            final var buffer = content.content();
+            if (listener != null) {
+                currentProgress += buffer.readableBytes();
+                try {
+                    listener.onProgress(currentProgress, Math.max(currentProgress, expectedContentLength));
+                }
+                catch (final Throwable throwable) {
+                    complete(Result.failure(throwable));
+                }
+            }
+            append(buffer);
+        }
+
+        protected abstract void append(ByteBuf buffer);
+
+        protected void complete(final Result<V> result) {
+            if (isCompleted) {
+                return;
+            }
+            isCompleted = true;
+
             if (consumer != null) {
                 consumer.accept(isCancelled
                     ? Result.failure(new CancellationException())
@@ -202,18 +216,17 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
             }
         }
 
-        public void abort(final Throwable throwable) {
-            fulfill(Result.failure(throwable));
-        }
-
-        public abstract void append(HttpContent content);
-
+        public abstract void finish();
 
         public boolean isCancelled() {
             return isCancelled;
         }
 
-        public abstract void finish();
+        @Override
+        public Future<V> onProgress(final Listener listener) {
+            this.listener = listener;
+            return this;
+        }
 
         @Override
         public void onResult(final Consumer<Result<V>> consumer) {
@@ -231,46 +244,48 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
         }
     }
 
-    private static abstract class BodyFutureBuffering<V> extends BodyFuture<V> {
+    private static abstract class FutureBodyBuffered<V> extends FutureBody<V> {
         private final CompositeByteBuf buffer;
 
-        private BodyFutureBuffering(final ByteBufAllocator alloc) {
+        private FutureBodyBuffered(final ByteBufAllocator alloc) {
+            super(0);
             buffer = alloc.compositeBuffer();
         }
 
         public abstract V assembleValue(ByteBuf buffer);
 
         @Override
-        public void append(final HttpContent content) {
-            buffer.addComponent(content.content());
+        public void append(final ByteBuf buffer) {
+            this.buffer.addComponent(buffer);
         }
 
         @Override
         public void finish() {
-            fulfill(Result.success(assembleValue(buffer)));
+            complete(Result.success(assembleValue(buffer)));
         }
     }
 
-    private static class BodyFutureDataByteArray extends BodyFutureBuffering<DataByteArray> {
-        public BodyFutureDataByteArray(final ByteBufAllocator alloc) {
+    private static class FutureBodyAsByteArray extends FutureBodyBuffered<byte[]> {
+        public FutureBodyAsByteArray(final ByteBufAllocator alloc) {
             super(alloc);
         }
 
         @Override
-        public DataByteArray assembleValue(final ByteBuf buffer) {
+        public byte[] assembleValue(final ByteBuf buffer) {
             final var byteArray = new byte[buffer.readableBytes()];
             buffer.readBytes(byteArray);
             buffer.release();
-            return new DataByteArray(byteArray);
+            return byteArray;
         }
     }
 
-    private static class BodyFutureDataPath extends BodyFuture<Path> {
+    private static class FutureBodyToPath extends FutureBody<Path> {
         private final Path path;
 
         private FileOutputStream stream;
 
-        public BodyFutureDataPath(final Path path, final boolean append) {
+        public FutureBodyToPath(final Path path, final boolean append, final HttpHeaders headers) {
+            super(headers.getInt("content-length", 0));
             FileOutputStream stream;
             try {
                 stream = new FileOutputStream(path.toFile(), append);
@@ -284,17 +299,16 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
         }
 
         @Override
-        public void append(final HttpContent content) {
+        public void append(final ByteBuf buffer) {
             if (stream == null) {
                 return;
             }
-            final var buffer = content.content();
             try {
-                buffer.readBytes(stream, buffer.readableBytes());
+                final var length = buffer.readableBytes();
+                buffer.readBytes(stream, length);
             }
             catch (final Throwable throwable) {
                 abort(throwable);
-                stream = null;
             }
         }
 
@@ -309,38 +323,38 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
                 catch (final Throwable throwable) {
                     result = Result.failure(throwable);
                 }
-                fulfill(result);
+                complete(result);
             }
             // If stream is null, we have already presented a Throwable to the
             // consumer of this Future.
         }
     }
 
-    private static class BodyFutureDataStream extends BodyFutureBuffering<DataStream> {
-        private BodyFutureDataStream(final ByteBufAllocator alloc) {
+    private static class FutureBodyAsStream extends FutureBodyBuffered<InputStream> {
+        private FutureBodyAsStream(final ByteBufAllocator alloc) {
             super(alloc);
         }
 
         @Override
-        public DataStream assembleValue(final ByteBuf buffer) {
-            return new DataStream(new ByteBufInputStream(buffer, true));
+        public InputStream assembleValue(final ByteBuf buffer) {
+            return new ByteBufInputStream(buffer, true);
         }
     }
 
-    private static class BodyFutureDataString extends BodyFutureBuffering<DataString> {
+    private static class FutureBodyAsString extends FutureBodyBuffered<String> {
         private final Charset charset;
 
-        public BodyFutureDataString(final ByteBufAllocator alloc, final HttpHeaders headers) {
+        public FutureBodyAsString(final ByteBufAllocator alloc, final HttpHeaders headers) {
             super(alloc);
             charset = HttpUtil.getCharset(headers.get("content-type"), StandardCharsets.UTF_8);
         }
 
         @Override
-        public DataString assembleValue(final ByteBuf buffer) {
+        public String assembleValue(final ByteBuf buffer) {
             final var byteArray = new byte[buffer.readableBytes()];
             buffer.readBytes(byteArray);
             buffer.release();
-            return new DataString(new String(byteArray, charset));
+            return new String(byteArray, charset);
         }
     }
 }

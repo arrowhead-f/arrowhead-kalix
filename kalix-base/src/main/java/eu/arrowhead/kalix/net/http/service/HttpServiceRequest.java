@@ -4,8 +4,9 @@ import eu.arrowhead.kalix.dto.DataReadable;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpMethod;
 import eu.arrowhead.kalix.net.http.HttpVersion;
-import eu.arrowhead.kalix.util.concurrent.Future;
+import eu.arrowhead.kalix.util.concurrent.FutureProgress;
 
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Supplier;
@@ -34,12 +35,27 @@ public class HttpServiceRequest implements HttpServiceRequestFull {
     }
 
     @Override
-    public <R extends DataReadable> Future<? extends R> bodyAs(final Class<R> class_) {
+    public <R extends DataReadable> FutureProgress<? extends R> bodyAs(final Class<R> class_) {
         return body.bodyAs(class_);
     }
 
     @Override
-    public Future<Path> bodyTo(final Path path, final boolean append) {
+    public FutureProgress<byte[]> bodyAsByteArray() {
+        return body.bodyAsByteArray();
+    }
+
+    @Override
+    public FutureProgress<? extends InputStream> bodyAsStream() {
+        return body.bodyAsStream();
+    }
+
+    @Override
+    public FutureProgress<String> bodyAsString() {
+        return body.bodyAsString();
+    }
+
+    @Override
+    public FutureProgress<Path> bodyTo(final Path path, final boolean append) {
         return body.bodyTo(path, append);
     }
 
@@ -105,12 +121,27 @@ public class HttpServiceRequest implements HttpServiceRequestFull {
         final var self = this;
         return new HttpServiceRequestFull() {
             @Override
-            public <R extends DataReadable> Future<? extends R> bodyAs(final Class<R> class_) {
+            public <R extends DataReadable> FutureProgress<? extends R> bodyAs(final Class<R> class_) {
                 return self.bodyAs(class_);
             }
 
             @Override
-            public Future<Path> bodyTo(final Path path, final boolean append) {
+            public FutureProgress<byte[]> bodyAsByteArray() {
+                return self.bodyAsByteArray();
+            }
+
+            @Override
+            public FutureProgress<? extends InputStream> bodyAsStream() {
+                return self.bodyAsStream();
+            }
+
+            @Override
+            public FutureProgress<String> bodyAsString() {
+                return self.bodyAsString();
+            }
+
+            @Override
+            public FutureProgress<Path> bodyTo(final Path path, final boolean append) {
                 return self.bodyTo(path, append);
             }
 
