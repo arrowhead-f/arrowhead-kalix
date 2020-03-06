@@ -15,14 +15,26 @@ import java.util.Optional;
 public class NettyHttp {
     private NettyHttp() {}
 
+    /**
+     * @param version Netty HTTP version.
+     * @return Kalix HTTP version.
+     */
     public static HttpVersion adapt(final io.netty.handler.codec.http.HttpVersion version) {
         return HttpVersion.getOrCreate(version.majorVersion(), version.minorVersion());
     }
 
+    /**
+     * @param method Netty HTTP method.
+     * @return Kalix HTTP method.
+     */
     public static HttpMethod adapt(final io.netty.handler.codec.http.HttpMethod method) {
         return HttpMethod.valueOf(method.name());
     }
 
+    /**
+     * @param headers Netty HTTP headers.
+     * @return Kalix HTTP headers.
+     */
     public static HttpHeaders adapt(final io.netty.handler.codec.http.HttpHeaders headers) {
         return new HttpHeaders() {
             @Override

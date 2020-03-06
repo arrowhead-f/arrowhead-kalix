@@ -89,16 +89,13 @@ public class HttpValidator implements Comparable<HttpValidator> {
     }
 
     /**
-     * Offers this validator the opportunity to respond to this request. If it
-     * does, it is assumed to the request needs no more processing and a
-     * response is to be immediately scheduled to the requester.
+     * Offers this validator the opportunity to respond to the request in the
+     * given task. If it does respond, it is assumed that the request needs no
+     * more processing and a response is sent to the requester immediately.
      * <p>
      * A validator will typically only handle a request if it is invalid.
      *
-     * @param request  Information about the incoming HTTP request, including
-     *                 its header and body.
-     * @param response An object useful for indicating how the request is to be
-     *                 responded to.
+     * @param task Incoming HTTP request route task.
      * @return Future completed when validation is complete. Its value is
      * {@code true} only if the request was handled.
      * @throws Exception Whatever exception the handle may want to throw. If
@@ -109,53 +106,60 @@ public class HttpValidator implements Comparable<HttpValidator> {
      *                   any details and the exception be logged (if logging is
      *                   enabled).
      */
-    public Future<Boolean> tryHandle(final HttpServiceRequest request, final HttpServiceResponse response)
-        throws Exception
-    {
+    public Future<Boolean> tryHandle(final HttpRouteTask task) throws Exception {
         mismatch:
         {
-            if (method != null && !method.equals(request.method())) {
+            if (method != null && !method.equals(task.request().method())) {
                 break mismatch;
             }
             final List<String> pathParameters;
             if (pattern != null) {
                 pathParameters = new ArrayList<>(pattern.nParameters());
-                if (!pattern.match(request.path(), pathParameters)) {
+                if (!pattern.match(task.request().path(), task.basePath().length(), pathParameters)) {
                     break mismatch;
                 }
             }
             else {
                 pathParameters = Collections.emptyList();
             }
-            return handler.handle(request.wrapHeadWithPathParameters(pathParameters), response)
-                .map(ignored -> response.body().isPresent() || response.status().isPresent());
+            final var response = task.response();
+            return handler.handle(task.request().wrapHeadWithPathParameters(pathParameters), response)
+                .map(ignored -> response.isInitialized());
         }
         return Future.success(false);
     }
 
     @Override
     public int compareTo(final HttpValidator other) {
-        if (method != null) {
-            if (other.method == null) {
-                return 1;
-            }
-            final var c0 = method.compareTo(other.method);
-            if (c0 != 0) {
-                return c0;
-            }
-        }
-        else if (other.method == null) {
-            return -1;
-        }
+        // Validators with patterns come before those without patterns.
         if (pattern != null) {
             if (other.pattern == null) {
-                return 1;
+                return -1;
             }
-            final var c1 = pattern.compareTo(other.pattern);
-            if (c1 != 0) {
-                return c1;
+            final var c = pattern.compareTo(other.pattern);
+            if (c != 0) {
+                return c;
             }
         }
+        else if (other.pattern != null) {
+            return 1;
+        }
+
+        // Validators with methods come before those without methods.
+        if (method != null) {
+            if (other.method == null) {
+                return -1;
+            }
+            final var c = method.compareTo(other.method);
+            if (c != 0) {
+                return c;
+            }
+        }
+        else if (other.method != null) {
+            return 1;
+        }
+
+        // If nothing else remains, use ordinals to decide order.
         return ordinal - other.ordinal;
     }
 }

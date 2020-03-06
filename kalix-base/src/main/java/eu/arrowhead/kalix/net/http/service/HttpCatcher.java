@@ -100,29 +100,21 @@ public class HttpCatcher<T extends Throwable> implements Comparable<HttpCatcher<
     /**
      * Tries to make this catcher handle the given exception.
      * <p>
-     * The exception will only be handled if the given request matches the
+     * The exception will only be handled if the given task request matches the
      * method, pattern and exception class of this catcher, and the handler
      * this class wraps reports that it did handle it.
      *
      * @param throwable Exception causing this handler to be invoked.
-     * @param request   Information about the incoming HTTP request, including
-     *                  its header and body.
-     * @param response  An object useful for indicating how the original
-     *                  request is to be responded to.
+     * @param task      Incoming HTTP request route task.
      * @return Future completed when catching is complete. Its value is
      * {@code true} only if the throwable was handled.
      * @throws Exception Whatever exception the handle may want to throw. This
      *                   exception is only thrown if the handle is executed.
      */
-    public Future<Boolean> tryHandle(
-        final Throwable throwable,
-        final HttpServiceRequest request,
-        final HttpServiceResponse response)
-        throws Exception
-    {
+    public Future<Boolean> tryHandle(final Throwable throwable, final HttpRouteTask task) throws Exception {
         mismatch:
         {
-            if (method != null && !method.equals(request.method())) {
+            if (method != null && !method.equals(task.request().method())) {
                 break mismatch;
             }
 
@@ -134,7 +126,7 @@ public class HttpCatcher<T extends Throwable> implements Comparable<HttpCatcher<
             final List<String> pathParameters;
             if (pattern != null) {
                 pathParameters = new ArrayList<>(pattern.nParameters());
-                if (!pattern.match(request.path(), pathParameters)) {
+                if (!pattern.match(task.request().path(), task.basePath().length(), pathParameters)) {
                     break mismatch;
                 }
             }
@@ -142,44 +134,56 @@ public class HttpCatcher<T extends Throwable> implements Comparable<HttpCatcher<
                 pathParameters = Collections.emptyList();
             }
 
-            return handler.handle(throwable0, request.wrapHeadWithPathParameters(pathParameters), response)
-                .map(ignored -> response.body().isPresent() || response.status().isPresent());
+            final var response = task.response();
+            return handler.handle(throwable0, task.request().wrapHeadWithPathParameters(pathParameters), response)
+                .map(ignored -> response.isInitialized());
         }
         return Future.success(false);
     }
 
     @Override
     public int compareTo(final HttpCatcher<?> other) {
-        if (method != null) {
-            if (other.method == null) {
-                return 1;
-            }
-            final var c0 = method.compareTo(other.method);
-            if (c0 != 0) {
-                return c0;
-            }
-        }
-        else if (other.method == null) {
-            return -1;
-        }
+        // Catchers with patterns come before those without patterns.
         if (pattern != null) {
             if (other.pattern == null) {
-                return 1;
+                return -1;
             }
-            final var c1 = pattern.compareTo(other.pattern);
-            if (c1 != 0) {
-                return c1;
+            final var c = pattern.compareTo(other.pattern);
+            if (c != 0) {
+                return c;
             }
         }
+        else if (other.pattern != null) {
+            return 1;
+        }
+
+        // Catchers with methods come before those without methods.
+        if (method != null) {
+            if (other.method == null) {
+                return -1;
+            }
+            final var c = method.compareTo(other.method);
+            if (c != 0) {
+                return c;
+            }
+        }
+        else if (other.method != null) {
+            return 1;
+        }
+
+        // Catchers with more specialized exception classes come before those
+        // with less specialized exception classes.
         if (exceptionClass == other.exceptionClass) {
+            // If nothing else remains, use ordinals to decide order.
             return ordinal - other.ordinal;
         }
         if (exceptionClass.isAssignableFrom(other.exceptionClass)) {
-            return -1;
-        }
-        if (other.exceptionClass.isAssignableFrom(exceptionClass)) {
             return 1;
         }
+        if (other.exceptionClass.isAssignableFrom(exceptionClass)) {
+            return -1;
+        }
+
         throw new IllegalStateException("Either of \"" + exceptionClass +
             "\" and \"" + other.exceptionClass +
             "\" does not extend \"Throwable\"");

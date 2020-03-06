@@ -1,8 +1,6 @@
 package eu.arrowhead.kalix.net.http.service;
 
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Factory class useful for constructing sound {@link HttpRouteSequence}
@@ -42,11 +40,11 @@ class HttpRouteSequenceFactory {
     HttpRouteSequence createRouteSequenceFor(final HttpRoute route) {
         final var routeValidators = validators.stream()
             .filter(validator -> validator.matchesIntersectionOf(route))
-            .collect(Collectors.toList());
+            .toArray(HttpValidator[]::new);
 
         final var routeCatchers = catchers.stream()
             .filter(catcher -> catcher.matchesIntersectionOf(route))
-            .collect(Collectors.toList());
+            .toArray(HttpCatcher[]::new);
 
         return new HttpRouteSequence(routeValidators, route, routeCatchers);
     }

@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.net.http.service;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -17,7 +18,7 @@ public class TestHttpPattern {
     void shouldMatchPattern(final String pattern, final String path, final String[] expectedParameters) {
         final var actualParameters = new ArrayList<String>(0);
         assertTrue(
-            HttpPattern.valueOf(pattern).match(path, actualParameters),
+            HttpPattern.valueOf(pattern).match(path, 0, actualParameters),
             "Pattern `" + pattern + "` does not match path `" + path + "`"
         );
         assertEquals(Arrays.asList(expectedParameters), actualParameters);
@@ -51,7 +52,7 @@ public class TestHttpPattern {
     void shouldNotMatchPattern(final String pattern, final String path) {
         final var actualParameters = new ArrayList<String>(0);
         assertFalse(
-            HttpPattern.valueOf(pattern).match(path, actualParameters),
+            HttpPattern.valueOf(pattern).match(path, 0, actualParameters),
             "Pattern `" + pattern + "` does match path `" + path + "`"
         );
     }
@@ -131,5 +132,46 @@ public class TestHttpPattern {
             arguments("/z/y", "/x/>"),
             arguments("/x/", "/x/y/z")
         );
+    }
+
+    @Test
+    void shouldSortPatternsCorrectly() {
+        final var patterns = Stream.of(
+            "/",
+            "/hello/morning",
+            "/#",
+            "/>",
+            "/hello",
+            "/hello/>",
+            "/hello/#name",
+            "/#/y/z",
+            "/#/y/#",
+            "/hello/goodbye",
+            "/#x/y/>",
+            "/#x/y"
+        );
+
+        final var actual = patterns
+            .map(HttpPattern::valueOf)
+            .sorted()
+            .map(HttpPattern::text)
+            .toArray(String[]::new);
+
+        final var expected = new String[]{
+            "/hello/goodbye",
+            "/hello/morning",
+            "/hello/#",
+            "/hello/>",
+            "/hello",
+            "/#/y/z",
+            "/#/y/#",
+            "/#/y/>",
+            "/#/y",
+            "/#",
+            "/",
+            "/>",
+        };
+
+        assertArrayEquals(expected, actual);
     }
 }

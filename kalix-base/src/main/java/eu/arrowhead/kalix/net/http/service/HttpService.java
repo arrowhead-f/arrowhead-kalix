@@ -1,15 +1,12 @@
 package eu.arrowhead.kalix.net.http.service;
 
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
-import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpMethod;
 import eu.arrowhead.kalix.net.http.HttpStatus;
 import eu.arrowhead.kalix.util.concurrent.Future;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * A concrete Arrowhead service, exposing its functions as HTTP endpoints.
@@ -21,7 +18,7 @@ public class HttpService {
     private final String name;
     private final String basePath;
     private final EncodingDescriptor[] encodings;
-    private final List<HttpRouteSequence> routeSequences;
+    private final HttpRouteSequence[] routeSequences;
 
     private HttpService(final Builder builder) {
         name = Objects.requireNonNull(builder.name, "Expected name");
@@ -38,12 +35,15 @@ public class HttpService {
         }
 
         encodings = Objects.requireNonNull(builder.encodings, "Expected encodings");
+        if (encodings.length == 0) {
+            throw new IllegalArgumentException("Expected encodings.length > 0");
+        }
 
         final var routeSequenceFactory = new HttpRouteSequenceFactory(builder.catchers, builder.validators);
         routeSequences = builder.routes.stream()
             .sorted()
             .map(routeSequenceFactory::createRouteSequenceFor)
-            .collect(Collectors.toList());
+            .toArray(HttpRouteSequence[]::new);
     }
 
     /**
@@ -62,6 +62,13 @@ public class HttpService {
     }
 
     /**
+     * @return The encoding to use by default.
+     */
+    public EncodingDescriptor defaultEncoding() {
+        return encodings[0];
+    }
+
+    /**
      * @return Data encodings supported by this service.
      */
     public EncodingDescriptor[] encodings() {
@@ -74,23 +81,29 @@ public class HttpService {
      * @param request  Incoming HTTP request.
      * @param response Modifiable HTTP response object, destined to be sent
      *                 back to the original request sender.
-     * @return Future completed with a {@code null} value when handling has
+     * @return Future completed with {@code null} value when handling has
      * finished.
      */
     public Future<?> handle(final HttpServiceRequest request, final HttpServiceResponse response) {
-        return Future
-            .flatReducePlain(routeSequences, false, (isHandled, routeSequence) -> {
+        final var task = new HttpRouteTask.Builder()
+            .basePath(basePath)
+            .request(request)
+            .response(response)
+            .build();
+
+        return Future.flatReducePlain(routeSequences, false,
+            (isHandled, routeSequence) -> {
                 if (isHandled) {
                     return Future.success(true);
                 }
-                return routeSequence.tryHandle(request, response);
+                return routeSequence.tryHandle(task);
             })
-            .flatMap(isHandled -> {
+            .map(isHandled -> {
                 if (!isHandled) {
                     response
                         .status(HttpStatus.NOT_FOUND)
-                        .headers(new HttpHeaders())
-                        .body(new byte[0]);
+                        .clearHeaders()
+                        .clearBody();
                 }
                 return null;
             });
@@ -156,20 +169,19 @@ public class HttpService {
          * Declares what data encodings this service can read and write.
          * <b>Must be specified.</b>
          * <p>
-         * While the {@code HttpArrowheadSystem} that will own this service
-         * will prevent messages claimed to be encoded with other encodings from
-         * being received, stating that an encoding can be read and written
-         * does not itself guarantee it. It is up to the {@link HttpService}
-         * creator to ensure that such capabilities are indeed available. For
-         * most intents and purposes, the most adequate way of achieving this
-         * is by using Data Transfer Objects (DTOs), more of which you can read
-         * about in the package documentation for the
-         * {@code eu.arrowhead.kalix.dto} package.
+         * While the created {@link HttpService} will prevent messages claimed
+         * to be encoded with other encodings from being received, stating that
+         * an encoding can be read and written does not itself guarantee it.
+         * It is up to the {@link HttpService} creator to ensure that such
+         * capabilities are indeed available. For most intents and purposes,
+         * the most adequate way of achieving this is by using Data Transfer
+         * Objects (DTOs), more of which you can read about in the package
+         * documentation for the {@code eu.arrowhead.kalix.dto} package.
          *
-         * @param encodings Encodings declared to be supported.
+         * @param encodings Encodings declared to be supported. At least one
+         *                  must be provided.
          * @return This builder.
          * @see eu.arrowhead.kalix.dto
-         * @see eu.arrowhead.kalix.net.http.HttpArrowheadSystem HttpArrowheadSystem
          */
         public Builder encodings(final EncodingDescriptor... encodings) {
             this.encodings = encodings;

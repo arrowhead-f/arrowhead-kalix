@@ -67,12 +67,14 @@ class HttpPattern implements Comparable<HttpPattern> {
      * dictated by RFC 3986.
      *
      * @param path       Path to match against.
+     * @param offset     Offset, from beginning of path, from which to start
+     *                   matching.
      * @param parameters List to store any pattern path parameters in.
      * @return {@code true} only if {@code path} matches this pattern.
      * @see HttpPattern
      * @see <a href="https://tools.ietf.org/html/rfc3986#section-3.3">RFC 3986, Section 3.3</a>
      */
-    boolean match(final String path, final List<String> parameters) {
+    boolean match(final String path, final int offset, final List<String> parameters) {
         // p0 = start of path;    p1 = end of path.
         // q0 = start of pattern; q1 = end of pattern.
 
@@ -84,15 +86,16 @@ class HttpPattern implements Comparable<HttpPattern> {
         final var q1 = pattern.length();
 
         if (nParameters == 0) { // Fast path for patterns without parameters.
-            if (isPrefix && p1 > q1 && pattern.regionMatches(0, path, 0, q1)) {
+            final var px = p1 - offset;
+            if (isPrefix && px > q1 && pattern.regionMatches(0, path, offset, q1)) {
                 parameters.add(path.substring(q1 - 1));
                 return true;
             }
-            return p1 == q1 && pattern.regionMatches(0, path, 0, q1);
+            return px == q1 && pattern.regionMatches(0, path, offset, q1);
         }
 
         int np = 0; // Number of found path parameters.
-        int p0 = 0, q0 = 0;
+        int p0 = offset, q0 = 0;
         while (true) {
             // Find first non-identical character.
             while (p0 < p1 && q0 < q1 && path.charAt(p0) == pattern.charAt(q0)) {
@@ -191,6 +194,13 @@ class HttpPattern implements Comparable<HttpPattern> {
      */
     int nParameters() {
         return nParameters;
+    }
+
+    /**
+     * @return Text representation of this pattern.
+     */
+    String text() {
+        return pattern + (isPrefix ? ">" : "");
     }
 
     /**
@@ -302,35 +312,40 @@ class HttpPattern implements Comparable<HttpPattern> {
     }
 
     /**
-     * <i>If this method is used to sort a list of patterns, then should trying
-     * a path against all the patterns of that list, beginning with the first,
-     * lead to the pattern matching the smallest possible set of paths
-     * including the given path to be tried first.</i>
+     * <i>The purpose of this comparator, which may seem rather arbitrary, is
+     * to ensure that pattern lists sorted with it are ordered such that
+     * comparing a path to each pattern in order leads to the most specialized
+     * pattern first matching the path. A pattern is more specialized than
+     * another such only if the subset of paths it can match is smaller than
+     * that of another pattern.</i>
      * <p>
      * {@inheritDoc}
      */
     @Override
     public int compareTo(final HttpPattern other) {
-        final var cmp0 = Boolean.compare(isPrefix, other.isPrefix);
-        if (cmp0 != 0) {
-            return cmp0;
-        }
         final var limit = Math.min(pattern.length(), other.pattern.length());
         for (var i = 0; i < limit; i++) {
             final var c0 = pattern.charAt(i);
             final var c1 = other.pattern.charAt(i);
             if (c0 != c1) {
-                // Ensure that paths with parameters always come after those
-                // without parameters.
+                // Paths with parameters come after those without parameters.
                 if (c0 == '#') {
                     return 1;
                 }
                 if (c1 == '#') {
                     return -1;
                 }
+
+                // Prefix paths come after both parameterized and regular paths.
+                final var b = Boolean.compare(isPrefix, other.isPrefix);
+                if (b != 0) {
+                    return b;
+                }
+
                 return c0 - c1;
             }
         }
-        return pattern.length() - other.pattern.length();
+        // Longer paths before shorter paths.
+        return other.pattern.length() - pattern.length();
     }
 }

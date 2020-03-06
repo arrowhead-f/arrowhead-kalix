@@ -5,6 +5,7 @@ import eu.arrowhead.kalix.util.concurrent.FutureProgress;
 
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.List;
 
 /**
  * The body of an incoming HTTP request.
@@ -39,6 +40,23 @@ public interface HttpServiceRequestBody {
     FutureProgress<byte[]> bodyAsByteArray();
 
     /**
+     * Requests that the body of the HTTP request be collected into a list of
+     * instances of the provided {@code class_}.
+     * <p>
+     * Note that only so-called Data Transfer Object (DTO) types may be decoded
+     * using this method. More details about such types can be read in the
+     * documentation for the {@link eu.arrowhead.kalix.dto} package.
+     *
+     * @param class_ Class to decode request body into.
+     * @param <R>    Type of {@code class_}.
+     * @return Future completed when the request body has been fully received
+     * and then decoded into an instance of {@code class_}.
+     * @throws IllegalStateException If more than one method with a name
+     *                               starting with "body" is called.
+     */
+    <R extends DataReadable> FutureProgress<List<? extends R>> bodyAsListOf(final Class<R> class_);
+
+    /**
      * Requests that the body of the HTTP request be collected into a regular
      * Java {@code InputStream}.
      * <p>
@@ -51,9 +69,9 @@ public interface HttpServiceRequestBody {
      * While it is technically possible to return an {@code InputStream}
      * without waiting for the body to have arrived in full, reading from that
      * stream would require blocking the current thread until more of the body
-     * arrives. That behavior does rhyme well with the concurrency model of the
-     * Kalix library, which tries to promote avoiding blocking I/O as far as
-     * possible. If expecting to receive a very large request body, consider
+     * arrives. That behavior does not rhyme well with the concurrency model of
+     * the Kalix library, which tries to promote avoiding blocking I/O as far
+     * as possible. If expecting to receive a very large request body, consider
      * using the {@link #bodyTo(Path, boolean)} method, which writes the body
      * directly to a file, as it arrives.
      *
@@ -100,9 +118,12 @@ public interface HttpServiceRequestBody {
      * The file will be created if it does not exist. If the {@code append}
      * parameter is {@code true}, the file is appended to rather than
      * overwritten.
-     *
-     * Using this method is the preferred way of receiving larger data objects,
-     * as it does not require buffering all of it in
+     * <p>
+     * Using this method, or {@link #bodyTo(Path)}, is the preferred way of
+     * receiving data objects that are too large to realistically fit in
+     * primary memory. This as received data is written directly to the target
+     * file as it is received, rather than being buffered until all of it
+     * becomes available.
      *
      * @param path   Path to file to contain request body.
      * @param append If {@code true}, any existing file at {@code path} will

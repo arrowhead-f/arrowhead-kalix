@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.net.http.service;
 
+import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.dto.DataReadable;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpMethod;
@@ -17,21 +18,23 @@ import java.util.function.Supplier;
  */
 public class HttpServiceRequest implements HttpServiceRequestFull {
     private final HttpVersion version;
+    private final EncodingDescriptor encoding;
     private final HttpMethod method;
     private final String path;
     private final Map<String, List<String>> queryParameters;
     private final HttpHeaders headers;
     private final HttpServiceRequestBody body;
-    private final Supplier<HttpRequester> requesterSupplier;
+    private final HttpRequester requester;
 
     protected HttpServiceRequest(final Builder builder) {
         version = Objects.requireNonNull(builder.version, "Expected version");
+        encoding = Objects.requireNonNull(builder.encoding, "Expected encoding");
         method = Objects.requireNonNull(builder.method, "Expected method");
         path = Objects.requireNonNull(builder.path, "Expected path");
         queryParameters = Objects.requireNonNull(builder.queryParameters, "Expected queryParameters");
         headers = Objects.requireNonNull(builder.headers, "Expected headers");
         body = Objects.requireNonNull(builder.body, "Expected body");
-        requesterSupplier = Objects.requireNonNull(builder.requesterSupplier, "Expected requesterSupplier");
+        requester = Objects.requireNonNull(builder.requester, "Expected requester");
     }
 
     @Override
@@ -42,6 +45,11 @@ public class HttpServiceRequest implements HttpServiceRequestFull {
     @Override
     public FutureProgress<byte[]> bodyAsByteArray() {
         return body.bodyAsByteArray();
+    }
+
+    @Override
+    public <R extends DataReadable> FutureProgress<List<? extends R>> bodyAsListOf(final Class<R> class_) {
+        return body.bodyAsListOf(class_);
     }
 
     @Override
@@ -60,8 +68,8 @@ public class HttpServiceRequest implements HttpServiceRequestFull {
     }
 
     @Override
-    public Optional<String> header(final String name) {
-        return headers.get(name);
+    public EncodingDescriptor encoding() {
+        return encoding;
     }
 
     @Override
@@ -80,19 +88,6 @@ public class HttpServiceRequest implements HttpServiceRequestFull {
     }
 
     @Override
-    public String pathParameter(final int index) {
-        throw new IndexOutOfBoundsException("No path parameters are available");
-    }
-
-    @Override
-    public List<String> queryParameters(final String name) {
-        final var parameters = queryParameters.get(name);
-        return parameters != null
-            ? Collections.unmodifiableList(parameters)
-            : Collections.emptyList();
-    }
-
-    @Override
     public List<String> pathParameters() {
         return Collections.emptyList();
     }
@@ -104,7 +99,7 @@ public class HttpServiceRequest implements HttpServiceRequestFull {
 
     @Override
     public HttpRequester requester() {
-        return requesterSupplier.get();
+        return requester;
     }
 
     @Override
@@ -131,6 +126,11 @@ public class HttpServiceRequest implements HttpServiceRequestFull {
             }
 
             @Override
+            public <R extends DataReadable> FutureProgress<List<? extends R>> bodyAsListOf(final Class<R> class_) {
+                return self.bodyAsListOf(class_);
+            }
+
+            @Override
             public FutureProgress<? extends InputStream> bodyAsStream() {
                 return self.bodyAsStream();
             }
@@ -141,13 +141,13 @@ public class HttpServiceRequest implements HttpServiceRequestFull {
             }
 
             @Override
-            public FutureProgress<Path> bodyTo(final Path path, final boolean append) {
-                return self.bodyTo(path, append);
+            public EncodingDescriptor encoding() {
+                return self.encoding();
             }
 
             @Override
-            public Optional<String> header(final String name) {
-                return self.header(name);
+            public FutureProgress<Path> bodyTo(final Path path, final boolean append) {
+                return self.bodyTo(path, append);
             }
 
             @Override
@@ -166,18 +166,8 @@ public class HttpServiceRequest implements HttpServiceRequestFull {
             }
 
             @Override
-            public String pathParameter(final int index) {
-                return pathParameters.get(index);
-            }
-
-            @Override
             public List<String> pathParameters() {
                 return pathParameters;
-            }
-
-            @Override
-            public List<String> queryParameters(final String name) {
-                return self.queryParameters(name);
             }
 
             @Override
@@ -206,8 +196,8 @@ public class HttpServiceRequest implements HttpServiceRequestFull {
         final var self = this;
         return new HttpServiceRequestHead() {
             @Override
-            public Optional<String> header(final String name) {
-                return self.header(name);
+            public EncodingDescriptor encoding() {
+                return self.encoding();
             }
 
             @Override
@@ -226,18 +216,8 @@ public class HttpServiceRequest implements HttpServiceRequestFull {
             }
 
             @Override
-            public String pathParameter(final int index) {
-                return pathParameters.get(index);
-            }
-
-            @Override
             public List<String> pathParameters() {
                 return pathParameters;
-            }
-
-            @Override
-            public List<String> queryParameters(final String name) {
-                return self.queryParameters(name);
             }
 
             @Override
@@ -262,12 +242,13 @@ public class HttpServiceRequest implements HttpServiceRequestFull {
      */
     public static class Builder {
         private HttpVersion version;
+        private EncodingDescriptor encoding;
         private HttpMethod method;
         private String path;
         private Map<String, List<String>> queryParameters;
         private HttpHeaders headers;
         private HttpServiceRequestBody body;
-        private Supplier<HttpRequester> requesterSupplier;
+        private HttpRequester requester;
 
         /**
          * @param version Request HTTP version.
@@ -275,6 +256,19 @@ public class HttpServiceRequest implements HttpServiceRequestFull {
          */
         public Builder version(final HttpVersion version) {
             this.version = version;
+            return this;
+        }
+
+        /**
+         * @param encoding Encoding used to encode request body. An encoding
+         *                 must be provided even if the request has no body.
+         *                 The encoding is a reflection of what Arrowhead
+         *                 service interface was selected for the request
+         *                 rather than any specifics about the request itself.
+         * @return This builder.
+         */
+        public Builder encoding(final EncodingDescriptor encoding) {
+            this.encoding = encoding;
             return this;
         }
 
@@ -325,13 +319,12 @@ public class HttpServiceRequest implements HttpServiceRequestFull {
         }
 
         /**
-         * @param requesterSupplier Function useful for lazily assembling data
-         *                          about the original sender of the built
-         *                          request.
+         * @param requester Information about the original sender of the
+         *                  created request.
          * @return This builder.
          */
-        public Builder requesterSupplier(final Supplier<HttpRequester> requesterSupplier) {
-            this.requesterSupplier = requesterSupplier;
+        public Builder requester(final HttpRequester requester) {
+            this.requester = requester;
             return this;
         }
 

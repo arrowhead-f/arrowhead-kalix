@@ -8,22 +8,13 @@ import java.util.regex.Pattern;
  */
 public class EncodingDescriptor {
     private final String name;
-    private final String mediaTypePatternString;
 
+    private String mediaTypePatternString;
     private Pattern mediaTypePattern;
 
     private EncodingDescriptor(final String name, final String mediaTypePattern) {
         this.name = Objects.requireNonNull(name, "Expected name");
-        this.mediaTypePatternString = mediaTypePattern != null
-            ? mediaTypePattern
-
-            // RFC 6838, Section 4.2.8 states that '"+suffix" constructs for
-            // as-yet unregistered structured syntaxes SHOULD NOT be used,
-            // given the possibility of conflicts with future suffix
-            // definitions.' For this reason, we cannot make any more
-            // assumptions about what a suitable MIME-type should look like
-            // than this.
-            : "^application\\/" + name.toLowerCase() + "$";
+        this.mediaTypePatternString = mediaTypePattern;
     }
 
     /**
@@ -50,8 +41,11 @@ public class EncodingDescriptor {
      * @return {@code true} only if this encoding could, theoretically, be used
      * to encode or decode data to/from the provided media type.
      */
-    public boolean usedByMediaType(final CharSequence mediaType) {
+    public boolean isUsedByMediaType(final CharSequence mediaType) {
         if (mediaTypePattern == null) {
+            if (mediaTypePatternString == null) {
+                mediaTypePatternString = "^application\\/" + name.toLowerCase() + "$";
+            }
             mediaTypePattern = Pattern.compile(mediaTypePatternString, Pattern.CASE_INSENSITIVE);
         }
         return mediaTypePattern.matcher(mediaType).find();

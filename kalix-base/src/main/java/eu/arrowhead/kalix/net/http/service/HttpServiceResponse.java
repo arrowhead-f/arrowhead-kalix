@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.net.http.service;
 
+import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.dto.data.DataByteArray;
 import eu.arrowhead.kalix.dto.data.DataPath;
 import eu.arrowhead.kalix.dto.data.DataString;
@@ -8,6 +9,7 @@ import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpStatus;
 import eu.arrowhead.kalix.net.http.HttpVersion;
 
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -16,6 +18,7 @@ import java.util.Optional;
  * An outgoing HTTP response, to be sent by an {@link HttpService}.
  */
 public class HttpServiceResponse {
+    private final EncodingDescriptor encoding;
     private final HttpVersion version;
 
     private HttpStatus status;
@@ -25,9 +28,11 @@ public class HttpServiceResponse {
     /**
      * Creates new outgoing HTTP response.
      *
-     * @param version Target HTTP version.
+     * @param encoding Encoding to use in outgoing HTTP response.
+     * @param version  Target HTTP version.
      */
-    public HttpServiceResponse(final HttpVersion version) {
+    public HttpServiceResponse(final EncodingDescriptor encoding, final HttpVersion version) {
+        this.encoding = Objects.requireNonNull(encoding, "Expected encoding");
         this.version = Objects.requireNonNull(version, "Expected version");
     }
 
@@ -102,7 +107,7 @@ public class HttpServiceResponse {
      * @return This response object.
      * @throws NullPointerException If {@code path} is {@code null}.
      */
-    public HttpServiceResponse body(final java.nio.file.Path path) {
+    public HttpServiceResponse body(final Path path) {
         body = new DataPath(path);
         return this;
     }
@@ -133,6 +138,33 @@ public class HttpServiceResponse {
     }
 
     /**
+     * Removes any previously set response body.
+     *
+     * @return This response object.
+     */
+    public HttpServiceResponse clearBody() {
+        body = null;
+        return this;
+    }
+
+    /**
+     * Removes all set headers, if any.
+     *
+     * @return This response object.
+     */
+    public HttpServiceResponse clearHeaders() {
+        headers = new HttpHeaders();
+        return this;
+    }
+
+    /**
+     * @return Encoding that will or should be used for any response body.
+     */
+    public EncodingDescriptor encoding() {
+        return encoding;
+    }
+
+    /**
      * Gets a response header value by name.
      *
      * @param name Name of header. Case insensitive. Should be lower-case.
@@ -159,6 +191,18 @@ public class HttpServiceResponse {
      */
     public HttpHeaders headers() {
         return headers;
+    }
+
+    /**
+     * Determines whether a status code or body has been assigned to this
+     * response. If so, the response is considered to be initialized, and will
+     * be responded to without any further HTTP request handlers being invoked.
+     *
+     * @return {@code true} only if this response contains a status code or a
+     * body.
+     */
+    public boolean isInitialized() {
+        return status != null || body != null;
     }
 
     /**

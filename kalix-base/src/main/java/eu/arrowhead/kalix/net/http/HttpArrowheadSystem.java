@@ -9,8 +9,6 @@ import eu.arrowhead.kalix.internal.net.http.NettyHttpServiceConnectionInitialize
 import eu.arrowhead.kalix.internal.util.concurrent.NettyScheduler;
 import eu.arrowhead.kalix.internal.util.logging.LogLevels;
 import eu.arrowhead.kalix.net.http.service.HttpService;
-import eu.arrowhead.kalix.net.http.service.HttpServiceRequest;
-import eu.arrowhead.kalix.net.http.service.HttpServiceResponse;
 import eu.arrowhead.kalix.util.concurrent.Future;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.ClientAuth;
@@ -19,8 +17,9 @@ import io.netty.handler.ssl.SslContextBuilder;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.HashMap;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -32,7 +31,7 @@ import static eu.arrowhead.kalix.internal.util.concurrent.NettyFutures.adapt;
  */
 public class HttpArrowheadSystem extends ArrowheadSystem<HttpService> {
     private final AtomicReference<InetSocketAddress> localSocketAddress = new AtomicReference<>();
-    private final HashMap<String, HttpService> providedServices = new HashMap<>();
+    private final TreeMap<String, HttpService> providedServices = new TreeMap<>();
 
     // Created when requested.
     private ServiceDescriptor[] providedServiceDescriptors = null;
@@ -102,31 +101,13 @@ public class HttpArrowheadSystem extends ArrowheadSystem<HttpService> {
         providedServiceDescriptors = null; // Force recreation.
     }
 
-    private Future<HttpServiceResponse> handle(final HttpServiceRequest request) {
-        final var response = new HttpServiceResponse(request.version());
+    private synchronized Optional<HttpService> getServiceByPath(final String path) {
         for (final var entry : providedServices.entrySet()) {
-            if (request.path().startsWith(entry.getKey())) {
-                final var name = entry.getValue().name();
-                return entry.getValue()
-                    .handle(request, response)
-                    .map(ignored -> response)
-                    .mapCatch(throwable -> {
-                        // TODO: Log properly.
-                        System.err.println("HTTP service \"" + name + "\" never handled:");
-                        throwable.printStackTrace();
-
-                        return response
-                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .headers(new HttpHeaders())
-                            .body(new byte[0]);
-                    });
+            if (path.startsWith(entry.getKey())) {
+                return Optional.of(entry.getValue());
             }
         }
-        // TODO: Allow user to set the function that handles this outcome.
-        return Future.success(response
-            .status(HttpStatus.NOT_FOUND)
-            .headers(new HttpHeaders())
-            .body(new byte[0]));
+        return Optional.empty();
     }
 
     @Override
@@ -145,7 +126,7 @@ public class HttpArrowheadSystem extends ArrowheadSystem<HttpService> {
             return adapt(NettyBootstraps
                 .createServerBootstrapUsing((NettyScheduler) scheduler())
                 .handler(new LoggingHandler(LogLevels.toNettyLogLevel(logLevel())))
-                .childHandler(new NettyHttpServiceConnectionInitializer(this::handle, logLevel(), sslContext))
+                .childHandler(new NettyHttpServiceConnectionInitializer(this::getServiceByPath, logLevel(), sslContext))
                 .bind(super.localAddress(), super.localPort()))
                 .flatMap(channel -> {
                     localSocketAddress.set((InetSocketAddress) channel.localAddress());

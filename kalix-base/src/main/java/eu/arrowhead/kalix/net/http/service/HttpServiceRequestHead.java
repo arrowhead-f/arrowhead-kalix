@@ -1,9 +1,11 @@
 package eu.arrowhead.kalix.net.http.service;
 
+import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpMethod;
 import eu.arrowhead.kalix.net.http.HttpVersion;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -13,12 +15,33 @@ import java.util.Optional;
  */
 public interface HttpServiceRequestHead {
     /**
-     * Gets value of named header, if set.
+     * @return Encoding used to encode the body, if any, of this request.
+     * Note that the encoding is a reflection of what Arrowhead service
+     * interface was selected for the request rather than any specifics about
+     * the request itself. This means that an encoding descriptor will be
+     * available even if the request has no body.
+     */
+    EncodingDescriptor encoding();
+
+    /**
+     * Gets value of first header with given {@code name}, if any such.
      *
      * @param name Name of header. Case is ignored. Prefer lowercase.
      * @return Header value, or {@code null}.
      */
-    Optional<String> header(final String name);
+    default Optional<String> header(final String name) {
+        return headers().get(name);
+    }
+
+    /**
+     * Gets all header values associated with given {@code name}, if any.
+     *
+     * @param name Name of header. Case is ignored. Prefer lowercase.
+     * @return Header values. May be an empty list.
+     */
+    default List<String> headers(final String name) {
+        return headers().getAll(name);
+    }
 
     /**
      * @return <i>Modifiable</i> map of all request headers.
@@ -52,7 +75,9 @@ public interface HttpServiceRequestHead {
      * @throws IndexOutOfBoundsException If provided index is out of the bounds
      *                                   of the request path parameter list.
      */
-    String pathParameter(final int index);
+    default String pathParameter(final int index) {
+        return pathParameters().get(index);
+    }
 
     /**
      * @return Unmodifiable list of all path parameters.
@@ -66,7 +91,7 @@ public interface HttpServiceRequestHead {
      * @return Query parameter value, if a corresponding parameter name exists.
      */
     default Optional<String> queryParameter(final String name) {
-        final var values = queryParameters(name);
+        final var values = queryParameters().get(name);
         return Optional.ofNullable(values.size() > 0 ? values.get(0) : null);
     }
 
@@ -76,7 +101,13 @@ public interface HttpServiceRequestHead {
      * @param name Name of query parameter. Case sensitive.
      * @return Unmodifiable list of query parameter values. May be empty.
      */
-    List<String> queryParameters(final String name);
+    default List<String> queryParameters(final String name) {
+        final var parameters = queryParameters().get(name);
+        if (parameters == null) {
+            return Collections.emptyList();
+        }
+        return Collections.unmodifiableList(parameters);
+    }
 
     /**
      * @return Unmodifiable map of all query parameters.

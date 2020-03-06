@@ -47,18 +47,18 @@ public class HttpRoute implements Comparable<HttpRoute> {
     }
 
     /**
-     * Checks whether given request matches this route, without providing the
-     * request to the route handler.
+     * Checks whether the request in the given task matches this route, without
+     * providing the request to the handler owned by this route.
      *
-     * @param request        Request to test.
+     * @param task           Incoming HTTP request route task.
      * @param pathParameters List to store any matching path parameters to.
      * @return {@code true} only if request matches this route.
      */
-    public boolean match(final HttpServiceRequest request, final List<String> pathParameters) {
-        if (method != null && !method.equals(request.method())) {
+    public boolean match(final HttpRouteTask task, final List<String> pathParameters) {
+        if (method != null && !method.equals(task.request().method())) {
             return false;
         }
-        return pattern == null || pattern.match(request.path(), pathParameters);
+        return pattern == null || pattern.match(task.request().path(), task.basePath().length(), pathParameters);
     }
 
     /**
@@ -83,24 +83,31 @@ public class HttpRoute implements Comparable<HttpRoute> {
 
     @Override
     public int compareTo(final HttpRoute other) {
-        if (method != null) {
-            if (other.method == null) {
-                return 1;
-            }
-            final var c0 = method.compareTo(other.method);
-            if (c0 != 0) {
-                return c0;
-            }
-        }
-        else if (other.method == null) {
-            return -1;
-        }
+        // Routes with patterns come before those without patterns.
         if (pattern != null) {
             if (other.pattern == null) {
-                return 1;
+                return -1;
             }
-            return pattern.compareTo(other.pattern);
+            final var c = pattern.compareTo(other.pattern);
+            if (c != 0) {
+                return c;
+            }
         }
+        else if (other.pattern != null) {
+            return 1;
+        }
+
+        // Routes with methods come before those without methods.
+        if (method != null) {
+            if (other.method == null) {
+                return -1;
+            }
+            return method.compareTo(other.method);
+        }
+        else if (other.method != null) {
+            return 1;
+        }
+
         return 0;
     }
 }

@@ -13,16 +13,16 @@ import io.netty.handler.ssl.SslContext;
 import javax.net.ssl.SSLEngine;
 
 public class NettyHttpServiceConnectionInitializer extends ChannelInitializer<SocketChannel> {
-    private final HttpServiceRequestHandler handler;
+    private final HttpServiceLookup serviceLookup;
     private final LogLevel logLevel;
     private final SslContext sslContext;
 
     public NettyHttpServiceConnectionInitializer(
-        final HttpServiceRequestHandler handler,
+        final HttpServiceLookup serviceLookup,
         final LogLevel logLevel,
         final SslContext sslContext)
     {
-        this.handler = handler;
+        this.serviceLookup = serviceLookup;
         this.logLevel = logLevel;
         this.sslContext = sslContext;
     }
@@ -32,15 +32,15 @@ public class NettyHttpServiceConnectionInitializer extends ChannelInitializer<So
         final var pipeline = ch.pipeline();
         SSLEngine sslEngine = null;
         if (sslContext != null) {
-            final var handler = sslContext.newHandler(ch.alloc());
-            sslEngine = handler.engine();
-            pipeline.addLast(handler);
+            final var serviceLookup = sslContext.newHandler(ch.alloc());
+            sslEngine = serviceLookup.engine();
+            pipeline.addLast(serviceLookup);
         }
         pipeline
             .addLast(new LoggingHandler(LogLevels.toNettyLogLevel(logLevel)))
             .addLast(new HttpRequestDecoder()) // TODO: Make message size restrictions configurable.
             .addLast(new HttpResponseEncoder())
             .addLast(new HttpContentCompressor()) // TODO: Make compression configurable.
-            .addLast(new NettyHttpServiceRequestHandler(handler, sslEngine));
+            .addLast(new NettyHttpServiceRequestHandler(serviceLookup, sslEngine));
     }
 }

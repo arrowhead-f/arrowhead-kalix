@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.CancellationException;
@@ -123,6 +124,15 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
     @Override
     public FutureProgress<byte[]> bodyAsByteArray() {
         return handleBodyRequest(() -> new FutureBodyAsByteArray(alloc, headers));
+    }
+
+    @Override
+    public <R extends DataReadable> FutureProgress<List<? extends R>> bodyAsListOf(final Class<R> class_) {
+        return handleBodyRequest(() -> {
+            throw new IllegalStateException("Unexpected class \"" + class_ +
+                "\"; only generated DTO classes may be requested as " +
+                "response bodies");
+        });
     }
 
     @Override
