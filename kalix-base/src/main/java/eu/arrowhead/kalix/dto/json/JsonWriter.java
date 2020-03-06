@@ -1,7 +1,7 @@
 package eu.arrowhead.kalix.dto.json;
 
+import eu.arrowhead.kalix.dto.DataEncoding;
 import eu.arrowhead.kalix.dto.WriteException;
-import eu.arrowhead.kalix.dto.Format;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -22,7 +22,7 @@ public final class JsonWriter {
 
     public static void write(final long number, final ByteBuffer target) throws WriteException {
         if (number < -9007199254740991L ||number > 9007199254740991L) {
-            throw new WriteException(Format.JSON, "Only integers in the " +
+            throw new WriteException(DataEncoding.JSON, "Only integers in the " +
                 "range -(2^53 - 1) to (2^53 - 1) can be represented as JSON " +
                 "numbers without loss of precision; " + number + " is " +
                 "outside that range");
@@ -33,7 +33,7 @@ public final class JsonWriter {
 
     public static void write(final double number, final ByteBuffer target) throws WriteException {
         if (!Double.isFinite(number)) {
-            throw new WriteException(Format.JSON, "NaN, +Infinify and " +
+            throw new WriteException(DataEncoding.JSON, "NaN, +Infinify and " +
                 "-Infinity cannot be represented in JSON");
         }
         target.put(Double.toString(number)

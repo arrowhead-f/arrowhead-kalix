@@ -42,8 +42,9 @@ public class HttpClientRequest {
     /**
      * Sets request body.
      * <p>
-     * The body is serialized into the format specified by the "content-type"
-     * header in the this request when provided to a {@link HttpClient}.
+     * The body is later encoded using the encoding associated with the media
+     * type stated in the "content-type" header in this request, if that
+     * encoding is supported.
      *
      * @param body Desired request body.
      * @return This request.

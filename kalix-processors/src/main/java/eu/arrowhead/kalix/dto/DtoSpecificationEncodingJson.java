@@ -11,23 +11,23 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
+public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
     private final ByteBufferPutCache putCache = new ByteBufferPutCache("target");
 
     private int level = 0;
 
     @Override
-    public Format format() {
-        return Format.JSON;
+    public DataEncoding encoding() {
+        return DataEncoding.JSON;
     }
 
     @Override
     public void implementFor(final DtoTarget target, final TypeSpec.Builder implementation) throws DtoException {
-        if (target.interfaceType().isReadable(Format.JSON)) {
+        if (target.interfaceType().isReadable(DataEncoding.JSON)) {
             implementation.addSuperinterface(JsonReadable.class);
             implementReadMethodsFor(target, implementation);
         }
-        if (target.interfaceType().isWritable(Format.JSON)) {
+        if (target.interfaceType().isWritable(DataEncoding.JSON)) {
             implementation.addSuperinterface(JsonWritable.class);
             implementWriteMethodFor(target, implementation);
         }
@@ -76,7 +76,7 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
 
         for (final var property : target.properties()) {
             try {
-                builder.beginControlFlow("case $S:", property.nameFor(Format.JSON));
+                builder.beginControlFlow("case $S:", property.nameFor(DataEncoding.JSON));
                 final var name = property.name();
                 readValue(property.type(), x -> "builder." + name + "(" + x + ")", builder);
                 builder.endControlFlow("break");
@@ -112,7 +112,7 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
         }
 
         builder.addCode("throw new $1T($2T.JSON, error, token.readString(source), token.begin());\n",
-            ReadException.class, Format.class);
+            ReadException.class, DataEncoding.class);
 
         implementation.addMethod(builder.build());
     }
@@ -235,9 +235,9 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
     }
 
     private void readInterface(final DtoInterface type, final Expander assignment, final MethodSpec.Builder builder) {
-        if (!type.isReadable(Format.JSON)) {
+        if (!type.isReadable(DataEncoding.JSON)) {
             throw new IllegalStateException(type.simpleName() + " is not annotated with " +
-                "@Readable, or lacks Format.JSON as annotation argument");
+                "@Readable, or lacks DataEncoding.JSON as annotation argument");
         }
         final var className = ClassName.bestGuess(type.targetSimpleName());
         builder.addStatement(assignment.expand("$T.readJson(reader)"), className);
@@ -344,7 +344,7 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
 
                 putCache
                     .append('"')
-                    .append(property.nameFor(Format.JSON))
+                    .append(property.nameFor(DataEncoding.JSON))
                     .append("\":");
 
                 writeValue(property.type(), property.name(), builder);
@@ -437,9 +437,9 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
     }
 
     private void writeInterface(final DtoInterface type, final String name, final MethodSpec.Builder builder) {
-        if (!type.isWritable(Format.JSON)) {
+        if (!type.isWritable(DataEncoding.JSON)) {
             throw new IllegalStateException(type.simpleName() + " is not " +
-                "annotated with @Writable, or lacks Format.JSON as " +
+                "annotated with @Writable, or lacks DataEncoding.JSON as " +
                 "annotation argument");
         }
         putCache.addPutIfNotEmpty(builder);
@@ -491,7 +491,7 @@ public class DtoSpecificationFormatJson implements DtoSpecificationFormat {
     private static IllegalStateException characterTypesNotSupportedException() {
         return new IllegalStateException("The char and Character types " +
             "cannot be represented as JSON; either change the type or " +
-            "remove Format.JSON from the array of formats provided to " +
-            "the @Readable/@Writable annotation(s)");
+            "remove DataEncoding.JSON from the array of encodings " +
+            "provided to the @Readable/@Writable annotation(s)");
     }
 }

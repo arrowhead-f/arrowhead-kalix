@@ -92,7 +92,7 @@ public class NettyHttpServiceRequestHandler extends SimpleChannelInboundHandler<
             // both the incoming and the outgoing messages.
         }
 
-        this.body = new NettyHttpServiceRequestBody(ctx.alloc(), request.headers());
+        this.body = new NettyHttpServiceRequestBody(ctx.alloc(), encoding, request.headers());
 
         final var version = adapt(request.protocolVersion());
         final var serviceRequest = new HttpServiceRequest.Builder()

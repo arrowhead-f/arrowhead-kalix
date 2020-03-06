@@ -39,18 +39,18 @@ public class DtoTargetFactory {
 
         final var readable = interfaceElement.getAnnotation(Readable.class);
         final var writable = interfaceElement.getAnnotation(Writable.class);
-        final var readableFormats = readable != null ? readable.value() : new Format[0];
-        final var writableFormats = writable != null ? writable.value() : new Format[0];
+        final var readableEncodings = readable != null ? readable.value() : new DataEncoding[0];
+        final var writableEncodings = writable != null ? writable.value() : new DataEncoding[0];
 
-        if (readableFormats.length == 0 && writableFormats.length == 0) {
+        if (readableEncodings.length == 0 && writableEncodings.length == 0) {
             throw new DtoException(interfaceElement, "@Readable/@Writable " +
                 "interfaces must have at least one readable or writable " +
-                "format, specified as @Readable/@Writable annotation " +
+                "encodings, specified as @Readable/@Writable annotation " +
                 "arguments");
         }
 
         final var declaredType = (DeclaredType) interfaceElement.asType();
-        final var interfaceType = new DtoInterface(declaredType, readableFormats, writableFormats);
+        final var interfaceType = new DtoInterface(declaredType, readableEncodings, writableEncodings);
 
         final var properties = new ArrayList<DtoProperty>();
         for (final var element : interfaceElement.getEnclosedElements()) {

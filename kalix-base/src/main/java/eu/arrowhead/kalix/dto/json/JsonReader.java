@@ -1,12 +1,11 @@
 package eu.arrowhead.kalix.dto.json;
 
-import eu.arrowhead.kalix.dto.Format;
+import eu.arrowhead.kalix.dto.DataEncoding;
 import eu.arrowhead.kalix.dto.ReadException;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.List;
 
 @SuppressWarnings("unused")
 public final class JsonReader {
@@ -44,7 +43,7 @@ public final class JsonReader {
     private void saveCandidateAsError(final String message) {
         final var buffer = new byte[source.position() - p0];
         source.position(p0).get(buffer);
-        error = new ReadException(Format.JSON, message, new String(buffer, StandardCharsets.UTF_8), p0);
+        error = new ReadException(DataEncoding.JSON, message, new String(buffer, StandardCharsets.UTF_8), p0);
     }
 
     private void discardWhitespace() {

@@ -35,7 +35,7 @@ public class DtoProcessor extends AbstractProcessor {
 
         targetFactory = new DtoTargetFactory(elementUtils, processingEnv.getTypeUtils());
         specificationFactory = new DtoSpecificationFactory(
-            new DtoSpecificationFormatJson()
+            new DtoSpecificationEncodingJson()
         );
     }
 

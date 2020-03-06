@@ -12,10 +12,10 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class DtoSpecificationFactory {
-    private final DtoSpecificationFormat[] specificationFormats;
+    private final DtoSpecificationEncoding[] specificationEncodings;
 
-    public DtoSpecificationFactory(final DtoSpecificationFormat... specificationFormats) {
-        this.specificationFormats = specificationFormats;
+    public DtoSpecificationFactory(final DtoSpecificationEncoding... specificationEncodings) {
+        this.specificationEncodings = specificationEncodings;
     }
 
     public DtoTargetSpecification createForTarget(final DtoTarget target) throws DtoException {
@@ -97,10 +97,10 @@ public class DtoSpecificationFactory {
         });
 
 
-        final var targetFormats = target.formats();
-        for (final var specificationFormat : specificationFormats) {
-            if (targetFormats.contains(specificationFormat.format())) {
-                specificationFormat.implementFor(target, implementation);
+        final var targetEncodings = target.encodings();
+        for (final var specificationEncodings : specificationEncodings) {
+            if (targetEncodings.contains(specificationEncodings.encoding())) {
+                specificationEncodings.implementFor(target, implementation);
             }
         }
 

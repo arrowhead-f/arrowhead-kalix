@@ -23,8 +23,8 @@ public class DtoTarget {
         return properties;
     }
 
-    public Set<Format> formats() {
-        return interfaceType.formats();
+    public Set<DataEncoding> encodings() {
+        return interfaceType.encodings();
     }
 
     public String simpleName() {

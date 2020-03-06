@@ -11,15 +11,15 @@ import java.util.Objects;
 public class DtoProperty implements DtoType {
     private final ExecutableElement parentElement;
     private final String name;
-    private final Map<Format, String> formatNames;
+    private final Map<DataEncoding, String> encodingNames;
     private final DtoType type;
     private final boolean isOptional;
 
     private DtoProperty(final Builder builder) {
-        parentElement = Objects.requireNonNull(builder.parentElement, "parentElement");
-        name = Objects.requireNonNull(builder.name, "name");
-        formatNames = Objects.requireNonNull(builder.formatNames, "formatNames");
-        type = Objects.requireNonNull(builder.type, "type");
+        parentElement = Objects.requireNonNull(builder.parentElement, "Expected parentElement");
+        name = Objects.requireNonNull(builder.name, "Expected name");
+        encodingNames = Objects.requireNonNull(builder.encodingNames, "Expected encodingNames");
+        type = Objects.requireNonNull(builder.type, "Expected type");
         isOptional = builder.isOptional;
     }
 
@@ -31,8 +31,8 @@ public class DtoProperty implements DtoType {
         return name;
     }
 
-    public String nameFor(final Format format) {
-        return formatNames.getOrDefault(format, name);
+    public String nameFor(final DataEncoding dataEncoding) {
+        return encodingNames.getOrDefault(dataEncoding, name);
     }
 
     public DtoType type() {
@@ -56,7 +56,7 @@ public class DtoProperty implements DtoType {
     public static class Builder {
         private ExecutableElement parentElement;
         private String name;
-        private Map<Format, String> formatNames;
+        private Map<DataEncoding, String> encodingNames;
         private DtoType type;
         private boolean isOptional;
 
@@ -70,8 +70,8 @@ public class DtoProperty implements DtoType {
             return this;
         }
 
-        public Builder formatNames(final Map<Format, String> formatNames) {
-            this.formatNames = formatNames;
+        public Builder encodingNames(final Map<DataEncoding, String> encodingNames) {
+            this.encodingNames = encodingNames;
             return this;
         }
 

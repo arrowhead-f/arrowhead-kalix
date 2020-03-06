@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.internal.net.http;
 
+import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.dto.DataReadable;
 import eu.arrowhead.kalix.net.http.service.HttpServiceRequestBody;
 import eu.arrowhead.kalix.util.Result;
@@ -28,6 +29,7 @@ import java.util.function.Supplier;
 
 public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
     private final ByteBufAllocator alloc;
+    private final EncodingDescriptor encoding;
     private final HttpHeaders headers;
 
     private FutureBody<?> body;
@@ -38,8 +40,13 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
     private boolean isBodyRequested = false;
     private boolean isFinished = false;
 
-    public NettyHttpServiceRequestBody(final ByteBufAllocator alloc, final HttpHeaders headers) {
+    public NettyHttpServiceRequestBody(
+        final ByteBufAllocator alloc,
+        final EncodingDescriptor encoding,
+        final HttpHeaders headers)
+    {
         this.alloc = alloc;
+        this.encoding = encoding;
         this.headers = headers;
     }
 
@@ -102,9 +109,9 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
         isFinished = true;
 
         // `headers` is the same map of headers already passed on in a
-        // `HttpServiceRequest` via the `HttpServiceRequestHandler`. By adding
-        // the trailing headers to the `headers` map here, they are being made
-        // visible via the same `HttpServiceRequest`.
+        // `HttpServiceRequest` to some `HttpService`. By adding the trailing
+        // headers to the `headers` map here, they are being made visible via
+        // the same `HttpServiceRequest`.
         headers.add(lastContent.trailingHeaders());
 
         if (isBodyRequested) {

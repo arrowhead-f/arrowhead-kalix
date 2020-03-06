@@ -74,7 +74,7 @@ public class DtoPropertyFactory {
         final var builder = new DtoProperty.Builder()
             .parentElement(method)
             .name(method.getSimpleName().toString())
-            .formatNames(collectFormatNamesFrom(method));
+            .encodingNames(collectEncodingNamesFrom(method));
 
         var type = method.getReturnType();
 
@@ -106,13 +106,13 @@ public class DtoPropertyFactory {
             .build();
     }
 
-    private Map<Format, String> collectFormatNamesFrom(final Element method) {
-        final var formatNames = new HashMap<Format, String>();
+    private Map<DataEncoding, String> collectEncodingNamesFrom(final Element method) {
+        final var encodingNames = new HashMap<DataEncoding, String>();
         final var nameJSON = method.getAnnotation(JsonName.class);
         if (nameJSON != null) {
-            formatNames.put(Format.JSON, nameJSON.value());
+            encodingNames.put(DataEncoding.JSON, nameJSON.value());
         }
-        return formatNames;
+        return encodingNames;
     }
 
     private DtoType resolveType(final ExecutableElement method, final TypeMirror type) throws DtoException {
@@ -237,10 +237,10 @@ public class DtoPropertyFactory {
                 "parameters must conform to the same requirements");
         }
 
-        final var readableFormats = readable != null ? readable.value() : new Format[0];
-        final var writableFormats = writable != null ? writable.value() : new Format[0];
+        final var readableEncodings = readable != null ? readable.value() : new DataEncoding[0];
+        final var writableEncodings = writable != null ? writable.value() : new DataEncoding[0];
 
-        return new DtoInterface(declaredType, readableFormats, writableFormats);
+        return new DtoInterface(declaredType, readableEncodings, writableEncodings);
     }
 
     private DtoEnum toEnumType(final TypeMirror type) {

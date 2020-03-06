@@ -1,5 +1,7 @@
 package eu.arrowhead.kalix.descriptor;
 
+import eu.arrowhead.kalix.dto.DataEncoding;
+
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -8,12 +10,14 @@ import java.util.regex.Pattern;
  */
 public class EncodingDescriptor {
     private final String name;
+    private final DataEncoding dataEncoding;
 
     private String mediaTypePatternString;
     private Pattern mediaTypePattern;
 
-    private EncodingDescriptor(final String name, final String mediaTypePattern) {
+    private EncodingDescriptor(final String name, final DataEncoding dataEncoding, final String mediaTypePattern) {
         this.name = Objects.requireNonNull(name, "Expected name");
+        this.dataEncoding = Objects.requireNonNull(dataEncoding, "Expected dataEncoding");
         this.mediaTypePatternString = mediaTypePattern;
     }
 
@@ -33,6 +37,17 @@ public class EncodingDescriptor {
      */
     public String name() {
         return name;
+    }
+
+    /**
+     * Gets DTO variant of this descriptor, or {@link DataEncoding#UNSUPPORTED}
+     * if no DTO support exists for the encoding.
+     *
+     * @return DTO variant of this descriptor.
+     * @see eu.arrowhead.kalix.dto
+     */
+    public DataEncoding asDataEncoding() {
+        return dataEncoding;
     }
 
     /**
@@ -57,7 +72,7 @@ public class EncodingDescriptor {
      * @see <a href="https://tools.ietf.org/html/rfc7049">RFC 7049</a>
      */
     public static final EncodingDescriptor CBOR = new EncodingDescriptor("CBOR",
-        "^application\\/(?:[^\\+]*\\+)?cbor$");
+        DataEncoding.UNSUPPORTED, "^application\\/(?:[^\\+]*\\+)?cbor$");
 
     /**
      * JavaScript Object Notation (JSON).
@@ -65,7 +80,7 @@ public class EncodingDescriptor {
      * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
      */
     public static final EncodingDescriptor JSON = new EncodingDescriptor("JSON",
-        "^application\\/(?:[^\\+]*\\+)?json$");
+        DataEncoding.JSON, "^application\\/(?:[^\\+]*\\+)?json$");
 
     /**
      * Extensible Markup Language (XML).
@@ -74,7 +89,7 @@ public class EncodingDescriptor {
      * @see <a href="https://www.w3.org/TR/xml11">W3C XML 1.1</a>
      */
     public static final EncodingDescriptor XML = new EncodingDescriptor("XML",
-        "^(?:(?:application)|(?:text))\\/(?:[^\\+]*\\+)?xml$");
+        DataEncoding.UNSUPPORTED, "^(?:(?:application)|(?:text))\\/(?:[^\\+]*\\+)?xml$");
 
     /**
      * Efficient XML Interchange (EXI).
@@ -82,7 +97,7 @@ public class EncodingDescriptor {
      * @see <a href="https://www.w3.org/TR/exi/">W3C EXI 1.0</a>
      */
     public static final EncodingDescriptor EXI = new EncodingDescriptor("EXI",
-        "^application\\/(?:[^-]*-)?exi$");
+        DataEncoding.UNSUPPORTED, "^application\\/(?:[^-]*-)?exi$");
 
     /**
      * Resolves {@link EncodingDescriptor} from given {@code name}.
@@ -98,7 +113,7 @@ public class EncodingDescriptor {
         case "XML": return XML;
         case "EXI": return EXI;
         }
-        return new EncodingDescriptor(name, null);
+        return new EncodingDescriptor(name, DataEncoding.UNSUPPORTED, null);
     }
 
     @Override

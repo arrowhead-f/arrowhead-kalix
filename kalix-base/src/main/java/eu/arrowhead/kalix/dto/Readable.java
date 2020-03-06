@@ -8,5 +8,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
 public @interface Readable {
-    Format[] value() default {Format.JSON};
+    DataEncoding[] value() default {DataEncoding.JSON};
 }

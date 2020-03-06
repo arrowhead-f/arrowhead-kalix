@@ -1,7 +1,7 @@
 package eu.arrowhead.kalix.dto.json;
 
+import eu.arrowhead.kalix.dto.DataEncoding;
 import eu.arrowhead.kalix.dto.ReadException;
-import eu.arrowhead.kalix.dto.Format;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -169,6 +169,6 @@ public final class JsonToken {
             source.get(buffer, b0, length);
             return new String(buffer, StandardCharsets.UTF_8);
         }
-        throw new ReadException(Format.JSON, "Bad escape", badEscapeBuilder.toString(), p0);
+        throw new ReadException(DataEncoding.JSON, "Bad escape", badEscapeBuilder.toString(), p0);
     }
 }
