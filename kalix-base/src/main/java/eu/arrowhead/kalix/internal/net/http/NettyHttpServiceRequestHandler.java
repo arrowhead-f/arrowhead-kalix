@@ -1,18 +1,21 @@
 package eu.arrowhead.kalix.internal.net.http;
 
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
-import eu.arrowhead.kalix.dto.DataWritable;
 import eu.arrowhead.kalix.net.http.service.HttpService;
 import eu.arrowhead.kalix.net.http.service.HttpServiceRequest;
 import eu.arrowhead.kalix.net.http.service.HttpServiceResponse;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.DefaultFileRegion;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 
 import javax.net.ssl.SSLEngine;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -38,9 +41,6 @@ public class NettyHttpServiceRequestHandler extends SimpleChannelInboundHandler<
         }
         if (msg instanceof HttpContent) {
             handleRequestContent((HttpContent) msg);
-        }
-        if (msg instanceof LastHttpContent) {
-            handleRequestEnd((LastHttpContent) msg);
         }
     }
 
@@ -97,15 +97,19 @@ public class NettyHttpServiceRequestHandler extends SimpleChannelInboundHandler<
             .build();
         final var serviceResponse = new HttpServiceResponse(encoding, version);
 
-        service.handle(serviceRequest, serviceResponse)
-            .onResult(result -> {
+        service.handle(serviceRequest, serviceResponse).onResult(result -> {
+            try {
                 if (result.isSuccess()) {
-                    sendResponse(ctx, serviceResponse);
+                    sendResponse(ctx, request, serviceResponse);
                     return;
                 }
                 sendEmptyResponseAndClose(ctx, request.protocolVersion(), HttpResponseStatus.INTERNAL_SERVER_ERROR);
                 ctx.fireExceptionCaught(result.fault());
-            });
+            }
+            catch (final Throwable throwable) {
+                ctx.fireExceptionCaught(throwable);
+            }
+        });
 
         return false;
     }
@@ -124,19 +128,21 @@ public class NettyHttpServiceRequestHandler extends SimpleChannelInboundHandler<
         if (contentType != null) {
             return HttpMediaTypes.findEncodingCompatibleWithContentType(service.encodings(), contentType);
         }
+
         final var acceptHeaders = headers.getAll("accept");
         if (acceptHeaders != null && acceptHeaders.size() > 0) {
             return HttpMediaTypes.findEncodingCompatibleWithAcceptHeaders(service.encodings(), acceptHeaders);
         }
+
         return Optional.of(service.defaultEncoding());
     }
 
     private void handleRequestContent(final HttpContent content) {
         body.append(content);
-    }
+        if (content instanceof LastHttpContent) {
+            body.finish((LastHttpContent) content);
 
-    private void handleRequestEnd(final LastHttpContent lastContent) {
-        body.finish(lastContent);
+        }
     }
 
     private void sendEmptyResponseAndClose(
@@ -148,24 +154,89 @@ public class NettyHttpServiceRequestHandler extends SimpleChannelInboundHandler<
             .addListener(ChannelFutureListener.CLOSE);
     }
 
-    private void sendResponse(final ChannelHandlerContext ctx, final HttpServiceResponse response) {
+    // TODO: Bring any response exceptions back to service.
+
+    private void sendResponse(
+        final ChannelHandlerContext ctx,
+        final HttpRequest request,
+        final HttpServiceResponse response) throws Exception
+    {
         final var optionalBody = response.body();
         if (optionalBody.isPresent()) {
             final var body = optionalBody.get();
             if (body instanceof byte[]) {
-
+                sendByteArrayResponse(ctx, request, response, (byte[]) body);
                 return;
             }
             if (body instanceof Path) {
-
+                sendPathResponse(ctx, request, response, (Path) body);
                 return;
             }
             if (body instanceof String) {
-
+                sendStringResponse(ctx, request, response, (String) body);
                 return;
             }
             // Handle DTO body.
         }
+    }
+
+    private void sendByteArrayResponse(
+        final ChannelHandlerContext ctx,
+        final HttpRequest request,
+        final HttpServiceResponse response,
+        final byte[] body)
+    {
+        ctx
+            .writeAndFlush(new DefaultFullHttpResponse(
+                request.protocolVersion(),
+                response.status()
+                    .map(NettyHttp::adapt)
+                    .orElse(HttpResponseStatus.OK),
+                Unpooled.wrappedBuffer(body),
+                adapt(response.headers()),
+                EmptyHttpHeaders.INSTANCE
+            ))
+            .addListener(ChannelFutureListener.CLOSE);
+    }
+
+    private void sendPathResponse(
+        final ChannelHandlerContext ctx,
+        final HttpRequest request,
+        final HttpServiceResponse response,
+        final Path body) throws FileNotFoundException
+    {
+        final var file = body.toFile();
+        final var in = new FileInputStream(file);
+        ctx.write(new DefaultHttpResponse(
+            request.protocolVersion(),
+            response.status()
+                .map(NettyHttp::adapt)
+                .orElse(HttpResponseStatus.OK),
+            adapt(response.headers())))
+            .addListener(future -> ctx.write(new DefaultFileRegion(in.getChannel(), 0, file.length()))
+                .addListener(future1 -> ctx.writeAndFlush(new DefaultLastHttpContent())
+                    .addListener(ChannelFutureListener.CLOSE)));
+    }
+
+    private void sendStringResponse(
+        final ChannelHandlerContext ctx,
+        final HttpRequest request,
+        final HttpServiceResponse response,
+        final String body)
+    {
+        final var headers = adapt(response.headers());
+        final var charset = HttpUtil.getCharset(headers.get("content-type"), StandardCharsets.UTF_8);
+        ctx
+            .writeAndFlush(new DefaultFullHttpResponse(
+                request.protocolVersion(),
+                response.status()
+                    .map(NettyHttp::adapt)
+                    .orElse(HttpResponseStatus.OK),
+                Unpooled.wrappedBuffer(body.getBytes(charset)),
+                headers,
+                EmptyHttpHeaders.INSTANCE
+            ))
+            .addListener(ChannelFutureListener.CLOSE);
     }
 
     @Override

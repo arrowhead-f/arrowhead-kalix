@@ -1,9 +1,6 @@
 package eu.arrowhead.kalix.net.http.service;
 
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
-import eu.arrowhead.kalix.internal.dto.DataByteArray;
-import eu.arrowhead.kalix.internal.dto.DataPath;
-import eu.arrowhead.kalix.internal.dto.DataString;
 import eu.arrowhead.kalix.dto.DataWritable;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpStatus;
@@ -152,7 +149,7 @@ public class HttpServiceResponse {
      * @return This response object.
      */
     public HttpServiceResponse clearHeaders() {
-        headers = new HttpHeaders();
+        headers.clear();
         return this;
     }
 

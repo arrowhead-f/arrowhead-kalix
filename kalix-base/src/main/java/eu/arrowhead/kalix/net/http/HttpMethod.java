@@ -18,6 +18,13 @@ public final class HttpMethod implements Comparable<HttpMethod> {
     }
 
     /**
+     * @return Method name.
+     */
+    public String name() {
+        return name;
+    }
+
+    /**
      * @return Whether or not this method is "safe" as defined in RFC 7231,
      * Section 4.2.1.
      * @see <a href="https://tools.ietf.org/html/rfc7231#section-4.2.1">RFC 7231, Section 4.2.1</a>
