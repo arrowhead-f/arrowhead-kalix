@@ -4,22 +4,17 @@ import eu.arrowhead.kalix.dto.DataEncoding;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 /**
- * Describes a type of message payload encoding.
+ * Names a type of message payload encoding.
  */
 public class EncodingDescriptor {
     private final String name;
     private final DataEncoding dataEncoding;
 
-    private String mediaTypePatternString;
-    private Pattern mediaTypePattern;
-
-    private EncodingDescriptor(final String name, final DataEncoding dataEncoding, final String mediaTypePattern) {
+    private EncodingDescriptor(final String name, final DataEncoding dataEncoding) {
         this.name = Objects.requireNonNull(name, "Expected name");
         this.dataEncoding = dataEncoding;
-        this.mediaTypePatternString = mediaTypePattern;
     }
 
     /**
@@ -51,38 +46,18 @@ public class EncodingDescriptor {
     }
 
     /**
-     * Gets {@code Pattern} useful for determine if given RFC 6838 media types,
-     * such as {@code "application/json"} or {@code "application/xmpp+xml"},
-     * are relying on this encoding.
-     *
-     * @return Regular expression pattern matching compatible media types.
-     * @see <a href="https://tools.ietf.org/html/rfc6838">RFC 6838</a>
-     */
-    public Pattern asMediaTypePattern() {
-        if (mediaTypePattern == null) {
-            if (mediaTypePatternString == null) {
-                mediaTypePatternString = "^application\\/" + name.toLowerCase() + "$";
-            }
-            mediaTypePattern = Pattern.compile(mediaTypePatternString, Pattern.CASE_INSENSITIVE);
-        }
-        return mediaTypePattern;
-    }
-
-    /**
      * Concise Binary Object Representation (CBOR).
      *
      * @see <a href="https://tools.ietf.org/html/rfc7049">RFC 7049</a>
      */
-    public static final EncodingDescriptor CBOR = new EncodingDescriptor("CBOR",
-        null, "^application\\/(?:[^\\+]*\\+)?cbor$");
+    public static final EncodingDescriptor CBOR = new EncodingDescriptor("CBOR", null);
 
     /**
      * JavaScript Object Notation (JSON).
      *
      * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
      */
-    public static final EncodingDescriptor JSON = new EncodingDescriptor("JSON",
-        DataEncoding.JSON, "^application\\/(?:[^\\+]*\\+)?json$");
+    public static final EncodingDescriptor JSON = new EncodingDescriptor("JSON", DataEncoding.JSON);
 
     /**
      * Extensible Markup Language (XML).
@@ -90,16 +65,14 @@ public class EncodingDescriptor {
      * @see <a href="https://www.w3.org/TR/xml">W3C XML 1.0</a>
      * @see <a href="https://www.w3.org/TR/xml11">W3C XML 1.1</a>
      */
-    public static final EncodingDescriptor XML = new EncodingDescriptor("XML",
-        null, "^(?:(?:application)|(?:text))\\/(?:[^\\+]*\\+)?xml$");
+    public static final EncodingDescriptor XML = new EncodingDescriptor("XML", null);
 
     /**
      * Efficient XML Interchange (EXI).
      *
      * @see <a href="https://www.w3.org/TR/exi/">W3C EXI 1.0</a>
      */
-    public static final EncodingDescriptor EXI = new EncodingDescriptor("EXI",
-        null, "^application\\/(?:[^-]*-)?exi$");
+    public static final EncodingDescriptor EXI = new EncodingDescriptor("EXI", null);
 
     /**
      * Resolves {@link EncodingDescriptor} from given {@code name}.
@@ -115,7 +88,7 @@ public class EncodingDescriptor {
         case "XML": return XML;
         case "EXI": return EXI;
         }
-        return new EncodingDescriptor(name, null, null);
+        return new EncodingDescriptor(name, null);
     }
 
     @Override

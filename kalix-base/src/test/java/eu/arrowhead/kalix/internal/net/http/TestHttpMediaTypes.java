@@ -21,7 +21,7 @@ public class TestHttpMediaTypes {
         final EncodingDescriptor[] encodings,
         final EncodingDescriptor expected)
     {
-        final var actual = HttpMediaTypes.findEncodingCompatibleWith(encodings, contentType);
+        final var actual = HttpMediaTypes.findEncodingCompatibleWithContentType(encodings, contentType);
         assertTrue(actual.isPresent());
         assertEquals(expected, actual.get());
     }
@@ -44,7 +44,7 @@ public class TestHttpMediaTypes {
                 EncodingDescriptor.JSON, EncodingDescriptor.XML
             }, EncodingDescriptor.JSON),
 
-            arguments("text/xml; charset=utf-16", new EncodingDescriptor[]{
+            arguments("application/xml; charset=utf-16", new EncodingDescriptor[]{
                 EncodingDescriptor.JSON, EncodingDescriptor.XML
             }, EncodingDescriptor.XML),
 
@@ -61,7 +61,7 @@ public class TestHttpMediaTypes {
     @ParameterizedTest
     @MethodSource("incompatibleContentTypeEncodingArguments")
     void shouldNotFindCompatibleEncoding(final String contentType, final EncodingDescriptor[] encodings) {
-        final var actual = HttpMediaTypes.findEncodingCompatibleWith(encodings, contentType);
+        final var actual = HttpMediaTypes.findEncodingCompatibleWithContentType(encodings, contentType);
         assertFalse(actual.isPresent());
     }
 
@@ -104,7 +104,7 @@ public class TestHttpMediaTypes {
         final EncodingDescriptor[] encodings,
         final EncodingDescriptor expected)
     {
-        final var actual = HttpMediaTypes.findEncodingCompatibleWith(encodings, acceptFields);
+        final var actual = HttpMediaTypes.findEncodingCompatibleWithAcceptHeaders(encodings, acceptFields);
         assertTrue(actual.isPresent());
         assertEquals(expected, actual.get());
     }
@@ -115,7 +115,7 @@ public class TestHttpMediaTypes {
                 EncodingDescriptor.JSON, EncodingDescriptor.XML
             }, EncodingDescriptor.JSON),
 
-            arguments(Collections.singletonList("*/json"), new EncodingDescriptor[]{
+            arguments(Collections.singletonList("*/senml+json"), new EncodingDescriptor[]{
                 EncodingDescriptor.JSON, EncodingDescriptor.XML
             }, EncodingDescriptor.JSON),
 
@@ -131,7 +131,7 @@ public class TestHttpMediaTypes {
                 EncodingDescriptor.EXI, EncodingDescriptor.CBOR
             }, EncodingDescriptor.CBOR),
 
-            arguments(Arrays.asList("*/json, */exi", "*/cbor"), new EncodingDescriptor[]{
+            arguments(Arrays.asList("*/json, */senml-exi", "*/cbor"), new EncodingDescriptor[]{
                 EncodingDescriptor.EXI, EncodingDescriptor.CBOR
             }, EncodingDescriptor.EXI),
 
@@ -151,7 +151,7 @@ public class TestHttpMediaTypes {
         final List<String> acceptFields,
         final EncodingDescriptor[] encodings)
     {
-        final var actual = HttpMediaTypes.findEncodingCompatibleWith(encodings, acceptFields);
+        final var actual = HttpMediaTypes.findEncodingCompatibleWithAcceptHeaders(encodings, acceptFields);
         assertFalse(actual.isPresent());
     }
 

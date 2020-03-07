@@ -1,6 +1,8 @@
 package eu.arrowhead.kalix.internal.net.http;
 
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
+import eu.arrowhead.kalix.dto.DataWritable;
+import eu.arrowhead.kalix.net.http.service.HttpService;
 import eu.arrowhead.kalix.net.http.service.HttpServiceRequest;
 import eu.arrowhead.kalix.net.http.service.HttpServiceResponse;
 import io.netty.buffer.Unpooled;
@@ -10,6 +12,9 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 
 import javax.net.ssl.SSLEngine;
+
+import java.nio.file.Path;
+import java.util.Optional;
 
 import static eu.arrowhead.kalix.internal.net.http.NettyHttp.adapt;
 
@@ -48,48 +53,33 @@ public class NettyHttpServiceRequestHandler extends SimpleChannelInboundHandler<
         final var uriDecoder = new QueryStringDecoder(request.uri());
         final var path = uriDecoder.path();
 
-        // Lookup the service that will handle the request.
-        final var optionalService = serviceLookup.getServiceByPath(path);
-        if (optionalService.isEmpty()) {
-            sendEmptyResponseAndClose(ctx, request.protocolVersion(), HttpResponseStatus.NOT_FOUND);
-            return true;
-        }
-        final var service = optionalService.get();
-
-        // Verify that the stated "content-length" does not exceed any limits.
+        final HttpService service;
         {
-            // TODO: Enable and check size restrictions.
-            if (HttpUtil.is100ContinueExpected(request)) {
-                ctx.writeAndFlush(new DefaultFullHttpResponse(
-                    request.protocolVersion(),
-                    HttpResponseStatus.CONTINUE,
-                    Unpooled.EMPTY_BUFFER
-                ));
+            final var optionalService = serviceLookup.getServiceByPath(path);
+            if (optionalService.isEmpty()) {
+                sendEmptyResponseAndClose(ctx, request.protocolVersion(), HttpResponseStatus.NOT_FOUND);
+                return true;
             }
+            service = optionalService.get();
         }
 
-        // Determine what HTTP encoding to use both for encoding and decoding.
         final EncodingDescriptor encoding;
         {
-            final var contentType = request.headers().get("content-type");
-            if (contentType == null) {
-                encoding = service.defaultEncoding();
+            final var optionalEncoding = determineEncodingFrom(service, request.headers());
+            if (optionalEncoding.isEmpty()) {
+                sendEmptyResponseAndClose(ctx, request.protocolVersion(), HttpResponseStatus.UNSUPPORTED_MEDIA_TYPE);
+                return true;
             }
-            else {
-                final var encoding0 = HttpMediaTypes.findEncodingCompatibleWith(service.encodings(), contentType);
-                if (encoding0.isEmpty()) {
-                    sendEmptyResponseAndClose(ctx, request.protocolVersion(),
-                        HttpResponseStatus.UNSUPPORTED_MEDIA_TYPE);
-                    return true;
-                }
-                encoding = encoding0.get();
-            }
-            // According to RFC 7231, Section 5.3.2, one can "disregard the
-            // ["accept"] header field by treating the response as if it is
-            // not subject to content negotiation." An Arrowhead service always
-            // has the same input and output encodings. No content-negotiation
-            // is possible. The "content-type", if present, is used to decide
-            // the types of both the incoming and the outgoing messages.
+            encoding = optionalEncoding.get();
+        }
+
+        // TODO: Enable and check size restrictions.
+        if (HttpUtil.is100ContinueExpected(request)) {
+            ctx.writeAndFlush(new DefaultFullHttpResponse(
+                request.protocolVersion(),
+                HttpResponseStatus.CONTINUE,
+                Unpooled.EMPTY_BUFFER
+            ));
         }
 
         this.body = new NettyHttpServiceRequestBody(ctx.alloc(), encoding, request.headers());
@@ -111,14 +101,34 @@ public class NettyHttpServiceRequestHandler extends SimpleChannelInboundHandler<
             .onResult(result -> {
                 if (result.isSuccess()) {
                     sendResponse(ctx, serviceResponse);
+                    return;
                 }
-                else {
-                    sendEmptyResponseAndClose(ctx, request.protocolVersion(), HttpResponseStatus.INTERNAL_SERVER_ERROR);
-                    ctx.fireExceptionCaught(result.fault());
-                }
+                sendEmptyResponseAndClose(ctx, request.protocolVersion(), HttpResponseStatus.INTERNAL_SERVER_ERROR);
+                ctx.fireExceptionCaught(result.fault());
             });
 
         return false;
+    }
+
+    /*
+     * According to RFC 7231, Section 5.3.2, one can 'disregard the ["accept"]
+     * header field by treating the response as if it is not subject to content
+     * negotiation.' An Arrowhead service always has the same input and output
+     * encodings. No other content-negotiation is possible. If "content-type"
+     * is specified, it is used to determine encoding. If "content-type" is not
+     * specified but "accept" is, it is used instead. If neither field is
+     * specified, the configured default encoding is assumed to be adequate.
+     */
+    private Optional<EncodingDescriptor> determineEncodingFrom(final HttpService service, final HttpHeaders headers) {
+        final var contentType = headers.get("content-type");
+        if (contentType != null) {
+            return HttpMediaTypes.findEncodingCompatibleWithContentType(service.encodings(), contentType);
+        }
+        final var acceptHeaders = headers.getAll("accept");
+        if (acceptHeaders != null && acceptHeaders.size() > 0) {
+            return HttpMediaTypes.findEncodingCompatibleWithAcceptHeaders(service.encodings(), acceptHeaders);
+        }
+        return Optional.of(service.defaultEncoding());
     }
 
     private void handleRequestContent(final HttpContent content) {
@@ -139,7 +149,23 @@ public class NettyHttpServiceRequestHandler extends SimpleChannelInboundHandler<
     }
 
     private void sendResponse(final ChannelHandlerContext ctx, final HttpServiceResponse response) {
-        // TODO: Implement!
+        final var optionalBody = response.body();
+        if (optionalBody.isPresent()) {
+            final var body = optionalBody.get();
+            if (body instanceof byte[]) {
+
+                return;
+            }
+            if (body instanceof Path) {
+
+                return;
+            }
+            if (body instanceof String) {
+
+                return;
+            }
+            // Handle DTO body.
+        }
     }
 
     @Override

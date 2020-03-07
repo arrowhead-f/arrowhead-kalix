@@ -23,7 +23,7 @@ public class HttpServiceResponse {
 
     private HttpStatus status;
     private HttpHeaders headers = new HttpHeaders();
-    private DataWritable body;
+    private Object body;
 
     /**
      * Creates new outgoing HTTP response.
@@ -39,7 +39,7 @@ public class HttpServiceResponse {
     /**
      * @return Response body, if any has been set.
      */
-    public Optional<DataWritable> body() {
+    public Optional<Object> body() {
         return Optional.ofNullable(body);
     }
 
@@ -59,10 +59,9 @@ public class HttpServiceResponse {
      *
      * @param byteArray Bytes to send to response receiver.
      * @return This response object.
-     * @throws NullPointerException If {@code byteArray} is {@code null}.
      */
     public HttpServiceResponse body(final byte[] byteArray) {
-        body = new DataByteArray(byteArray);
+        body = byteArray;
         return this;
     }
 
@@ -85,7 +84,7 @@ public class HttpServiceResponse {
      * @see eu.arrowhead.kalix.dto.Writable @Writable
      */
     public HttpServiceResponse body(final DataWritable body) {
-        this.body = Objects.requireNonNull(body, "Expected body");
+        this.body = body;
         return this;
     }
 
@@ -108,7 +107,7 @@ public class HttpServiceResponse {
      * @throws NullPointerException If {@code path} is {@code null}.
      */
     public HttpServiceResponse body(final Path path) {
-        body = new DataPath(path);
+        body = path;
         return this;
     }
 
@@ -133,7 +132,7 @@ public class HttpServiceResponse {
      * @throws NullPointerException If {@code string} is {@code null}.
      */
     public HttpServiceResponse body(final String string) {
-        body = new DataString(string);
+        body = string;
         return this;
     }
 
