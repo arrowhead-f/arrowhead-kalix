@@ -11,9 +11,4 @@ public enum DataEncoding {
      * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
      */
     JSON,
-
-    /**
-     * Some currently unsupported encoding.
-     */
-    UNSUPPORTED,
 }

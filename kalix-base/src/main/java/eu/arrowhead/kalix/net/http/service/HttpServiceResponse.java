@@ -1,9 +1,9 @@
 package eu.arrowhead.kalix.net.http.service;
 
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
-import eu.arrowhead.kalix.dto.data.DataByteArray;
-import eu.arrowhead.kalix.dto.data.DataPath;
-import eu.arrowhead.kalix.dto.data.DataString;
+import eu.arrowhead.kalix.internal.dto.DataByteArray;
+import eu.arrowhead.kalix.internal.dto.DataPath;
+import eu.arrowhead.kalix.internal.dto.DataString;
 import eu.arrowhead.kalix.dto.DataWritable;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpStatus;

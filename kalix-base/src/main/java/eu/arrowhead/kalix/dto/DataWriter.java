@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.dto;
 
+import eu.arrowhead.kalix.dto.binary.BinaryWriter;
 import eu.arrowhead.kalix.dto.json.JsonWritable;
 
 import java.nio.ByteBuffer;
@@ -11,47 +12,39 @@ public class DataWriter {
     private DataWriter() {}
 
     /**
-     * Attempts to write {@code object} encoded with {@code encoding} to
-     * {@code target}.
+     * Attempts to write {@code t} encoded with {@code encoding} to
+     * {@code target} byte buffer.
      *
-     * @param object   Object to encode and write to {@code target}.
-     * @param encoding Encoding to use when writing {@code object}.
-     * @param target   Byte buffer to write encoded form of {@code object} to.
-     * @param <T>      Type of {@code object}.
-     * @throws UnsupportedOperationException If {@code encoding} is
-     *                                       {@link DataEncoding#UNSUPPORTED}.
+     * @param t        Object to encode and write to {@code target}.
+     * @param encoding Encoding to use when writing {@code t}.
+     * @param target   Byte buffer to write encoded form of {@code t} to.
+     * @param <T>      Type of {@code t}.
+     * @throws UnsupportedOperationException If the DTO interface type of
+     *                                       {@code t} does not include the
+     *                                       given {@link DataEncoding} as
+     *                                       argument to its {@code @Writable}
+     *                                       annotation.
      * @throws WriteException                If writing to {@code target} fails.
      */
-    public static <T extends DataWritable> void write(
-        final T object,
-        final DataEncoding encoding,
-        final ByteBuffer target) throws WriteException
+    public static <T extends DataWritable> void write(final T t, final DataEncoding encoding, final BinaryWriter target)
+        throws WriteException
     {
-        switch (encoding) {
-        case JSON:
-            writeJson(object, target);
-            return;
-
-        case UNSUPPORTED:
-            throw new UnsupportedOperationException("Unsupported encoding");
+        if (encoding == DataEncoding.JSON) {
+            if (t instanceof JsonWritable) {
+                ((JsonWritable) t).writeJson(target);
+                return;
+            }
+            throw encodingNotSupportedFor(encoding, t);
         }
         throw new IllegalStateException("DataEncoding that is supported has " +
             "not yet been added to this method");
     }
 
-    private static <T extends DataWritable> void writeJson(
-        final T object,
-        final ByteBuffer target) throws WriteException
-    {
-        if (object instanceof JsonWritable) {
-            ((JsonWritable) object).writeJson(target);
-        }
-        else {
-            throw new UnsupportedOperationException("The interface type " +
-                "from which the \"" + object.getClass() + "\" DTO was " +
-                "generated does not include DataEncoding.JSON as argument " +
-                "to its @Writable annotation; no JSON encoding routine has, " +
-                "consequently, been generated for the class");
-        }
+    private static RuntimeException encodingNotSupportedFor(final DataEncoding encoding, final Object object) {
+        return new UnsupportedOperationException("The interface type from " +
+            "which the \"" + object.getClass() + "\" DTO was generated does " +
+            "not include DataEncoding." + encoding + " as argument to its " +
+            "@Writable annotation; no corresponding encoding routine has, " +
+            "consequently, been generated for the class");
     }
 }

@@ -1,5 +1,7 @@
 package eu.arrowhead.kalix.example;
 
+import eu.arrowhead.kalix.dto.binary.BinaryReader;
+import eu.arrowhead.kalix.dto.binary.BinaryWriter;
 import eu.arrowhead.kalix.example.dto.PointBuilder;
 import eu.arrowhead.kalix.example.dto.ShapeBuilder;
 import eu.arrowhead.kalix.example.dto.ShapeData;
@@ -42,19 +44,22 @@ public class Main {
                 .build();
 
             final var byteBuffer = ByteBuffer.allocate(4096);
-            shape0.writeJson(byteBuffer);
+            final var reader = BinaryReader.from(byteBuffer);
+            final var writer = BinaryWriter.from(byteBuffer);
+
+            shape0.writeJson(writer);
 
             final var text0 = new String(byteBuffer.array(), 0, byteBuffer.position(), StandardCharsets.UTF_8);
             System.out.println(text0);
 
             byteBuffer.flip();
             byteBuffer.position(0);
-            final var shape1 = ShapeData.readJson(byteBuffer);
+            final var shape1 = ShapeData.readJson(reader);
 
             byteBuffer.flip();
             byteBuffer.position(0);
             byteBuffer.limit(4096);
-            shape1.writeJson(byteBuffer);
+            shape1.writeJson(writer);
 
             final var text1 = new String(byteBuffer.array(), 0, byteBuffer.position(), StandardCharsets.UTF_8);
             System.out.println(text1);

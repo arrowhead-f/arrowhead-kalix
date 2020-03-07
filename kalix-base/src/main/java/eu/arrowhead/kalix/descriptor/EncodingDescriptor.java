@@ -3,6 +3,7 @@ package eu.arrowhead.kalix.descriptor;
 import eu.arrowhead.kalix.dto.DataEncoding;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
@@ -17,7 +18,7 @@ public class EncodingDescriptor {
 
     private EncodingDescriptor(final String name, final DataEncoding dataEncoding, final String mediaTypePattern) {
         this.name = Objects.requireNonNull(name, "Expected name");
-        this.dataEncoding = Objects.requireNonNull(dataEncoding, "Expected dataEncoding");
+        this.dataEncoding = dataEncoding;
         this.mediaTypePatternString = mediaTypePattern;
     }
 
@@ -40,30 +41,31 @@ public class EncodingDescriptor {
     }
 
     /**
-     * Gets DTO variant of this descriptor, or {@link DataEncoding#UNSUPPORTED}
-     * if no DTO support exists for the encoding.
+     * Gets DTO variant of this descriptor, if any such exists.
      *
      * @return DTO variant of this descriptor.
      * @see eu.arrowhead.kalix.dto
      */
-    public DataEncoding asDataEncoding() {
-        return dataEncoding;
+    public Optional<DataEncoding> asDataEncoding() {
+        return Optional.ofNullable(dataEncoding);
     }
 
     /**
-     * @param mediaType Media type to test, such as {@code "application/json"}
-     *                  or {@code "application/xmpp+xml"}.
-     * @return {@code true} only if this encoding could, theoretically, be used
-     * to encode or decode data to/from the provided media type.
+     * Gets {@code Pattern} useful for determine if given RFC 6838 media types,
+     * such as {@code "application/json"} or {@code "application/xmpp+xml"},
+     * are relying on this encoding.
+     *
+     * @return Regular expression pattern matching compatible media types.
+     * @see <a href="https://tools.ietf.org/html/rfc6838">RFC 6838</a>
      */
-    public boolean isUsedByMediaType(final CharSequence mediaType) {
+    public Pattern asMediaTypePattern() {
         if (mediaTypePattern == null) {
             if (mediaTypePatternString == null) {
                 mediaTypePatternString = "^application\\/" + name.toLowerCase() + "$";
             }
             mediaTypePattern = Pattern.compile(mediaTypePatternString, Pattern.CASE_INSENSITIVE);
         }
-        return mediaTypePattern.matcher(mediaType).find();
+        return mediaTypePattern;
     }
 
     /**
@@ -72,7 +74,7 @@ public class EncodingDescriptor {
      * @see <a href="https://tools.ietf.org/html/rfc7049">RFC 7049</a>
      */
     public static final EncodingDescriptor CBOR = new EncodingDescriptor("CBOR",
-        DataEncoding.UNSUPPORTED, "^application\\/(?:[^\\+]*\\+)?cbor$");
+        null, "^application\\/(?:[^\\+]*\\+)?cbor$");
 
     /**
      * JavaScript Object Notation (JSON).
@@ -89,7 +91,7 @@ public class EncodingDescriptor {
      * @see <a href="https://www.w3.org/TR/xml11">W3C XML 1.1</a>
      */
     public static final EncodingDescriptor XML = new EncodingDescriptor("XML",
-        DataEncoding.UNSUPPORTED, "^(?:(?:application)|(?:text))\\/(?:[^\\+]*\\+)?xml$");
+        null, "^(?:(?:application)|(?:text))\\/(?:[^\\+]*\\+)?xml$");
 
     /**
      * Efficient XML Interchange (EXI).
@@ -97,7 +99,7 @@ public class EncodingDescriptor {
      * @see <a href="https://www.w3.org/TR/exi/">W3C EXI 1.0</a>
      */
     public static final EncodingDescriptor EXI = new EncodingDescriptor("EXI",
-        DataEncoding.UNSUPPORTED, "^application\\/(?:[^-]*-)?exi$");
+        null, "^application\\/(?:[^-]*-)?exi$");
 
     /**
      * Resolves {@link EncodingDescriptor} from given {@code name}.
@@ -113,7 +115,7 @@ public class EncodingDescriptor {
         case "XML": return XML;
         case "EXI": return EXI;
         }
-        return new EncodingDescriptor(name, DataEncoding.UNSUPPORTED, null);
+        return new EncodingDescriptor(name, null, null);
     }
 
     @Override

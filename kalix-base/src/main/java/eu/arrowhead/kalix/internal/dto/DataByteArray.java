@@ -1,4 +1,4 @@
-package eu.arrowhead.kalix.dto.data;
+package eu.arrowhead.kalix.internal.dto;
 
 import eu.arrowhead.kalix.dto.DataWritable;
 

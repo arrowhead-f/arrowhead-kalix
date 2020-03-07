@@ -2,26 +2,26 @@ package eu.arrowhead.kalix.dto.json;
 
 import eu.arrowhead.kalix.dto.DataEncoding;
 import eu.arrowhead.kalix.dto.ReadException;
+import eu.arrowhead.kalix.dto.binary.BinaryReader;
 
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 @SuppressWarnings("unused")
 public final class JsonReader {
-    private final ByteBuffer source;
+    private final BinaryReader source;
     private final ArrayList<JsonToken> tokens;
 
     private int p0;
     private ReadException error = null;
 
-    private JsonReader(final ByteBuffer source) {
+    private JsonReader(final BinaryReader source) {
         this.source = source;
-        this.tokens = new ArrayList<>(source.remaining() / 16);
-        this.p0 = source.position();
+        this.tokens = new ArrayList<>(source.readableBytes() / 16);
+        this.p0 = source.readOffset();
     }
 
-    public static JsonTokenReader tokenize(final ByteBuffer source) throws ReadException {
+    public static JsonTokenReader tokenize(final BinaryReader source) throws ReadException {
         final var tokenizer = new JsonReader(source);
         if (tokenizer.tokenizeRoot()) {
             return new JsonTokenReader(tokenizer.tokens, source);
@@ -30,62 +30,37 @@ public final class JsonReader {
     }
 
     private JsonToken collectCandidate(final JsonType type) {
-        final var token = new JsonToken(type, p0, source.position(), 0);
+        final var token = new JsonToken(type, p0, source.readOffset(), 0);
         tokens.add(token);
         discardCandidate();
         return token;
     }
 
     private void discardCandidate() {
-        p0 = source.position();
+        p0 = source.readOffset();
     }
 
     private void saveCandidateAsError(final String message) {
-        final var buffer = new byte[source.position() - p0];
-        source.position(p0).get(buffer);
+        final var buffer = new byte[source.readOffset() - p0];
+        source.getBytes(p0, buffer);
         error = new ReadException(DataEncoding.JSON, message, new String(buffer, StandardCharsets.UTF_8), p0);
     }
 
     private void discardWhitespace() {
-        for (byte b; ; ) {
-            b = peek();
+        for (byte b; source.readableBytes() > 0; ) {
+            b = source.peekByte();
             if (b != '\t' && b != '\r' && b != '\n' && b != ' ') {
-                discardCandidate();
                 break;
             }
-            skip1();
+            source.skipByte();
         }
-    }
-
-    private byte next() {
-        return source.position() < source.limit()
-            ? source.get()
-            : 0;
-    }
-
-    private byte peek() {
-        return source.get(source.position());
-    }
-
-    private void skip1() {
-        if (source.position() < source.limit()) {
-            source.position(source.position() + 1);
-        }
-    }
-
-    private void skip4() {
-        if (source.position() + 3 < source.limit()) {
-            source.position(source.position() + 4);
-        }
-        else {
-            source.position(source.limit());
-        }
+        discardCandidate();
     }
 
     private boolean tokenizeRoot() {
         discardWhitespace();
 
-        switch (next()) {
+        switch (source.readByteOrZero()) {
         case '{': return tokenizeObject();
         case '[': return tokenizeArray();
         default:
@@ -98,7 +73,7 @@ public final class JsonReader {
     private boolean tokenizeValue() {
         discardWhitespace();
 
-        switch (next()) {
+        switch (source.readByteOrZero()) {
         case '\0': return true;
         case '{': return tokenizeObject();
         case '[': return tokenizeArray();
@@ -132,16 +107,19 @@ public final class JsonReader {
 
         discardWhitespace();
 
-        var b = peek();
+        if (source.readableBytes() == 0) {
+            return false;
+        }
+        var b = source.peekByte();
         if (b == '}') {
-            skip1();
+            source.skipByte();
             return true;
         }
 
         while (true) {
             discardWhitespace();
 
-            b = next();
+            b = source.readByteOrZero();
             if (b != '\"') {
                 saveCandidateAsError("Object key must be string");
                 return false;
@@ -152,7 +130,7 @@ public final class JsonReader {
 
             discardWhitespace();
 
-            b = next();
+            b = source.readByteOrZero();
             if (b != ':') {
                 saveCandidateAsError("Object key not followed by colon");
                 return false;
@@ -165,16 +143,19 @@ public final class JsonReader {
 
             discardWhitespace();
 
-            b = peek();
+            if (source.readableBytes() == 0) {
+                return false;
+            }
+            b = source.peekByte();
             if (b == ',') {
-                skip1();
+                source.skipByte();
                 continue;
             }
             if (b != '}') {
                 saveCandidateAsError("Expected `,` or `}`");
                 return false;
             }
-            skip1();
+            source.skipByte();
             return true;
         }
     }
@@ -184,9 +165,12 @@ public final class JsonReader {
 
         discardWhitespace();
 
-        byte b = peek();
+        if (source.readableBytes() == 0) {
+            return false;
+        }
+        byte b = source.peekByte();
         if (b == ']') {
-            skip1();
+            source.skipByte();
             return true;
         }
 
@@ -198,7 +182,7 @@ public final class JsonReader {
 
             discardWhitespace();
 
-            b = next();
+            b = source.readByteOrZero();
             if (b == ',') {
                 continue;
             }
@@ -211,8 +195,8 @@ public final class JsonReader {
     }
 
     private boolean tokenizeString() {
-        while (true) {
-            byte b = next();
+        while (source.readableBytes() > 0) {
+            byte b = source.readByte();
             if (b == '\"') {
                 final var token = collectCandidate(JsonType.STRING);
 
@@ -223,16 +207,24 @@ public final class JsonReader {
                 return true;
             }
             if (b == '\\') {
-                if (next() == 'u') {
-                    skip4();
+                if (source.readableBytes() == 0) {
+                    return false;
+                }
+                if (source.readByte() == 'u') {
+                    if (source.readableBytes() < 4) {
+                        return false;
+                    }
+                    source.skipBytes(4);
                 }
             }
         }
+        return false;
     }
 
     private boolean tokenizeNumber() {
-        while (true) {
-            switch (peek()) {
+        number:
+        while (source.readableBytes() > 0) {
+            switch (source.peekByte()) {
             case '\0':
             case ',':
             case '}':
@@ -241,26 +233,27 @@ public final class JsonReader {
             case '\r':
             case '\n':
             case ' ':
-                collectCandidate(JsonType.NUMBER);
-                return true;
+                break number;
 
             default:
-                skip1();
+                source.skipByte();
                 break;
             }
         }
+        collectCandidate(JsonType.NUMBER);
+        return true;
     }
 
     private boolean tokenizeTrue() {
         error:
         {
-            if (next() != 'r') {
+            if (source.readByteOrZero() != 'r') {
                 break error;
             }
-            if (next() != 'u') {
+            if (source.readByteOrZero() != 'u') {
                 break error;
             }
-            if (next() != 'e') {
+            if (source.readByteOrZero() != 'e') {
                 break error;
             }
             collectCandidate(JsonType.TRUE);
@@ -273,16 +266,16 @@ public final class JsonReader {
     private boolean tokenizeFalse() {
         error:
         {
-            if (next() != 'a') {
+            if (source.readByteOrZero() != 'a') {
                 break error;
             }
-            if (next() != 'l') {
+            if (source.readByteOrZero() != 'l') {
                 break error;
             }
-            if (next() != 's') {
+            if (source.readByteOrZero() != 's') {
                 break error;
             }
-            if (next() != 'e') {
+            if (source.readByteOrZero() != 'e') {
                 break error;
             }
             collectCandidate(JsonType.FALSE);
@@ -295,13 +288,13 @@ public final class JsonReader {
     private boolean tokenizeNull() {
         error:
         {
-            if (next() != 'u') {
+            if (source.readByteOrZero() != 'u') {
                 break error;
             }
-            if (next() != 'l') {
+            if (source.readByteOrZero() != 'l') {
                 break error;
             }
-            if (next() != 'l') {
+            if (source.readByteOrZero() != 'l') {
                 break error;
             }
             collectCandidate(JsonType.NULL);
@@ -312,8 +305,9 @@ public final class JsonReader {
     }
 
     private void expandAndSaveCandidateAsError(final String message) {
-        while (true) {
-            switch (peek()) {
+        expand:
+        while (source.readableBytes() > 0) {
+            switch (source.peekByte()) {
             case '\0':
             case ',':
             case '}':
@@ -322,13 +316,13 @@ public final class JsonReader {
             case '\r':
             case '\n':
             case ' ':
-                saveCandidateAsError(message);
-                return;
+               break expand;
 
             default:
-                skip1();
+                source.skipByte();
                 break;
             }
         }
+        saveCandidateAsError(message);
     }
 }

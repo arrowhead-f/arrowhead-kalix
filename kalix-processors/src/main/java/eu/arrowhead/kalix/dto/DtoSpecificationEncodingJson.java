@@ -1,18 +1,19 @@
 package eu.arrowhead.kalix.dto;
 
 import com.squareup.javapoet.*;
+import eu.arrowhead.kalix.dto.binary.BinaryReader;
+import eu.arrowhead.kalix.dto.binary.BinaryWriter;
 import eu.arrowhead.kalix.dto.json.*;
 import eu.arrowhead.kalix.dto.types.*;
-import eu.arrowhead.kalix.dto.util.ByteBufferPutCache;
+import eu.arrowhead.kalix.dto.util.BinaryWriterWriteCache;
 import eu.arrowhead.kalix.dto.util.Expander;
 
 import javax.lang.model.element.Modifier;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
-    private final ByteBufferPutCache putCache = new ByteBufferPutCache("target");
+    private final BinaryWriterWriteCache writeCache = new BinaryWriterWriteCache("target");
 
     private int level = 0;
 
@@ -39,7 +40,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         implementation.addMethod(MethodSpec.methodBuilder("readJson")
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
             .returns(targetClassName)
-            .addParameter(ByteBuffer.class, "source", Modifier.FINAL)
+            .addParameter(BinaryReader.class, "source", Modifier.FINAL)
             .addException(ReadException.class)
             .addStatement("return readJson($T.tokenize(source))", JsonReader.class)
             .build());
@@ -321,12 +322,12 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             .addAnnotation(Override.class)
             .addModifiers(Modifier.PUBLIC)
             .addException(WriteException.class)
-            .addParameter(ParameterSpec.builder(TypeName.get(ByteBuffer.class), "target")
+            .addParameter(ParameterSpec.builder(TypeName.get(BinaryWriter.class), "target")
                 .addModifiers(Modifier.FINAL)
                 .build());
 
-        putCache.clear();
-        putCache.append('{');
+        writeCache.clear();
+        writeCache.append('{');
 
         final var properties = target.properties();
         final var p1 = properties.size();
@@ -336,13 +337,13 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             try {
                 if (p0 != 0) {
                     if (isOptional) {
-                        putCache.addPutIfNotEmpty(builder);
+                        writeCache.addWriteIfNotEmpty(builder);
                         builder.beginControlFlow("if ($N != null)", property.name());
                     }
-                    putCache.append(',');
+                    writeCache.append(',');
                 }
 
-                putCache
+                writeCache
                     .append('"')
                     .append(property.nameFor(DataEncoding.JSON))
                     .append("\":");
@@ -350,7 +351,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
                 writeValue(property.type(), property.name(), builder);
 
                 if (isOptional) {
-                    putCache.addPutIfNotEmpty(builder);
+                    writeCache.addWriteIfNotEmpty(builder);
                     builder.endControlFlow();
                 }
             }
@@ -359,7 +360,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             }
         }
 
-        putCache.append('}').addPutIfNotEmpty(builder);
+        writeCache.append('}').addWriteIfNotEmpty(builder);
 
         implementation.addMethod(builder.build());
     }
@@ -403,7 +404,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
     }
 
     private void writeArray(final DtoType type, final String name, final MethodSpec.Builder builder) {
-        putCache.append('[').addPut(builder);
+        writeCache.append('[').addPut(builder);
 
         builder
             .beginControlFlow("")
@@ -414,7 +415,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             .addStatement("var i$L = 0", level)
             .beginControlFlow("for (final var item$L : $N)", level, name)
             .beginControlFlow("if (i$L++ != 0)", level)
-            .addStatement("target.put((byte) ',')")
+            .addStatement("target.write((byte) ',')")
             .endControlFlow();
 
         final var itemName = "item" + level;
@@ -422,18 +423,18 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         writeValue(((DtoArrayOrList) type).element(), itemName, builder);
         level -= 1;
 
-        putCache.addPutIfNotEmpty(builder);
+        writeCache.addWriteIfNotEmpty(builder);
         builder
             .endControlFlow()
             .endControlFlow();
 
-        putCache.append(']');
+        writeCache.append(']');
     }
 
     private void writeEnum(final String name, final MethodSpec.Builder builder) {
-        putCache.append('"').addPut(builder);
+        writeCache.append('"').addPut(builder);
         builder.addStatement("$T.write($N.toString(), target)", JsonWriter.class, name);
-        putCache.append('"');
+        writeCache.append('"');
     }
 
     private void writeInterface(final DtoInterface type, final String name, final MethodSpec.Builder builder) {
@@ -442,12 +443,12 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
                 "annotated with @Writable, or lacks DataEncoding.JSON as " +
                 "annotation argument");
         }
-        putCache.addPutIfNotEmpty(builder);
+        writeCache.addWriteIfNotEmpty(builder);
         builder.addStatement("$N.writeJson(target)", name);
     }
 
     private void writeMap(final DtoType type, final String name, final MethodSpec.Builder builder) {
-        putCache.append('{').addPutIfNotEmpty(builder);
+        writeCache.append('{').addWriteIfNotEmpty(builder);
 
         final var map = (DtoMap) type;
         builder
@@ -457,34 +458,34 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             .addStatement("var i$L = 0", level)
             .beginControlFlow("for (final var entry$1L : entrySet$1L)", level)
             .beginControlFlow("if (i$L++ != 0)", level)
-            .addStatement("target.put((byte) ',')")
+            .addStatement("target.write((byte) ',')")
             .endControlFlow();
 
         writeValue(map.key(), "entry" + level + ".getKey()", builder);
 
-        putCache.append(':');
+        writeCache.append(':');
 
         final var valueName = "entry" + level + ".getValue()";
         level += 1;
         writeValue(map.value(), valueName, builder);
         level -= 1;
 
-        putCache.addPutIfNotEmpty(builder);
+        writeCache.addWriteIfNotEmpty(builder);
         builder
             .endControlFlow()
             .endControlFlow();
 
-        putCache.append('}');
+        writeCache.append('}');
     }
 
     private void writeString(final String name, final MethodSpec.Builder builder) {
-        putCache.append('"').addPut(builder);
+        writeCache.append('"').addPut(builder);
         builder.addStatement("$T.write($N, target)", JsonWriter.class, name);
-        putCache.append('"');
+        writeCache.append('"');
     }
 
     private void writePrimitive(final String name, final MethodSpec.Builder builder) {
-        putCache.addPutIfNotEmpty(builder);
+        writeCache.addWriteIfNotEmpty(builder);
         builder.addStatement("$T.write($N, target)", JsonWriter.class, name);
     }
 

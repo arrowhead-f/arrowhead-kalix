@@ -5,7 +5,6 @@ import eu.arrowhead.kalix.util.concurrent.FutureProgress;
 
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.List;
 
 /**
  * The body of an incoming HTTP request.
@@ -38,23 +37,6 @@ public interface HttpServiceRequestBody {
      *                               starting with "body" is called.
      */
     FutureProgress<byte[]> bodyAsByteArray();
-
-    /**
-     * Requests that the body of the HTTP request be collected into a list of
-     * instances of the provided {@code class_}.
-     * <p>
-     * Note that only so-called Data Transfer Object (DTO) types may be decoded
-     * using this method. More details about such types can be read in the
-     * documentation for the {@link eu.arrowhead.kalix.dto} package.
-     *
-     * @param class_ Class to decode request body into.
-     * @param <R>    Type of {@code class_}.
-     * @return Future completed when the request body has been fully received
-     * and then decoded into an instance of {@code class_}.
-     * @throws IllegalStateException If more than one method with a name
-     *                               starting with "body" is called.
-     */
-    <R extends DataReadable> FutureProgress<List<? extends R>> bodyAsListOf(final Class<R> class_);
 
     /**
      * Requests that the body of the HTTP request be collected into a regular

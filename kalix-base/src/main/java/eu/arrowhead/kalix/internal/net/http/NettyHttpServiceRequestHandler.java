@@ -88,8 +88,8 @@ public class NettyHttpServiceRequestHandler extends SimpleChannelInboundHandler<
             // ["accept"] header field by treating the response as if it is
             // not subject to content negotiation." An Arrowhead service always
             // has the same input and output encodings. No content-negotiation
-            // is possible. The "content-type" is used to decide the types of
-            // both the incoming and the outgoing messages.
+            // is possible. The "content-type", if present, is used to decide
+            // the types of both the incoming and the outgoing messages.
         }
 
         this.body = new NettyHttpServiceRequestBody(ctx.alloc(), encoding, request.headers());

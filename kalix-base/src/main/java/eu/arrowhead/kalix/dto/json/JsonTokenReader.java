@@ -1,16 +1,15 @@
 package eu.arrowhead.kalix.dto.json;
 
-import eu.arrowhead.kalix.dto.ReadException;
+import eu.arrowhead.kalix.dto.binary.BinaryReader;
 
-import java.nio.ByteBuffer;
 import java.util.List;
 
 public class JsonTokenReader {
     private final List<JsonToken> tokens;
-    private final ByteBuffer source;
+    private final BinaryReader source;
     private int offset;
 
-    JsonTokenReader(final List<JsonToken> tokens, final ByteBuffer source) {
+    JsonTokenReader(final List<JsonToken> tokens, final BinaryReader source) {
         this.tokens = tokens;
         this.source = source;
 
@@ -21,7 +20,7 @@ public class JsonTokenReader {
         return tokens.get(offset++);
     }
 
-    public ByteBuffer source() {
+    public BinaryReader source() {
         return source;
     }
 }

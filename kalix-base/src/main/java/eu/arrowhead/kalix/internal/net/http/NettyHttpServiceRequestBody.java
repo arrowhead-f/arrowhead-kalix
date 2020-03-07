@@ -1,7 +1,11 @@
 package eu.arrowhead.kalix.internal.net.http;
 
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
+import eu.arrowhead.kalix.dto.DataEncoding;
 import eu.arrowhead.kalix.dto.DataReadable;
+import eu.arrowhead.kalix.dto.DataReader;
+import eu.arrowhead.kalix.dto.ReadException;
+import eu.arrowhead.kalix.internal.dto.binary.ByteBufReader;
 import eu.arrowhead.kalix.net.http.service.HttpServiceRequestBody;
 import eu.arrowhead.kalix.util.Result;
 import eu.arrowhead.kalix.util.concurrent.Future;
@@ -20,7 +24,6 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.CancellationException;
@@ -121,25 +124,18 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
 
     @Override
     public <R extends DataReadable> FutureProgress<? extends R> bodyAs(final Class<R> class_) {
-        return handleBodyRequest(() -> {
-            throw new IllegalStateException("Unexpected class \"" + class_ +
-                "\"; only generated DTO classes may be requested as " +
-                "response bodies");
-        });
+        final var dataEncoding = encoding.asDataEncoding();
+        if (dataEncoding.isEmpty()) {
+            return FutureProgress.failure(new UnsupportedOperationException("" +
+                "There is no DTO support for the \"" + encoding +
+                "\" encoding; request body cannot be decoded"));
+        }
+        return handleBodyRequest(() -> new FutureBodyAs<>(alloc, headers, class_, dataEncoding.get()));
     }
 
     @Override
     public FutureProgress<byte[]> bodyAsByteArray() {
         return handleBodyRequest(() -> new FutureBodyAsByteArray(alloc, headers));
-    }
-
-    @Override
-    public <R extends DataReadable> FutureProgress<List<? extends R>> bodyAsListOf(final Class<R> class_) {
-        return handleBodyRequest(() -> {
-            throw new IllegalStateException("Unexpected class \"" + class_ +
-                "\"; only generated DTO classes may be requested as " +
-                "response bodies");
-        });
     }
 
     @Override
@@ -283,15 +279,33 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
         }
     }
 
-    private static class FutureBodyAs<V> extends FutureBodyBuffered<V> {
-        private FutureBodyAs(final ByteBufAllocator alloc, final HttpHeaders headers) {
+    private static class FutureBodyAs<V extends DataReadable> extends FutureBodyBuffered<V> {
+        private final Class<V> class_;
+        private final DataEncoding encoding;
+
+        private FutureBodyAs(
+            final ByteBufAllocator alloc,
+            final HttpHeaders headers,
+            final Class<V> class_,
+            final DataEncoding encoding)
+        {
             super(alloc, headers);
+            this.class_ = class_;
+            this.encoding = encoding;
         }
 
         @Override
         public V assembleValue(final ByteBuf buffer) {
-            buffer.release();
-            return null;
+            try {
+                return DataReader.read(class_, encoding, new ByteBufReader(buffer));
+            }
+            catch (final ReadException exception) {
+                abort(exception);
+                return null;
+            }
+            finally {
+                buffer.release();
+            }
         }
     }
 

@@ -48,11 +48,6 @@ public class HttpServiceRequest implements HttpServiceRequestFull {
     }
 
     @Override
-    public <R extends DataReadable> FutureProgress<List<? extends R>> bodyAsListOf(final Class<R> class_) {
-        return body.bodyAsListOf(class_);
-    }
-
-    @Override
     public FutureProgress<? extends InputStream> bodyAsStream() {
         return body.bodyAsStream();
     }
@@ -123,11 +118,6 @@ public class HttpServiceRequest implements HttpServiceRequestFull {
             @Override
             public FutureProgress<byte[]> bodyAsByteArray() {
                 return self.bodyAsByteArray();
-            }
-
-            @Override
-            public <R extends DataReadable> FutureProgress<List<? extends R>> bodyAsListOf(final Class<R> class_) {
-                return self.bodyAsListOf(class_);
             }
 
             @Override
