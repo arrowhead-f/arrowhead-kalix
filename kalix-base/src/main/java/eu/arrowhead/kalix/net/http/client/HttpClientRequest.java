@@ -1,9 +1,11 @@
 package eu.arrowhead.kalix.net.http.client;
 
 import eu.arrowhead.kalix.dto.DataWritable;
+import eu.arrowhead.kalix.internal.net.http.NettyHttpHeaders;
+import eu.arrowhead.kalix.net.http.HttpBodySender;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpVersion;
-import eu.arrowhead.kalix.net.http.service.HttpServiceResponse;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -11,72 +13,47 @@ import java.util.*;
 /**
  * An outgoing HTTP request.
  */
-public interface HttpClientRequest {
-    /**
-     * @return Currently set request body, if any.
-     */
-    Optional<Object> body();
+public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
+    private final NettyHttpHeaders headers = new NettyHttpHeaders(new DefaultHttpHeaders());
+    private final Map<String, List<String>> queryParameters = new HashMap<>();
 
-    /**
-     * Sets request body, replacing any previously set such.
-     * <p>
-     * The provided byte array is scheduled for transmission to the request
-     * receiver as-is. It becomes the responsibility of the caller to ensure
-     * that the {@code "content-type"} header is set appropriately. The
-     * {@code "content-length"} header is, however, automatically set to the
-     * length of the byte array.
-     *
-     * @param byteArray Bytes to send to request receiver.
-     * @return This request object.
-     */
-    HttpServiceResponse body(final byte[] byteArray);
+    private Object body = null;
+    private HttpVersion version;
 
-    /**
-     * Sets request body, replacing any previously set such.
-     * <p>
-     * The provided writable data transfer object is scheduled for encoding and
-     * transmission to the request receiver. Please refer to the Javadoc for
-     * the {@code @Writable} annotation for more information about writable
-     * data transfer objects.
-     *
-     * @param body Data transfer object to send to request receiver.
-     * @return This request object.
-     * @throws NullPointerException If {@code body} is {@code null}.
-     * @see eu.arrowhead.kalix.dto.Writable @Writable
-     */
-    HttpServiceResponse body(final DataWritable body);
+    @Override
+    public Optional<Object> body() {
+        return Optional.ofNullable(body);
+    }
 
-    /**
-     * Sets request body, replacing any previously set such.
-     * <p>
-     * The contents of the file at the provided file system path are scheduled
-     * for transmission to the request receiver as-is. It becomes the
-     * responsibility of the caller to ensure that the {@code "content-type"}
-     * header is set appropriately. The {@code "content-length"} header is,
-     * however, automatically set to the size of the file.
-     *
-     * @param path Path to file to send to request receiver.
-     * @return This request object.
-     * @throws NullPointerException If {@code path} is {@code null}.
-     */
-    HttpServiceResponse body(final Path path);
+    @Override
+    public HttpClientRequest body(final byte[] byteArray) {
+        body = byteArray;
+        return this;
+    }
 
-    /**
-     * Sets request body, replacing any previously set such.
-     * <p>
-     * The provided string is scheduled for transmission to the request
-     * receiver as-is. It becomes the responsibility of the caller to ensure
-     * that the {@code "content-type"} header is set appropriately. If no
-     * charset is specified in the {@code "content-type"}, one that is
-     * acceptable to the request receiver will be used if possible. The
-     * {@code "content-length"} header is automatically set to the length of
-     * the string.
-     *
-     * @param string String to send to request receiver.
-     * @return This request object.
-     * @throws NullPointerException If {@code string} is {@code null}.
-     */
-    HttpServiceResponse body(final String string);
+    @Override
+    public HttpClientRequest body(final DataWritable dto) {
+        body = dto;
+        return this;
+    }
+
+    @Override
+    public HttpClientRequest body(final Path path) {
+        body = path;
+        return this;
+    }
+
+    @Override
+    public HttpClientRequest body(final String string) {
+        body = string;
+        return this;
+    }
+
+    @Override
+    public HttpClientRequest clearBody() {
+        body = null;
+        return this;
+    }
 
     /**
      * Gets value of first header with given {@code name}, if any such.
@@ -84,8 +61,8 @@ public interface HttpClientRequest {
      * @param name Name of header. Case is ignored. Prefer lowercase.
      * @return Header value, or {@code null}.
      */
-    default Optional<String> header(final CharSequence name) {
-        return headers().get(name);
+    public Optional<String> header(final CharSequence name) {
+        return headers.get(name);
     }
 
     /**
@@ -95,8 +72,8 @@ public interface HttpClientRequest {
      * @param value Desired header value.
      * @return This request.
      */
-    default HttpClientRequest header(final CharSequence name, final CharSequence value) {
-        headers().set(name, value);
+    public HttpClientRequest header(final CharSequence name, final CharSequence value) {
+        headers.set(name, value);
         return this;
     }
 
@@ -106,14 +83,16 @@ public interface HttpClientRequest {
      * @param name Name of header. Case is ignored. Prefer lowercase.
      * @return Header values. May be an empty list.
      */
-    default List<String> headers(final CharSequence name) {
-        return headers().getAll(name);
+    public List<String> headers(final CharSequence name) {
+        return headers.getAll(name);
     }
 
     /**
      * @return <i>Modifiable</i> map of all request headers.
      */
-    HttpHeaders headers();
+    public HttpHeaders headers() {
+        return headers;
+    }
 
     /**
      * Gets first query parameter with given name, if any such.
@@ -121,8 +100,8 @@ public interface HttpClientRequest {
      * @param name Name of query parameter. Case sensitive.
      * @return Query parameter value, if a corresponding parameter name exists.
      */
-    default Optional<String> queryParameter(final String name) {
-        final var values = queryParameters().get(name);
+    public Optional<String> queryParameter(final String name) {
+        final var values = queryParameters.get(name);
         return Optional.ofNullable(values.size() > 0 ? values.get(0) : null);
     }
 
@@ -134,20 +113,29 @@ public interface HttpClientRequest {
      * @param value Desired parameter value.
      * @return Query parameter value, if a corresponding parameter name exists.
      */
-    default HttpClientRequest queryParameter(final String name, final CharSequence value) {
+    public HttpClientRequest queryParameter(final String name, final CharSequence value) {
         final var list = new ArrayList<String>(1);
         list.add(value.toString());
-        queryParameters().put(name, list);
+        queryParameters.put(name, list);
         return this;
     }
 
     /**
      * @return Modifiable map of query parameters.
      */
-    Map<String, List<String>> queryParameters();
+    public Map<String, List<String>> queryParameters() {
+        return queryParameters;
+    }
 
     /**
      * @return HTTP version used by request.
      */
-    HttpVersion version();
+    public HttpVersion version() {
+        return version;
+    }
+
+    public HttpClientRequest version(final HttpVersion version) {
+        this.version = version;
+        return this;
+    }
 }

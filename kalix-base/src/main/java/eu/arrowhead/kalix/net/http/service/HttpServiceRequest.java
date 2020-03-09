@@ -2,9 +2,7 @@ package eu.arrowhead.kalix.net.http.service;
 
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.dto.DataReadable;
-import eu.arrowhead.kalix.net.http.HttpHeaders;
-import eu.arrowhead.kalix.net.http.HttpMethod;
-import eu.arrowhead.kalix.net.http.HttpVersion;
+import eu.arrowhead.kalix.net.http.*;
 import eu.arrowhead.kalix.util.concurrent.FutureProgress;
 
 import java.io.InputStream;
@@ -15,9 +13,7 @@ import java.util.Map;
 /**
  * The head and body of an incoming HTTP request.
  */
-public interface HttpServiceRequest
-    extends HttpServiceRequestHead, HttpServiceRequestBody {
-
+public interface HttpServiceRequest extends HttpServiceRequestHead, HttpBodyReceiver {
     /**
      * Creates a shallow copy of this {@code HttpServiceRequest} that contains
      * the given {@code pathParameters}.
@@ -84,7 +80,7 @@ public interface HttpServiceRequest
             }
 
             @Override
-            public HttpRequester requester() {
+            public HttpPeer requester() {
                 return self.requester();
             }
 

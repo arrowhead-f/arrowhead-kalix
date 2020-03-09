@@ -1,10 +1,13 @@
 package eu.arrowhead.kalix.security;
 
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -77,6 +80,26 @@ public class X509TrustStore {
             ? KeyStore.getInstance(file, password)
             : KeyStore.getInstance(file, (KeyStore.LoadStoreParameter) null);
         return from(keyStore);
+    }
+
+    /**
+     * Loads default {@link javax.net.ssl.X509TrustManager X509TrustManager}
+     * from the system and uses its list of accepted issuers to initialize a
+     * new trust store.
+     *
+     * @return New x.509 trust store.
+     * @throws GeneralSecurityException If loading default trust manager fails.
+     */
+    public static X509TrustStore systemDefault() throws GeneralSecurityException {
+        final var factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        factory.init((KeyStore) null);
+
+        for (final var trustManager : factory.getTrustManagers()) {
+            if (trustManager instanceof X509TrustManager) {
+                return new X509TrustStore(((X509TrustManager) trustManager).getAcceptedIssuers());
+            }
+        }
+        throw new IllegalStateException("No system default x.509 trust manager has been configured");
     }
 
     /**

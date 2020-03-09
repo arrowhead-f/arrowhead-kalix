@@ -1,10 +1,12 @@
 package eu.arrowhead.kalix.internal.dto.binary;
 
 import eu.arrowhead.kalix.dto.binary.BinaryWriter;
+import eu.arrowhead.kalix.util.annotation.Internal;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Objects;
 
+@Internal
 public class ByteBufWriter implements BinaryWriter {
     private final ByteBuf byteBuf;
 

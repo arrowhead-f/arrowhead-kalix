@@ -1,8 +1,10 @@
 package eu.arrowhead.kalix.internal.dto.binary;
 
 import eu.arrowhead.kalix.dto.binary.BinaryReader;
+import eu.arrowhead.kalix.util.annotation.Internal;
 import io.netty.buffer.ByteBuf;
 
+@Internal
 public class ByteBufReader implements BinaryReader {
     private final ByteBuf byteBuf;
 

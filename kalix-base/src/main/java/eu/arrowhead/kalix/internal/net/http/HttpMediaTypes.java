@@ -1,6 +1,7 @@
 package eu.arrowhead.kalix.internal.net.http;
 
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
+import eu.arrowhead.kalix.util.annotation.Internal;
 
 import java.util.List;
 import java.util.Objects;
@@ -9,6 +10,7 @@ import java.util.Optional;
 /**
  * Various utility methods related to HTTP and Media/MIME Types.
  */
+@Internal
 public class HttpMediaTypes {
     private HttpMediaTypes() {}
 

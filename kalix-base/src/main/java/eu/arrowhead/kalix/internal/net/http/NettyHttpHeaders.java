@@ -1,6 +1,7 @@
 package eu.arrowhead.kalix.internal.net.http;
 
 import eu.arrowhead.kalix.net.http.HttpHeaders;
+import eu.arrowhead.kalix.util.annotation.Internal;
 
 import java.util.Iterator;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.Optional;
 /**
  * Netty implementation of {@link HttpHeaders}.
  */
+@Internal
 public class NettyHttpHeaders implements HttpHeaders {
     private final io.netty.handler.codec.http.HttpHeaders headers;
 

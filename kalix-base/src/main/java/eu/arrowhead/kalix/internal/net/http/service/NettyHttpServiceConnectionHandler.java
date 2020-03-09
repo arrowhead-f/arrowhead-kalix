@@ -2,7 +2,10 @@ package eu.arrowhead.kalix.internal.net.http.service;
 
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.internal.net.http.HttpMediaTypes;
+import eu.arrowhead.kalix.internal.net.http.NettyHttpBodyReceiver;
+import eu.arrowhead.kalix.internal.net.http.NettyHttpPeer;
 import eu.arrowhead.kalix.net.http.service.HttpService;
+import eu.arrowhead.kalix.util.annotation.Internal;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -11,15 +14,17 @@ import io.netty.handler.codec.http.*;
 
 import javax.net.ssl.SSLEngine;
 
+import java.net.InetSocketAddress;
 import java.util.Optional;
 
-public class NettyHttpServiceRequestHandler extends SimpleChannelInboundHandler<Object> {
+@Internal
+public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandler<Object> {
     private final HttpServiceLookup serviceLookup;
     private final SSLEngine sslEngine;
 
-    private NettyHttpServiceRequestBody body;
+    private NettyHttpBodyReceiver body;
 
-    public NettyHttpServiceRequestHandler(final HttpServiceLookup serviceLookup, final SSLEngine sslEngine) {
+    public NettyHttpServiceConnectionHandler(final HttpServiceLookup serviceLookup, final SSLEngine sslEngine) {
         this.serviceLookup = serviceLookup;
         this.sslEngine = sslEngine;
     }
@@ -77,13 +82,13 @@ public class NettyHttpServiceRequestHandler extends SimpleChannelInboundHandler<
             ));
         }
 
-        final var serviceRequestBody = new NettyHttpServiceRequestBody(ctx.alloc(), encoding, request.headers());
+        final var serviceRequestBody = new NettyHttpBodyReceiver(ctx.alloc(), encoding, request.headers());
         final var serviceRequest = new NettyHttpServiceRequest.Builder()
             .body(serviceRequestBody)
             .encoding(encoding)
             .queryStringDecoder(queryStringDecoder)
             .request(request)
-            .requester(new NettyHttpRequester(ctx, request.headers(), sslEngine))
+            .requester(new NettyHttpPeer((InetSocketAddress) ctx.channel().remoteAddress(), sslEngine))
             .build();
 
         final var serviceResponseHeaders = new DefaultHttpHeaders();

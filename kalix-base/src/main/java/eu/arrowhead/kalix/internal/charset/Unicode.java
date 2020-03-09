@@ -1,10 +1,13 @@
 package eu.arrowhead.kalix.internal.charset;
 
+import eu.arrowhead.kalix.util.annotation.Internal;
+
 import java.io.ByteArrayOutputStream;
 
 /**
  * Various Unicode-related utilities.
  */
+@Internal
 public class Unicode {
     private Unicode() {}
 

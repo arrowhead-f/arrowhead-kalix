@@ -3,6 +3,7 @@ package eu.arrowhead.kalix.net.http.service;
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpMethod;
+import eu.arrowhead.kalix.net.http.HttpPeer;
 import eu.arrowhead.kalix.net.http.HttpVersion;
 
 import java.util.Collections;
@@ -117,7 +118,7 @@ public interface HttpServiceRequestHead {
     /**
      * @return Information about the request sender.
      */
-    HttpRequester requester();
+    HttpPeer requester();
 
     /**
      * @return HTTP version used by request.
@@ -165,7 +166,7 @@ public interface HttpServiceRequestHead {
             }
 
             @Override
-            public HttpRequester requester() {
+            public HttpPeer requester() {
                 return self.requester();
             }
 

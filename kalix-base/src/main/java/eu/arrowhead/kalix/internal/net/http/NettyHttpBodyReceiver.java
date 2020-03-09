@@ -1,4 +1,4 @@
-package eu.arrowhead.kalix.internal.net.http.service;
+package eu.arrowhead.kalix.internal.net.http;
 
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.dto.DataEncoding;
@@ -6,8 +6,9 @@ import eu.arrowhead.kalix.dto.DataReadable;
 import eu.arrowhead.kalix.dto.DataReader;
 import eu.arrowhead.kalix.dto.ReadException;
 import eu.arrowhead.kalix.internal.dto.binary.ByteBufReader;
-import eu.arrowhead.kalix.net.http.service.HttpServiceRequestBody;
+import eu.arrowhead.kalix.net.http.HttpBodyReceiver;
 import eu.arrowhead.kalix.util.Result;
+import eu.arrowhead.kalix.util.annotation.Internal;
 import eu.arrowhead.kalix.util.concurrent.Future;
 import eu.arrowhead.kalix.util.concurrent.FutureProgress;
 import io.netty.buffer.ByteBuf;
@@ -30,7 +31,8 @@ import java.util.concurrent.CancellationException;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
+@Internal
+public class NettyHttpBodyReceiver implements HttpBodyReceiver {
     private final ByteBufAllocator alloc;
     private final EncodingDescriptor encoding;
     private final HttpHeaders headers;
@@ -43,7 +45,7 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
     private boolean isBodyRequested = false;
     private boolean isFinished = false;
 
-    public NettyHttpServiceRequestBody(
+    public NettyHttpBodyReceiver(
         final ByteBufAllocator alloc,
         final EncodingDescriptor encoding,
         final HttpHeaders headers)
@@ -111,10 +113,6 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
         }
         isFinished = true;
 
-        // `headers` is the same map of headers already passed on in a
-        // `HttpServiceRequest` to some `HttpService`. By adding the trailing
-        // headers to the `headers` map here, they are being made visible via
-        // the same `HttpServiceRequest`.
         headers.add(lastContent.trailingHeaders());
 
         if (isBodyRequested) {

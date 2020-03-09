@@ -1,6 +1,7 @@
 package eu.arrowhead.kalix.internal.util.concurrent;
 
 import eu.arrowhead.kalix.util.Result;
+import eu.arrowhead.kalix.util.annotation.Internal;
 import eu.arrowhead.kalix.util.concurrent.Future;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -8,6 +9,7 @@ import io.netty.util.concurrent.GenericFutureListener;
 
 import java.util.function.Consumer;
 
+@Internal
 public class NettyFutures {
     private NettyFutures() {}
 

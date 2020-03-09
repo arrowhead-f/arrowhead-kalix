@@ -1,4 +1,4 @@
-package eu.arrowhead.kalix.internal.net.http.service;
+package eu.arrowhead.kalix.internal.net.http.client;
 
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.dto.DataReadable;
@@ -6,42 +6,36 @@ import eu.arrowhead.kalix.internal.net.http.NettyHttpBodyReceiver;
 import eu.arrowhead.kalix.internal.net.http.NettyHttpHeaders;
 import eu.arrowhead.kalix.internal.net.http.NettyHttpPeer;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
-import eu.arrowhead.kalix.net.http.HttpMethod;
-import eu.arrowhead.kalix.net.http.HttpPeer;
+import eu.arrowhead.kalix.net.http.HttpStatus;
 import eu.arrowhead.kalix.net.http.HttpVersion;
-import eu.arrowhead.kalix.net.http.service.HttpServiceRequest;
+import eu.arrowhead.kalix.net.http.client.HttpClientResponse;
+import eu.arrowhead.kalix.net.http.HttpPeer;
 import eu.arrowhead.kalix.util.annotation.Internal;
 import eu.arrowhead.kalix.util.concurrent.FutureProgress;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.QueryStringDecoder;
+import io.netty.handler.codec.http.HttpResponse;
 
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 import static eu.arrowhead.kalix.internal.net.http.NettyHttpAdapters.adapt;
 
 @Internal
-public class NettyHttpServiceRequest implements HttpServiceRequest {
+public class NettyHttpClientResponse implements HttpClientResponse {
     private final NettyHttpBodyReceiver body;
     private final EncodingDescriptor encoding;
-    private final QueryStringDecoder queryStringDecoder;
-    private final HttpRequest request;
-    private final NettyHttpPeer requester;
+    private final HttpResponse response;
+    private final NettyHttpPeer responder;
 
     private HttpHeaders headers = null;
-    private HttpMethod method = null;
+    private HttpStatus status = null;
     private HttpVersion version = null;
 
-    private NettyHttpServiceRequest(final Builder builder) {
+    private NettyHttpClientResponse(final Builder builder) {
         body = Objects.requireNonNull(builder.body, "Expected body");
         encoding = Objects.requireNonNull(builder.encoding, "Expected encoding");
-        queryStringDecoder = Objects.requireNonNull(builder.queryStringDecoder, "Expected queryStringDecoder");
-        request = Objects.requireNonNull(builder.request, "Expected request");
-        requester = Objects.requireNonNull(builder.requester, "Expected requester");
+        response = Objects.requireNonNull(builder.response, "Expected response");
+        responder = Objects.requireNonNull(builder.responder, "Expected responder");
     }
 
     @Override
@@ -77,53 +71,37 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
     @Override
     public HttpHeaders headers() {
         if (headers == null) {
-            headers = new NettyHttpHeaders(request.headers());
+            headers = new NettyHttpHeaders(response.headers());
         }
         return headers;
     }
 
     @Override
-    public HttpMethod method() {
-        if (method == null) {
-            method = adapt(request.method());
+    public HttpPeer responder() {
+        return responder;
+    }
+
+    @Override
+    public HttpStatus status() {
+        if (status == null) {
+            status = adapt(response.status());
         }
-        return method;
-    }
-
-    @Override
-    public String path() {
-        return queryStringDecoder.path();
-    }
-
-    @Override
-    public List<String> pathParameters() {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public Map<String, List<String>> queryParameters() {
-        return Collections.unmodifiableMap(queryStringDecoder.parameters());
-    }
-
-    @Override
-    public HttpPeer requester() {
-        return requester;
+        return status;
     }
 
     @Override
     public HttpVersion version() {
         if (version == null) {
-            version = adapt(request.protocolVersion());
+            version = adapt(response.protocolVersion());
         }
         return version;
     }
 
     public static class Builder {
         private NettyHttpBodyReceiver body;
-        private HttpRequest request;
+        private HttpResponse response;
         private EncodingDescriptor encoding;
-        private NettyHttpPeer requester;
-        private QueryStringDecoder queryStringDecoder;
+        private NettyHttpPeer responder;
 
         public Builder body(final NettyHttpBodyReceiver body) {
             this.body = body;
@@ -135,23 +113,18 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
             return this;
         }
 
-        public Builder queryStringDecoder(final QueryStringDecoder queryStringDecoder) {
-            this.queryStringDecoder = queryStringDecoder;
+        public Builder response(final HttpResponse response) {
+            this.response = response;
             return this;
         }
 
-        public Builder request(final HttpRequest request) {
-            this.request = request;
+        public Builder responder(final NettyHttpPeer responder) {
+            this.responder = responder;
             return this;
         }
 
-        public Builder requester(final NettyHttpPeer requester) {
-            this.requester = requester;
-            return this;
-        }
-
-        public NettyHttpServiceRequest build() {
-            return new NettyHttpServiceRequest(this);
+        public NettyHttpClientResponse build() {
+            return new NettyHttpClientResponse(this);
         }
     }
 }

@@ -3,11 +3,14 @@ package eu.arrowhead.kalix.internal.net.http;
 import eu.arrowhead.kalix.net.http.HttpMethod;
 import eu.arrowhead.kalix.net.http.HttpStatus;
 import eu.arrowhead.kalix.net.http.HttpVersion;
+import eu.arrowhead.kalix.util.annotation.Internal;
+import io.netty.handler.codec.http.HttpResponseStatus;
 
 /**
  * Various adapters useful for converting HTTP types to/from their Kalix/Netty
  * representations.
  */
+@Internal
 public class NettyHttpAdapters {
     private NettyHttpAdapters() {}
 
@@ -31,7 +34,15 @@ public class NettyHttpAdapters {
      * @param status Kalix HTTP status.
      * @return Netty HTTP status.
      */
-    public static io.netty.handler.codec.http.HttpResponseStatus adapt(final HttpStatus status) {
-        return io.netty.handler.codec.http.HttpResponseStatus.valueOf(status.code());
+    public static HttpResponseStatus adapt(final HttpStatus status) {
+        return HttpResponseStatus.valueOf(status.code());
+    }
+
+    /**
+     * @param status Netty HTTP status.
+     * @return Kalix HTTP status.
+     */
+    public static HttpStatus adapt(final HttpResponseStatus status) {
+        return HttpStatus.valueOf(status.code());
     }
 }

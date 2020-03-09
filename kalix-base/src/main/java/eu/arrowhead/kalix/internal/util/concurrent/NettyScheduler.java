@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.internal.util.concurrent;
 
+import eu.arrowhead.kalix.util.annotation.Internal;
 import eu.arrowhead.kalix.util.concurrent.Future;
 import eu.arrowhead.kalix.util.concurrent.Scheduler;
 import io.netty.channel.EventLoopGroup;
@@ -22,6 +23,7 @@ import static eu.arrowhead.kalix.internal.util.concurrent.NettyFutures.adapt;
  * interface is part of the public interface of this library, while this
  * implementation is not.
  */
+@Internal
 public class NettyScheduler implements Scheduler {
     private static NettyScheduler defaultScheduler = null;
 

@@ -25,11 +25,20 @@ public abstract class ArrowheadSystem<S> {
     private final X509KeyStore keyStore;
     private final X509TrustStore trustStore;
     private final Scheduler scheduler;
+    private final boolean schedulerIsOwned;
 
     protected ArrowheadSystem(final Builder<?, ? extends ArrowheadSystem<?>> builder) {
         var name = builder.name;
         socketAddress = Objects.requireNonNullElseGet(builder.socketAddress, () -> new InetSocketAddress(0));
-        scheduler = Objects.requireNonNullElseGet(builder.scheduler, NettySchedulerReferenceCounted::getDefault);
+
+        if (builder.scheduler == null) {
+            scheduler = NettySchedulerReferenceCounted.getDefault();
+            schedulerIsOwned = true;
+        }
+        else {
+            scheduler = builder.scheduler;
+            schedulerIsOwned = false;
+        }
 
         if (builder.isInsecure) {
             isSecured = false;
@@ -115,7 +124,7 @@ public abstract class ArrowheadSystem<S> {
     }
 
     /**
-     * @return Trust store, which contains the identities of trusted systems.
+     * @return Trust store, which contains certificates trusted by this system.
      * @throws UnsupportedOperationException If this system is not running in
      *                                       secure mode.
      */
@@ -192,7 +201,10 @@ public abstract class ArrowheadSystem<S> {
      */
     public Future<?> shutdown(final Duration timeout) {
         dismissAllServices();
-        return scheduler.shutdown(timeout);
+        if (schedulerIsOwned) {
+            return scheduler.shutdown(timeout);
+        }
+        return Future.done();
     }
 
     /**
@@ -404,16 +416,12 @@ public abstract class ArrowheadSystem<S> {
          * becomes the responsibility of the caller to ensure that the
          * scheduler is shut down when no longer in use.
          * <p>
-         * If, on the other hand, no scheduler is explicitly specified, the one
-         * returned by {@link Scheduler#getDefault()} will be used instead.
-         * This means that if several systems are created without schedulers
-         * being explicitly set, the systems will all share the same scheduler.
-         * When the last system is shut down, the default scheduler will be
-         * shut down automatically, unless it has ever been explicitly acquired
-         * by the {@link Scheduler#getDefault()} method, which is not used
-         * directly by the {@link ArrowheadSystem} class. It then becomes the
-         * responsibility of the caller of that method to shut down the
-         * scheduler.
+         * If no scheduler is explicitly specified, the one returned by
+         * {@link Scheduler#getDefault()} will be used instead. This means that
+         * if several systems are created without schedulers being explicitly
+         * set, the systems will all share the same scheduler. When the last
+         * system, or whatever else is using the default scheduler, is shut
+         * down, the default scheduler is also shut down.
          *
          * @param scheduler Asynchronous task scheduler.
          * @return This builder.

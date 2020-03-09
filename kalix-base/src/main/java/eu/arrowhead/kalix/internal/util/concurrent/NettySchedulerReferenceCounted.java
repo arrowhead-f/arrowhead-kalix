@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.internal.util.concurrent;
 
+import eu.arrowhead.kalix.util.annotation.Internal;
 import eu.arrowhead.kalix.util.concurrent.Future;
 import io.netty.channel.EventLoopGroup;
 
@@ -15,6 +16,7 @@ import java.util.concurrent.ThreadFactory;
  * scheduler is not shut down until all users of it have signaled that they
  * have no more interest in using it.
  */
+@Internal
 public class NettySchedulerReferenceCounted extends NettyScheduler {
     private static NettySchedulerReferenceCounted defaultScheduler = null;
 

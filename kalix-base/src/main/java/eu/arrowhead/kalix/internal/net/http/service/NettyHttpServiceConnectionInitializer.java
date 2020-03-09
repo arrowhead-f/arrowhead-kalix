@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.internal.net.http.service;
 
+import eu.arrowhead.kalix.util.annotation.Internal;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpContentCompressor;
@@ -9,10 +10,12 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslContext;
 
 import javax.net.ssl.SSLEngine;
+import java.util.Objects;
 
 /**
  * {@link ChannelInitializer} useful for managing incoming HTTP connections.
  */
+@Internal
 public class NettyHttpServiceConnectionInitializer extends ChannelInitializer<SocketChannel> {
     private final HttpServiceLookup serviceLookup;
     private final SslContext sslContext;
@@ -24,7 +27,7 @@ public class NettyHttpServiceConnectionInitializer extends ChannelInitializer<So
      * @param sslContext    SSL/TLS context from Netty bootstrap used to
      */
     public NettyHttpServiceConnectionInitializer(final HttpServiceLookup serviceLookup, final SslContext sslContext) {
-        this.serviceLookup = serviceLookup;
+        this.serviceLookup = Objects.requireNonNull(serviceLookup, "Expected serviceLookup");
         this.sslContext = sslContext;
     }
 
@@ -33,15 +36,15 @@ public class NettyHttpServiceConnectionInitializer extends ChannelInitializer<So
         final var pipeline = ch.pipeline();
         SSLEngine sslEngine = null;
         if (sslContext != null) {
-            final var serviceLookup = sslContext.newHandler(ch.alloc());
-            sslEngine = serviceLookup.engine();
-            pipeline.addLast(serviceLookup);
+            final var sslHandler = sslContext.newHandler(ch.alloc());
+            sslEngine = sslHandler.engine();
+            pipeline.addLast(sslHandler);
         }
         pipeline
             .addLast(new LoggingHandler())
             .addLast(new HttpRequestDecoder()) // TODO: Make message size restrictions configurable.
             .addLast(new HttpResponseEncoder())
             .addLast(new HttpContentCompressor()) // TODO: Make compression configurable.
-            .addLast(new NettyHttpServiceRequestHandler(serviceLookup, sslEngine));
+            .addLast(new NettyHttpServiceConnectionHandler(serviceLookup, sslEngine));
     }
 }

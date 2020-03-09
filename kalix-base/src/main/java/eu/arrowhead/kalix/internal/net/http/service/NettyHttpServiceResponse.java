@@ -10,6 +10,7 @@ import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpStatus;
 import eu.arrowhead.kalix.net.http.HttpVersion;
 import eu.arrowhead.kalix.net.http.service.HttpServiceResponse;
+import eu.arrowhead.kalix.util.annotation.Internal;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -25,6 +26,7 @@ import java.util.Optional;
 
 import static eu.arrowhead.kalix.internal.net.http.NettyHttpAdapters.adapt;
 
+@Internal
 public class NettyHttpServiceResponse implements HttpServiceResponse {
     private final EncodingDescriptor encoding;
     private final HttpRequest request;
@@ -99,25 +101,25 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
 
     @Override
     public HttpServiceResponse body(final byte[] byteArray) {
-        this.body = byteArray;
+        body = byteArray;
         return this;
     }
 
     @Override
-    public HttpServiceResponse body(final DataWritable body) {
-        this.body = body;
+    public HttpServiceResponse body(final DataWritable dto) {
+        body = dto;
         return this;
     }
 
     @Override
     public HttpServiceResponse body(final Path path) {
-        this.body = path;
+        body = path;
         return this;
     }
 
     @Override
     public HttpServiceResponse body(final String string) {
-        this.body = string;
+        body = string;
         return this;
     }
 

@@ -1,39 +1,30 @@
-package eu.arrowhead.kalix.internal.net.http.service;
+package eu.arrowhead.kalix.internal.net.http;
 
-import eu.arrowhead.kalix.net.http.service.HttpRequester;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.HttpHeaders;
+import eu.arrowhead.kalix.net.http.HttpPeer;
+import eu.arrowhead.kalix.util.annotation.Internal;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import java.net.InetSocketAddress;
 import java.security.cert.X509Certificate;
-import java.util.Optional;
+import java.util.Objects;
 
-/**
- * Information about the original sender of an incoming HTTP request.
- */
-public class NettyHttpRequester implements HttpRequester {
-    private final ChannelHandlerContext ctx;
+@Internal
+public class NettyHttpPeer implements HttpPeer {
+    private final InetSocketAddress remoteSocketAddress;
     private final SSLEngine sslEngine;
-    private final HttpHeaders headers;
 
     private X509Certificate[] cachedCertificateChain;
-    private InetSocketAddress cachedRemoteSocketAddress;
-    private String cachedToken;
-    private boolean isTokenCached = false;
 
     /**
-     * Creates new {@link HttpRequester}.
+     * Creates new {@link HttpPeer}.
      *
-     * @param ctx       Netty channel handler context associated with channel
-     *                  used to handle the requester in question.
-     * @param headers   Incoming HTTP request headers.
-     * @param sslEngine SSL/TLS engine used by channel, if in secure mode.
+     * @param remoteSocketAddress Internet socket address of peer.
+     * @param sslEngine           SSL/TLS engine used by channel through which
+     *                            the peer is communicated with, if any.
      */
-    public NettyHttpRequester(final ChannelHandlerContext ctx, final HttpHeaders headers, final SSLEngine sslEngine) {
-        this.ctx = ctx;
-        this.headers = headers;
+    public NettyHttpPeer(final InetSocketAddress remoteSocketAddress, final SSLEngine sslEngine) {
+        this.remoteSocketAddress = Objects.requireNonNull(remoteSocketAddress, "Expected remoteSocketAddress");
         this.sslEngine = sslEngine;
     }
 
@@ -65,7 +56,7 @@ public class NettyHttpRequester implements HttpRequester {
                 if (!(certificate instanceof X509Certificate)) {
                     throw new IllegalStateException("Only x.509 " +
                         "certificates may be used by connecting clients, " +
-                        "somehow the client at " + remoteSocketAddress() +
+                        "somehow the peer at " + remoteSocketAddress +
                         " was able to use some other type: " + certificate);
                 }
                 cachedCertificateChain[i] = (X509Certificate) chain[i];
@@ -78,18 +69,6 @@ public class NettyHttpRequester implements HttpRequester {
 
     @Override
     public InetSocketAddress remoteSocketAddress() {
-        if (cachedRemoteSocketAddress == null) {
-            cachedRemoteSocketAddress = (InetSocketAddress) ctx.channel().remoteAddress();
-        }
-        return cachedRemoteSocketAddress;
-    }
-
-    @Override
-    public Optional<String> token() {
-        if (!isTokenCached) {
-            isTokenCached = true;
-            cachedToken = headers.get("authorization");
-        }
-        return Optional.ofNullable(cachedToken);
+        return remoteSocketAddress;
     }
 }

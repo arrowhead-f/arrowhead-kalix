@@ -1,6 +1,7 @@
 package eu.arrowhead.kalix.internal.net;
 
 import eu.arrowhead.kalix.internal.util.concurrent.NettyScheduler;
+import eu.arrowhead.kalix.util.annotation.Internal;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.epoll.EpollEventLoopGroup;
@@ -15,6 +16,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
+@Internal
 public class NettyBootstraps {
     private NettyBootstraps() {}
 
