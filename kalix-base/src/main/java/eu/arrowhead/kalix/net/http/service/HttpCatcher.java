@@ -135,8 +135,8 @@ public class HttpCatcher<T extends Throwable> implements Comparable<HttpCatcher<
             }
 
             final var response = task.response();
-            return handler.handle(throwable0, task.request().wrapHeadWithPathParameters(pathParameters), response)
-                .map(ignored -> response.isInitialized());
+            return handler.handle(throwable0, task.request().newWithPathParameters(pathParameters), response)
+                .map(ignored -> response.status().isPresent());
         }
         return Future.success(false);
     }

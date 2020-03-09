@@ -77,7 +77,7 @@ public class HttpRoute implements Comparable<HttpRoute> {
      *                   any details and the exception be logged (if logging is
      *                   enabled).
      */
-    public Future<?> handle(final HttpServiceRequestFull request, final HttpServiceResponse response) throws Exception {
+    public Future<?> handle(final HttpServiceRequest request, final HttpServiceResponse response) throws Exception {
         return handler.handle(request, response);
     }
 

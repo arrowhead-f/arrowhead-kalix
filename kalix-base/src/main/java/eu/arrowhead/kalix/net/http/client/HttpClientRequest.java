@@ -4,6 +4,7 @@ import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpVersion;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -12,8 +13,7 @@ import java.util.Optional;
  */
 public class HttpClientRequest {
     private HttpVersion version;
-    private Map<String, String> queryParameters = new HashMap<>(8);
-    private HttpHeaders headers = new HttpHeaders();
+    private Map<String, List<String>> queryParameters = new HashMap<>();
     private Object body;
 
     /**
@@ -61,7 +61,7 @@ public class HttpClientRequest {
      * @return Header value, or {@code null}.
      */
     public Optional<String> header(final String name) {
-        return headers.get(name);
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -72,30 +72,14 @@ public class HttpClientRequest {
      * @return This request.
      */
     public HttpClientRequest header(final String name, final String value) {
-        headers.set(name, value);
-        return this;
+        throw new UnsupportedOperationException();
     }
 
     /**
      * @return Case-insensitive map of request headers. Prefer lowercase keys.
      */
     public HttpHeaders headers() {
-        return headers;
-    }
-
-    /**
-     * Replaces all existing request headers.
-     * <p>
-     * If {@code headers} contains keys that would be identical if compared
-     * without case sensitivity, it is undefined which of their values ends up
-     * in this request.
-     *
-     * @param headers New map of response headers.
-     * @return This response object.
-     */
-    public HttpClientRequest headers(final HttpHeaders headers) {
-        this.headers = headers;
-        return this;
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -105,7 +89,7 @@ public class HttpClientRequest {
      * @return Query parameter value, or {@code null}.
      */
     public Optional<String> queryParameter(final String name) {
-        return Optional.ofNullable(queryParameters.get(name));
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -116,15 +100,14 @@ public class HttpClientRequest {
      * @return This request.
      */
     public HttpClientRequest queryParameter(final String name, final String value) {
-        queryParameters.put(name, value);
-        return this;
+        throw new UnsupportedOperationException();
     }
 
     /**
      * @return Map of all query parameters.
      */
     public Map<String, String> queryParameters() {
-        return queryParameters;
+        throw new UnsupportedOperationException();
     }
 
     /**

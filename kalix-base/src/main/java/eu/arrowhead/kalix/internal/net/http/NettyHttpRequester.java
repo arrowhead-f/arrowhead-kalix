@@ -86,9 +86,9 @@ public class NettyHttpRequester implements HttpRequester {
 
     @Override
     public Optional<String> token() {
-        if (!isTokenCached && cachedToken == null) {
-            cachedToken = headers.get("authorization");
+        if (!isTokenCached) {
             isTokenCached = true;
+            cachedToken = headers.get("authorization");
         }
         return Optional.ofNullable(cachedToken);
     }

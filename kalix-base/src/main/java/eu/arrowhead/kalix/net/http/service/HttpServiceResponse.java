@@ -14,31 +14,11 @@ import java.util.Optional;
 /**
  * An outgoing HTTP response, to be sent by an {@link HttpService}.
  */
-public class HttpServiceResponse {
-    private final EncodingDescriptor encoding;
-    private final HttpVersion version;
-
-    private HttpStatus status;
-    private HttpHeaders headers = new HttpHeaders();
-    private Object body;
-
-    /**
-     * Creates new outgoing HTTP response.
-     *
-     * @param encoding Encoding to use in outgoing HTTP response.
-     * @param version  Target HTTP version.
-     */
-    public HttpServiceResponse(final EncodingDescriptor encoding, final HttpVersion version) {
-        this.encoding = Objects.requireNonNull(encoding, "Expected encoding");
-        this.version = Objects.requireNonNull(version, "Expected version");
-    }
-
+public interface HttpServiceResponse {
     /**
      * @return Response body, if any has been set.
      */
-    public Optional<Object> body() {
-        return Optional.ofNullable(body);
-    }
+    Optional<Object> body();
 
     /**
      * Sets response body, replacing any previously set such.
@@ -57,10 +37,7 @@ public class HttpServiceResponse {
      * @param byteArray Bytes to send to response receiver.
      * @return This response object.
      */
-    public HttpServiceResponse body(final byte[] byteArray) {
-        body = byteArray;
-        return this;
-    }
+    HttpServiceResponse body(final byte[] byteArray);
 
     /**
      * Sets response body, replacing any previously set such.
@@ -80,10 +57,7 @@ public class HttpServiceResponse {
      * @throws NullPointerException If {@code body} is {@code null}.
      * @see eu.arrowhead.kalix.dto.Writable @Writable
      */
-    public HttpServiceResponse body(final DataWritable body) {
-        this.body = body;
-        return this;
-    }
+    HttpServiceResponse body(final DataWritable body);
 
     /**
      * Sets response body, replacing any previously set such.
@@ -103,10 +77,7 @@ public class HttpServiceResponse {
      * @return This response object.
      * @throws NullPointerException If {@code path} is {@code null}.
      */
-    public HttpServiceResponse body(final Path path) {
-        body = path;
-        return this;
-    }
+    HttpServiceResponse body(final Path path);
 
     /**
      * Sets response body, replacing any previously set such.
@@ -128,37 +99,26 @@ public class HttpServiceResponse {
      * @return This response object.
      * @throws NullPointerException If {@code string} is {@code null}.
      */
-    public HttpServiceResponse body(final String string) {
-        body = string;
-        return this;
-    }
+    HttpServiceResponse body(final String string);
 
     /**
-     * Removes any previously set response body.
+     * Removes any currently set response body.
      *
      * @return This response object.
      */
-    public HttpServiceResponse clearBody() {
-        body = null;
-        return this;
-    }
+    HttpServiceResponse clearBody();
 
     /**
-     * Removes all set headers, if any.
+     * Removes all currently set headers.
      *
      * @return This response object.
      */
-    public HttpServiceResponse clearHeaders() {
-        headers.clear();
-        return this;
-    }
+    HttpServiceResponse clearHeaders();
 
     /**
      * @return Encoding that will or should be used for any response body.
      */
-    public EncodingDescriptor encoding() {
-        return encoding;
-    }
+    public EncodingDescriptor encoding();
 
     /**
      * Gets a response header value by name.
@@ -166,8 +126,8 @@ public class HttpServiceResponse {
      * @param name Name of header. Case insensitive. Should be lower-case.
      * @return Header value, if any.
      */
-    public Optional<String> header(final String name) {
-        return headers.get(name);
+    default Optional<String> header(final CharSequence name) {
+        return headers().get(name);
     }
 
     /**
@@ -177,47 +137,20 @@ public class HttpServiceResponse {
      * @param value Header value.
      * @return This response object.
      */
-    public HttpServiceResponse header(final String name, final String value) {
-        headers.set(name, value);
+    default HttpServiceResponse header(final CharSequence name, final CharSequence value) {
+        headers().set(name, value);
         return this;
     }
 
     /**
      * @return Modifiable {@link Map} of all response headers.
      */
-    public HttpHeaders headers() {
-        return headers;
-    }
-
-    /**
-     * Determines whether a status code or body has been assigned to this
-     * response. If so, the response is considered to be initialized, and will
-     * be responded to without any further HTTP request handlers being invoked.
-     *
-     * @return {@code true} only if this response contains a status code or a
-     * body.
-     */
-    public boolean isInitialized() {
-        return status != null || body != null;
-    }
-
-    /**
-     * Replaces all existing response headers.
-     *
-     * @param headers New map of response headers.
-     * @return This response object.
-     */
-    public HttpServiceResponse headers(final HttpHeaders headers) {
-        this.headers = headers;
-        return this;
-    }
+    HttpHeaders headers();
 
     /**
      * @return Currently set response {@link HttpStatus}, if any.
      */
-    public Optional<HttpStatus> status() {
-        return Optional.ofNullable(status);
-    }
+    Optional<HttpStatus> status();
 
     /**
      * Sets response status.
@@ -229,15 +162,10 @@ public class HttpServiceResponse {
      * @param status New response {@link HttpStatus}.
      * @return This response object.
      */
-    public HttpServiceResponse status(final HttpStatus status) {
-        this.status = status;
-        return this;
-    }
+    HttpServiceResponse status(final HttpStatus status);
 
     /**
      * @return Designated response {@link HttpVersion}.
      */
-    public HttpVersion version() {
-        return version;
-    }
+    HttpVersion version();
 }

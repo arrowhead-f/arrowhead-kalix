@@ -24,5 +24,5 @@ public interface HttpRouteHandler {
      *                   any details and the exception be logged (if logging is
      *                   enabled).
      */
-    Future<?> handle(HttpServiceRequestFull request, HttpServiceResponse response) throws Exception;
+    Future<?> handle(HttpServiceRequest request, HttpServiceResponse response) throws Exception;
 }

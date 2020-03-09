@@ -124,13 +124,12 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
 
     @Override
     public <R extends DataReadable> FutureProgress<? extends R> bodyAs(final Class<R> class_) {
-        final var dataEncoding = encoding.asDataEncoding();
-        if (dataEncoding.isEmpty()) {
-            return FutureProgress.failure(new UnsupportedOperationException("" +
+        final var dataEncoding = encoding.asDataEncoding()
+            .orElseThrow(() -> new UnsupportedOperationException("" +
                 "There is no DTO support for the \"" + encoding +
                 "\" encoding; request body cannot be decoded"));
-        }
-        return handleBodyRequest(() -> new FutureBodyAs<>(alloc, headers, class_, dataEncoding.get()));
+
+        return handleBodyRequest(() -> new FutureBodyAs<>(alloc, headers, class_, dataEncoding));
     }
 
     @Override
@@ -358,19 +357,18 @@ public class NettyHttpServiceRequestBody implements HttpServiceRequestBody {
 
         @Override
         public void finish() {
-            Result<Path> result;
-            if (stream != null) {
-                try {
-                    stream.close();
-                    result = Result.success(path);
-                }
-                catch (final Throwable throwable) {
-                    result = Result.failure(throwable);
-                }
-                complete(result);
+            if (stream == null) {
+                return;
             }
-            // If stream is null, we have already presented a Throwable to the
-            // consumer of this Future.
+            Result<Path> result;
+            try {
+                stream.close();
+                result = Result.success(path);
+            }
+            catch (final Throwable throwable) {
+                result = Result.failure(throwable);
+            }
+            complete(result);
         }
     }
 

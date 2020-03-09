@@ -123,8 +123,8 @@ public class HttpValidator implements Comparable<HttpValidator> {
                 pathParameters = Collections.emptyList();
             }
             final var response = task.response();
-            return handler.handle(task.request().wrapHeadWithPathParameters(pathParameters), response)
-                .map(ignored -> response.isInitialized());
+            return handler.handle(task.request().newWithPathParameters(pathParameters), response)
+                .map(ignored -> response.status().isPresent());
         }
         return Future.success(false);
     }

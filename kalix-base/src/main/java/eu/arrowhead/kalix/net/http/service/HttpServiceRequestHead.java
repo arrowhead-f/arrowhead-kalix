@@ -123,4 +123,56 @@ public interface HttpServiceRequestHead {
      * @return HTTP version used by request.
      */
     HttpVersion version();
+
+    /**
+     * Creates a shallow copy of this {@code HttpServiceRequestHead} that
+     * contains the given {@code pathParameters}.
+     *
+     * @param pathParameters Path parameters to include in request copy.
+     * @return Copy of this object that includes given path parameters.
+     */
+    default HttpServiceRequestHead newWithPathParameters(final List<String> pathParameters) {
+        final var self = this;
+        return new HttpServiceRequestHead() {
+            @Override
+            public EncodingDescriptor encoding() {
+                return self.encoding();
+            }
+
+            @Override
+            public HttpHeaders headers() {
+                return self.headers();
+            }
+
+            @Override
+            public HttpMethod method() {
+                return self.method();
+            }
+
+            @Override
+            public String path() {
+                return self.path();
+            }
+
+            @Override
+            public List<String> pathParameters() {
+                return pathParameters;
+            }
+
+            @Override
+            public Map<String, List<String>> queryParameters() {
+                return self.queryParameters();
+            }
+
+            @Override
+            public HttpRequester requester() {
+                return self.requester();
+            }
+
+            @Override
+            public HttpVersion version() {
+                return self.version();
+            }
+        };
+    }
 }
