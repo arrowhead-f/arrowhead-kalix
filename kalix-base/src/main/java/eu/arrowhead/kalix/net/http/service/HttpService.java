@@ -1,6 +1,10 @@
 package eu.arrowhead.kalix.net.http.service;
 
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
+import eu.arrowhead.kalix.internal.net.http.service.HttpPaths;
+import eu.arrowhead.kalix.internal.net.http.service.HttpPattern;
+import eu.arrowhead.kalix.internal.net.http.service.HttpRouteSequence;
+import eu.arrowhead.kalix.internal.net.http.service.HttpRouteSequenceFactory;
 import eu.arrowhead.kalix.net.http.HttpMethod;
 import eu.arrowhead.kalix.net.http.HttpStatus;
 import eu.arrowhead.kalix.util.concurrent.Future;

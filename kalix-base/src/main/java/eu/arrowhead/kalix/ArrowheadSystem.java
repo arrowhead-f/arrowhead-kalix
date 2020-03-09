@@ -1,12 +1,11 @@
 package eu.arrowhead.kalix;
 
 import eu.arrowhead.kalix.descriptor.ServiceDescriptor;
-import eu.arrowhead.kalix.internal.util.concurrent.NettySchedulerReferenceCounted;
 import eu.arrowhead.kalix.security.X509Certificates;
 import eu.arrowhead.kalix.security.X509KeyStore;
 import eu.arrowhead.kalix.security.X509TrustStore;
 import eu.arrowhead.kalix.util.concurrent.Future;
-import eu.arrowhead.kalix.util.concurrent.Scheduler;
+import eu.arrowhead.kalix.util.concurrent.FutureScheduler;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -24,7 +23,7 @@ public abstract class ArrowheadSystem<S> {
     private final boolean isSecured;
     private final X509KeyStore keyStore;
     private final X509TrustStore trustStore;
-    private final Scheduler scheduler;
+    private final FutureScheduler scheduler;
     private final boolean schedulerIsOwned;
 
     protected ArrowheadSystem(final Builder<?, ? extends ArrowheadSystem<?>> builder) {
@@ -32,7 +31,7 @@ public abstract class ArrowheadSystem<S> {
         socketAddress = Objects.requireNonNullElseGet(builder.socketAddress, () -> new InetSocketAddress(0));
 
         if (builder.scheduler == null) {
-            scheduler = NettySchedulerReferenceCounted.getDefault();
+            scheduler = FutureScheduler.getDefault();
             schedulerIsOwned = true;
         }
         else {
@@ -138,7 +137,7 @@ public abstract class ArrowheadSystem<S> {
     /**
      * @return Scheduler being used to handle asynchronous task execution.
      */
-    public Scheduler scheduler() {
+    public FutureScheduler scheduler() {
         return scheduler;
     }
 
@@ -220,7 +219,7 @@ public abstract class ArrowheadSystem<S> {
         private X509KeyStore keyStore;
         private X509TrustStore trustStore;
         private boolean isInsecure = false;
-        private Scheduler scheduler;
+        private FutureScheduler scheduler;
 
         /**
          * @return This builder.
@@ -417,7 +416,7 @@ public abstract class ArrowheadSystem<S> {
          * scheduler is shut down when no longer in use.
          * <p>
          * If no scheduler is explicitly specified, the one returned by
-         * {@link Scheduler#getDefault()} will be used instead. This means that
+         * {@link FutureScheduler#getDefault()} will be used instead. This means that
          * if several systems are created without schedulers being explicitly
          * set, the systems will all share the same scheduler. When the last
          * system, or whatever else is using the default scheduler, is shut
@@ -426,7 +425,7 @@ public abstract class ArrowheadSystem<S> {
          * @param scheduler Asynchronous task scheduler.
          * @return This builder.
          */
-        public final B scheduler(final Scheduler scheduler) {
+        public final B scheduler(final FutureScheduler scheduler) {
             this.scheduler = scheduler;
             return self();
         }

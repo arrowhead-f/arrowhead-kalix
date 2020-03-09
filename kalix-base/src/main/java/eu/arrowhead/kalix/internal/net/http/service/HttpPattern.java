@@ -1,4 +1,6 @@
-package eu.arrowhead.kalix.net.http.service;
+package eu.arrowhead.kalix.internal.net.http.service;
+
+import eu.arrowhead.kalix.util.annotation.Internal;
 
 import java.util.*;
 
@@ -36,7 +38,8 @@ import java.util.*;
  *
  * @see <a href="https://tools.ietf.org/html/rfc3986#section-3.3">RFC 3986, Section 3.3</a>
  */
-class HttpPattern implements Comparable<HttpPattern> {
+@Internal
+public class HttpPattern implements Comparable<HttpPattern> {
     private final String pattern;
     private final int nParameters;
     private final boolean isPrefix;
@@ -50,7 +53,7 @@ class HttpPattern implements Comparable<HttpPattern> {
     /**
      * The root pattern, only matching the "/" path.
      */
-    static final HttpPattern ROOT = new HttpPattern("/", 0, false);
+    public static final HttpPattern ROOT = new HttpPattern("/", 0, false);
 
     /**
      * Matches this pattern against given path, and collects any path
@@ -74,7 +77,7 @@ class HttpPattern implements Comparable<HttpPattern> {
      * @see HttpPattern
      * @see <a href="https://tools.ietf.org/html/rfc3986#section-3.3">RFC 3986, Section 3.3</a>
      */
-    boolean match(final String path, final int offset, final List<String> parameters) {
+    public boolean match(final String path, final int offset, final List<String> parameters) {
         // p0 = start of path;    p1 = end of path.
         // q0 = start of pattern; q1 = end of pattern.
 
@@ -144,7 +147,7 @@ class HttpPattern implements Comparable<HttpPattern> {
      * @return {@code true} only if this pattern matches some of the paths
      * that the other pattern does.
      */
-    boolean intersectsWith(final HttpPattern other) {
+    public boolean intersectsWith(final HttpPattern other) {
         // q  = this pattern.
         // q0 = start of this pattern;  q1 = end of this pattern.
 
@@ -192,14 +195,14 @@ class HttpPattern implements Comparable<HttpPattern> {
     /**
      * @return Number of path parameters.
      */
-    int nParameters() {
+    public int nParameters() {
         return nParameters;
     }
 
     /**
      * @return Text representation of this pattern.
      */
-    String text() {
+    public String text() {
         return pattern + (isPrefix ? ">" : "");
     }
 
@@ -220,7 +223,7 @@ class HttpPattern implements Comparable<HttpPattern> {
      * @see HttpPattern
      * @see <a href="https://tools.ietf.org/html/rfc3986#section-3.3">RFC 3986, Section 3.3</a>
      */
-    static HttpPattern valueOf(final String pattern) {
+    public static HttpPattern valueOf(final String pattern) {
         // q0 = start of pattern; q1 = end of pattern
         var q1 = pattern.length();
         if (q1 == 0 || pattern.charAt(0) != '/') {
@@ -244,7 +247,7 @@ class HttpPattern implements Comparable<HttpPattern> {
                 throw new IllegalArgumentException("Percent encodings may not be used in patterns");
             }
             if (c != '/') {
-                if (isRFC3986PathChar(c)) {
+                if (HttpPaths.isValidPathCharacter(c)) {
                     builder.append(c);
                     continue;
                 }
@@ -304,11 +307,6 @@ class HttpPattern implements Comparable<HttpPattern> {
         }
 
         return new HttpPattern(builder.toString(), nParameters, isPrefix);
-    }
-
-    private static boolean isRFC3986PathChar(final char c) {
-        return c >= 'a' && c <= 'z' || c >= '$' && c <= ';' || c >= '@' && c <= 'Z' ||
-            c == '_' || c == '~' || c == '=' || c == '!';
     }
 
     /**

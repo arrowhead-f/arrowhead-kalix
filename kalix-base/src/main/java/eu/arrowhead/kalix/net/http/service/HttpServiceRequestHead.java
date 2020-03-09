@@ -1,6 +1,7 @@
 package eu.arrowhead.kalix.net.http.service;
 
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
+import eu.arrowhead.kalix.internal.net.http.service.HttpPattern;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpMethod;
 import eu.arrowhead.kalix.net.http.HttpPeer;

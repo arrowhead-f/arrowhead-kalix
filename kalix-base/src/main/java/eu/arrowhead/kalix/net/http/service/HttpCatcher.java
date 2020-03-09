@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.net.http.service;
 
+import eu.arrowhead.kalix.internal.net.http.service.HttpPattern;
 import eu.arrowhead.kalix.net.http.HttpMethod;
 import eu.arrowhead.kalix.util.concurrent.Future;
 

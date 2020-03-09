@@ -1,9 +1,12 @@
-package eu.arrowhead.kalix.net.http.service;
+package eu.arrowhead.kalix.internal.net.http.service;
+
+import eu.arrowhead.kalix.util.annotation.Internal;
 
 /**
  * Various helper functions for managing URL paths.
  */
-class HttpPaths {
+@Internal
+public class HttpPaths {
     private HttpPaths() {}
 
     /**
@@ -20,7 +23,7 @@ class HttpPaths {
      * @return {@code true} only if {@code path} is valid.
      * @see <a href="https://tools.ietf.org/html/rfc3986#section-3.3">RFC 3986, Section 3.3</a>
      */
-    static boolean isValidPathWithoutPercentEncodings(final String path) {
+    public static boolean isValidPathWithoutPercentEncodings(final String path) {
         final var p1 = path.length();
         if (p1 == 0 || path.charAt(0) != '/') {
             return false;
@@ -47,7 +50,7 @@ class HttpPaths {
      * @return {@code true} only if {@code c} is a valid path character.
      * @see <a href="https://tools.ietf.org/html/rfc3986#section-3.3">RFC 3986, Section 3.3</a>
      */
-    static boolean isValidPathCharacter(final char c) {
+    public static boolean isValidPathCharacter(final char c) {
         return c >= 'a' && c <= 'z' || c >= '$' && c <= ';' || c >= '@' && c <= 'Z' ||
             c == '_' || c == '~' || c == '=' || c == '!';
     }

@@ -1,4 +1,9 @@
-package eu.arrowhead.kalix.net.http.service;
+package eu.arrowhead.kalix.internal.net.http.service;
+
+import eu.arrowhead.kalix.net.http.service.HttpCatcher;
+import eu.arrowhead.kalix.net.http.service.HttpRoute;
+import eu.arrowhead.kalix.net.http.service.HttpValidator;
+import eu.arrowhead.kalix.util.annotation.Internal;
 
 import java.util.List;
 
@@ -6,7 +11,8 @@ import java.util.List;
  * Factory class useful for constructing sound {@link HttpRouteSequence}
  * instances.
  */
-class HttpRouteSequenceFactory {
+@Internal
+public class HttpRouteSequenceFactory {
     private final List<HttpCatcher<?>> catchers;
     private final List<HttpValidator> validators;
 
@@ -21,7 +27,7 @@ class HttpRouteSequenceFactory {
      * @param catchers   Route exception handlers.
      * @param validators Route validation handlers.
      */
-    HttpRouteSequenceFactory(final List<HttpCatcher<?>> catchers, final List<HttpValidator> validators) {
+    public HttpRouteSequenceFactory(final List<HttpCatcher<?>> catchers, final List<HttpValidator> validators) {
         this.catchers = catchers;
         this.validators = validators;
 
@@ -37,7 +43,7 @@ class HttpRouteSequenceFactory {
      * @param route Route to create route sequence for.
      * @return New route sequence.
      */
-    HttpRouteSequence createRouteSequenceFor(final HttpRoute route) {
+    public HttpRouteSequence createRouteSequenceFor(final HttpRoute route) {
         final var routeValidators = validators.stream()
             .filter(validator -> validator.matchesIntersectionOf(route))
             .toArray(HttpValidator[]::new);

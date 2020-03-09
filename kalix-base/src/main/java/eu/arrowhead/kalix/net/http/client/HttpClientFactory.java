@@ -3,12 +3,10 @@ package eu.arrowhead.kalix.net.http.client;
 import eu.arrowhead.kalix.internal.net.NettyBootstraps;
 import eu.arrowhead.kalix.internal.net.http.client.NettyHttpClient;
 import eu.arrowhead.kalix.internal.net.http.client.NettyHttpClientConnectionInitializer;
-import eu.arrowhead.kalix.internal.util.concurrent.NettyScheduler;
-import eu.arrowhead.kalix.internal.util.concurrent.NettySchedulerReferenceCounted;
 import eu.arrowhead.kalix.security.X509KeyStore;
 import eu.arrowhead.kalix.security.X509TrustStore;
 import eu.arrowhead.kalix.util.concurrent.Future;
-import eu.arrowhead.kalix.util.concurrent.Scheduler;
+import eu.arrowhead.kalix.util.concurrent.FutureScheduler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContext;
@@ -16,7 +14,6 @@ import io.netty.handler.ssl.SslContextBuilder;
 
 import javax.net.ssl.SSLException;
 import java.net.InetSocketAddress;
-import java.time.Duration;
 
 import static eu.arrowhead.kalix.internal.util.concurrent.NettyFutures.adapt;
 
@@ -26,30 +23,13 @@ import static eu.arrowhead.kalix.internal.util.concurrent.NettyFutures.adapt;
 public class HttpClientFactory {
     private final Bootstrap bootstrap;
     private final InetSocketAddress localSocketAddress;
-    private final Scheduler scheduler;
-    private final boolean schedulerIsOwned;
     private final SslContext sslContext;
 
     private HttpClientFactory(final Builder builder) throws SSLException {
-        if (builder.scheduler != null && !(builder.scheduler instanceof NettyScheduler)) {
-            throw new UnsupportedOperationException("Unsupported scheduler implementation");
-        }
-
         bootstrap = NettyBootstraps.createBootstrapUsing(builder.scheduler != null
-            ? (NettyScheduler) builder.scheduler
-            : NettySchedulerReferenceCounted.getDefault());
-
+            ? builder.scheduler
+            : FutureScheduler.getDefault());
         localSocketAddress = builder.localSocketAddress;
-
-        if (builder.scheduler == null) {
-            scheduler = NettySchedulerReferenceCounted.getDefault();
-            schedulerIsOwned = true;
-        }
-        else {
-            scheduler = builder.scheduler;
-            schedulerIsOwned = false;
-        }
-
         if (builder.isInsecure) {
             sslContext = null;
         }
@@ -114,20 +94,6 @@ public class HttpClientFactory {
     }
 
     /**
-     * Starts orderly shutdown of client factory.
-     *
-     * @param timeout The duration after which the factory is forcefully
-     *                terminated.
-     * @return {@code Future} completed after shutdown completion.
-     */
-    public Future<?> shutdown(final Duration timeout) {
-        if (schedulerIsOwned) {
-            return scheduler.shutdown(timeout);
-        }
-        return Future.done();
-    }
-
-    /**
      * Builder useful for creating {@link HttpClientFactory} instances.
      */
     public static class Builder {
@@ -135,7 +101,7 @@ public class HttpClientFactory {
         private X509KeyStore keyStore;
         private X509TrustStore trustStore;
         private boolean isInsecure = false;
-        private Scheduler scheduler;
+        private FutureScheduler scheduler;
 
         /**
          * Ensures that the identified local network interface is used by
@@ -204,7 +170,7 @@ public class HttpClientFactory {
          * scheduler is shut down when no longer in use.
          * <p>
          * If no scheduler is explicitly specified, the one returned by
-         * {@link Scheduler#getDefault()} will be used instead. This means that
+         * {@link FutureScheduler#getDefault()} will be used instead. This means that
          * if several factories are created without schedulers being explicitly
          * set, the factories will all share the same schedulers. When the last
          * factory, or whatever else is using the default scheduler, is shut
@@ -213,7 +179,7 @@ public class HttpClientFactory {
          * @param scheduler Asynchronous task scheduler.
          * @return This builder.
          */
-        public final Builder scheduler(final Scheduler scheduler) {
+        public final Builder scheduler(final FutureScheduler scheduler) {
             this.scheduler = scheduler;
             return this;
         }

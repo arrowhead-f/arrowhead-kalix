@@ -6,7 +6,6 @@ import eu.arrowhead.kalix.descriptor.ServiceDescriptor;
 import eu.arrowhead.kalix.descriptor.TransportDescriptor;
 import eu.arrowhead.kalix.internal.net.NettyBootstraps;
 import eu.arrowhead.kalix.internal.net.http.service.NettyHttpServiceConnectionInitializer;
-import eu.arrowhead.kalix.internal.util.concurrent.NettyScheduler;
 import eu.arrowhead.kalix.net.http.service.HttpService;
 import eu.arrowhead.kalix.util.concurrent.Future;
 import io.netty.handler.logging.LoggingHandler;
@@ -37,9 +36,6 @@ public class HttpArrowheadSystem extends ArrowheadSystem<HttpService> {
 
     private HttpArrowheadSystem(final Builder builder) {
         super(builder);
-        if (!(scheduler() instanceof NettyScheduler)) {
-            throw new UnsupportedOperationException("Unsupported scheduler implementation");
-        }
     }
 
     @Override
@@ -126,7 +122,7 @@ public class HttpArrowheadSystem extends ArrowheadSystem<HttpService> {
                     .build();
             }
             return adapt(NettyBootstraps
-                .createServerBootstrapUsing((NettyScheduler) scheduler())
+                .createServerBootstrapUsing(scheduler())
                 .handler(new LoggingHandler())
                 .childHandler(new NettyHttpServiceConnectionInitializer(this::getServiceByPath, sslContext))
                 .bind(super.localAddress(), super.localPort()))

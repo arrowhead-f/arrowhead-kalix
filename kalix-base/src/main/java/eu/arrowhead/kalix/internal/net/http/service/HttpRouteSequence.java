@@ -1,5 +1,10 @@
-package eu.arrowhead.kalix.net.http.service;
+package eu.arrowhead.kalix.internal.net.http.service;
 
+import eu.arrowhead.kalix.net.http.service.HttpCatcher;
+import eu.arrowhead.kalix.net.http.service.HttpRoute;
+import eu.arrowhead.kalix.net.http.service.HttpRouteTask;
+import eu.arrowhead.kalix.net.http.service.HttpValidator;
+import eu.arrowhead.kalix.util.annotation.Internal;
 import eu.arrowhead.kalix.util.concurrent.Future;
 
 import java.util.ArrayList;
@@ -9,7 +14,8 @@ import java.util.ArrayList;
  * {@link HttpCatcher}s, together able to handle the validation, processing and
  * error handling related to certain incoming HTTP requests, respectively.
  */
-class HttpRouteSequence {
+@Internal
+public class HttpRouteSequence {
     private final HttpValidator[] validators;
     private final HttpRoute route;
     private final HttpCatcher<?>[] catchers;
@@ -25,7 +31,7 @@ class HttpRouteSequence {
      * @param route      Target route.
      * @param catchers   Catchers to include in route sequence.
      */
-    HttpRouteSequence(
+    public HttpRouteSequence(
         final HttpValidator[] validators,
         final HttpRoute route,
         final HttpCatcher<?>[] catchers)
@@ -42,7 +48,7 @@ class HttpRouteSequence {
      * @return Future completed with {@code true} only if given request was
      * handled.
      */
-    Future<Boolean> tryHandle(final HttpRouteTask task) {
+    public Future<Boolean> tryHandle(final HttpRouteTask task) {
         final var pathParameters = new ArrayList<String>(route.pattern().map(HttpPattern::nParameters).orElse(0));
         if (!route.match(task, pathParameters)) {
             return Future.success(false);
