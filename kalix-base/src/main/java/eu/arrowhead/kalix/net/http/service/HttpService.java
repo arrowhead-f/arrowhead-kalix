@@ -196,7 +196,7 @@ public class HttpService {
          * @see eu.arrowhead.kalix.dto
          */
         public Builder encodings(final EncodingDescriptor... encodings) {
-            this.encodings = encodings;
+            this.encodings = encodings.clone();
             return this;
         }
 

@@ -9,7 +9,6 @@ import eu.arrowhead.kalix.util.concurrent.FutureScheduler;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.time.Duration;
 import java.util.Objects;
 
 /**
@@ -24,7 +23,6 @@ public abstract class ArrowheadSystem<S> {
     private final X509KeyStore keyStore;
     private final X509TrustStore trustStore;
     private final FutureScheduler scheduler;
-    private final boolean schedulerIsOwned;
 
     protected ArrowheadSystem(final Builder<?, ? extends ArrowheadSystem<?>> builder) {
         var name = builder.name;
@@ -32,11 +30,9 @@ public abstract class ArrowheadSystem<S> {
 
         if (builder.scheduler == null) {
             scheduler = FutureScheduler.getDefault();
-            schedulerIsOwned = true;
         }
         else {
             scheduler = builder.scheduler;
-            schedulerIsOwned = false;
         }
 
         if (builder.isInsecure) {
@@ -184,27 +180,11 @@ public abstract class ArrowheadSystem<S> {
      * {@link #provideService(Object)} either before or after this method is
      * called.
      *
-     * @return Future completed only if (1) starting the system fails, (2) the
-     * system crashes or (3) the {@link #shutdown(Duration)} method of this
-     * system is called.
+     * @return Future completed only if (1) starting the system fails, (2) this
+     * system crashes or (3) the {@link FutureScheduler} used by this system is
+     * shut down.
      */
     public abstract Future<?> serve();
-
-    /**
-     * Dismisses all provided services and releases all resources held by the
-     * system.
-     *
-     * @param timeout The duration after which the system is forcefully
-     *                terminated.
-     * @return {@code Future} completed after shutdown completion.
-     */
-    public Future<?> shutdown(final Duration timeout) {
-        dismissAllServices();
-        if (schedulerIsOwned) {
-            return scheduler.shutdown(timeout);
-        }
-        return Future.done();
-    }
 
     /**
      * Builder useful for creating instances of classes extending the
@@ -416,11 +396,9 @@ public abstract class ArrowheadSystem<S> {
          * scheduler is shut down when no longer in use.
          * <p>
          * If no scheduler is explicitly specified, the one returned by
-         * {@link FutureScheduler#getDefault()} will be used instead. This means that
-         * if several systems are created without schedulers being explicitly
-         * set, the systems will all share the same scheduler. When the last
-         * system, or whatever else is using the default scheduler, is shut
-         * down, the default scheduler is also shut down.
+         * {@link FutureScheduler#getDefault()} is used instead. This means
+         * that if several systems are created without schedulers being
+         * explicitly set, the systems will all share the same scheduler.
          *
          * @param scheduler Asynchronous task scheduler.
          * @return This builder.

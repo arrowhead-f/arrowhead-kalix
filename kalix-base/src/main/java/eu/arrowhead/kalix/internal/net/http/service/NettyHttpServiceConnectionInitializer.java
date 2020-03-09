@@ -32,7 +32,7 @@ public class NettyHttpServiceConnectionInitializer extends ChannelInitializer<So
     }
 
     @Override
-    protected void initChannel(final SocketChannel ch) throws Exception {
+    protected void initChannel(final SocketChannel ch) {
         final var pipeline = ch.pipeline();
         SSLEngine sslEngine = null;
         if (sslContext != null) {

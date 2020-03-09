@@ -5,6 +5,7 @@ import eu.arrowhead.kalix.internal.net.http.HttpMediaTypes;
 import eu.arrowhead.kalix.internal.net.http.NettyHttpBodyReceiver;
 import eu.arrowhead.kalix.internal.net.http.NettyHttpPeer;
 import eu.arrowhead.kalix.internal.net.http.service.NettyHttpServiceResponse;
+import eu.arrowhead.kalix.net.http.client.HttpClientResponseException;
 import eu.arrowhead.kalix.util.annotation.Internal;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
@@ -30,7 +31,7 @@ public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandle
     }
 
     @Override
-    protected void channelRead0(final ChannelHandlerContext ctx, final HttpObject msg) throws Exception {
+    protected void channelRead0(final ChannelHandlerContext ctx, final HttpObject msg) {
         if (msg instanceof HttpResponse) {
             if (handleResponseHead(ctx, (HttpResponse) msg)) {
                 return;
@@ -48,15 +49,25 @@ public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandle
 
     private boolean handleResponseHead(final ChannelHandlerContext ctx, final HttpResponse response) {
         // TODO: Enable and check size restrictions.
-/*
+
         final EncodingDescriptor encoding;
         {
-            final var optionalEncoding = determineEncodingFrom(response.headers());
-            if (optionalEncoding.isEmpty()) {
-                sendErrorAndClose(ctx, response, HttpResponseStatus.UNSUPPORTED_MEDIA_TYPE);
-                return true;
+            final var encodings = responseReceiver.encodings();
+            final var contentType = response.headers().get("content-type");
+            if (contentType == null) {
+                encoding = encodings[0];
             }
-            encoding = optionalEncoding.get();
+            else {
+                final var encoding0 = HttpMediaTypes.findEncodingCompatibleWithContentType(encodings, contentType);
+                if (encoding0.isEmpty()) {
+                    responseReceiver.fail(new HttpClientResponseException(
+                        "No supported media type in response body; " +
+                            "content-type \"" + contentType + "\" does not " +
+                            "match any encoding supported by this client"));
+                    return true;
+                }
+                encoding = encoding0.get();
+            }
         }
 
         final var serviceResponseBody = new NettyHttpBodyReceiver(ctx.alloc(), encoding, response.headers());
@@ -70,32 +81,9 @@ public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandle
         this.body = serviceResponseBody;
 
         responseReceiver.receive(serviceResponse);
-*/
+
         return false;
     }
-
-    /*
-     * According to RFC 7231, Section 5.3.2, one can 'disregard the ["accept"]
-     * header field by treating the response as if it is not subject to content
-     * negotiation.' An Arrowhead service always has the same input and output
-     * encodings. If "content-type" is specified, it is used to determine
-     * encoding. If "content-type" is not specified but "accept" is, it is used
-     * instead. If neither field is specified, the configured default encoding
-     * is assumed to be adequate. No other content-negotiation is possible.
-     */
-/*    private Optional<EncodingDescriptor> determineEncodingFrom(final HttpHeaders headers) {
-        final var contentType = headers.get("content-type");
-        if (contentType != null) {
-            return HttpMediaTypes.findEncodingCompatibleWithContentType(service.encodings(), contentType);
-        }
-
-        final var acceptHeaders = headers.getAll("accept");
-        if (acceptHeaders != null && acceptHeaders.size() > 0) {
-            return HttpMediaTypes.findEncodingCompatibleWithAcceptHeaders(service.encodings(), acceptHeaders);
-        }
-
-        return Optional.of(service.defaultEncoding());
-    }*/
 
     private void handleResponseContent(final HttpContent content) {
         body.append(content);
