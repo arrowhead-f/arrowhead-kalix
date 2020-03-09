@@ -29,7 +29,7 @@ public interface HttpServiceRequestHead {
      * @param name Name of header. Case is ignored. Prefer lowercase.
      * @return Header value, or {@code null}.
      */
-    default Optional<String> header(final String name) {
+    default Optional<String> header(final CharSequence name) {
         return headers().get(name);
     }
 
@@ -39,7 +39,7 @@ public interface HttpServiceRequestHead {
      * @param name Name of header. Case is ignored. Prefer lowercase.
      * @return Header values. May be an empty list.
      */
-    default List<String> headers(final String name) {
+    default List<String> headers(final CharSequence name) {
         return headers().getAll(name);
     }
 
@@ -90,8 +90,8 @@ public interface HttpServiceRequestHead {
      * @param name Name of query parameter. Case sensitive.
      * @return Query parameter value, if a corresponding parameter name exists.
      */
-    default Optional<String> queryParameter(final String name) {
-        final var values = queryParameters().get(name);
+    default Optional<String> queryParameter(final CharSequence name) {
+        final var values = queryParameters().get(name.toString());
         return Optional.ofNullable(values.size() > 0 ? values.get(0) : null);
     }
 
@@ -101,8 +101,8 @@ public interface HttpServiceRequestHead {
      * @param name Name of query parameter. Case sensitive.
      * @return Unmodifiable list of query parameter values. May be empty.
      */
-    default List<String> queryParameters(final String name) {
-        final var parameters = queryParameters().get(name);
+    default List<String> queryParameters(final CharSequence name) {
+        final var parameters = queryParameters().get(name.toString());
         if (parameters == null) {
             return Collections.emptyList();
         }

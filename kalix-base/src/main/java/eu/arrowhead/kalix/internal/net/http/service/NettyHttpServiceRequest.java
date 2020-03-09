@@ -1,7 +1,8 @@
-package eu.arrowhead.kalix.internal.net.http;
+package eu.arrowhead.kalix.internal.net.http.service;
 
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.dto.DataReadable;
+import eu.arrowhead.kalix.internal.net.http.NettyHttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpMethod;
 import eu.arrowhead.kalix.net.http.HttpVersion;
@@ -18,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static eu.arrowhead.kalix.internal.net.http.NettyHttp.adapt;
+import static eu.arrowhead.kalix.internal.net.http.NettyHttpAdapters.adapt;
 
 public class NettyHttpServiceRequest implements HttpServiceRequest {
     private final NettyHttpServiceRequestBody body;

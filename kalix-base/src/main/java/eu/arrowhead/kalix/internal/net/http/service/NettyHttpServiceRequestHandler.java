@@ -1,6 +1,7 @@
-package eu.arrowhead.kalix.internal.net.http;
+package eu.arrowhead.kalix.internal.net.http.service;
 
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
+import eu.arrowhead.kalix.internal.net.http.HttpMediaTypes;
 import eu.arrowhead.kalix.net.http.service.HttpService;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;

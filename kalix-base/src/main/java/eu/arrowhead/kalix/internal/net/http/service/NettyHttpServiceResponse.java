@@ -1,10 +1,11 @@
-package eu.arrowhead.kalix.internal.net.http;
+package eu.arrowhead.kalix.internal.net.http.service;
 
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.dto.DataWritable;
 import eu.arrowhead.kalix.dto.DataWriter;
 import eu.arrowhead.kalix.dto.WriteException;
 import eu.arrowhead.kalix.internal.dto.binary.ByteBufWriter;
+import eu.arrowhead.kalix.internal.net.http.NettyHttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpStatus;
 import eu.arrowhead.kalix.net.http.HttpVersion;
@@ -22,7 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Optional;
 
-import static eu.arrowhead.kalix.internal.net.http.NettyHttp.adapt;
+import static eu.arrowhead.kalix.internal.net.http.NettyHttpAdapters.adapt;
 
 public class NettyHttpServiceResponse implements HttpServiceResponse {
     private final EncodingDescriptor encoding;
@@ -55,12 +56,12 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
             content = Unpooled.wrappedBuffer((byte[]) body);
         }
         else if (body instanceof DataWritable) {
+            final var dataEncoding = encoding.asDataEncoding().orElseThrow(() -> new UnsupportedOperationException("" +
+                "There is no DTO support for the \"" + encoding +
+                "\" encoding; response body cannot be encoded"));
             content = ctx.alloc().buffer();
-            DataWriter.write((DataWritable) body,
-                encoding.asDataEncoding().orElseThrow(() -> new UnsupportedOperationException("" +
-                    "There is no DTO support for the \"" + encoding +
-                    "\" encoding; response body cannot be encoded")),
-                new ByteBufWriter(content));
+            DataWriter.write((DataWritable) body, dataEncoding, new ByteBufWriter(content));
+            nettyHeaders.set("content-type", dataEncoding.asMediaType());
         }
         else if (body instanceof Path) {
             return writeFileBodyTo((Path) body, ctx);

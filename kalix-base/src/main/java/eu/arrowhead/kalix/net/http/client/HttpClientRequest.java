@@ -1,67 +1,91 @@
 package eu.arrowhead.kalix.net.http.client;
 
+import eu.arrowhead.kalix.dto.DataWritable;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpVersion;
+import eu.arrowhead.kalix.net.http.service.HttpServiceResponse;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.nio.file.Path;
+import java.util.*;
 
 /**
  * An outgoing HTTP request.
  */
-public class HttpClientRequest {
-    private HttpVersion version;
-    private Map<String, List<String>> queryParameters = new HashMap<>();
-    private Object body;
-
+public interface HttpClientRequest {
     /**
-     * Creates new HTTP/1.1 request.
+     * @return Currently set request body, if any.
      */
-    public HttpClientRequest() {
-        this(HttpVersion.HTTP_11);
-    }
+    Optional<Object> body();
 
     /**
-     * Creates new HTTP request with the specified version indicator.
-     *
-     * @param version HTTP version to use.
-     */
-    public HttpClientRequest(final HttpVersion version) {
-        this.version = version;
-    }
-
-    /**
-     * @return Previously set request body, if any.
-     */
-    public Optional<Object> body() {
-        return Optional.ofNullable(body);
-    }
-
-    /**
-     * Sets request body.
+     * Sets request body, replacing any previously set such.
      * <p>
-     * The body is later encoded using the encoding associated with the media
-     * type stated in the "content-type" header in this request, if that
-     * encoding is supported.
+     * The provided byte array is scheduled for transmission to the request
+     * receiver as-is. It becomes the responsibility of the caller to ensure
+     * that the {@code "content-type"} header is set appropriately. The
+     * {@code "content-length"} header is, however, automatically set to the
+     * length of the byte array.
      *
-     * @param body Desired request body.
-     * @return This request.
+     * @param byteArray Bytes to send to request receiver.
+     * @return This request object.
      */
-    public HttpClientRequest body(final Object body) {
-        this.body = body;
-        return this;
-    }
+    HttpServiceResponse body(final byte[] byteArray);
 
     /**
-     * Gets value of named header, if set.
+     * Sets request body, replacing any previously set such.
+     * <p>
+     * The provided writable data transfer object is scheduled for encoding and
+     * transmission to the request receiver. Please refer to the Javadoc for
+     * the {@code @Writable} annotation for more information about writable
+     * data transfer objects.
+     *
+     * @param body Data transfer object to send to request receiver.
+     * @return This request object.
+     * @throws NullPointerException If {@code body} is {@code null}.
+     * @see eu.arrowhead.kalix.dto.Writable @Writable
+     */
+    HttpServiceResponse body(final DataWritable body);
+
+    /**
+     * Sets request body, replacing any previously set such.
+     * <p>
+     * The contents of the file at the provided file system path are scheduled
+     * for transmission to the request receiver as-is. It becomes the
+     * responsibility of the caller to ensure that the {@code "content-type"}
+     * header is set appropriately. The {@code "content-length"} header is,
+     * however, automatically set to the size of the file.
+     *
+     * @param path Path to file to send to request receiver.
+     * @return This request object.
+     * @throws NullPointerException If {@code path} is {@code null}.
+     */
+    HttpServiceResponse body(final Path path);
+
+    /**
+     * Sets request body, replacing any previously set such.
+     * <p>
+     * The provided string is scheduled for transmission to the request
+     * receiver as-is. It becomes the responsibility of the caller to ensure
+     * that the {@code "content-type"} header is set appropriately. If no
+     * charset is specified in the {@code "content-type"}, one that is
+     * acceptable to the request receiver will be used if possible. The
+     * {@code "content-length"} header is automatically set to the length of
+     * the string.
+     *
+     * @param string String to send to request receiver.
+     * @return This request object.
+     * @throws NullPointerException If {@code string} is {@code null}.
+     */
+    HttpServiceResponse body(final String string);
+
+    /**
+     * Gets value of first header with given {@code name}, if any such.
      *
      * @param name Name of header. Case is ignored. Prefer lowercase.
      * @return Header value, or {@code null}.
      */
-    public Optional<String> header(final String name) {
-        throw new UnsupportedOperationException();
+    default Optional<String> header(final CharSequence name) {
+        return headers().get(name);
     }
 
     /**
@@ -71,60 +95,59 @@ public class HttpClientRequest {
      * @param value Desired header value.
      * @return This request.
      */
-    public HttpClientRequest header(final String name, final String value) {
-        throw new UnsupportedOperationException();
+    default HttpClientRequest header(final CharSequence name, final CharSequence value) {
+        headers().set(name, value);
+        return this;
     }
 
     /**
-     * @return Case-insensitive map of request headers. Prefer lowercase keys.
+     * Gets all header values associated with given {@code name}, if any.
+     *
+     * @param name Name of header. Case is ignored. Prefer lowercase.
+     * @return Header values. May be an empty list.
      */
-    public HttpHeaders headers() {
-        throw new UnsupportedOperationException();
+    default List<String> headers(final CharSequence name) {
+        return headers().getAll(name);
     }
 
     /**
-     * Gets value of previously set query parameter, if any.
+     * @return <i>Modifiable</i> map of all request headers.
+     */
+    HttpHeaders headers();
+
+    /**
+     * Gets first query parameter with given name, if any such.
      *
      * @param name Name of query parameter. Case sensitive.
-     * @return Query parameter value, or {@code null}.
+     * @return Query parameter value, if a corresponding parameter name exists.
      */
-    public Optional<String> queryParameter(final String name) {
-        throw new UnsupportedOperationException();
+    default Optional<String> queryParameter(final String name) {
+        final var values = queryParameters().get(name);
+        return Optional.ofNullable(values.size() > 0 ? values.get(0) : null);
     }
 
     /**
-     * Sets query parameter with {@code name} to given value.
+     * Sets query parameter pair, replacing all previous such with the same
+     * name.
      *
      * @param name  Name of query parameter. Case sensitive.
-     * @param value Query parameter value. Case sensitive.
-     * @return This request.
+     * @param value Desired parameter value.
+     * @return Query parameter value, if a corresponding parameter name exists.
      */
-    public HttpClientRequest queryParameter(final String name, final String value) {
-        throw new UnsupportedOperationException();
+    default HttpClientRequest queryParameter(final String name, final CharSequence value) {
+        final var list = new ArrayList<String>(1);
+        list.add(value.toString());
+        queryParameters().put(name, list);
+        return this;
     }
 
     /**
-     * @return Map of all query parameters.
+     * @return Modifiable map of query parameters.
      */
-    public Map<String, String> queryParameters() {
-        throw new UnsupportedOperationException();
-    }
+    Map<String, List<String>> queryParameters();
 
     /**
      * @return HTTP version used by request.
      */
-    public HttpVersion version() {
-        return version;
-    }
-
-    /**
-     * Sets HTTP version to use with request.
-     *
-     * @param version Target HTTP version.
-     * @return This request.
-     */
-    public HttpClientRequest version(final HttpVersion version) {
-        this.version = version;
-        return this;
-    }
+    HttpVersion version();
 }

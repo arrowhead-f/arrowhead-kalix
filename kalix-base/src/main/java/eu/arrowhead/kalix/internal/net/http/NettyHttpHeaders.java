@@ -7,9 +7,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Netty implementation of {@link HttpHeaders}.
+ */
 public class NettyHttpHeaders implements HttpHeaders {
     private final io.netty.handler.codec.http.HttpHeaders headers;
 
+    /**
+     * @param headers Netty headers to wrap.
+     */
     public NettyHttpHeaders(final io.netty.handler.codec.http.HttpHeaders headers) {
         this.headers = headers;
     }

@@ -1,47 +1,36 @@
 package eu.arrowhead.kalix.net.http.client;
 
+import eu.arrowhead.kalix.net.http.HttpArrowheadSystem;
+
 import java.net.InetSocketAddress;
 import java.security.cert.X509Certificate;
-import java.util.Objects;
 
 /**
  * Represents information about a system sending some received HTTP response.
  */
-public class HttpResponder {
-    private final X509Certificate certificate;
-    private final InetSocketAddress remoteSocketAddress;
-
+public interface HttpResponder {
     /**
-     * Creates new object containing details about the sender of some incoming
-     * HTTP response.
-     *
-     * @param certificate         Certificate of sender, if running in secure
-     *                            mode.
-     * @param remoteSocketAddress Socket address of sender.
-     */
-    public HttpResponder(final X509Certificate certificate, final InetSocketAddress remoteSocketAddress) {
-        this.certificate = certificate;
-        this.remoteSocketAddress = Objects.requireNonNull(remoteSocketAddress, "Expected remoteSocketAddress");
-    }
-
-    /**
-     * @return Certificate of response sender.
-     * @throws UnsupportedOperationException If the {@link HttpClient}
+     * @return Certificate of request sender.
+     * @throws UnsupportedOperationException If the {@link HttpArrowheadSystem}
      *                                       providing this object is not
      *                                       running in secure mode.
      */
-    public X509Certificate certificate() {
-        if (certificate == null) {
-            throw new UnsupportedOperationException("Not in secure mode");
-        }
-        return certificate;
+    default X509Certificate certificate() {
+        return certificateChain()[0];
     }
 
     /**
-     * @return The hostname/port or IP-address/port of the sender of some HTTP
-     * response.
+     * @return Certificate chain of the request sender. The certificate at
+     * index 0 is the one owned by the request sender, and the other ones are
+     * its issuers.
+     * @throws UnsupportedOperationException If the {@link HttpArrowheadSystem}
+     *                                       providing this object is not
+     *                                       running in secure mode.
      */
-    public InetSocketAddress remoteSocketAddress() {
-        return remoteSocketAddress;
-    }
+    X509Certificate[] certificateChain();
+
+    /**
+     * @return The hostname/port or IP-address/port of the request sender.
+     */
+    InetSocketAddress remoteSocketAddress();
 }

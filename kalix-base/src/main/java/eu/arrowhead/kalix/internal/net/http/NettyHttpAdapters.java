@@ -5,10 +5,11 @@ import eu.arrowhead.kalix.net.http.HttpStatus;
 import eu.arrowhead.kalix.net.http.HttpVersion;
 
 /**
- * Various HTTP-related utilities related to Netty.
+ * Various adapters useful for converting HTTP types to/from their Kalix/Netty
+ * representations.
  */
-public class NettyHttp {
-    private NettyHttp() {}
+public class NettyHttpAdapters {
+    private NettyHttpAdapters() {}
 
     /**
      * @param version Netty HTTP version.
@@ -24,14 +25,6 @@ public class NettyHttp {
      */
     public static HttpMethod adapt(final io.netty.handler.codec.http.HttpMethod method) {
         return HttpMethod.valueOf(method.name());
-    }
-
-    /**
-     * @param method Kalix HTTP method.
-     * @return Netty HTTP method.
-     */
-    public static io.netty.handler.codec.http.HttpMethod adapt(final HttpMethod method) {
-        return io.netty.handler.codec.http.HttpMethod.valueOf(method.name());
     }
 
     /**

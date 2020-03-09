@@ -7,7 +7,6 @@ import eu.arrowhead.kalix.security.X509KeyStore;
 import eu.arrowhead.kalix.security.X509TrustStore;
 import eu.arrowhead.kalix.util.concurrent.Future;
 import eu.arrowhead.kalix.util.concurrent.Scheduler;
-import eu.arrowhead.kalix.util.logging.LogLevel;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -26,13 +25,11 @@ public abstract class ArrowheadSystem<S> {
     private final X509KeyStore keyStore;
     private final X509TrustStore trustStore;
     private final Scheduler scheduler;
-    private final LogLevel logLevel;
 
     protected ArrowheadSystem(final Builder<?, ? extends ArrowheadSystem<?>> builder) {
         var name = builder.name;
         socketAddress = Objects.requireNonNullElseGet(builder.socketAddress, () -> new InetSocketAddress(0));
         scheduler = Objects.requireNonNullElseGet(builder.scheduler, NettySchedulerReferenceCounted::getDefault);
-        logLevel = builder.logLevel;
 
         if (builder.isInsecure) {
             isSecured = false;
@@ -137,13 +134,6 @@ public abstract class ArrowheadSystem<S> {
     }
 
     /**
-     * @return Logging level configured for this system.
-     */
-    public LogLevel logLevel() {
-        return logLevel;
-    }
-
-    /**
      * @return Descriptors representing all services currently provided by this
      * system. The returned array should be a copy that can be modified without
      * having any impact on the set kept internally by this class.
@@ -219,7 +209,6 @@ public abstract class ArrowheadSystem<S> {
         private X509TrustStore trustStore;
         private boolean isInsecure = false;
         private Scheduler scheduler;
-        private LogLevel logLevel = LogLevel.INFO;
 
         /**
          * @return This builder.
@@ -431,20 +420,6 @@ public abstract class ArrowheadSystem<S> {
          */
         public final B scheduler(final Scheduler scheduler) {
             this.scheduler = scheduler;
-            return self();
-        }
-
-        /**
-         * Determines what internal events will be logged while the system is
-         * running.
-         * <p>
-         * If never set, {@link LogLevel#INFO} will be used by default.
-         *
-         * @param logLevel Target logging level.
-         * @return This builder.
-         */
-        public final B logLevel(final LogLevel logLevel) {
-            this.logLevel = logLevel;
             return self();
         }
 

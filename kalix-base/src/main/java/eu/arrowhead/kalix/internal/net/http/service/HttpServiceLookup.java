@@ -1,4 +1,4 @@
-package eu.arrowhead.kalix.internal.net.http;
+package eu.arrowhead.kalix.internal.net.http.service;
 
 import eu.arrowhead.kalix.net.http.service.HttpService;
 

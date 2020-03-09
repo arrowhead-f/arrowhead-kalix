@@ -118,7 +118,7 @@ public interface HttpServiceResponse {
     /**
      * @return Encoding that will or should be used for any response body.
      */
-    public EncodingDescriptor encoding();
+    EncodingDescriptor encoding();
 
     /**
      * Gets a response header value by name.
@@ -143,7 +143,7 @@ public interface HttpServiceResponse {
     }
 
     /**
-     * @return Modifiable {@link Map} of all response headers.
+     * @return Modifiable response headers.
      */
     HttpHeaders headers();
 
