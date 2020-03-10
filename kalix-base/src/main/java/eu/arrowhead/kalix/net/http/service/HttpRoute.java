@@ -1,6 +1,5 @@
 package eu.arrowhead.kalix.net.http.service;
 
-import eu.arrowhead.kalix.internal.net.http.service.HttpPattern;
 import eu.arrowhead.kalix.net.http.HttpMethod;
 import eu.arrowhead.kalix.util.concurrent.Future;
 
@@ -11,7 +10,7 @@ import java.util.Optional;
  * Describes the conditions for and where to route matching incoming
  * {@link HttpServiceRequest}s.
  */
-public class HttpRoute implements Comparable<HttpRoute> {
+public class HttpRoute implements HttpRoutable {
     private final HttpMethod method;
     private final HttpPattern pattern;
     private final HttpRouteHandler handler;
@@ -35,6 +34,7 @@ public class HttpRoute implements Comparable<HttpRoute> {
      * @return {@link HttpMethod}, if any, that routed requests must match
      * for this route to be invoked.
      */
+    @Override
     public Optional<HttpMethod> method() {
         return Optional.ofNullable(method);
     }
@@ -43,6 +43,7 @@ public class HttpRoute implements Comparable<HttpRoute> {
      * @return {@link HttpPattern}, if any, that the paths of routed requests
      * must match for this route to be invoked.
      */
+    @Override
     public Optional<HttpPattern> pattern() {
         return Optional.ofNullable(pattern);
     }
@@ -80,35 +81,5 @@ public class HttpRoute implements Comparable<HttpRoute> {
      */
     public Future<?> handle(final HttpServiceRequest request, final HttpServiceResponse response) throws Exception {
         return handler.handle(request, response);
-    }
-
-    @Override
-    public int compareTo(final HttpRoute other) {
-        // Routes with patterns come before those without patterns.
-        if (pattern != null) {
-            if (other.pattern == null) {
-                return -1;
-            }
-            final var c = pattern.compareTo(other.pattern);
-            if (c != 0) {
-                return c;
-            }
-        }
-        else if (other.pattern != null) {
-            return 1;
-        }
-
-        // Routes with methods come before those without methods.
-        if (method != null) {
-            if (other.method == null) {
-                return -1;
-            }
-            return method.compareTo(other.method);
-        }
-        else if (other.method != null) {
-            return 1;
-        }
-
-        return 0;
     }
 }

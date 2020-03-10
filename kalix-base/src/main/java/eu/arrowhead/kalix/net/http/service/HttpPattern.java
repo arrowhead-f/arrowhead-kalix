@@ -1,6 +1,6 @@
-package eu.arrowhead.kalix.internal.net.http.service;
+package eu.arrowhead.kalix.net.http.service;
 
-import eu.arrowhead.kalix.util.annotation.Internal;
+import eu.arrowhead.kalix.internal.net.http.service.HttpPaths;
 
 import java.util.*;
 
@@ -38,7 +38,6 @@ import java.util.*;
  *
  * @see <a href="https://tools.ietf.org/html/rfc3986#section-3.3">RFC 3986, Section 3.3</a>
  */
-@Internal
 public class HttpPattern implements Comparable<HttpPattern> {
     private final String pattern;
     private final int nParameters;
@@ -182,7 +181,7 @@ public class HttpPattern implements Comparable<HttpPattern> {
                 return false;
             }
 
-            // One of is at a path parameter. Skip current segment.
+            // One pattern is at a path parameter. Skip current segment.
             while (q0 < q1 && q.charAt(q0) != '/') {
                 q0 += 1;
             }

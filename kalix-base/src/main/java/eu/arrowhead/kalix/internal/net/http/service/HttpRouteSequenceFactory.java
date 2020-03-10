@@ -31,8 +31,8 @@ public class HttpRouteSequenceFactory {
         this.catchers = catchers;
         this.validators = validators;
 
-        this.catchers.sort(HttpCatcher::compareTo);
-        this.validators.sort(HttpValidator::compareTo);
+        this.catchers.sort(HttpRoutables::compareCatchers);
+        this.validators.sort(HttpRoutables::compareValidators);
     }
 
     /**
@@ -45,11 +45,11 @@ public class HttpRouteSequenceFactory {
      */
     public HttpRouteSequence createRouteSequenceFor(final HttpRoute route) {
         final var routeValidators = validators.stream()
-            .filter(validator -> validator.matchesIntersectionOf(route))
+            .filter(validator -> HttpRoutables.intersect(validator, route))
             .toArray(HttpValidator[]::new);
 
         final var routeCatchers = catchers.stream()
-            .filter(catcher -> catcher.matchesIntersectionOf(route))
+            .filter(catcher -> HttpRoutables.intersect(catcher, route))
             .toArray(HttpCatcher[]::new);
 
         return new HttpRouteSequence(routeValidators, route, routeCatchers);

@@ -2,7 +2,6 @@ package eu.arrowhead.kalix.net.http.service;
 
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.dto.DataReadable;
-import eu.arrowhead.kalix.internal.net.http.service.HttpPattern;
 import eu.arrowhead.kalix.net.http.*;
 import eu.arrowhead.kalix.util.concurrent.FutureProgress;
 
@@ -131,8 +130,8 @@ public interface HttpServiceRequest extends HttpBodyReceiver {
      * Creates a shallow copy of this {@code HttpServiceRequest} that contains
      * the given {@code pathParameters}.
      *
-     * @param pathParameters Path parameters to include in request copy.
-     * @return Copy of this object that includes given path parameters.
+     * @param pathParameters Path parameters to include in request clone.
+     * @return Clone of request object that includes given path parameters.
      */
     default HttpServiceRequest cloneAndSet(final List<String> pathParameters) {
         final var self = this;

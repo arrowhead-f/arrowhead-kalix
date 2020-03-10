@@ -1,6 +1,5 @@
 package eu.arrowhead.kalix.net.http.service;
 
-import eu.arrowhead.kalix.internal.net.http.service.HttpPattern;
 import eu.arrowhead.kalix.net.http.HttpMethod;
 import eu.arrowhead.kalix.util.concurrent.Future;
 
@@ -14,7 +13,7 @@ import java.util.Optional;
  * incoming HTTP requests before they are provided to their designated
  * {@link HttpRoute}s.
  */
-public class HttpValidator implements Comparable<HttpValidator> {
+public class HttpValidator implements HttpRoutable {
     private final int ordinal;
     private final HttpMethod method;
     private final HttpPattern pattern;
@@ -44,25 +43,30 @@ public class HttpValidator implements Comparable<HttpValidator> {
     }
 
     /**
-     * Determines whether there are method/path pairs that would match both
-     * this validator and the provided route.
-     *
-     * @param route Route to test.
-     * @return {@code true} only if an intersection of matching method/path
-     * pairs exists between this catcher and the given route.
+     * @return Integer indicating when to execute this validator in relation to
+     * other catchers that match the same {@link HttpMethod methods} and
+     * have the exact same {@link HttpPattern patterns}.
      */
-    public boolean matchesIntersectionOf(final HttpRoute route) {
-        if (method != null) {
-            final var method0 = route.method();
-            if (method0.isPresent() && method0.get() != method) {
-                return false;
-            }
-        }
-        if (pattern != null) {
-            final var pattern0 = route.pattern();
-            return pattern0.isEmpty() || pattern.intersectsWith(pattern0.get());
-        }
-        return true;
+    public int ordinal() {
+        return ordinal;
+    }
+
+    /**
+     * @return {@link HttpMethod}, if any, that requests causing thrown
+     * exceptions must match for this validator to be invoked.
+     */
+    @Override
+    public Optional<HttpMethod> method() {
+        return Optional.ofNullable(method);
+    }
+
+    /**
+     * @return {@link HttpPattern}, if any, that paths of requests causing
+     * thrown exceptions must match for this validator to be invoked.
+     */
+    @Override
+    public Optional<HttpPattern> pattern() {
+        return Optional.ofNullable(pattern);
     }
 
     /**
@@ -104,39 +108,5 @@ public class HttpValidator implements Comparable<HttpValidator> {
                 .map(ignored -> response.status().isPresent());
         }
         return Future.success(false);
-    }
-
-    @Override
-    public int compareTo(final HttpValidator other) {
-        // Validators with patterns come before those without patterns.
-        if (pattern != null) {
-            if (other.pattern == null) {
-                return -1;
-            }
-            final var c = pattern.compareTo(other.pattern);
-            if (c != 0) {
-                return c;
-            }
-        }
-        else if (other.pattern != null) {
-            return 1;
-        }
-
-        // Validators with methods come before those without methods.
-        if (method != null) {
-            if (other.method == null) {
-                return -1;
-            }
-            final var c = method.compareTo(other.method);
-            if (c != 0) {
-                return c;
-            }
-        }
-        else if (other.method != null) {
-            return 1;
-        }
-
-        // If nothing else remains, use ordinals to decide order.
-        return ordinal - other.ordinal;
     }
 }
