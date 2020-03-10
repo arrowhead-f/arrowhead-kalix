@@ -19,11 +19,11 @@ public interface HttpBodyReceiver {
      * documentation for the {@link eu.arrowhead.kalix.dto} package.
      * <p>
      * Note that a body can typically only be requested once via this
-     * interface. Any further requests will likely cause exceptions being
+     * interface. Any further requests will likely cause exceptions to be
      * thrown.
      *
-     * @param class_ Class to decode incoming HTTP body into.
-     * @param <R>    Type of {@code class_}.
+     * @param class_   Class to decode incoming HTTP body into.
+     * @param <R>      Type of {@code class_}.
      * @return Future completed when the incoming HTTP body has been fully
      * received and then decoded into an instance of {@code class_}.
      * @throws IllegalStateException If the body has already been requested.
@@ -35,7 +35,7 @@ public interface HttpBodyReceiver {
      * byte array ({@code byte[]}).
      * <p>
      * Note that a body can typically only be requested once via this
-     * interface. Any further requests will likely cause exceptions being
+     * interface. Any further requests will likely cause exceptions to be
      * thrown.
      *
      * @return Future completed when the incoming HTTP body has been fully
@@ -64,7 +64,7 @@ public interface HttpBodyReceiver {
      * the body directly to a file, as it arrives.
      * <p>
      * Note that a body can typically only be requested once via this
-     * interface. Any further requests will likely cause exceptions being
+     * interface. Any further requests will likely cause exceptions to be
      * thrown.
      *
      * @return Future completed when the incoming HTTP body has been fully
@@ -83,7 +83,7 @@ public interface HttpBodyReceiver {
      * case, UTF-8 will be assumed to be adequate.
      * <p>
      * Note that a body can typically only be requested once via this
-     * interface. Any further requests will likely cause exceptions being
+     * interface. Any further requests will likely cause exceptions to be
      * thrown.
      *
      * @return Future completed when the incoming HTTP body becomes has been
@@ -97,7 +97,7 @@ public interface HttpBodyReceiver {
      * specified file system path, overwriting it if it already exists.
      * <p>
      * Note that a body can typically only be requested once via this
-     * interface. Any further requests will likely cause exceptions being
+     * interface. Any further requests will likely cause exceptions to be
      * thrown.
      *
      * @param path Path to file to contain incoming HTTP body.
@@ -125,7 +125,7 @@ public interface HttpBodyReceiver {
      * becomes available.
      * <p>
      * Note that a body can typically only be requested once via this
-     * interface. Any further requests will likely cause exceptions being
+     * interface. Any further requests will likely cause exceptions to be
      * thrown.
      *
      * @param path   Path to file to contain incoming HTTP body.

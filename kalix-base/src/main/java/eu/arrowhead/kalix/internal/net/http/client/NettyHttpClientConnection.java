@@ -5,10 +5,11 @@ import eu.arrowhead.kalix.dto.DataWritable;
 import eu.arrowhead.kalix.dto.DataWriter;
 import eu.arrowhead.kalix.dto.WriteException;
 import eu.arrowhead.kalix.internal.dto.binary.ByteBufWriter;
-import eu.arrowhead.kalix.internal.net.http.NettyHttpAdapters;
+import eu.arrowhead.kalix.internal.net.http.HttpMediaTypes;
+import eu.arrowhead.kalix.internal.util.concurrent.NettyFutures;
 import eu.arrowhead.kalix.net.http.HttpPeer;
 import eu.arrowhead.kalix.net.http.HttpVersion;
-import eu.arrowhead.kalix.net.http.client.HttpClient;
+import eu.arrowhead.kalix.net.http.client.HttpClientConnection;
 import eu.arrowhead.kalix.net.http.client.HttpClientRequest;
 import eu.arrowhead.kalix.net.http.client.HttpClientResponse;
 import eu.arrowhead.kalix.util.Result;
@@ -30,19 +31,22 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.CancellationException;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static eu.arrowhead.kalix.internal.util.concurrent.NettyFutures.adapt;
+import static eu.arrowhead.kalix.internal.net.http.NettyHttpAdapters.adapt;
+import static io.netty.handler.codec.http.HttpHeaderNames.*;
 
 @Internal
-public class NettyHttpClient implements HttpClient, HttpPeer {
-    private final EncodingDescriptor encoding;
+public class NettyHttpClientConnection implements HttpClientConnection, HttpPeer {
+    private final EncodingDescriptor[] encodings;
     private final Queue<FutureResponse> pendingResponseQueue = new LinkedList<>();
 
     private Channel channel = null;
     private X509Certificate[] certificateChain = null;
 
-    public NettyHttpClient(final EncodingDescriptor encoding) {
-        this.encoding = encoding;
+    public NettyHttpClientConnection(final EncodingDescriptor[] encodings) {
+        this.encodings = encodings;
     }
 
     @Override
@@ -81,12 +85,21 @@ public class NettyHttpClient implements HttpClient, HttpPeer {
         return pendingResponse;
     }
 
+    @Override
+    public Future<HttpClientResponse> sendAndClose(final HttpClientRequest request) {
+        return send(request)
+            .flatMap(response -> close().map(ignored -> response))
+            .flatMapError(fault -> close().map(ignored -> fault));
+    }
+
     private void writeRequestToChannel(final HttpClientRequest request) throws WriteException, IOException {
         final var body = request.body().orElse(null);
         final var headers = request.headers().unwrap();
-        final var method = request.method().orElseThrow(() -> new IllegalArgumentException("Expected method"));
+        final var method = adapt(request.method().orElseThrow(() -> new IllegalArgumentException("Expected method")));
         final var uri = request.uri().orElseThrow(() -> new IllegalArgumentException("Expected uri"));
-        final var version = request.version().orElse(HttpVersion.HTTP_11);
+        final var version = adapt(request.version().orElse(HttpVersion.HTTP_11));
+
+        headers.set(HOST, remoteSocketAddress().getHostString());
 
         final ByteBuf content;
         if (body == null) {
@@ -96,27 +109,38 @@ public class NettyHttpClient implements HttpClient, HttpPeer {
             content = Unpooled.wrappedBuffer((byte[]) body);
         }
         else if (body instanceof DataWritable) {
+            final var contentType = headers.get(CONTENT_TYPE);
+            final var encoding = HttpMediaTypes.findEncodingCompatibleWithContentType(encodings, contentType)
+                .orElseThrow(() -> new UnsupportedOperationException("" +
+                    "The content-type \"" + contentType + "\" is not compatible " +
+                    "with eny encoding declared for the HTTP client owning this " +
+                    "connection " + Stream.of(encodings)
+                    .map(EncodingDescriptor::toString)
+                    .collect(Collectors.joining(", ", "(", ")."))));
+
             final var dataEncoding = encoding.asDataEncoding().orElseThrow(() -> new UnsupportedOperationException("" +
                 "There is no DTO support for the \"" + encoding +
                 "\" encoding; request body cannot be encoded"));
 
             content = channel.alloc().buffer();
             DataWriter.write((DataWritable) body, dataEncoding, new ByteBufWriter(content));
-            if (headers.get(HttpHeaderNames.CONTENT_TYPE) == null) {
-                headers.set(HttpHeaderNames.CONTENT_TYPE, dataEncoding.asMediaType());
+
+            final var mediaType = HttpMediaTypes.toMediaType(encoding);
+            if (!headers.contains(ACCEPT)) {
+                headers.set(ACCEPT, mediaType);
+            }
+            if (contentType == null || contentType.isBlank()) {
+                headers.set(CONTENT_TYPE, mediaType);
             }
         }
         else if (body instanceof Path) {
             final var path = (Path) body;
             final var file = new RandomAccessFile(path.toFile(), "r");
             final var length = file.length();
-            final var response = new DefaultHttpRequest(
-                NettyHttpAdapters.adapt(version),
-                NettyHttpAdapters.adapt(method),
-                uri,
-                headers);
 
-            HttpUtil.setContentLength(response, length);
+            headers.set(CONTENT_LENGTH, length);
+
+            channel.write(new DefaultHttpRequest(version, method, uri, headers));
             channel.write(new DefaultFileRegion(file.getChannel(), 0, length));
             channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
             return;
@@ -128,24 +152,22 @@ public class NettyHttpClient implements HttpClient, HttpPeer {
         else {
             throw new IllegalStateException("Invalid response body supplied \"" + body + "\"");
         }
+        headers.set(CONTENT_LENGTH, content.readableBytes());
 
-        headers
-            .set(HttpHeaderNames.CONTENT_LENGTH, content.readableBytes())
-            .set(HttpHeaderNames.HOST, remoteSocketAddress().getHostString())
-            .add(HttpHeaderNames.ACCEPT, "application/" + encoding.name().toLowerCase());
-
-        channel.writeAndFlush(new DefaultFullHttpRequest(
-            NettyHttpAdapters.adapt(version),
-            NettyHttpAdapters.adapt(method),
-            uri,
-            content,
-            headers,
+        channel.writeAndFlush(new DefaultFullHttpRequest(version, method, uri, content, headers,
             EmptyHttpHeaders.INSTANCE));
     }
 
     @Override
     public Future<?> close() {
-        return adapt(channel.close());
+        return NettyFutures.adapt(channel.close());
+    }
+
+    /**
+     * @return Descriptors of supported encodings.
+     */
+    public EncodingDescriptor[] encodings() {
+        return encodings;
     }
 
     /**

@@ -1,6 +1,5 @@
 package eu.arrowhead.kalix.net.http.service;
 
-import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.dto.DataReadable;
 import eu.arrowhead.kalix.net.http.*;
 import eu.arrowhead.kalix.util.concurrent.FutureProgress;
@@ -16,15 +15,6 @@ import java.util.Optional;
  * The head and body of an incoming HTTP request.
  */
 public interface HttpServiceRequest extends HttpBodyReceiver {
-    /**
-     * @return Encoding used to encode the body, if any, of this request.
-     * Note that the encoding is a reflection of what Arrowhead service
-     * interface was selected for the request rather than any specifics about
-     * the request itself. This means that an encoding descriptor will be
-     * available even if the request has no body.
-     */
-    EncodingDescriptor encoding();
-
     /**
      * Gets value of first header with given {@code name}, if any such.
      *
@@ -159,11 +149,6 @@ public interface HttpServiceRequest extends HttpBodyReceiver {
             @Override
             public FutureProgress<Path> bodyTo(final Path path, final boolean append) {
                 return self.bodyTo(path, append);
-            }
-
-            @Override
-            public EncodingDescriptor encoding() {
-                return self.encoding();
             }
 
             @Override

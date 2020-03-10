@@ -1,32 +1,25 @@
 package eu.arrowhead.kalix.internal.net.http.client;
 
-import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.util.annotation.Internal;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.handler.timeout.ReadTimeoutHandler;
 
 import java.security.cert.X509Certificate;
 import java.util.Objects;
 
 @Internal
 public class NettyHttpClientConnectionInitializer extends ChannelInitializer<SocketChannel> {
-    private final NettyHttpClient client;
-    private final EncodingDescriptor encoding;
+    private final NettyHttpClientConnection connection;
     private final SslContext sslContext;
 
     public NettyHttpClientConnectionInitializer(
-        final NettyHttpClient client,
-        final EncodingDescriptor encoding,
+        final NettyHttpClientConnection connection,
         final SslContext sslContext)
     {
-        this.client = Objects.requireNonNull(client, "Expected client");
-        this.encoding = encoding;
+        this.connection = Objects.requireNonNull(connection, "Expected connection");
         this.sslContext = sslContext;
     }
 
@@ -42,18 +35,18 @@ public class NettyHttpClientConnectionInitializer extends ChannelInitializer<Soc
                 if (!(certificate instanceof X509Certificate)) {
                     throw new IllegalStateException("Only x.509 " +
                         "certificates may be used by remote peers, " +
-                        "somehow the peer at " + client.remoteSocketAddress() +
+                        "somehow the peer at " + connection.remoteSocketAddress() +
                         " was able to use some other type: " + certificate);
                 }
                 x509chain[i] = (X509Certificate) chain[i];
             }
-            client.setCertificateChain(x509chain);
+            connection.setCertificateChain(x509chain);
             pipeline.addLast(sslHandler);
         }
         pipeline
             //.addLast(new LoggingHandler(LogLevel.INFO))
             .addLast(new HttpClientCodec()) // TODO: Make message size restrictions configurable.
             .addLast(new IdleStateHandler(10, 10, 15))
-            .addLast(new NettyHttpClientConnectionHandler(encoding, client));
+            .addLast(new NettyHttpClientConnectionHandler(connection));
     }
 }

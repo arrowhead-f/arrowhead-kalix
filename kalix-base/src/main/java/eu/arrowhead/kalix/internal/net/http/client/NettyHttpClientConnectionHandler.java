@@ -11,20 +11,19 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Internal
 public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandler<HttpObject> {
-    private final EncodingDescriptor encoding;
-    private final NettyHttpClient client;
+    private final NettyHttpClientConnection connection;
 
     private NettyHttpBodyReceiver body = null;
 
     public NettyHttpClientConnectionHandler(
-        final EncodingDescriptor encoding,
-        final NettyHttpClient client)
+        final NettyHttpClientConnection connection)
     {
-        this.encoding = encoding;
-        this.client = Objects.requireNonNull(client, "Expected client");
+        this.connection = Objects.requireNonNull(connection, "Expected connection");
     }
 
     @Override
@@ -46,23 +45,21 @@ public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandle
         // TODO: Enable and check size restrictions.
 
         final var contentType = response.headers().get("content-type");
-        if (contentType != null) {
-            if (!HttpMediaTypes.isEncodingCompatibleWithContentType(encoding, contentType)) {
-                client.onResponseResult(Result.failure(new HttpClientResponseException(
-                    "No supported media type in response body from " +
-                        client.remoteSocketAddress() + "; content-type \"" +
-                        contentType + "\" does not match the encoding " +
-                        "supported by this client (" + encoding + ")")));
-                return;
-            }
-        }
+        final var encodings = connection.encodings();
+        final var encoding = HttpMediaTypes.findEncodingCompatibleWithContentType(encodings, contentType)
+            .orElseThrow(() -> new HttpClientResponseException("" +
+                "The content-type \"" + contentType + "\" is not compatible " +
+                "with eny encoding declared for the HTTP client owning this " +
+                "connection " + Stream.of(encodings)
+                .map(EncodingDescriptor::toString)
+                .collect(Collectors.joining(", ", "(", ")."))));
 
         final var serviceResponseBody = new NettyHttpBodyReceiver(ctx.alloc(), encoding, response.headers());
         final var serviceResponse = new NettyHttpClientResponse(serviceResponseBody, encoding, response);
 
         this.body = serviceResponseBody;
 
-        client.onResponseResult(Result.success(serviceResponse));
+        connection.onResponseResult(Result.success(serviceResponse));
     }
 
     private void handleResponseContent(final HttpContent content) {
@@ -83,7 +80,7 @@ public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandle
             body.abort(cause);
             return;
         }
-        if (client.onResponseResult(Result.failure(cause))) {
+        if (connection.onResponseResult(Result.failure(cause))) {
             return;
         }
         ctx.fireExceptionCaught(cause);

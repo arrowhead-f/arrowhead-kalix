@@ -1,8 +1,9 @@
 package eu.arrowhead.kalix.net.http.client;
 
 /**
- * Signifies that some HTTP response received by a {@link HttpClient} contains
- * an error and, therefore, will not be processed.
+ * Signifies that some HTTP response received via a
+ * {@link HttpClientConnection} contains an error and, therefore, will not be
+ * processed.
  * <p>
  * As these exceptions are expected to be quite common, and are caused by
  * external rather than internal mistakes, <i>they do not produce stack

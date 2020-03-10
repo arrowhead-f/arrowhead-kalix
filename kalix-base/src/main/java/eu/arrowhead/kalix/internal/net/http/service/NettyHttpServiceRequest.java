@@ -1,6 +1,5 @@
 package eu.arrowhead.kalix.internal.net.http.service;
 
-import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.dto.DataReadable;
 import eu.arrowhead.kalix.internal.net.http.NettyHttpBodyReceiver;
 import eu.arrowhead.kalix.internal.net.http.NettyHttpPeer;
@@ -26,7 +25,6 @@ import static eu.arrowhead.kalix.internal.net.http.NettyHttpAdapters.adapt;
 @Internal
 public class NettyHttpServiceRequest implements HttpServiceRequest {
     private final NettyHttpBodyReceiver body;
-    private final EncodingDescriptor encoding;
     private final QueryStringDecoder queryStringDecoder;
     private final HttpRequest request;
     private final NettyHttpPeer requester;
@@ -37,7 +35,6 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
 
     private NettyHttpServiceRequest(final Builder builder) {
         body = Objects.requireNonNull(builder.body, "Expected body");
-        encoding = Objects.requireNonNull(builder.encoding, "Expected encoding");
         queryStringDecoder = Objects.requireNonNull(builder.queryStringDecoder, "Expected queryStringDecoder");
         request = Objects.requireNonNull(builder.request, "Expected request");
         requester = Objects.requireNonNull(builder.requester, "Expected requester");
@@ -66,11 +63,6 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
     @Override
     public FutureProgress<Path> bodyTo(final Path path, final boolean append) {
         return body.bodyTo(path, append);
-    }
-
-    @Override
-    public EncodingDescriptor encoding() {
-        return encoding;
     }
 
     @Override
@@ -120,17 +112,11 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
     public static class Builder {
         private NettyHttpBodyReceiver body;
         private HttpRequest request;
-        private EncodingDescriptor encoding;
         private NettyHttpPeer requester;
         private QueryStringDecoder queryStringDecoder;
 
         public Builder body(final NettyHttpBodyReceiver body) {
             this.body = body;
-            return this;
-        }
-
-        public Builder encoding(final EncodingDescriptor encoding) {
-            this.encoding = encoding;
             return this;
         }
 

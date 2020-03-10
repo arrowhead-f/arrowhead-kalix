@@ -347,4 +347,17 @@ public class HttpMediaTypes {
         }
         return true;
     }
+
+    /**
+     * Converts given {@code encoding} to a media type.
+     *
+     * @param encoding Encoding descriptor to convert.
+     * @return Media type string.
+     */
+    public static String toMediaType(final EncodingDescriptor encoding) {
+        if (encoding == EncodingDescriptor.JSON) {
+            return "application/json";
+        }
+        return "application/" + encoding.name().toLowerCase();
+    }
 }

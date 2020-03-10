@@ -5,6 +5,7 @@ import eu.arrowhead.kalix.dto.DataWritable;
 import eu.arrowhead.kalix.dto.DataWriter;
 import eu.arrowhead.kalix.dto.WriteException;
 import eu.arrowhead.kalix.internal.dto.binary.ByteBufWriter;
+import eu.arrowhead.kalix.internal.net.http.HttpMediaTypes;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpStatus;
 import eu.arrowhead.kalix.net.http.HttpVersion;
@@ -12,19 +13,19 @@ import eu.arrowhead.kalix.net.http.service.HttpServiceResponse;
 import eu.arrowhead.kalix.util.annotation.Internal;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.DefaultFileRegion;
 import io.netty.handler.codec.http.*;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Optional;
 
 import static eu.arrowhead.kalix.internal.net.http.NettyHttpAdapters.adapt;
+import static io.netty.handler.codec.http.HttpHeaderNames.*;
 
 @Internal
 public class NettyHttpServiceResponse implements HttpServiceResponse {
@@ -47,9 +48,12 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
         this.request = request;
     }
 
-    public ChannelFuture writeTo(final ChannelHandlerContext ctx)
+    public ChannelFuture write(final Channel channel)
         throws WriteException, IOException
     {
+        final var nettyStatus = adapt(status);
+        final var nettyVersion = request.protocolVersion();
+
         final ByteBuf content;
         if (body == null) {
             content = Unpooled.EMPTY_BUFFER;
@@ -61,12 +65,18 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
             final var dataEncoding = encoding.asDataEncoding().orElseThrow(() -> new UnsupportedOperationException("" +
                 "There is no DTO support for the \"" + encoding +
                 "\" encoding; response body cannot be encoded"));
-            content = ctx.alloc().buffer();
+            content = channel.alloc().buffer();
             DataWriter.write((DataWritable) body, dataEncoding, new ByteBufWriter(content));
-            nettyHeaders.set(HttpHeaderNames.CONTENT_TYPE, dataEncoding.asMediaType());
         }
         else if (body instanceof Path) {
-            return writeFileBodyTo((Path) body, ctx);
+            final var file = new RandomAccessFile(((Path) body).toFile(), "r");
+            final var length = file.length();
+
+            nettyHeaders.set(CONTENT_LENGTH, length);
+
+            channel.write(new DefaultHttpResponse(nettyVersion, nettyStatus, nettyHeaders));
+            channel.write(new DefaultFileRegion(file.getChannel(), 0, length));
+            return channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
         }
         else if (body instanceof String) {
             final var charset = HttpUtil.getCharset(nettyHeaders.get("content-type"), StandardCharsets.UTF_8);
@@ -75,27 +85,14 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
         else {
             throw new IllegalStateException("Invalid response body supplied \"" + body + "\"");
         }
+        nettyHeaders.set(CONTENT_LENGTH, content.readableBytes());
 
-        nettyHeaders
-            .set(HttpHeaderNames.CONTENT_LENGTH, content.readableBytes())
-            .set(HttpHeaderNames.HOST, ((InetSocketAddress) ctx.channel().remoteAddress()).getHostString());
+        if (!nettyHeaders.contains(CONTENT_TYPE)) {
+            nettyHeaders.set(CONTENT_TYPE, HttpMediaTypes.toMediaType(encoding));
+        }
 
-        return ctx.writeAndFlush(new DefaultFullHttpResponse(
-            request.protocolVersion(),
-            adapt(status),
-            content,
-            nettyHeaders,
+        return channel.writeAndFlush(new DefaultFullHttpResponse(nettyVersion, nettyStatus, content, nettyHeaders,
             EmptyHttpHeaders.INSTANCE));
-    }
-
-    private ChannelFuture writeFileBodyTo(final Path path, final ChannelHandlerContext ctx) throws IOException {
-        final var file = new RandomAccessFile(path.toFile(), "r");
-        final var length = file.length();
-        final var response = new DefaultHttpResponse(request.protocolVersion(), adapt(status), nettyHeaders);
-        HttpUtil.setContentLength(response, length);
-
-        ctx.write(new DefaultFileRegion(file.getChannel(), 0, length));
-        return ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
     }
 
     @Override
@@ -136,11 +133,6 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
     @Override
     public HttpServiceResponse clearHeaders() {
         return null;
-    }
-
-    @Override
-    public EncodingDescriptor encoding() {
-        return encoding;
     }
 
     @Override

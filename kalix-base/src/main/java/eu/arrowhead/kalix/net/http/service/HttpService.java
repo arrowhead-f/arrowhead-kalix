@@ -190,7 +190,9 @@ public class HttpService {
          * documentation for the {@code eu.arrowhead.kalix.dto} package.
          *
          * @param encodings Encodings declared to be supported. At least one
-         *                  must be provided.
+         *                  must be provided. The first specified encoding is
+         *                  used by default when received requests do not
+         *                  include enough details about their bodies.
          * @return This builder.
          * @see eu.arrowhead.kalix.dto
          */

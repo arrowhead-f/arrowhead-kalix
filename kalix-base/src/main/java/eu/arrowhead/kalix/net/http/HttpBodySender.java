@@ -20,7 +20,7 @@ public interface HttpBodySender<Self> {
      * body receiver as-is. It becomes the responsibility of the caller to
      * ensure that any {@code "content-type"} header is set appropriately.
      *
-     * @param byteArray Bytes to send to outgoing body receiver.
+     * @param byteArray Bytes to send to receiver of the body.
      * @return This.
      */
     Self body(final byte[] byteArray);
@@ -29,13 +29,14 @@ public interface HttpBodySender<Self> {
      * Sets outgoing HTTP body, replacing any previously set such.
      * <p>
      * The provided writable data transfer object is scheduled for encoding and
-     * transmission to the outgoing body receiver. Please refer to the Javadoc
+     * transmission to the receiver of the body. Please refer to the Javadoc
      * for the {@code @Writable} annotation for more information about writable
      * data transfer objects.
      *
-     * @param dto Data transfer object to send to outgoing body receiver.
+     * @param dto Data transfer object to send to receiver of the body.
      * @return This.
-     * @throws NullPointerException If {@code body} is {@code null}.
+     * @throws NullPointerException If {@code encoding} or {@code body} is
+     *                              {@code null}.
      * @see eu.arrowhead.kalix.dto.Writable @Writable
      */
     Self body(final DataWritable dto);
@@ -44,11 +45,11 @@ public interface HttpBodySender<Self> {
      * Sets outgoing HTTP body, replacing any previously set such.
      * <p>
      * The contents of the file at the provided file system path are scheduled
-     * for transmission to the outgoing body receiver as-is. It becomes the
+     * for transmission to the receiver of the body as-is. It becomes the
      * responsibility of the caller to ensure that the {@code "content-type"}
      * header is set appropriately.
      *
-     * @param path Path to file to send to outgoing body receiver.
+     * @param path Path to file to send to receiver of the body.
      * @return This.
      * @throws NullPointerException If {@code path} is {@code null}.
      */
@@ -61,9 +62,9 @@ public interface HttpBodySender<Self> {
      * receiver as-is. It becomes the responsibility of the caller to ensure
      * that the {@code "content-type"} header is set appropriately. If no
      * charset is specified in the {@code "content-type"}, one that is
-     * acceptable to the outgoing body receiver will be used if possible.
+     * acceptable to the receiver of the body will be used if possible.
      *
-     * @param string String to send to outgoing body receiver.
+     * @param string String to send to receiver of the body.
      * @return This.
      * @throws NullPointerException If {@code string} is {@code null}.
      */

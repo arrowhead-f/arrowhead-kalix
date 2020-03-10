@@ -1,6 +1,5 @@
 package eu.arrowhead.kalix.net.http.service;
 
-import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.net.http.HttpBodySender;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpStatus;
@@ -18,11 +17,6 @@ public interface HttpServiceResponse extends HttpBodySender<HttpServiceResponse>
      * @return This response object.
      */
     HttpServiceResponse clearHeaders();
-
-    /**
-     * @return Encoding that will or should be used for any response body.
-     */
-    EncodingDescriptor encoding();
 
     /**
      * Gets a response header value by name.
