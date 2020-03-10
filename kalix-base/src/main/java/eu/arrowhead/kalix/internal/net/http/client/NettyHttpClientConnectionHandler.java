@@ -30,9 +30,7 @@ public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandle
     @Override
     protected void channelRead0(final ChannelHandlerContext ctx, final HttpObject msg) {
         if (msg instanceof HttpResponse) {
-            if (handleResponseHead(ctx, (HttpResponse) msg)) {
-                return;
-            }
+            handleResponseHead(ctx, (HttpResponse) msg);
         }
         if (msg instanceof HttpContent) {
             handleResponseContent((HttpContent) msg);
@@ -44,7 +42,7 @@ public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandle
         ctx.flush();
     }
 
-    private boolean handleResponseHead(final ChannelHandlerContext ctx, final HttpResponse response) {
+    private void handleResponseHead(final ChannelHandlerContext ctx, final HttpResponse response) {
         // TODO: Enable and check size restrictions.
 
         final var contentType = response.headers().get("content-type");
@@ -55,7 +53,7 @@ public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandle
                         client.remoteSocketAddress() + "; content-type \"" +
                         contentType + "\" does not match the encoding " +
                         "supported by this client (" + encoding + ")")));
-                return true;
+                return;
             }
         }
 
@@ -65,11 +63,12 @@ public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandle
         this.body = serviceResponseBody;
 
         client.onResponseResult(Result.success(serviceResponse));
-
-        return false;
     }
 
     private void handleResponseContent(final HttpContent content) {
+        if (body == null) {
+            return;
+        }
         body.append(content);
         if (content instanceof LastHttpContent) {
             body.finish((LastHttpContent) content);

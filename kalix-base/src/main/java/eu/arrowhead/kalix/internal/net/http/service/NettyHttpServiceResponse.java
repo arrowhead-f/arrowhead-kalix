@@ -19,6 +19,7 @@ import io.netty.handler.codec.http.*;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -62,7 +63,7 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
                 "\" encoding; response body cannot be encoded"));
             content = ctx.alloc().buffer();
             DataWriter.write((DataWritable) body, dataEncoding, new ByteBufWriter(content));
-            nettyHeaders.set("content-type", dataEncoding.asMediaType());
+            nettyHeaders.set(HttpHeaderNames.CONTENT_TYPE, dataEncoding.asMediaType());
         }
         else if (body instanceof Path) {
             return writeFileBodyTo((Path) body, ctx);
@@ -74,6 +75,10 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
         else {
             throw new IllegalStateException("Invalid response body supplied \"" + body + "\"");
         }
+
+        nettyHeaders
+            .set(HttpHeaderNames.CONTENT_LENGTH, content.readableBytes())
+            .set(HttpHeaderNames.HOST, ((InetSocketAddress) ctx.channel().remoteAddress()).getHostString());
 
         return ctx.writeAndFlush(new DefaultFullHttpResponse(
             request.protocolVersion(),

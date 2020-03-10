@@ -38,7 +38,7 @@ public class NettyHttpClientResponse implements HttpClientResponse {
     }
 
     @Override
-    public <R extends DataReadable> FutureProgress<? extends R> bodyAs(final Class<R> class_) {
+    public <R extends DataReadable> FutureProgress<R> bodyAs(final Class<R> class_) {
         return body.bodyAs(class_);
     }
 

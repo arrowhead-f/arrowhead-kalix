@@ -121,7 +121,7 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
     }
 
     @Override
-    public <R extends DataReadable> FutureProgress<? extends R> bodyAs(final Class<R> class_) {
+    public <R extends DataReadable> FutureProgress<R> bodyAs(final Class<R> class_) {
         final var dataEncoding = encoding.asDataEncoding()
             .orElseThrow(() -> new UnsupportedOperationException("" +
                 "There is no DTO support for the \"" + encoding +
@@ -268,7 +268,8 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
 
         @Override
         public void append(final ByteBuf buffer) {
-            this.buffer.addComponent(buffer);
+            buffer.retain();
+            this.buffer.addComponent(true, buffer);
         }
 
         @Override
@@ -378,7 +379,7 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
 
         @Override
         public InputStream assembleValue(final ByteBuf buffer) {
-            return new ByteBufInputStream(buffer, true);
+            return new ByteBufInputStream(buffer);
         }
     }
 

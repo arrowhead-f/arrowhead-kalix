@@ -102,11 +102,8 @@ public class NettyHttpClient implements HttpClient, HttpPeer {
 
             content = channel.alloc().buffer();
             DataWriter.write((DataWritable) body, dataEncoding, new ByteBufWriter(content));
-            if (headers.get("content-type") == null) {
-                headers.set("content-type", dataEncoding.asMediaType());
-            }
-            if (headers.get("accept") == null) {
-                headers.set("accept", dataEncoding.asMediaType());
+            if (headers.get(HttpHeaderNames.CONTENT_TYPE) == null) {
+                headers.set(HttpHeaderNames.CONTENT_TYPE, dataEncoding.asMediaType());
             }
         }
         else if (body instanceof Path) {
@@ -131,6 +128,11 @@ public class NettyHttpClient implements HttpClient, HttpPeer {
         else {
             throw new IllegalStateException("Invalid response body supplied \"" + body + "\"");
         }
+
+        headers
+            .set(HttpHeaderNames.CONTENT_LENGTH, content.readableBytes())
+            .set(HttpHeaderNames.HOST, remoteSocketAddress().getHostString())
+            .add(HttpHeaderNames.ACCEPT, "application/" + encoding.name().toLowerCase());
 
         channel.writeAndFlush(new DefaultFullHttpRequest(
             NettyHttpAdapters.adapt(version),

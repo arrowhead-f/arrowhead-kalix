@@ -96,19 +96,19 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         if (hasEnum) {
             builder
                 .beginControlFlow("catch (final $T exception)", IllegalArgumentException.class)
-                .addStatement("error = \"Enumerator error: \" + exception.getMessage()")
+                .addStatement("error = exception.getMessage()")
                 .endControlFlow();
         }
         if (hasMandatory) {
             builder
                 .beginControlFlow("catch (final $T exception)", NullPointerException.class)
-                .addStatement("error = \"Field error: \" + exception.getMessage()")
+                .addStatement("error = \"Mandatory field `\" + exception.getMessage() + \"` missing in object\"")
                 .endControlFlow();
         }
         if (hasNumber) {
             builder
-                .beginControlFlow("catch (final $T exception)", NumberFormatException.class)
-                .addStatement("error = \"Number error: \" + exception.getMessage()")
+                .beginControlFlow("catch (final $T ignored)", NumberFormatException.class)
+                .addStatement("error = \"Invalid number\"")
                 .endControlFlow();
         }
 

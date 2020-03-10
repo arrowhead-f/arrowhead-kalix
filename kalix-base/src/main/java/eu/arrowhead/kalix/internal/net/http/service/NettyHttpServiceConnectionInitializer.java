@@ -6,6 +6,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslContext;
 
@@ -41,10 +42,9 @@ public class NettyHttpServiceConnectionInitializer extends ChannelInitializer<So
             pipeline.addLast(sslHandler);
         }
         pipeline
-            .addLast(new LoggingHandler())
+            //.addLast(new LoggingHandler(LogLevel.INFO))
             .addLast(new HttpRequestDecoder()) // TODO: Make message size restrictions configurable.
             .addLast(new HttpResponseEncoder())
-            .addLast(new HttpContentCompressor()) // TODO: Make compression configurable.
             .addLast(new NettyHttpServiceConnectionHandler(serviceLookup, sslEngine));
     }
 }

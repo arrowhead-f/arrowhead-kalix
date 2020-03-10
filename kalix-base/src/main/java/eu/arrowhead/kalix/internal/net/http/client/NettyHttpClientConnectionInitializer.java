@@ -5,8 +5,11 @@ import eu.arrowhead.kalix.util.annotation.Internal;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslContext;
+import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.handler.timeout.ReadTimeoutHandler;
 
 import java.security.cert.X509Certificate;
 import java.util.Objects;
@@ -48,10 +51,9 @@ public class NettyHttpClientConnectionInitializer extends ChannelInitializer<Soc
             pipeline.addLast(sslHandler);
         }
         pipeline
-            .addLast(new LoggingHandler())
+            //.addLast(new LoggingHandler(LogLevel.INFO))
             .addLast(new HttpClientCodec()) // TODO: Make message size restrictions configurable.
-            .addLast(new HttpContentDecompressor()) // TODO: Make decompression configurable.
-            .addLast(new HttpContentCompressor())
+            .addLast(new IdleStateHandler(10, 10, 15))
             .addLast(new NettyHttpClientConnectionHandler(encoding, client));
     }
 }

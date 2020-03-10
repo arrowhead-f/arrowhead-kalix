@@ -1,77 +1,65 @@
 package eu.arrowhead.kalix.example;
 
-import eu.arrowhead.kalix.dto.binary.BinaryReader;
-import eu.arrowhead.kalix.dto.binary.BinaryWriter;
-import eu.arrowhead.kalix.example.dto.PointBuilder;
-import eu.arrowhead.kalix.example.dto.ShapeBuilder;
-import eu.arrowhead.kalix.example.dto.ShapeData;
-import eu.arrowhead.kalix.example.dto.ShapeType;
+import eu.arrowhead.kalix.descriptor.InterfaceDescriptor;
+import eu.arrowhead.kalix.example.dto.ErrorResponseData;
+import eu.arrowhead.kalix.example.dto.ServiceRegistrationRequestBuilder;
+import eu.arrowhead.kalix.example.dto.ServiceRegistrationRequestProviderSystemBuilder;
+import eu.arrowhead.kalix.example.dto.ServiceRegistrationResponseData;
+import eu.arrowhead.kalix.net.http.HttpMethod;
+import eu.arrowhead.kalix.net.http.client.HttpClientFactory;
+import eu.arrowhead.kalix.net.http.client.HttpClientRequest;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.net.InetSocketAddress;
+
+import static eu.arrowhead.kalix.descriptor.EncodingDescriptor.JSON;
 
 public class Main {
     public static void main(final String[] args) {
         try {
             System.out.println("Hello, Example!");
 
-            final var map = new HashMap<String, Map<String, Integer>>();
-
-            final var map0 = new HashMap<String, Integer>();
-            map0.put("hejsan", 1);
-            map0.put("ojsan", 2);
-            map.put("hej", map0);
-
-            final var map1 = new HashMap<String, Integer>();
-            map.put("tomt", map1);
-
-            final var shape0 = new ShapeBuilder()
-                .position(new PointBuilder()
-                    .x(1423e134)
-                    .y(352234.123432e-142)
-                    .build())
-                .attributes(Arrays.asList(
-                    Arrays.asList(new BigDecimal(10), new BigDecimal(20)),
-                    Arrays.asList(new BigDecimal(1230), new BigDecimal(0), new BigDecimal(-50))))
-                .attributes2(
-                    BigInteger.valueOf(1),
-                    BigInteger.valueOf(2),
-                    BigInteger.valueOf(3),
-                    BigInteger.valueOf(4),
-                    BigInteger.valueOf(5),
-                    BigInteger.valueOf(6),
-                    BigInteger.valueOf(7))
-                .name("Jaime")
-                .bools(true, false, true, true)
-                .properties(map)
-                .type(ShapeType.TRIANGLE)
+            final var clientFactory = new HttpClientFactory.Builder()
+                .insecure()
                 .build();
 
-            final var byteBuffer = ByteBuffer.allocate(4096);
-            final var reader = BinaryReader.from(byteBuffer);
-            final var writer = BinaryWriter.from(byteBuffer);
+            clientFactory.create(JSON, new InetSocketAddress("127.0.0.1", 8443))
+                .onResult(result0 -> {
+                    if (!result0.isSuccess()) {
+                        result0.fault().printStackTrace();
+                        return;
+                    }
+                    final var client = result0.value();
+                    client.send(new HttpClientRequest()
+                        .method(HttpMethod.POST)
+                        .uri("/serviceregistry/register")
+                        .body(new ServiceRegistrationRequestBuilder()
+                            .serviceDefinition("example-palm2-service")
+                            .providerSystem(new ServiceRegistrationRequestProviderSystemBuilder()
+                                .systemName("example-palm2")
+                                .address("127.0.0.1")
+                                .port(13370)
+                                .authenticationInfo("xyz")
+                                .build())
+                            .serviceUri("http://127.0.0.1/example-palm2")
+                            .secure("NOT_SECURE")
+                            .version(10)
+                            .interfaces(InterfaceDescriptor.valueOf("HTTP-INSECURE-JSON"))
+                            .build()))
+                        .flatMap(response -> {
+                            System.out.println(response.status());
+                            return response.bodyAsString();
+                        })
+                        .onResult(result1 -> {
+                            if (result1.isSuccess()) {
+                                System.out.println(result1.value());
+                            }
+                            else {
+                                result1.fault().printStackTrace();
+                            }
+                            client.close();
+                        });
+                });
 
-            shape0.writeJson(writer);
-
-            final var text0 = new String(byteBuffer.array(), 0, byteBuffer.position(), StandardCharsets.UTF_8);
-            System.out.println(text0);
-
-            byteBuffer.flip();
-            byteBuffer.position(0);
-            final var shape1 = ShapeData.readJson(reader);
-
-            byteBuffer.flip();
-            byteBuffer.position(0);
-            byteBuffer.limit(4096);
-            shape1.writeJson(writer);
-
-            final var text1 = new String(byteBuffer.array(), 0, byteBuffer.position(), StandardCharsets.UTF_8);
-            System.out.println(text1);
         }
         catch (final Throwable e) {
             e.printStackTrace();

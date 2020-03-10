@@ -28,7 +28,7 @@ public interface HttpBodyReceiver {
      * received and then decoded into an instance of {@code class_}.
      * @throws IllegalStateException If the body has already been requested.
      */
-    <R extends DataReadable> FutureProgress<? extends R> bodyAs(final Class<R> class_);
+    <R extends DataReadable> FutureProgress<R> bodyAs(final Class<R> class_);
 
     /**
      * Requests that the incoming HTTP body be collected into a regular Java

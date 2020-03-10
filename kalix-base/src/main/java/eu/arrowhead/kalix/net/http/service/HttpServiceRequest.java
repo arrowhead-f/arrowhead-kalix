@@ -137,7 +137,7 @@ public interface HttpServiceRequest extends HttpBodyReceiver {
         final var self = this;
         return new HttpServiceRequest() {
             @Override
-            public <R extends DataReadable> FutureProgress<? extends R> bodyAs(final Class<R> class_) {
+            public <R extends DataReadable> FutureProgress<R> bodyAs(final Class<R> class_) {
                 return self.bodyAs(class_);
             }
 

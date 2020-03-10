@@ -91,7 +91,7 @@ public class DtoSpecificationFactory {
                 constructor.addStatement("this.$1N = builder.$1N", name);
             }
             else {
-                constructor.addStatement("this.$1N = $2T.requireNonNull(builder.$1N, \"Expected $1N\")",
+                constructor.addStatement("this.$1N = $2T.requireNonNull(builder.$1N, \"$1N\")",
                     name, Objects.class);
             }
         });
