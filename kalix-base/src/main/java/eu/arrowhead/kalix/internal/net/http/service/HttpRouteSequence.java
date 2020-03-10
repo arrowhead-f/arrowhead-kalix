@@ -65,7 +65,7 @@ public class HttpRouteSequence {
                     return Future.success(true);
                 }
                 return route
-                    .handle(task.request().newWithPathParameters(pathParameters), task.response())
+                    .handle(task.request().cloneAndSet(pathParameters), task.response())
                     .map(ignored -> true);
             })
             .flatMapCatch(throwable -> Future.flatReducePlain(catchers, false, (isHandled, catcher) -> {

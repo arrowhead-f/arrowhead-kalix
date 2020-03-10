@@ -44,30 +44,6 @@ public class HttpValidator implements Comparable<HttpValidator> {
     }
 
     /**
-     * @return Integer indicating when to execute this filter in relation to
-     * other such. Filters with lower ordinals are to be executed first.
-     */
-    public int ordinal() {
-        return ordinal;
-    }
-
-    /**
-     * @return {@link HttpMethod}, if any, that filtered requests must match
-     * for this filter to be invoked.
-     */
-    public Optional<HttpMethod> method() {
-        return Optional.ofNullable(method);
-    }
-
-    /**
-     * @return {@link HttpPattern}, if any, that filtered request paths must
-     * match for this filter to be invoked.
-     */
-    public Optional<HttpPattern> pattern() {
-        return Optional.ofNullable(pattern);
-    }
-
-    /**
      * Determines whether there are method/path pairs that would match both
      * this validator and the provided route.
      *
@@ -124,7 +100,7 @@ public class HttpValidator implements Comparable<HttpValidator> {
                 pathParameters = Collections.emptyList();
             }
             final var response = task.response();
-            return handler.handle(task.request().newWithPathParameters(pathParameters), response)
+            return handler.handle(task.request().cloneAndSet(pathParameters), response)
                 .map(ignored -> response.status().isPresent());
         }
         return Future.success(false);

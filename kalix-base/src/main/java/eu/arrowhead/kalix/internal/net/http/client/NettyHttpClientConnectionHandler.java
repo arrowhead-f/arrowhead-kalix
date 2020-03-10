@@ -3,31 +3,28 @@ package eu.arrowhead.kalix.internal.net.http.client;
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.internal.net.http.HttpMediaTypes;
 import eu.arrowhead.kalix.internal.net.http.NettyHttpBodyReceiver;
-import eu.arrowhead.kalix.internal.net.http.NettyHttpPeer;
-import eu.arrowhead.kalix.internal.net.http.service.NettyHttpServiceResponse;
 import eu.arrowhead.kalix.net.http.client.HttpClientResponseException;
+import eu.arrowhead.kalix.util.Result;
 import eu.arrowhead.kalix.util.annotation.Internal;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 
-import javax.net.ssl.SSLEngine;
-import java.net.InetSocketAddress;
 import java.util.Objects;
-import java.util.Optional;
 
 @Internal
 public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandler<HttpObject> {
-    private final HttpResponseReceiver responseReceiver;
-    private final SSLEngine sslEngine;
+    private final EncodingDescriptor encoding;
+    private final NettyHttpClient client;
 
     private NettyHttpBodyReceiver body = null;
 
-    public NettyHttpClientConnectionHandler(final HttpResponseReceiver responseReceiver, final SSLEngine sslEngine) {
-        this.responseReceiver = Objects.requireNonNull(responseReceiver, "Expected responseReceiver");
-        this.sslEngine = sslEngine;
+    public NettyHttpClientConnectionHandler(
+        final EncodingDescriptor encoding,
+        final NettyHttpClient client)
+    {
+        this.encoding = encoding;
+        this.client = Objects.requireNonNull(client, "Expected client");
     }
 
     @Override
@@ -50,37 +47,24 @@ public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandle
     private boolean handleResponseHead(final ChannelHandlerContext ctx, final HttpResponse response) {
         // TODO: Enable and check size restrictions.
 
-        final EncodingDescriptor encoding;
-        {
-            final var encodings = responseReceiver.encodings();
-            final var contentType = response.headers().get("content-type");
-            if (contentType == null) {
-                encoding = encodings[0];
-            }
-            else {
-                final var encoding0 = HttpMediaTypes.findEncodingCompatibleWithContentType(encodings, contentType);
-                if (encoding0.isEmpty()) {
-                    responseReceiver.fail(new HttpClientResponseException(
-                        "No supported media type in response body; " +
-                            "content-type \"" + contentType + "\" does not " +
-                            "match any encoding supported by this client"));
-                    return true;
-                }
-                encoding = encoding0.get();
+        final var contentType = response.headers().get("content-type");
+        if (contentType != null) {
+            if (!HttpMediaTypes.isEncodingCompatibleWithContentType(encoding, contentType)) {
+                client.onResponseResult(Result.failure(new HttpClientResponseException(
+                    "No supported media type in response body from " +
+                        client.remoteSocketAddress() + "; content-type \"" +
+                        contentType + "\" does not match the encoding " +
+                        "supported by this client (" + encoding + ")")));
+                return true;
             }
         }
 
         final var serviceResponseBody = new NettyHttpBodyReceiver(ctx.alloc(), encoding, response.headers());
-        final var serviceResponse = new NettyHttpClientResponse.Builder()
-            .body(serviceResponseBody)
-            .encoding(encoding)
-            .response(response)
-            .responder(new NettyHttpPeer((InetSocketAddress) ctx.channel().remoteAddress(), sslEngine))
-            .build();
+        final var serviceResponse = new NettyHttpClientResponse(serviceResponseBody, encoding, response);
 
         this.body = serviceResponseBody;
 
-        responseReceiver.receive(serviceResponse);
+        client.onResponseResult(Result.success(serviceResponse));
 
         return false;
     }
@@ -92,15 +76,17 @@ public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandle
         }
     }
 
-    // TODO: Bring any response exceptions back to service.
+    // TODO: Bring any response exceptions back to client.
 
     @Override
     public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
         if (body != null) {
             body.abort(cause);
+            return;
         }
-        else {
-            ctx.fireExceptionCaught(cause);
+        if (client.onResponseResult(Result.failure(cause))) {
+            return;
         }
+        ctx.fireExceptionCaught(cause);
     }
 }

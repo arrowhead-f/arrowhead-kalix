@@ -2,7 +2,6 @@ package eu.arrowhead.kalix.net.http.client;
 
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.internal.net.NettyBootstraps;
-import eu.arrowhead.kalix.internal.net.http.client.HttpResponseReceiver;
 import eu.arrowhead.kalix.internal.net.http.client.NettyHttpClient;
 import eu.arrowhead.kalix.internal.net.http.client.NettyHttpClientConnectionInitializer;
 import eu.arrowhead.kalix.security.X509KeyStore;
@@ -25,7 +24,6 @@ import static eu.arrowhead.kalix.internal.util.concurrent.NettyFutures.adapt;
  */
 public class HttpClientFactory {
     private final Bootstrap bootstrap;
-    private final EncodingDescriptor[] encodings;
     private final InetSocketAddress localSocketAddress;
     private final SslContext sslContext;
 
@@ -33,10 +31,6 @@ public class HttpClientFactory {
         bootstrap = NettyBootstraps.createBootstrapUsing(builder.scheduler != null
             ? builder.scheduler
             : FutureScheduler.getDefault());
-        encodings = Objects.requireNonNull(builder.encodings, "Expected encodings");
-        if (encodings.length == 0) {
-
-        }
         localSocketAddress = builder.localSocketAddress;
         if (builder.isInsecure) {
             sslContext = null;
@@ -59,57 +53,48 @@ public class HttpClientFactory {
      * Creates new {@code HttpClient} for communicating with remote host
      * reachable via provided Internet socket address.
      *
+     * @param encoding            Encoding to use for encoding requests and
+     *                            decoding responses.
      * @param remoteSocketAddress Remote socket address.
      * @return Future completed with a new client if and when a TCP connection
      * has been established to {@code remoteSocketAddress}.
-     * @throws NullPointerException If {@code remoteSocketAddress} is
+     * @throws NullPointerException If {@code encoding} or
+     *                              {@code remoteSocketAddress} is
      *                              {@code null}.
      */
-    public Future<HttpClient> createFor(final InetSocketAddress remoteSocketAddress) {
-        return createFor(remoteSocketAddress, null);
+    public Future<HttpClient> create(final EncodingDescriptor encoding, final InetSocketAddress remoteSocketAddress) {
+        return create(encoding, remoteSocketAddress, null);
     }
 
     /**
      * Creates new {@code HttpClient} for communicating with remote host
      * reachable via provided Internet socket address.
      *
+     * @param encoding            Encoding to use for encoding requests and
+     *                            decoding responses.
      * @param remoteSocketAddress Remote socket address.
      * @param localSocketAddress  Socket address of local network interface to
      *                            use when communicating with remote host.
      * @return Future completed with a new client if and when a TCP connection
      * has been established to {@code remoteSocketAddress}.
-     * @throws NullPointerException If {@code remoteSocketAddress} is
+     * @throws NullPointerException If {@code encoding} or
+     *                              {@code remoteSocketAddress} is
      *                              {@code null}.
      */
-    public Future<HttpClient> createFor(
+    public Future<HttpClient> create(
+        final EncodingDescriptor encoding,
         final InetSocketAddress remoteSocketAddress,
-        InetSocketAddress localSocketAddress)
+        final InetSocketAddress localSocketAddress)
     {
-        Objects.requireNonNull(remoteSocketAddress);
-        if (localSocketAddress == null) {
-            localSocketAddress = this.localSocketAddress;
-        }
+        Objects.requireNonNull(encoding, "Expected encoding");
+        Objects.requireNonNull(remoteSocketAddress, "Expected remoteSocketAddress");
 
-        final var client = new NettyHttpClient();
-        final var responseReceiver = new HttpResponseReceiver() {
-            @Override
-            public EncodingDescriptor[] encodings() {
-                return encodings;
-            }
-
-            @Override
-            public void receive(final HttpClientResponse response) {
-                client.receive(response);
-            }
-
-            @Override
-            public void fail(final Throwable throwable) {
-                // TODO
-            }
-        };
+        final var client = new NettyHttpClient(encoding);
         return adapt(bootstrap.clone()
-            .handler(new NettyHttpClientConnectionInitializer(responseReceiver, sslContext))
-            .connect(remoteSocketAddress, localSocketAddress))
+            .handler(new NettyHttpClientConnectionInitializer(client, encoding, sslContext))
+            .connect(remoteSocketAddress, localSocketAddress != null
+                ? localSocketAddress
+                : this.localSocketAddress))
             .map(channel -> {
                 client.setChannel(channel);
                 return client;
@@ -120,36 +105,11 @@ public class HttpClientFactory {
      * Builder useful for creating {@link HttpClientFactory} instances.
      */
     public static class Builder {
-        private EncodingDescriptor[] encodings;
         private InetSocketAddress localSocketAddress;
         private X509KeyStore keyStore;
         private X509TrustStore trustStore;
         private boolean isInsecure = false;
         private FutureScheduler scheduler;
-
-        /**
-         * Declares what data encodings this clients created with this factory
-         * can read and write. <b>Must be specified.</b>
-         * <p>
-         * While the created {@link HttpClientFactory} will prevent messages
-         * claimed to be encoded with other encodings from being received,
-         * stating that an encoding can be read and written does not itself
-         * guarantee it. It is up to the {@link HttpClientFactory} creator to
-         * ensure that such capabilities are indeed available. For most intents
-         * and purposes, the most adequate way of achieving this is by using
-         * Data Transfer Objects (DTOs), more of which you can read about in
-         * the package documentation for the {@code eu.arrowhead.kalix.dto}
-         * package.
-         *
-         * @param encodings Encodings declared to be supported. At least one
-         *                  must be provided.
-         * @return This builder.
-         * @see eu.arrowhead.kalix.dto
-         */
-        public final Builder encodings(final EncodingDescriptor... encodings) {
-            this.encodings = encodings.clone();
-            return this;
-        }
 
         /**
          * Ensures that the identified local network interface is used by

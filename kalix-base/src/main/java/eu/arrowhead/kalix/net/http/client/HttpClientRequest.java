@@ -1,12 +1,12 @@
 package eu.arrowhead.kalix.net.http.client;
 
 import eu.arrowhead.kalix.dto.DataWritable;
-import eu.arrowhead.kalix.internal.net.http.NettyHttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpBodySender;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
+import eu.arrowhead.kalix.net.http.HttpMethod;
 import eu.arrowhead.kalix.net.http.HttpVersion;
-import io.netty.handler.codec.http.DefaultHttpHeaders;
 
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.*;
 
@@ -14,11 +14,13 @@ import java.util.*;
  * An outgoing HTTP request.
  */
 public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
-    private final NettyHttpHeaders headers = new NettyHttpHeaders(new DefaultHttpHeaders());
+    private final HttpHeaders headers = new HttpHeaders();
     private final Map<String, List<String>> queryParameters = new HashMap<>();
 
     private Object body = null;
-    private HttpVersion version;
+    private HttpMethod method = null;
+    private String uri = null;
+    private HttpVersion version = null;
 
     @Override
     public Optional<Object> body() {
@@ -95,6 +97,24 @@ public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
     }
 
     /**
+     * @return Currently set HTTP method.
+     */
+    public Optional<HttpMethod> method() {
+        return Optional.ofNullable(method);
+    }
+
+    /**
+     * Sets HTTP method. <b>Must be specified.</b>
+     *
+     * @param method Desired method.
+     * @return This request.
+     */
+    public HttpClientRequest method(final HttpMethod method) {
+        this.method = method;
+        return this;
+    }
+
+    /**
      * Gets first query parameter with given name, if any such.
      *
      * @param name Name of query parameter. Case sensitive.
@@ -128,12 +148,46 @@ public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
     }
 
     /**
-     * @return HTTP version used by request.
+     * @return Currently set request URI, if any.
      */
-    public HttpVersion version() {
-        return version;
+    public Optional<String> uri() {
+        return Optional.ofNullable(uri);
     }
 
+    /**
+     * Sets request URI. <b>Must be specified.</b>
+     *
+     * @param uri Desired URI.
+     * @return This request.
+     */
+    public HttpClientRequest uri(final String uri) {
+        this.uri = uri;
+        return this;
+    }
+
+    /**
+     * Sets request URI. <b>Must be specified.</b>
+     *
+     * @param uri Desired URI.
+     * @return This request.
+     */
+    public HttpClientRequest uri(final URI uri) {
+        return uri(uri.toString());
+    }
+
+    /**
+     * @return Currently set HTTP version, if any.
+     */
+    public Optional<HttpVersion> version() {
+        return Optional.ofNullable(version);
+    }
+
+    /**
+     * Sets HTTP version.
+     *
+     * @param version Desired HTTP version.
+     * @return This request.
+     */
     public HttpClientRequest version(final HttpVersion version) {
         this.version = version;
         return this;

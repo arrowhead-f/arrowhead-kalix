@@ -3,7 +3,6 @@ package eu.arrowhead.kalix.internal.net.http.service;
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.dto.DataReadable;
 import eu.arrowhead.kalix.internal.net.http.NettyHttpBodyReceiver;
-import eu.arrowhead.kalix.internal.net.http.NettyHttpHeaders;
 import eu.arrowhead.kalix.internal.net.http.NettyHttpPeer;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpMethod;
@@ -77,7 +76,7 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
     @Override
     public HttpHeaders headers() {
         if (headers == null) {
-            headers = new NettyHttpHeaders(request.headers());
+            headers = new HttpHeaders(request.headers());
         }
         return headers;
     }

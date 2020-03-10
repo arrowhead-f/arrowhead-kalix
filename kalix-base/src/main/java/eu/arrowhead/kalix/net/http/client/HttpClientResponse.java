@@ -45,11 +45,6 @@ public interface HttpClientResponse extends HttpBodyReceiver {
     HttpHeaders headers();
 
     /**
-     * @return Information about the sender of the response.
-     */
-    HttpPeer responder();
-
-    /**
      * @return Response status.
      */
     HttpStatus status();

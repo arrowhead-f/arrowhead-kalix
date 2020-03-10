@@ -5,7 +5,6 @@ import eu.arrowhead.kalix.dto.DataWritable;
 import eu.arrowhead.kalix.dto.DataWriter;
 import eu.arrowhead.kalix.dto.WriteException;
 import eu.arrowhead.kalix.internal.dto.binary.ByteBufWriter;
-import eu.arrowhead.kalix.internal.net.http.NettyHttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpStatus;
 import eu.arrowhead.kalix.net.http.HttpVersion;
@@ -153,7 +152,7 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
     @Override
     public HttpHeaders headers() {
         if (headers == null) {
-            headers = new NettyHttpHeaders(nettyHeaders);
+            headers = new HttpHeaders(nettyHeaders);
         }
         return headers;
     }

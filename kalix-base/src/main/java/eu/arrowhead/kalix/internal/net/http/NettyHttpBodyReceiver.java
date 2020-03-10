@@ -25,7 +25,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.PriorityQueue;
+import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.CancellationException;
 import java.util.function.Consumer;
@@ -84,7 +84,7 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
 
         if (!isBodyRequested) {
             if (pendingContent == null) {
-                pendingContent = new PriorityQueue<>();
+                pendingContent = new LinkedList<>();
             }
             pendingContent.add(content);
             return;
@@ -152,8 +152,9 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
 
     private <V> FutureProgress<V> handleBodyRequest(final Supplier<FutureBody<V>> futureBodySupplier) {
         if (isBodyRequested) {
-            throw new IllegalStateException("HTTP request body has already " +
-                "been requested");
+            throw new IllegalStateException("Incoming HTTP body has already " +
+                "been requested; the handler or other context that requests " +
+                "a body must also make sure to handle it");
         }
         isBodyRequested = true;
 

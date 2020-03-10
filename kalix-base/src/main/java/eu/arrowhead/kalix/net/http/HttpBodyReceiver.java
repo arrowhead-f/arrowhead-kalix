@@ -17,24 +17,30 @@ public interface HttpBodyReceiver {
      * Note that only so-called Data Transfer Object (DTO) types may be decoded
      * using this method. More details about such types can be read in the
      * documentation for the {@link eu.arrowhead.kalix.dto} package.
+     * <p>
+     * Note that a body can typically only be requested once via this
+     * interface. Any further requests will likely cause exceptions being
+     * thrown.
      *
      * @param class_ Class to decode incoming HTTP body into.
      * @param <R>    Type of {@code class_}.
      * @return Future completed when the incoming HTTP body has been fully
      * received and then decoded into an instance of {@code class_}.
-     * @throws IllegalStateException If more than one method with a name
-     *                               starting with "body" is called.
+     * @throws IllegalStateException If the body has already been requested.
      */
     <R extends DataReadable> FutureProgress<? extends R> bodyAs(final Class<R> class_);
 
     /**
      * Requests that the incoming HTTP body be collected into a regular Java
      * byte array ({@code byte[]}).
+     * <p>
+     * Note that a body can typically only be requested once via this
+     * interface. Any further requests will likely cause exceptions being
+     * thrown.
      *
      * @return Future completed when the incoming HTTP body has been fully
      * collected into a single byte array.
-     * @throws IllegalStateException If more than one method with a name
-     *                               starting with "body" is called.
+     * @throws IllegalStateException If the body has already been requested.
      */
     FutureProgress<byte[]> bodyAsByteArray();
 
@@ -56,11 +62,14 @@ public interface HttpBodyReceiver {
      * as possible. If expecting to receive a very large incoming HTTP body,
      * consider using the {@link #bodyTo(Path, boolean)} method, which writes
      * the body directly to a file, as it arrives.
+     * <p>
+     * Note that a body can typically only be requested once via this
+     * interface. Any further requests will likely cause exceptions being
+     * thrown.
      *
      * @return Future completed when the incoming HTTP body has been fully
      * collected and can be presented as an input stream.
-     * @throws IllegalStateException If more than one method with a name
-     *                               starting with "body" is called.
+     * @throws IllegalStateException If the body has already been requested.
      */
     FutureProgress<? extends InputStream> bodyAsStream();
 
@@ -72,21 +81,29 @@ public interface HttpBodyReceiver {
      * {@code "content-type"} of the HTTP message containing the body,
      * that will be used when decoding the body into a string. In any other
      * case, UTF-8 will be assumed to be adequate.
+     * <p>
+     * Note that a body can typically only be requested once via this
+     * interface. Any further requests will likely cause exceptions being
+     * thrown.
      *
      * @return Future completed when the incoming HTTP body becomes has been
      * fully collected into a string.
-     * @throws IllegalStateException If more than one method with a name
-     *                               starting with "body" is called.
+     * @throws IllegalStateException If the body has already been requested.
      */
     FutureProgress<String> bodyAsString();
 
     /**
      * Requests that the incoming HTTP body be written to the file at the
      * specified file system path, overwriting it if it already exists.
+     * <p>
+     * Note that a body can typically only be requested once via this
+     * interface. Any further requests will likely cause exceptions being
+     * thrown.
      *
      * @param path Path to file to contain incoming HTTP body.
      * @return Future completed successfully with given path only if the
      * incoming HTTP body is fully received and written to the file at that path.
+     * @throws IllegalStateException If the body has already been requested.
      * @see #bodyTo(Path, boolean)
      */
     default FutureProgress<Path> bodyTo(final Path path) {
@@ -106,6 +123,10 @@ public interface HttpBodyReceiver {
      * primary memory. This as received data is written directly to the target
      * file as it is received, rather than being buffered until all of it
      * becomes available.
+     * <p>
+     * Note that a body can typically only be requested once via this
+     * interface. Any further requests will likely cause exceptions being
+     * thrown.
      *
      * @param path   Path to file to contain incoming HTTP body.
      * @param append If {@code true}, any existing file at {@code path} will
@@ -113,6 +134,7 @@ public interface HttpBodyReceiver {
      *               appended to it.
      * @return Future completed successfully with given path only if the
      * incoming HTTP body is fully received and written to the file at that path.
+     * @throws IllegalStateException If the body has already been requested.
      */
     FutureProgress<Path> bodyTo(final Path path, boolean append);
 }

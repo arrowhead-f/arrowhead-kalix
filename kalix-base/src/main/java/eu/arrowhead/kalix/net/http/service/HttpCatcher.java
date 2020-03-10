@@ -69,11 +69,11 @@ public class HttpCatcher<T extends Throwable> implements Comparable<HttpCatcher<
     }
 
     /**
-     * @return Class, if any, that caught exceptions must be assignable to for
-     * this catcher to be invoked.
+     * @return Class that caught exceptions must be assignable to for this
+     * catcher to be invoked.
      */
-    public Optional<Class<T>> exceptionClass() {
-        return Optional.ofNullable(exceptionClass);
+    public Class<T> exceptionClass() {
+        return exceptionClass;
     }
 
     /**
@@ -136,7 +136,7 @@ public class HttpCatcher<T extends Throwable> implements Comparable<HttpCatcher<
             }
 
             final var response = task.response();
-            return handler.handle(throwable0, task.request().newWithPathParameters(pathParameters), response)
+            return handler.handle(throwable0, task.request().cloneAndSet(pathParameters), response)
                 .map(ignored -> response.status().isPresent());
         }
         return Future.success(false);
