@@ -4,6 +4,8 @@ import eu.arrowhead.kalix.dto.DataEncoding;
 import eu.arrowhead.kalix.dto.WriteException;
 import eu.arrowhead.kalix.dto.binary.BinaryWriter;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 
 @SuppressWarnings("unused")
@@ -15,6 +17,14 @@ public final class JsonWriter {
     private static byte[] HEX = new byte[]{
         '0', '1', '2', '3', '4', '5', '6', '7',
         '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+
+    public static void write(final BigDecimal bigDecimal, final BinaryWriter target) {
+        target.write(bigDecimal.toString().getBytes(StandardCharsets.ISO_8859_1));
+    }
+
+    public static void write(final BigInteger bigInteger, final BinaryWriter target) {
+        target.write(bigInteger.toString().getBytes(StandardCharsets.ISO_8859_1));
+    }
 
     public static void write(final boolean bool, final BinaryWriter target) {
         target.write(bool ? TRUE : FALSE);

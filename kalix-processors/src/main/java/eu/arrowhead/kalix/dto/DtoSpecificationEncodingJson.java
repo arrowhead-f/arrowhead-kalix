@@ -125,6 +125,14 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             readArray((DtoArray) type, assignment, builder);
             break;
 
+        case BIG_DECIMAL:
+            readNumber("BigDecimal", assignment, builder);
+            break;
+
+        case BIG_INTEGER:
+            readNumber("BigInteger", assignment, builder);
+            break;
+
         case BOOLEAN_BOXED:
         case BOOLEAN_UNBOXED:
             readBoolean(assignment, builder);
@@ -373,6 +381,11 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             writeArray(type, name, builder);
             break;
 
+        case BIG_DECIMAL:
+        case BIG_INTEGER:
+            writePrimitiveOrBigNumber(name, builder);
+            break;
+
         case CHARACTER_BOXED:
         case CHARACTER_UNBOXED:
             throw characterTypesNotSupportedException();
@@ -395,7 +408,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
 
         default:
             if (descriptor.isPrimitive()) {
-                writePrimitive(name, builder);
+                writePrimitiveOrBigNumber(name, builder);
             }
             else {
                 throw new IllegalStateException("Unexpected type: " + type);
@@ -484,7 +497,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         writeCache.append('"');
     }
 
-    private void writePrimitive(final String name, final MethodSpec.Builder builder) {
+    private void writePrimitiveOrBigNumber(final String name, final MethodSpec.Builder builder) {
         writeCache.addWriteIfNotEmpty(builder);
         builder.addStatement("$T.write($N, target)", JsonWriter.class, name);
     }

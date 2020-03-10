@@ -154,7 +154,7 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
         if (isBodyRequested) {
             throw new IllegalStateException("Incoming HTTP body has already " +
                 "been requested; the handler or other context that requests " +
-                "a body must also make sure to handle it");
+                "an HTTP body must also make sure to handle it");
         }
         isBodyRequested = true;
 

@@ -4,6 +4,8 @@ import eu.arrowhead.kalix.dto.DataEncoding;
 import eu.arrowhead.kalix.dto.ReadException;
 import eu.arrowhead.kalix.dto.binary.BinaryReader;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 
 @SuppressWarnings("unused")
@@ -42,11 +44,42 @@ public final class JsonToken {
         this.nChildren = nChildren;
     }
 
+    public BigDecimal readBigDecimal(final BinaryReader source) {
+        return new BigDecimal(readRawString(source));
+    }
+
+    public BigInteger readBigInteger(final BinaryReader source) {
+        return new BigInteger(readRawString(source));
+    }
+
     public byte readByte(final BinaryReader source) {
+        return Byte.parseByte(requireNotHex(readRawString(source)));
+    }
+
+    public double readDouble(final BinaryReader source) {
+        return Double.parseDouble(requireNotHex(readRawString(source)));
+    }
+
+    public float readFloat(final BinaryReader source) {
+        return Float.parseFloat(requireNotHex(readRawString(source)));
+    }
+
+    public int readInteger(final BinaryReader source) {
+        return Integer.parseInt(requireNotHex(readRawString(source)));
+    }
+
+    public long readLong(final BinaryReader source) {
+        return Long.parseLong(requireNotHex(readRawString(source)));
+    }
+
+    public short readShort(final BinaryReader source) {
+        return Short.parseShort(requireNotHex(readRawString(source)));
+    }
+
+    private String readRawString(final BinaryReader source) {
         final var buffer = new byte[length()];
         source.getBytes(begin, buffer);
-        final var string = new String(buffer, StandardCharsets.ISO_8859_1);
-        return Byte.parseByte(requireNotHex(string));
+        return new String(buffer, StandardCharsets.ISO_8859_1);
     }
 
     private static String requireNotHex(final String string) {
@@ -57,41 +90,6 @@ public final class JsonToken {
             }
         }
         return string;
-    }
-
-    public double readDouble(final BinaryReader source) {
-        final var buffer = new byte[length()];
-        source.getBytes(begin, buffer);
-        final var string = new String(buffer, StandardCharsets.ISO_8859_1);
-        return Double.parseDouble(requireNotHex(string));
-    }
-
-    public float readFloat(final BinaryReader source) {
-        final var buffer = new byte[length()];
-        source.getBytes(begin, buffer);
-        final var string = new String(buffer, StandardCharsets.ISO_8859_1);
-        return Float.parseFloat(requireNotHex(string));
-    }
-
-    public int readInteger(final BinaryReader source) {
-        final var buffer = new byte[length()];
-        source.getBytes(begin, buffer);
-        final var string = new String(buffer, StandardCharsets.ISO_8859_1);
-        return Integer.parseInt(requireNotHex(string));
-    }
-
-    public long readLong(final BinaryReader source) {
-        final var buffer = new byte[length()];
-        source.getBytes(begin, buffer);
-        final var string = new String(buffer, StandardCharsets.ISO_8859_1);
-        return Long.parseLong(requireNotHex(string));
-    }
-
-    public short readShort(final BinaryReader source) {
-        final var buffer = new byte[length()];
-        source.getBytes(begin, buffer);
-        final var string = new String(buffer, StandardCharsets.ISO_8859_1);
-        return Short.parseShort(requireNotHex(string));
     }
 
     public String readString(final BinaryReader source) throws ReadException {

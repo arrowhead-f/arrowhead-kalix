@@ -4,6 +4,8 @@ import javax.lang.model.type.TypeKind;
 
 public enum DtoDescriptor {
     ARRAY(0x1100),
+    BIG_DECIMAL(0x2000),
+    BIG_INTEGER(0x2000),
     BOOLEAN_BOXED(0x0601),
     BOOLEAN_UNBOXED(0x0201),
     BYTE_BOXED(0x2602),

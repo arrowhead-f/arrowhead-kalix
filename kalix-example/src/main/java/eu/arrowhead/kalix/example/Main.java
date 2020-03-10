@@ -7,6 +7,8 @@ import eu.arrowhead.kalix.example.dto.ShapeBuilder;
 import eu.arrowhead.kalix.example.dto.ShapeData;
 import eu.arrowhead.kalix.example.dto.ShapeType;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -34,9 +36,16 @@ public class Main {
                     .y(352234.123432e-142)
                     .build())
                 .attributes(Arrays.asList(
-                    Arrays.asList((byte) 1, (byte) 2),
-                    Arrays.asList((byte) 123, (byte) 0, (byte) -5)))
-                .attributes2(1, 2, 3, 4, 5, 6, 7)
+                    Arrays.asList(new BigDecimal(10), new BigDecimal(20)),
+                    Arrays.asList(new BigDecimal(1230), new BigDecimal(0), new BigDecimal(-50))))
+                .attributes2(
+                    BigInteger.valueOf(1),
+                    BigInteger.valueOf(2),
+                    BigInteger.valueOf(3),
+                    BigInteger.valueOf(4),
+                    BigInteger.valueOf(5),
+                    BigInteger.valueOf(6),
+                    BigInteger.valueOf(7))
                 .name("Jaime")
                 .bools(true, false, true, true)
                 .properties(map)

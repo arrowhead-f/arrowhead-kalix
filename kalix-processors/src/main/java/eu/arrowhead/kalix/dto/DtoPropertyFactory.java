@@ -8,13 +8,18 @@ import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DtoPropertyFactory {
     private final Types typeUtils;
 
+    private final DeclaredType bigDecimalType;
+    private final DeclaredType bigIntegerType;
     private final DeclaredType booleanType;
     private final DeclaredType byteType;
     private final DeclaredType characterType;
@@ -33,25 +38,26 @@ public class DtoPropertyFactory {
     public DtoPropertyFactory(final Elements elementUtils, final Types typeUtils) {
         this.typeUtils = typeUtils;
 
-        booleanType = getDeclaredTypeOf(elementUtils, Boolean.class);
-        byteType = getDeclaredTypeOf(elementUtils, Byte.class);
-        characterType = getDeclaredTypeOf(elementUtils, Character.class);
-        doubleType = getDeclaredTypeOf(elementUtils, Double.class);
-        floatType = getDeclaredTypeOf(elementUtils, Float.class);
-        integerType = getDeclaredTypeOf(elementUtils, Integer.class);
-        listType = getDeclaredTypeOf(elementUtils, List.class);
-        longType = getDeclaredTypeOf(elementUtils, Long.class);
-        mapType = getDeclaredTypeOf(elementUtils, Map.class);
-        optionalType = getDeclaredTypeOf(elementUtils, Optional.class);
-        shortType = getDeclaredTypeOf(elementUtils, Short.class);
-        stringType = getDeclaredTypeOf(elementUtils, String.class);
+        final Function<Class<?>, DeclaredType> getDeclaredType = (class_) ->
+            (DeclaredType) elementUtils.getTypeElement(class_.getCanonicalName()).asType();
+
+        bigDecimalType = getDeclaredType.apply(BigDecimal.class);
+        bigIntegerType = getDeclaredType.apply(BigInteger.class);
+        booleanType = getDeclaredType.apply(Boolean.class);
+        byteType = getDeclaredType.apply(Byte.class);
+        characterType = getDeclaredType.apply(Character.class);
+        doubleType = getDeclaredType.apply(Double.class);
+        floatType = getDeclaredType.apply(Float.class);
+        integerType = getDeclaredType.apply(Integer.class);
+        listType = getDeclaredType.apply(List.class);
+        longType = getDeclaredType.apply(Long.class);
+        mapType = getDeclaredType.apply(Map.class);
+        optionalType = getDeclaredType.apply(Optional.class);
+        shortType = getDeclaredType.apply(Short.class);
+        stringType = getDeclaredType.apply(String.class);
 
         publicStaticModifiers = Stream.of(Modifier.PUBLIC, Modifier.STATIC)
             .collect(Collectors.toSet());
-    }
-
-    private static DeclaredType getDeclaredTypeOf(final Elements elementUtils, final Class<?> class_) {
-        return (DeclaredType) elementUtils.getTypeElement(class_.getCanonicalName()).asType();
     }
 
     public DtoProperty createFromMethod(final ExecutableElement method) throws DtoException {
@@ -63,7 +69,8 @@ public class DtoPropertyFactory {
         if (method.getReturnType().getKind() == TypeKind.VOID ||
             method.getParameters().size() != 0 ||
             method.getTypeParameters().size() != 0
-        ) {
+        )
+        {
             throw new DtoException(method, "@Readable/@Writable interface " +
                 "methods must either be static, provide a default " +
                 "implementation, or be simple getters, which means that " +
@@ -121,6 +128,12 @@ public class DtoPropertyFactory {
         }
         if (type.getKind() == TypeKind.ARRAY) {
             return toArrayType(method, type);
+        }
+        if (typeUtils.isSameType(bigDecimalType, type)) {
+            return toBigNumberType(type, DtoDescriptor.BIG_DECIMAL);
+        }
+        if (typeUtils.isSameType(bigIntegerType, type)) {
+            return toBigNumberType(type, DtoDescriptor.BIG_INTEGER);
         }
         if (typeUtils.isSameType(booleanType, type)) {
             return toPrimitiveBoxedType(type, DtoDescriptor.BOOLEAN_BOXED);
@@ -206,6 +219,10 @@ public class DtoPropertyFactory {
             }
         }
         return hasValueOf && hasToString;
+    }
+
+    private DtoType toBigNumberType(final TypeMirror type, final DtoDescriptor descriptor) {
+        return new DtoBigNumber((DeclaredType) type, descriptor);
     }
 
     private DtoArray toArrayType(final ExecutableElement method, final TypeMirror type) throws DtoException {
