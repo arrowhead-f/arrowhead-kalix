@@ -6,9 +6,7 @@ import eu.arrowhead.kalix.dto.types.DtoList;
 import eu.arrowhead.kalix.dto.util.Expander;
 
 import javax.lang.model.element.Modifier;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 public class DtoSpecificationFactory {
     private final DtoSpecificationEncoding[] specificationEncodings;
@@ -49,31 +47,39 @@ public class DtoSpecificationFactory {
                     ? ParameterizedTypeName.get(ClassName.get(Optional.class), outputTypeName)
                     : outputTypeName);
 
-            final Expander modifier = property.isOptional()
+            final Expander output = property.isOptional()
                 ? (expression) -> "return Optional.ofNullable(" + expression + ")"
                 : (expression) -> "return " + expression;
 
             switch (property.descriptor()) {
             case ARRAY:
-                getter.addStatement(modifier.expand("$N.clone()"), name);
+                getter.addStatement(output.expand("$N.clone()"), name);
                 break;
 
             case LIST:
-                getter.addStatement(modifier.expand("(List) $N"), name);
+                getter.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)
+                    .addMember("value", "\"unchecked\"").build());
+                getter.addStatement(output.expand("(List) $N"), name);
                 break;
 
             case MAP:
-                getter.addStatement(modifier.expand("(Map) $N"), name);
+                getter.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)
+                    .addMember("value", "\"unchecked\"").build());
+                getter.addStatement(output.expand("(Map) $N"), name);
                 break;
 
             default:
-                getter.addStatement(modifier.expand("$N"), name);
+                getter.addStatement(output.expand("$N"), name);
                 break;
             }
 
             implementation.addMethod(getter.build());
 
-            builder.addField(FieldSpec.builder(inputTypeName, name).build());
+            final var builderFieldTypeName = property.descriptor().isPrimitive()
+                ? property.inputTypeName().box()
+                : property.inputTypeName();
+
+            builder.addField(FieldSpec.builder(builderFieldTypeName, name).build());
             final var fieldSetter = MethodSpec.methodBuilder(name)
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(inputTypeName, name, Modifier.FINAL)
@@ -103,12 +109,42 @@ public class DtoSpecificationFactory {
                 }
             }
 
-            if (property.isOptional() || property.type().descriptor().isPrimitive()) {
-                constructor.addStatement("this.$1N = builder.$1N", name);
+            if (property.isOptional()) {
+                switch (property.descriptor()) {
+                case LIST:
+                    constructor
+                        .addStatement("this.$1N = builder.$1N == null ? null : $2T.unmodifiableList(builder.$1N)",
+                            name, Collections.class);
+                    break;
+
+                case MAP:
+                    constructor
+                        .addStatement("this.$1N = builder.$1N == null ? null : $2T.unmodifiableMap(builder.$1N)",
+                            name, Collections.class);
+                    break;
+
+                default:
+                    constructor.addStatement("this.$1N = builder.$1N", name);
+                    break;
+                }
             }
             else {
-                constructor.addStatement("this.$1N = $2T.requireNonNull(builder.$1N, \"$1N\")",
-                    name, Objects.class);
+                switch (property.descriptor()) {
+                case LIST:
+                    constructor.addStatement("this.$1N = $2T.unmodifiableList($3T.requireNonNull(builder.$1N))",
+                        name, Collections.class, Objects.class);
+                    break;
+
+                case MAP:
+                    constructor.addStatement("this.$1N = $2T.unmodifiableMap($3T.requireNonNull(builder.$1N))",
+                        name, Collections.class, Objects.class);
+                    break;
+
+                default:
+                    constructor.addStatement("this.$1N = $2T.requireNonNull(builder.$1N)",
+                        name, Objects.class);
+                    break;
+                }
             }
         });
 
