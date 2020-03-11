@@ -14,19 +14,33 @@ public enum DtoDescriptor {
     CHARACTER_UNBOXED(0x0204),
     DOUBLE_BOXED(0x2608),
     DOUBLE_UNBOXED(0x2208),
+    DURATION(0x6000),
     ENUM(0x0800),
     FLOAT_BOXED(0x2610),
     FLOAT_UNBOXED(0x2210),
     INTEGER_BOXED(0x2620),
     INTEGER_UNBOXED(0x2220),
     INTERFACE(0x0000),
+    INSTANT(0x6000),
     LIST(0x1100),
+    LOCAL_DATE(0x6000),
+    LOCAL_DATE_TIME(0x6000),
+    LOCAL_TIME(0x6000),
     LONG_BOXED(0x2640),
     LONG_UNBOXED(0x2240),
     MAP(0x0100),
+    MONTH_DAY(0x4000),
+    OFFSET_DATE_TIME(0x6000),
+    OFFSET_TIME(0x6000),
+    PERIOD(0x4000),
     SHORT_BOXED(0x2680),
     SHORT_UNBOXED(0x2280),
-    STRING(0x0800);
+    STRING(0x0800),
+    YEAR(0x6000),
+    YEAR_MONTH(0x4000),
+    ZONED_DATE_TIME(0x6000),
+    ZONE_ID(0x4000),
+    ZONE_OFFSET(0x4000);
 
     private final short mask;
 
@@ -92,6 +106,10 @@ public enum DtoDescriptor {
 
     public boolean isStringOrEnum() {
         return (mask & 0x0800) == 0x0800;
+    }
+
+    public boolean isTemporal() {
+        return (mask & 0x4000) == 0x4000;
     }
 
     public static DtoDescriptor valueOf(final TypeKind typeKind) {

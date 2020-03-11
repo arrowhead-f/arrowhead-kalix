@@ -14,8 +14,14 @@ ext {
 
 dependencies {
     api project(':kalix-base')
-    api project(':kalix-core-plugins')
     annotationProcessor project(':kalix-processors')
 
     testImplementation "org.junit.jupiter:junit-jupiter:$versionJunitJupiter"
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events 'FAILED', 'SKIPPED'
+    }
 }

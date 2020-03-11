@@ -10,6 +10,7 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -18,19 +19,42 @@ import java.util.stream.Stream;
 public class DtoPropertyFactory {
     private final Types typeUtils;
 
-    private final DeclaredType bigDecimalType;
-    private final DeclaredType bigIntegerType;
+    // Primitive types.
     private final DeclaredType booleanType;
     private final DeclaredType byteType;
     private final DeclaredType characterType;
     private final DeclaredType doubleType;
     private final DeclaredType floatType;
     private final DeclaredType integerType;
-    private final DeclaredType listType;
     private final DeclaredType longType;
-    private final DeclaredType mapType;
-    private final DeclaredType optionalType;
     private final DeclaredType shortType;
+
+    // Collection types.
+    private final DeclaredType listType;
+    private final DeclaredType mapType;
+
+    // Big number types.
+    private final DeclaredType bigDecimalType;
+    private final DeclaredType bigIntegerType;
+
+    // Temporal types.
+    private final DeclaredType durationType;
+    private final DeclaredType instantType;
+    private final DeclaredType localDateType;
+    private final DeclaredType localDateTimeType;
+    private final DeclaredType localTimeType;
+    private final DeclaredType monthDayType;
+    private final DeclaredType offsetDateTimeType;
+    private final DeclaredType offsetTimeType;
+    private final DeclaredType periodType;
+    private final DeclaredType yearType;
+    private final DeclaredType yearMonthType;
+    private final DeclaredType zonedDateTimeType;
+    private final DeclaredType zoneIdType;
+    private final DeclaredType zoneOffsetType;
+
+    // Other types.
+    private final DeclaredType optionalType;
     private final DeclaredType stringType;
 
     private final Set<Modifier> publicStaticModifiers;
@@ -41,19 +65,37 @@ public class DtoPropertyFactory {
         final Function<Class<?>, DeclaredType> getDeclaredType = (class_) ->
             (DeclaredType) elementUtils.getTypeElement(class_.getCanonicalName()).asType();
 
-        bigDecimalType = getDeclaredType.apply(BigDecimal.class);
-        bigIntegerType = getDeclaredType.apply(BigInteger.class);
         booleanType = getDeclaredType.apply(Boolean.class);
         byteType = getDeclaredType.apply(Byte.class);
         characterType = getDeclaredType.apply(Character.class);
         doubleType = getDeclaredType.apply(Double.class);
         floatType = getDeclaredType.apply(Float.class);
         integerType = getDeclaredType.apply(Integer.class);
-        listType = getDeclaredType.apply(List.class);
         longType = getDeclaredType.apply(Long.class);
-        mapType = getDeclaredType.apply(Map.class);
-        optionalType = getDeclaredType.apply(Optional.class);
         shortType = getDeclaredType.apply(Short.class);
+
+        listType = getDeclaredType.apply(List.class);
+        mapType = getDeclaredType.apply(Map.class);
+
+        bigDecimalType = getDeclaredType.apply(BigDecimal.class);
+        bigIntegerType = getDeclaredType.apply(BigInteger.class);
+
+        durationType = getDeclaredType.apply(Duration.class);
+        instantType = getDeclaredType.apply(Instant.class);
+        localDateType = getDeclaredType.apply(LocalDate.class);
+        localDateTimeType = getDeclaredType.apply(LocalDateTime.class);
+        localTimeType = getDeclaredType.apply(LocalTime.class);
+        monthDayType = getDeclaredType.apply(MonthDay.class);
+        offsetDateTimeType = getDeclaredType.apply(OffsetDateTime.class);
+        offsetTimeType = getDeclaredType.apply(OffsetTime.class);
+        periodType = getDeclaredType.apply(Period.class);
+        yearType = getDeclaredType.apply(Year.class);
+        yearMonthType = getDeclaredType.apply(YearMonth.class);
+        zonedDateTimeType = getDeclaredType.apply(ZonedDateTime.class);
+        zoneIdType = getDeclaredType.apply(ZoneId.class);
+        zoneOffsetType = getDeclaredType.apply(ZoneOffset.class);
+
+        optionalType = getDeclaredType.apply(Optional.class);
         stringType = getDeclaredType.apply(String.class);
 
         publicStaticModifiers = Stream.of(Modifier.PUBLIC, Modifier.STATIC)
@@ -130,37 +172,64 @@ public class DtoPropertyFactory {
             return toArrayType(method, type);
         }
         if (typeUtils.isSameType(bigDecimalType, type)) {
-            return toBigNumberType(type, DtoDescriptor.BIG_DECIMAL);
+            return toDeclaredType(type, DtoDescriptor.BIG_DECIMAL);
         }
         if (typeUtils.isSameType(bigIntegerType, type)) {
-            return toBigNumberType(type, DtoDescriptor.BIG_INTEGER);
+            return toDeclaredType(type, DtoDescriptor.BIG_INTEGER);
         }
         if (typeUtils.isSameType(booleanType, type)) {
-            return toPrimitiveBoxedType(type, DtoDescriptor.BOOLEAN_BOXED);
+            return toDeclaredType(type, DtoDescriptor.BOOLEAN_BOXED);
         }
         if (typeUtils.isSameType(byteType, type)) {
-            return toPrimitiveBoxedType(type, DtoDescriptor.BYTE_BOXED);
+            return toDeclaredType(type, DtoDescriptor.BYTE_BOXED);
         }
         if (typeUtils.isSameType(characterType, type)) {
-            return toPrimitiveBoxedType(type, DtoDescriptor.CHARACTER_BOXED);
+            return toDeclaredType(type, DtoDescriptor.CHARACTER_BOXED);
         }
         if (typeUtils.isSameType(doubleType, type)) {
-            return toPrimitiveBoxedType(type, DtoDescriptor.DOUBLE_BOXED);
+            return toDeclaredType(type, DtoDescriptor.DOUBLE_BOXED);
+        }
+        if (typeUtils.isSameType(durationType, type)) {
+            return toDeclaredType(type, DtoDescriptor.DURATION);
         }
         if (typeUtils.isSameType(floatType, type)) {
-            return toPrimitiveBoxedType(type, DtoDescriptor.FLOAT_BOXED);
+            return toDeclaredType(type, DtoDescriptor.FLOAT_BOXED);
+        }
+        if (typeUtils.isSameType(instantType, type)) {
+            return toDeclaredType(type, DtoDescriptor.INSTANT);
         }
         if (typeUtils.isSameType(integerType, type)) {
-            return toPrimitiveBoxedType(type, DtoDescriptor.INTEGER_BOXED);
+            return toDeclaredType(type, DtoDescriptor.INTEGER_BOXED);
+        }
+        if (typeUtils.isSameType(localDateType, type)) {
+            return toDeclaredType(type, DtoDescriptor.LOCAL_DATE);
+        }
+        if (typeUtils.isSameType(localDateTimeType, type)) {
+            return toDeclaredType(type, DtoDescriptor.LOCAL_DATE_TIME);
+        }
+        if (typeUtils.isSameType(localTimeType, type)) {
+            return toDeclaredType(type, DtoDescriptor.LOCAL_TIME);
         }
         if (typeUtils.isSameType(longType, type)) {
-            return toPrimitiveBoxedType(type, DtoDescriptor.LONG_BOXED);
+            return toDeclaredType(type, DtoDescriptor.LONG_BOXED);
+        }
+        if (typeUtils.isSameType(monthDayType, type)) {
+            return toDeclaredType(type, DtoDescriptor.MONTH_DAY);
+        }
+        if (typeUtils.isSameType(offsetDateTimeType, type)) {
+            return toDeclaredType(type, DtoDescriptor.OFFSET_DATE_TIME);
+        }
+        if (typeUtils.isSameType(offsetTimeType, type)) {
+            return toDeclaredType(type, DtoDescriptor.OFFSET_TIME);
+        }
+        if (typeUtils.isSameType(periodType, type)) {
+            return toDeclaredType(type, DtoDescriptor.PERIOD);
         }
         if (typeUtils.isSameType(shortType, type)) {
-            return toPrimitiveBoxedType(type, DtoDescriptor.SHORT_BOXED);
+            return toDeclaredType(type, DtoDescriptor.SHORT_BOXED);
         }
         if (typeUtils.asElement(type).getKind() == ElementKind.ENUM) {
-            return toEnumType(type);
+            return toDeclaredType(type, DtoDescriptor.ENUM);
         }
         if (typeUtils.isAssignable(typeUtils.erasure(type), listType)) {
             return toListType(method, type);
@@ -169,10 +238,25 @@ public class DtoPropertyFactory {
             return toMapType(method, type);
         }
         if (typeUtils.isSameType(stringType, type)) {
-            return toStringType(type);
+            return toDeclaredType(type, DtoDescriptor.STRING);
+        }
+        if (typeUtils.isSameType(yearType, type)) {
+            return toDeclaredType(type, DtoDescriptor.YEAR);
+        }
+        if (typeUtils.isSameType(yearMonthType, type)) {
+            return toDeclaredType(type, DtoDescriptor.YEAR_MONTH);
+        }
+        if (typeUtils.isSameType(zonedDateTimeType, type)) {
+            return toDeclaredType(type, DtoDescriptor.ZONED_DATE_TIME);
+        }
+        if (typeUtils.isSameType(zoneIdType, type)) {
+            return toDeclaredType(type, DtoDescriptor.ZONE_ID);
+        }
+        if (typeUtils.isSameType(zoneOffsetType, type)) {
+            return toDeclaredType(type, DtoDescriptor.ZONE_OFFSET);
         }
         if (isEnumLike(type)) {
-            return toEnumType(type);
+            return toDeclaredType(type, DtoDescriptor.ENUM);
         }
         return toInterfaceType(method, type);
     }
@@ -221,14 +305,14 @@ public class DtoPropertyFactory {
         return hasValueOf && hasToString;
     }
 
-    private DtoType toBigNumberType(final TypeMirror type, final DtoDescriptor descriptor) {
-        return new DtoBigNumber((DeclaredType) type, descriptor);
-    }
-
     private DtoArray toArrayType(final ExecutableElement method, final TypeMirror type) throws DtoException {
         final var arrayType = (ArrayType) type;
         final var element = resolveType(method, arrayType.getComponentType());
         return new DtoArray(arrayType, element);
+    }
+
+    private DtoType toDeclaredType(final TypeMirror type, final DtoDescriptor descriptor) {
+        return new DtoDeclaredType((DeclaredType) type, descriptor);
     }
 
     private DtoInterface toInterfaceType(final ExecutableElement method, final TypeMirror type) throws DtoException {
@@ -260,10 +344,6 @@ public class DtoPropertyFactory {
         return new DtoInterface(declaredType, readableEncodings, writableEncodings);
     }
 
-    private DtoEnum toEnumType(final TypeMirror type) {
-        return new DtoEnum((DeclaredType) type);
-    }
-
     private DtoList toListType(final ExecutableElement method, final TypeMirror type) throws DtoException {
         final var declaredType = (DeclaredType) type;
         final var element = resolveType(method, declaredType.getTypeArguments().get(0));
@@ -284,13 +364,5 @@ public class DtoPropertyFactory {
 
     private DtoPrimitiveUnboxed toPrimitiveType(final TypeMirror type, final DtoDescriptor primitiveType) {
         return new DtoPrimitiveUnboxed((PrimitiveType) type, primitiveType);
-    }
-
-    private DtoPrimitiveBoxed toPrimitiveBoxedType(final TypeMirror type, final DtoDescriptor primitiveType) {
-        return new DtoPrimitiveBoxed((DeclaredType) type, primitiveType);
-    }
-
-    private DtoString toStringType(final TypeMirror type) {
-        return new DtoString((DeclaredType) type);
     }
 }

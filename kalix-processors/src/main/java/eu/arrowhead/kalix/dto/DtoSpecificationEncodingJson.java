@@ -9,6 +9,7 @@ import eu.arrowhead.kalix.dto.util.BinaryWriterWriteCache;
 import eu.arrowhead.kalix.dto.util.Expander;
 
 import javax.lang.model.element.Modifier;
+import java.time.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -93,10 +94,10 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             .addStatement("return builder.build()")
             .endControlFlow();
 
-        if (hasEnum) {
+        if (hasNumber) {
             builder
-                .beginControlFlow("catch (final $T exception)", IllegalArgumentException.class)
-                .addStatement("error = exception.getMessage()")
+                .beginControlFlow("catch (final $T ignored)", NumberFormatException.class)
+                .addStatement("error = \"Invalid number\"")
                 .endControlFlow();
         }
         if (hasMandatory) {
@@ -105,10 +106,10 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
                 .addStatement("error = \"Mandatory field `\" + exception.getMessage() + \"` missing in object\"")
                 .endControlFlow();
         }
-        if (hasNumber) {
+        if (hasEnum) {
             builder
-                .beginControlFlow("catch (final $T ignored)", NumberFormatException.class)
-                .addStatement("error = \"Invalid number\"")
+                .beginControlFlow("catch (final $T exception)", IllegalArgumentException.class)
+                .addStatement("error = exception.getMessage()")
                 .endControlFlow();
         }
 
@@ -152,6 +153,10 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             readNumber("Double", assignment, builder);
             break;
 
+        case DURATION:
+            readTemporal(Duration.class, true, assignment, builder);
+            break;
+
         case ENUM:
             readEnum(type, assignment, builder);
             break;
@@ -166,12 +171,28 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             readNumber("Integer", assignment, builder);
             break;
 
+        case INSTANT:
+            readTemporal(Instant.class, descriptor.isNumber(), assignment, builder);
+            break;
+
         case INTERFACE:
             readInterface((DtoInterface) type, assignment, builder);
             break;
 
         case LIST:
             readList((DtoList) type, assignment, builder);
+            break;
+
+        case LOCAL_DATE:
+            readTemporal(LocalDate.class, descriptor.isNumber(), assignment, builder);
+            break;
+
+        case LOCAL_DATE_TIME:
+            readTemporal(LocalDateTime.class, descriptor.isNumber(), assignment, builder);
+            break;
+
+        case LOCAL_TIME:
+            readTemporal(LocalTime.class, descriptor.isNumber(), assignment, builder);
             break;
 
         case LONG_BOXED:
@@ -183,6 +204,22 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             readMap((DtoMap) type, assignment, builder);
             break;
 
+        case MONTH_DAY:
+            readTemporal(MonthDay.class, descriptor.isNumber(), assignment, builder);
+            break;
+
+        case OFFSET_DATE_TIME:
+            readTemporal(OffsetDateTime.class, descriptor.isNumber(), assignment, builder);
+            break;
+
+        case OFFSET_TIME:
+            readTemporal(OffsetTime.class, descriptor.isNumber(), assignment, builder);
+            break;
+
+        case PERIOD:
+            readTemporal(Period.class, descriptor.isNumber(), assignment, builder);
+            break;
+
         case SHORT_BOXED:
         case SHORT_UNBOXED:
             readNumber("Short", assignment, builder);
@@ -191,6 +228,27 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         case STRING:
             readString(assignment, builder);
             break;
+
+        case YEAR:
+            readTemporal(Year.class, descriptor.isNumber(), assignment, builder);
+            break;
+
+        case YEAR_MONTH:
+            readTemporal(YearMonth.class, descriptor.isNumber(), assignment, builder);
+            break;
+
+        case ZONED_DATE_TIME:
+            readTemporal(ZonedDateTime.class, descriptor.isNumber(), assignment, builder);
+            break;
+
+        case ZONE_ID:
+            readTemporal(ZoneId.class, descriptor.isNumber(), assignment, builder);
+            break;
+
+        case ZONE_OFFSET:
+            readTemporal(ZoneOffset.class, descriptor.isNumber(), assignment, builder);
+            break;
+
 
         default:
             throw new IllegalStateException("Unexpected type: " + type);
@@ -206,7 +264,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             .addStatement("error = \"Expected array\"")
             .addStatement("break error")
             .endControlFlow()
-            .addStatement("final var items$L = new $T[token.nChildren()]", level, element.asTypeMirror())
+            .addStatement("final var items$L = new $T[token.nChildren()]", level, element.asTypeName())
             .beginControlFlow("for (var i$1L = 0; i$1L < items$1L.length; ++i$1L)", level);
 
         final var lhs = "items" + level + "[i" + level + "] = ";
@@ -240,7 +298,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             .addStatement("error = \"Expected number\"")
             .addStatement("break error")
             .endControlFlow()
-            .addStatement(assignment.expand("$T.valueOf(token.readString(source))"), type.asTypeMirror());
+            .addStatement(assignment.expand("$T.valueOf(token.readString(source))"), type.asTypeName());
     }
 
     private void readInterface(final DtoInterface type, final Expander assignment, final MethodSpec.Builder builder) {
@@ -262,7 +320,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             .addStatement("break error")
             .endControlFlow()
             .addStatement("var n$L = token.nChildren()", level)
-            .addStatement("final var items$1L = new $2T<$3T>(n$1L)", level, ArrayList.class, element.asTypeMirror())
+            .addStatement("final var items$1L = new $2T<$3T>(n$1L)", level, ArrayList.class, element.asTypeName())
             .beginControlFlow("while (n$L-- != 0)", level);
 
         final var lhs = "final var item" + level + " = ";
@@ -288,7 +346,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             .endControlFlow()
             .addStatement("var n$L = token.nChildren()", level)
             .addStatement("final var entries$1L = new $2T<$3T, $4T>(n$1L)",
-                level, HashMap.class, key.asTypeMirror(), value.asTypeMirror())
+                level, HashMap.class, key.asTypeName(), value.asTypeName())
             .beginControlFlow("while (n$L-- != 0)", level)
             .addStatement("final var key$L = reader.next().readString(source)", level);
 
@@ -317,10 +375,36 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         builder
             .addStatement("token = reader.next()")
             .beginControlFlow("if (token.type() != $T.STRING)", JsonType.class)
-            .addStatement("error = \"Expected number\"")
+            .addStatement("error = \"Expected string\"")
             .addStatement("break error")
             .endControlFlow()
             .addStatement(assignment.expand("token.readString(source)"));
+    }
+
+    public void readTemporal(
+        final Class<?> class_,
+        final boolean asNumber, final Expander assignment,
+        final MethodSpec.Builder builder)
+    {
+        builder.addStatement("token = reader.next()");
+        if (asNumber) {
+            builder
+                .addStatement("$T value$L", class_, level)
+                .beginControlFlow("switch (token.type())")
+                .addStatement("case NUMBER: value$L = token.read$TNumber(source); break", level, class_)
+                .addStatement("case STRING: value$L = token.read$T(source); break", level, class_)
+                .addStatement("default: error = \"Expected number or string\"; break error")
+                .endControlFlow()
+                .addStatement(assignment.expand("value$L"), level);
+        }
+        else {
+            builder
+                .beginControlFlow("if (token.type() != $T.STRING)", JsonType.class)
+                .addStatement("error = \"Expected string\"")
+                .addStatement("break error")
+                .endControlFlow()
+                .addStatement(assignment.expand("token.read$T(source)"), class_);
+        }
     }
 
     private void implementWriteMethodFor(final DtoTarget target, final TypeSpec.Builder implementation)
@@ -381,11 +465,6 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             writeArray(type, name, builder);
             break;
 
-        case BIG_DECIMAL:
-        case BIG_INTEGER:
-            writePrimitiveOrBigNumber(name, builder);
-            break;
-
         case CHARACTER_BOXED:
         case CHARACTER_UNBOXED:
             throw characterTypesNotSupportedException();
@@ -407,8 +486,8 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             break;
 
         default:
-            if (descriptor.isPrimitive()) {
-                writePrimitiveOrBigNumber(name, builder);
+            if (descriptor.isPrimitive() || descriptor.isNumber() || descriptor.isTemporal()) {
+                writeOther(name, builder);
             }
             else {
                 throw new IllegalStateException("Unexpected type: " + type);
@@ -491,15 +570,15 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         writeCache.append('}');
     }
 
+    private void writeOther(final String name, final MethodSpec.Builder builder) {
+        writeCache.addWriteIfNotEmpty(builder);
+        builder.addStatement("$T.write($N, target)", JsonWriter.class, name);
+    }
+
     private void writeString(final String name, final MethodSpec.Builder builder) {
         writeCache.append('"').addPut(builder);
         builder.addStatement("$T.write($N, target)", JsonWriter.class, name);
         writeCache.append('"');
-    }
-
-    private void writePrimitiveOrBigNumber(final String name, final MethodSpec.Builder builder) {
-        writeCache.addWriteIfNotEmpty(builder);
-        builder.addStatement("$T.write($N, target)", JsonWriter.class, name);
     }
 
     private static IllegalStateException characterTypesNotSupportedException() {

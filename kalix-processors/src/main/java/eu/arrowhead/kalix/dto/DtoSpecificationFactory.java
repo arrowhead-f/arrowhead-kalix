@@ -39,9 +39,7 @@ public class DtoSpecificationFactory {
         target.properties().forEach(property -> {
             final var descriptor = property.descriptor();
             final var name = property.name();
-            final var type = property.type() instanceof DtoInterface
-                ? ClassName.bestGuess(((DtoInterface) property.type()).targetSimpleName())
-                : TypeName.get(property.asTypeMirror());
+            final var type = property.asTypeName();
 
             implementation.addField(type, name, Modifier.PRIVATE, Modifier.FINAL);
             implementation.addMethod(MethodSpec.methodBuilder(name)
@@ -72,13 +70,11 @@ public class DtoSpecificationFactory {
             if (descriptor == DtoDescriptor.LIST) {
                 final var element = ((DtoList) property.type()).element();
                 if (!element.descriptor().isCollection()) {
-                    final var elementType = element instanceof DtoInterface
-                        ? ClassName.bestGuess(((DtoInterface) element).targetSimpleName())
-                        : TypeName.get(element.asTypeMirror());
+                    final var elementTypeName = element.asTypeName();
 
                     builder.addMethod(MethodSpec.methodBuilder(name)
                         .addModifiers(Modifier.PUBLIC)
-                        .addParameter(ArrayTypeName.of(elementType), name, Modifier.FINAL)
+                        .addParameter(ArrayTypeName.of(elementTypeName), name, Modifier.FINAL)
                         .varargs()
                         .returns(builderClassName)
                         .addStatement("this.$1N = $2T.asList($1N)", name, Arrays.class)

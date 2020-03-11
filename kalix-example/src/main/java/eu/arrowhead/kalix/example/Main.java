@@ -12,7 +12,6 @@ import eu.arrowhead.kalix.security.X509TrustStore;
 
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
-import java.util.Base64;
 
 public class Main {
     public static void main(final String[] args) {
@@ -52,7 +51,7 @@ public class Main {
                                 .systemName("data_consumer")
                                 .address("127.0.0.1")
                                 .port(13370)
-                                .authenticationInfo(keyStore.publicKeyAsString())
+                                .authenticationInfo(keyStore.publicKeyBase64())
                                 .build())
                             .serviceUri("http://127.0.0.1/example-palm3")
                             .secure("CERTIFICATE")

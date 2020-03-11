@@ -1,5 +1,7 @@
 package eu.arrowhead.kalix.dto.types;
 
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.TypeName;
 import eu.arrowhead.kalix.dto.DtoTarget;
 import eu.arrowhead.kalix.dto.DataEncoding;
 
@@ -55,6 +57,11 @@ public class DtoInterface implements DtoType {
     @Override
     public DeclaredType asTypeMirror() {
         return interfaceType;
+    }
+
+    @Override
+    public TypeName asTypeName() {
+        return ClassName.bestGuess(targetSimpleName);
     }
 
     public boolean isReadable(final DataEncoding dataEncoding) {

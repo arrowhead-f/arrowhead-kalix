@@ -75,7 +75,7 @@ public class X509KeyStore {
      * certificate returned by {@link #certificate()}.
      * @see <a href="https://www.itu.int/rec/T-REC-X.690-201508-I/en">X.690 : Information technology - ASN.1 encoding rules: Specification of Basic Encoding Rules (BER), Canonical Encoding Rules (CER) and Distinguished Encoding Rules (DER)</a>
      */
-    public byte[] publicKeyAsBytes() {
+    public byte[] publicKeyDer() {
         return publicKey().getEncoded();
     }
 
@@ -85,8 +85,8 @@ public class X509KeyStore {
      * @see <a href="https://tools.ietf.org/html/rfc4648#section-4">RFC 4648, Section 4</a>
      * @see <a href="https://www.itu.int/rec/T-REC-X.690-201508-I/en">X.690 : Information technology - ASN.1 encoding rules: Specification of Basic Encoding Rules (BER), Canonical Encoding Rules (CER) and Distinguished Encoding Rules (DER)</a>
      */
-    public String publicKeyAsString() {
-        return Base64.getEncoder().encodeToString(publicKeyAsBytes());
+    public String publicKeyBase64() {
+        return Base64.getEncoder().encodeToString(publicKeyDer());
     }
 
     /**
