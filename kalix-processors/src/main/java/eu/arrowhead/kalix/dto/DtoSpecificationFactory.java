@@ -2,9 +2,8 @@ package eu.arrowhead.kalix.dto;
 
 import com.squareup.javapoet.*;
 import eu.arrowhead.kalix.dto.types.DtoDescriptor;
-import eu.arrowhead.kalix.dto.types.DtoInterface;
 import eu.arrowhead.kalix.dto.types.DtoList;
-import eu.arrowhead.kalix.dto.types.DtoPrimitiveUnboxed;
+import eu.arrowhead.kalix.dto.util.Expander;
 
 import javax.lang.model.element.Modifier;
 import java.util.Arrays;
@@ -21,12 +20,12 @@ public class DtoSpecificationFactory {
     public DtoTargetSpecification createForTarget(final DtoTarget target) throws DtoException {
         final var interfaceType = target.interfaceType();
 
-        final var implementation = TypeSpec.classBuilder(target.simpleName())
+        final var implementation = TypeSpec.classBuilder(target.dataSimpleName())
             .addJavadoc("{@link $N} Data Transfer Object (DTO).", interfaceType.simpleName())
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-            .addSuperinterface(TypeName.get(interfaceType.asTypeMirror()));
+            .addSuperinterface(interfaceType.outputTypeName());
 
-        final var builderSimpleName = interfaceType.simpleName() + "Builder";
+        final var builderSimpleName = interfaceType.builderSimpleName();
         final var builderClassName = ClassName.bestGuess(builderSimpleName);
         final var builder = TypeSpec.classBuilder(builderSimpleName)
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL);
@@ -39,24 +38,45 @@ public class DtoSpecificationFactory {
         target.properties().forEach(property -> {
             final var descriptor = property.descriptor();
             final var name = property.name();
-            final var type = property.asTypeName();
+            final var inputTypeName = property.inputTypeName();
+            final var outputTypeName = property.outputTypeName();
 
-            implementation.addField(type, name, Modifier.PRIVATE, Modifier.FINAL);
-            implementation.addMethod(MethodSpec.methodBuilder(name)
+            implementation.addField(inputTypeName, name, Modifier.PRIVATE, Modifier.FINAL);
+            final var getter = MethodSpec.methodBuilder(name)
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
                 .returns(property.isOptional()
-                    ? ParameterizedTypeName.get(ClassName.get(Optional.class), type)
-                    : type)
-                .addStatement(property.isOptional()
-                    ? "return Optional.ofNullable($N)"
-                    : "return $N", name)
-                .build());
+                    ? ParameterizedTypeName.get(ClassName.get(Optional.class), outputTypeName)
+                    : outputTypeName);
 
-            builder.addField(FieldSpec.builder(type, name).build());
+            final Expander modifier = property.isOptional()
+                ? (expression) -> "return Optional.ofNullable(" + expression + ")"
+                : (expression) -> "return " + expression;
+
+            switch (property.descriptor()) {
+            case ARRAY:
+                getter.addStatement(modifier.expand("$N.clone()"), name);
+                break;
+
+            case LIST:
+                getter.addStatement(modifier.expand("(List) $N"), name);
+                break;
+
+            case MAP:
+                getter.addStatement(modifier.expand("(Map) $N"), name);
+                break;
+
+            default:
+                getter.addStatement(modifier.expand("$N"), name);
+                break;
+            }
+
+            implementation.addMethod(getter.build());
+
+            builder.addField(FieldSpec.builder(inputTypeName, name).build());
             final var fieldSetter = MethodSpec.methodBuilder(name)
                 .addModifiers(Modifier.PUBLIC)
-                .addParameter(type, name, Modifier.FINAL)
+                .addParameter(inputTypeName, name, Modifier.FINAL)
                 .returns(builderClassName)
                 .addStatement("this.$1N = $1N", name)
                 .addStatement("return this");
@@ -70,7 +90,7 @@ public class DtoSpecificationFactory {
             if (descriptor == DtoDescriptor.LIST) {
                 final var element = ((DtoList) property.type()).element();
                 if (!element.descriptor().isCollection()) {
-                    final var elementTypeName = element.asTypeName();
+                    final var elementTypeName = element.inputTypeName();
 
                     builder.addMethod(MethodSpec.methodBuilder(name)
                         .addModifiers(Modifier.PUBLIC)
@@ -83,7 +103,7 @@ public class DtoSpecificationFactory {
                 }
             }
 
-            if (property.isOptional() || property.type() instanceof DtoPrimitiveUnboxed) {
+            if (property.isOptional() || property.type().descriptor().isPrimitive()) {
                 constructor.addStatement("this.$1N = builder.$1N", name);
             }
             else {
@@ -107,8 +127,8 @@ public class DtoSpecificationFactory {
             .builder(builder
                 .addMethod(MethodSpec.methodBuilder("build")
                     .addModifiers(Modifier.PUBLIC)
-                    .returns(ClassName.bestGuess(target.simpleName()))
-                    .addStatement("return new $N(this)", target.simpleName())
+                    .returns(target.dataTypeName())
+                    .addStatement("return new $N(this)", target.dataSimpleName())
                     .build())
                 .build())
             .build();

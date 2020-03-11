@@ -1,10 +1,10 @@
 package eu.arrowhead.kalix.dto;
 
+import com.squareup.javapoet.TypeName;
 import eu.arrowhead.kalix.dto.types.DtoDescriptor;
 import eu.arrowhead.kalix.dto.types.DtoType;
 
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.type.TypeMirror;
 import java.util.Map;
 import java.util.Objects;
 
@@ -45,8 +45,13 @@ public class DtoProperty implements DtoType {
     }
 
     @Override
-    public TypeMirror asTypeMirror() {
-        return type.asTypeMirror();
+    public TypeName inputTypeName() {
+        return type.inputTypeName();
+    }
+
+    @Override
+    public TypeName outputTypeName() {
+        return type.outputTypeName();
     }
 
     public boolean isOptional() {

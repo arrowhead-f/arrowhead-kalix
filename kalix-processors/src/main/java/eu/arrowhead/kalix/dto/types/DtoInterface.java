@@ -13,36 +13,68 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DtoInterface implements DtoType {
-    private final DeclaredType interfaceType;
     private final Set<DataEncoding> readableDataEncodings;
     private final Set<DataEncoding> writableDataEncodings;
-    private final String simpleName;
-    private final String targetSimpleName;
     private final Set<DataEncoding> dataEncodings;
+
+    private final String simpleName;
+    private final String dataSimpleName;
+    private final String builderSimpleName;
+    private final TypeName inputTypeName;
+    private final TypeName outputTypeName;
 
     public DtoInterface(
         final DeclaredType interfaceType,
         final DataEncoding[] readableDataEncodings,
         final DataEncoding[] writableDataEncodings
     ) {
-        this.interfaceType = interfaceType;
         this.readableDataEncodings = Stream.of(readableDataEncodings).collect(Collectors.toSet());
         this.writableDataEncodings = Stream.of(writableDataEncodings).collect(Collectors.toSet());
 
-        final TypeElement interfaceElement = (TypeElement) interfaceType.asElement();
-        simpleName = interfaceElement.getSimpleName().toString();
-        targetSimpleName = simpleName + DtoTarget.NAME_SUFFIX;
         dataEncodings = new HashSet<>();
         dataEncodings.addAll(this.readableDataEncodings);
         dataEncodings.addAll(this.writableDataEncodings);
+
+        final TypeElement interfaceElement = (TypeElement) interfaceType.asElement();
+        simpleName = interfaceElement.getSimpleName().toString();
+        dataSimpleName = simpleName + DtoTarget.DATA_SUFFIX;
+        builderSimpleName = simpleName + DtoTarget.BUILDER_SUFFIX;
+        inputTypeName = ClassName.get(packageNameOf(interfaceElement.getQualifiedName()), dataSimpleName);
+        outputTypeName = TypeName.get(interfaceType);
+    }
+
+    private String packageNameOf(final CharSequence qualifiedName) {
+        final var q1 = qualifiedName.length();
+        var q0 = q1;
+        int qx = 0;
+        while (q0-- != 0) {
+            var c = qualifiedName.charAt(q0);
+            if (c == '.') {
+                if (q0 + 1 == q1) {
+                    throw new IllegalArgumentException("Not a qualified type name: \"" + qualifiedName + "\"");
+                }
+                c = qualifiedName.charAt(q0 + 1);
+                if (Character.isUpperCase(c)) {
+                    qx = q0;
+                }
+                else {
+                    break;
+                }
+            }
+        }
+        return qualifiedName.subSequence(0, qx).toString();
     }
 
     public String simpleName() {
         return simpleName;
     }
 
-    public String targetSimpleName() {
-        return targetSimpleName;
+    public String dataSimpleName() {
+        return dataSimpleName;
+    }
+
+    public String builderSimpleName() {
+        return builderSimpleName;
     }
 
     public Set<DataEncoding> encodings() {
@@ -55,13 +87,13 @@ public class DtoInterface implements DtoType {
     }
 
     @Override
-    public DeclaredType asTypeMirror() {
-        return interfaceType;
+    public TypeName inputTypeName() {
+        return inputTypeName;
     }
 
     @Override
-    public TypeName asTypeName() {
-        return ClassName.bestGuess(targetSimpleName);
+    public TypeName outputTypeName() {
+        return outputTypeName;
     }
 
     public boolean isReadable(final DataEncoding dataEncoding) {

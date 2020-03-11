@@ -1,15 +1,18 @@
 package eu.arrowhead.kalix.dto.types;
 
+import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.TypeName;
 
 import javax.lang.model.type.ArrayType;
 
 public class DtoArray implements DtoArrayOrList {
-    private final ArrayType type;
+    private final ArrayTypeName inputTypeName;
+    private final ArrayTypeName outputTypeName;
     private final DtoType element;
 
     public DtoArray(final ArrayType type, final DtoType element) {
-        this.type = type;
+        this.inputTypeName = ArrayTypeName.of(element.inputTypeName());
+        this.outputTypeName = ArrayTypeName.get(type);
         this.element = element;
     }
 
@@ -24,8 +27,13 @@ public class DtoArray implements DtoArrayOrList {
     }
 
     @Override
-    public ArrayType asTypeMirror() {
-        return type;
+    public ArrayTypeName inputTypeName() {
+        return inputTypeName;
+    }
+
+    @Override
+    public TypeName outputTypeName() {
+        return outputTypeName;
     }
 
     @Override

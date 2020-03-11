@@ -10,7 +10,6 @@ import eu.arrowhead.kalix.dto.util.Expander;
 
 import javax.lang.model.element.Modifier;
 import java.time.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 
 public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
@@ -36,11 +35,11 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
     }
 
     private void implementReadMethodsFor(final DtoTarget target, final TypeSpec.Builder implementation) throws DtoException {
-        final var targetClassName = ClassName.bestGuess(target.simpleName());
+        final var dataTypeName = target.dataTypeName();
 
         implementation.addMethod(MethodSpec.methodBuilder("readJson")
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-            .returns(targetClassName)
+            .returns(dataTypeName)
             .addParameter(BinaryReader.class, "source", Modifier.FINAL)
             .addException(ReadException.class)
             .addStatement("return readJson($T.tokenize(source))", JsonReader.class)
@@ -48,7 +47,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
 
         final var builder = MethodSpec.methodBuilder("readJson")
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-            .returns(targetClassName)
+            .returns(dataTypeName)
             .addParameter(JsonTokenReader.class, "reader", Modifier.FINAL)
             .addException(ReadException.class)
             .addStatement("final var source = reader.source()")
@@ -123,7 +122,8 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         final var descriptor = type.descriptor();
         switch (descriptor) {
         case ARRAY:
-            readArray((DtoArray) type, assignment, builder);
+        case LIST:
+            readArray((DtoArrayOrList) type, assignment, builder);
             break;
 
         case BIG_DECIMAL:
@@ -177,10 +177,6 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
 
         case INTERFACE:
             readInterface((DtoInterface) type, assignment, builder);
-            break;
-
-        case LIST:
-            readList((DtoList) type, assignment, builder);
             break;
 
         case LOCAL_DATE:
@@ -255,7 +251,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         }
     }
 
-    private void readArray(final DtoArray type, final Expander assignment, final MethodSpec.Builder builder) {
+    private void readArray(final DtoArrayOrList type, final Expander assignment, final MethodSpec.Builder builder) {
         final var element = type.element();
 
         builder
@@ -264,7 +260,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             .addStatement("error = \"Expected array\"")
             .addStatement("break error")
             .endControlFlow()
-            .addStatement("final var items$L = new $T[token.nChildren()]", level, element.asTypeName())
+            .addStatement("final var items$L = new $T[token.nChildren()]", level, element.inputTypeName())
             .beginControlFlow("for (var i$1L = 0; i$1L < items$1L.length; ++i$1L)", level);
 
         final var lhs = "items" + level + "[i" + level + "] = ";
@@ -298,7 +294,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             .addStatement("error = \"Expected number\"")
             .addStatement("break error")
             .endControlFlow()
-            .addStatement(assignment.expand("$T.valueOf(token.readString(source))"), type.asTypeName());
+            .addStatement(assignment.expand("$T.valueOf(token.readString(source))"), type.inputTypeName());
     }
 
     private void readInterface(final DtoInterface type, final Expander assignment, final MethodSpec.Builder builder) {
@@ -306,32 +302,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             throw new IllegalStateException(type.simpleName() + " is not annotated with " +
                 "@Readable, or lacks DataEncoding.JSON as annotation argument");
         }
-        final var className = ClassName.bestGuess(type.targetSimpleName());
-        builder.addStatement(assignment.expand("$T.readJson(reader)"), className);
-    }
-
-    private void readList(final DtoList type, final Expander assignment, final MethodSpec.Builder builder) {
-        final var element = type.element();
-
-        builder
-            .addStatement("token = reader.next()")
-            .beginControlFlow("if (token.type() != $T.ARRAY)", JsonType.class)
-            .addStatement("error = \"Expected array\"")
-            .addStatement("break error")
-            .endControlFlow()
-            .addStatement("var n$L = token.nChildren()", level)
-            .addStatement("final var items$1L = new $2T<$3T>(n$1L)", level, ArrayList.class, element.asTypeName())
-            .beginControlFlow("while (n$L-- != 0)", level);
-
-        final var lhs = "final var item" + level + " = ";
-        level += 1;
-        readValue(element, x -> lhs + x, builder);
-        level -= 1;
-
-        builder
-            .addStatement("items$1L.add(item$1L)", level)
-            .endControlFlow()
-            .addStatement(assignment.expand("items$L"), level);
+        builder.addStatement(assignment.expand("$T.readJson(reader)"), type.inputTypeName());
     }
 
     private void readMap(final DtoMap type, final Expander assignment, final MethodSpec.Builder builder) {
@@ -346,7 +317,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             .endControlFlow()
             .addStatement("var n$L = token.nChildren()", level)
             .addStatement("final var entries$1L = new $2T<$3T, $4T>(n$1L)",
-                level, HashMap.class, key.asTypeName(), value.asTypeName())
+                level, HashMap.class, key.inputTypeName(), value.inputTypeName())
             .beginControlFlow("while (n$L-- != 0)", level)
             .addStatement("final var key$L = reader.next().readString(source)", level);
 

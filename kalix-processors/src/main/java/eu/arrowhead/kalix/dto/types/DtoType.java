@@ -7,9 +7,7 @@ import javax.lang.model.type.TypeMirror;
 public interface DtoType {
     DtoDescriptor descriptor();
 
-    TypeMirror asTypeMirror();
+    TypeName inputTypeName();
 
-    default TypeName asTypeName() {
-        return TypeName.get(asTypeMirror());
-    }
+    TypeName outputTypeName();
 }

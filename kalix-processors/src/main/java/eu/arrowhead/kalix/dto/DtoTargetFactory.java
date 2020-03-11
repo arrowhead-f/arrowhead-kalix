@@ -31,10 +31,10 @@ public class DtoTargetFactory {
             throw new DtoException(interfaceElement, "@Readable/@Writable " +
                 "interfaces may not extend other interfaces");
         }
-        if (interfaceElement.getSimpleName().toString().endsWith(DtoTarget.NAME_SUFFIX)) {
+        if (interfaceElement.getSimpleName().toString().endsWith(DtoTarget.DATA_SUFFIX)) {
             throw new DtoException(interfaceElement, "@Readable/@Writable " +
                 "interfaces may not have names ending with \"" +
-                DtoTarget.NAME_SUFFIX + "\"");
+                DtoTarget.DATA_SUFFIX + "\"");
         }
 
         final var readable = interfaceElement.getAnnotation(Readable.class);
