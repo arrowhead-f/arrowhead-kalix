@@ -274,6 +274,56 @@ public interface Future<V> {
     }
 
     /**
+     * Returns new {@code Future} that is completed after the value of this
+     * {@code Future} has become available and could be transformed into a
+     * result of type {@code Result<U>} by {@code mapper}.
+     * <p>
+     * In other words, this method performs the asynchronous counterpart to the
+     * following code:
+     * <pre>
+     *     Result&lt;V&gt; result0 = originalFutureOperation();
+     *     // Wait for result0 to become available.
+     *     Result&lt;U&gt; result1 = mapper.apply(result0);
+     *     return result1;
+     * </pre>
+     * Any exception thrown by {@code mapper} leads to the returned
+     * {@code Future} being failed with the same exception.
+     *
+     * @param <U>    The type of the value returned from the mapping function.
+     * @param mapper The mapping function to apply to the value of this
+     *               {@code Future}, if it becomes available.
+     * @return A {@code Future} that may eventually hold the result of applying
+     * a mapping function to the value of this {@code Future}, if it completes
+     * successfully.
+     * @throws NullPointerException If the mapping function is {@code null}.
+     */
+    default <U> Future<U> mapResult(final ThrowingFunction<Result<? super V>, Result<U>> mapper) {
+        Objects.requireNonNull(mapper);
+        final var source = this;
+        return new Future<>() {
+            @Override
+            public void onResult(final Consumer<Result<U>> consumer) {
+                source.onResult(result0 -> {
+                    Result<U> result1;
+                    try {
+                        result1 = mapper.apply(result0);
+
+                    }
+                    catch (final Throwable throwable) {
+                        result1 = Result.failure(throwable);
+                    }
+                    consumer.accept(result1);
+                });
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                source.cancel(mayInterruptIfRunning);
+            }
+        };
+    }
+
+    /**
      * Returns new {@code Future} that is completed when the {@code Future}
      * returned by {@code mapper} completes, which, in turn, is not executed
      * until this {@code Future} completes.
@@ -502,6 +552,74 @@ public interface Future<V> {
     }
 
     /**
+     * Returns new {@code Future} that is completed when the {@code Future}
+     * returned by {@code mapper} completes, which, in turn, is not executed
+     * until this {@code Future} completes.
+     * <p>
+     * The difference between this method and
+     * {@link #mapResult(ThrowingFunction)} is that the {@code mapper} provided
+     * here is expected to return a {@code Future} rather than a plain result.
+     * The returned {@code Future} completes after this {@code Future} and the
+     * {@code Future} returned by {@code mapper} have completed in sequence.
+     * <p>
+     * In other words, this method performs the asynchronous counterpart to the
+     * following code:
+     * <pre>
+     *     Result&lt;V&gt; result0 = originalFutureOperation();
+     *     // Wait for result0 to become available.
+     *     U value1 = mapper.apply(result0);
+     *     // Wait for value1 to become available.
+     *     return value1;
+     * </pre>
+     * Any exception thrown by {@code mapper} should lead to the returned
+     * future being failed with the same exception.
+     *
+     * @param <U>    The type of the value returned from the mapping function.
+     * @param mapper The mapping function to apply to the value of this
+     *               {@code Future}, if it becomes available.
+     * @return A {@code Future} that may eventually hold the result of applying
+     * a mapping function to the result of this {@code Future}, and then waiting
+     * for the {@code Future} returned by the mapper to complete.
+     * @throws NullPointerException If the mapping function is {@code null}.
+     */
+    default <U> Future<U> flatMapResult(final ThrowingFunction<Result<V>, ? extends Future<U>> mapper) {
+        Objects.requireNonNull(mapper);
+        final var source = this;
+        final var cancelTarget = new AtomicReference<Future<?>>(this);
+        return new Future<>() {
+            @Override
+            public void onResult(final Consumer<Result<U>> consumer) {
+                source.onResult(result0 -> {
+                    Throwable cause;
+                    if (cancelTarget.get() == null) {
+                        cause = new CancellationException();
+                    }
+                    else {
+                        try {
+                            final var future1 = mapper.apply(result0);
+                            future1.onResult(consumer);
+                            cancelTarget.set(future1);
+                            return;
+                        }
+                        catch (final Throwable throwable) {
+                            cause = throwable;
+                        }
+                    }
+                    consumer.accept(Result.failure(cause));
+                });
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                final var target = cancelTarget.getAndSet(null);
+                if (target != null) {
+                    target.cancel(mayInterruptIfRunning);
+                }
+            }
+        };
+    }
+
+    /**
      * Creates new {@code Future} that always succeeds with {@code null}.
      *
      * @return New {@code Future}.
@@ -530,6 +648,18 @@ public interface Future<V> {
      */
     static <V> Future<V> failure(final Throwable error) {
         return new FutureFailure<>(error);
+    }
+
+    /**
+     * Creates new {@code Future} that always completes with {@code result}.
+     *
+     * @param result Result to wrap in {@code Future}.
+     * @param <V>    Type of value that is being wrapped if {@code result} is
+     *               successful.
+     * @return New {@code Future}.
+     */
+    static <V> Future<V> of(final Result<V> result) {
+        return new FutureResult<>(result);
     }
 
     /**

@@ -26,6 +26,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.LinkedList;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.CancellationException;
 import java.util.function.Consumer;
@@ -56,6 +57,7 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
     }
 
     public void abort(final Throwable throwable) {
+        Objects.requireNonNull(throwable, "Expected throwable");
         if (isAborted) {
             throw new IllegalStateException("Already aborted", throwable);
         }
@@ -73,11 +75,8 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
     }
 
     public void append(final HttpContent content) {
-        if (isAborted) {
-            throw new IllegalStateException("Cannot append; body aborted");
-        }
-        if (isFinished) {
-            throw new IllegalStateException("Cannot append; body finished");
+        if (isAborted || isFinished) {
+            return;
         }
 
         // TODO: Ensure body size does not exceed some configured limit.
@@ -104,17 +103,19 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
         body.append(content);
     }
 
+    public void finish() {
+        finish(null);
+    }
+
     public void finish(final LastHttpContent lastContent) {
-        if (isAborted) {
-            throw new IllegalStateException("Cannot finish; body aborted");
-        }
-        if (isFinished) {
-            throw new IllegalStateException("Already finished");
+        if (isAborted || isFinished) {
+            return;
         }
         isFinished = true;
 
-        headers.add(lastContent.trailingHeaders());
-
+        if (lastContent != null) {
+            headers.add(lastContent.trailingHeaders());
+        }
         if (isBodyRequested) {
             body.finish();
         }

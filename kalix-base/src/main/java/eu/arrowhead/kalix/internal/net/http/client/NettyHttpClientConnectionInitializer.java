@@ -1,52 +1,52 @@
 package eu.arrowhead.kalix.internal.net.http.client;
 
+import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.util.annotation.Internal;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslContext;
-import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.util.concurrent.Future;
 
-import java.security.cert.X509Certificate;
 import java.util.Objects;
 
 @Internal
 public class NettyHttpClientConnectionInitializer extends ChannelInitializer<SocketChannel> {
-    private final NettyHttpClientConnection connection;
+    private final EncodingDescriptor[] encodings;
+    private final FutureHttpClientConnection futureConnection;
     private final SslContext sslContext;
 
     public NettyHttpClientConnectionInitializer(
-        final NettyHttpClientConnection connection,
+        final EncodingDescriptor[] encodings,
+        final FutureHttpClientConnection futureConnection,
         final SslContext sslContext)
     {
-        this.connection = Objects.requireNonNull(connection, "Expected connection");
+        this.encodings = Objects.requireNonNull(encodings, "Expected encodings");
+        if (encodings.length == 0) {
+            throw new IllegalArgumentException("Expected encodings.length > 0");
+        }
+        this.futureConnection = Objects.requireNonNull(futureConnection, "Expected futureConnection");
         this.sslContext = sslContext;
     }
 
     @Override
     protected void initChannel(final SocketChannel ch) throws Exception {
+        if (futureConnection.failIfCancelled()) {
+            ch.close();
+            return;
+        }
         final var pipeline = ch.pipeline();
+        SslHandler sslHandler = null;
         if (sslContext != null) {
-            final var sslHandler = sslContext.newHandler(ch.alloc());
-            final var chain = sslHandler.engine().getSession().getPeerCertificates();
-            final var x509chain = new X509Certificate[chain.length];
-            for (var i = 0; i < chain.length; ++i) {
-                final var certificate = chain[i];
-                if (!(certificate instanceof X509Certificate)) {
-                    throw new IllegalStateException("Only x.509 " +
-                        "certificates may be used by remote peers, " +
-                        "somehow the peer at " + connection.remoteSocketAddress() +
-                        " was able to use some other type: " + certificate);
-                }
-                x509chain[i] = (X509Certificate) chain[i];
-            }
-            connection.setCertificateChain(x509chain);
+            sslHandler = sslContext.newHandler(ch.alloc());
             pipeline.addLast(sslHandler);
         }
         pipeline
             //.addLast(new LoggingHandler(LogLevel.INFO))
             .addLast(new HttpClientCodec()) // TODO: Make message size restrictions configurable.
-            .addLast(new IdleStateHandler(10, 10, 15))
-            .addLast(new NettyHttpClientConnectionHandler(connection));
+            //.addLast(new IdleStateHandler(10, 10, 15))
+            .addLast(new NettyHttpClientConnectionHandler(encodings, futureConnection, sslHandler));
     }
 }

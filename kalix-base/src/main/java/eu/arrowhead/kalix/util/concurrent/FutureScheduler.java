@@ -296,7 +296,9 @@ public final class FutureScheduler {
     public synchronized Future<?> shutdown(final Duration timeout) {
         synchronized (FutureScheduler.class) {
             if (this == defaultScheduler && defaultSchedulerShutdownHook != null) {
-                Runtime.getRuntime().removeShutdownHook(defaultSchedulerShutdownHook);
+                if (Thread.currentThread() != defaultSchedulerShutdownHook) {
+                    Runtime.getRuntime().removeShutdownHook(defaultSchedulerShutdownHook);
+                }
             }
         }
         final var millis = timeout.toMillis();

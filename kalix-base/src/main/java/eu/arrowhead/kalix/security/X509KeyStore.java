@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.Collections;
 
 /**
@@ -59,6 +60,33 @@ public class X509KeyStore {
      */
     public PrivateKey privateKey() {
         return privateKey;
+    }
+
+    /**
+     * @return Public key associated with certificate returned by
+     * {@link #certificate()}.
+     */
+    public PublicKey publicKey() {
+        return certificate().getPublicKey();
+    }
+
+    /**
+     * @return X.690 DER encoded byte array of public key associated with the
+     * certificate returned by {@link #certificate()}.
+     * @see <a href="https://www.itu.int/rec/T-REC-X.690-201508-I/en">X.690 : Information technology - ASN.1 encoding rules: Specification of Basic Encoding Rules (BER), Canonical Encoding Rules (CER) and Distinguished Encoding Rules (DER)</a>
+     */
+    public byte[] publicKeyAsBytes() {
+        return publicKey().getEncoded();
+    }
+
+    /**
+     * @return Base64 representation of the X.690 DER encoded public key
+     * associated with the certificate returned by {@link #certificate()}.
+     * @see <a href="https://tools.ietf.org/html/rfc4648#section-4">RFC 4648, Section 4</a>
+     * @see <a href="https://www.itu.int/rec/T-REC-X.690-201508-I/en">X.690 : Information technology - ASN.1 encoding rules: Specification of Basic Encoding Rules (BER), Canonical Encoding Rules (CER) and Distinguished Encoding Rules (DER)</a>
+     */
+    public String publicKeyAsString() {
+        return Base64.getEncoder().encodeToString(publicKeyAsBytes());
     }
 
     /**

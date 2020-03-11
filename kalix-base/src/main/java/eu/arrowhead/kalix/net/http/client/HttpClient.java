@@ -2,7 +2,7 @@ package eu.arrowhead.kalix.net.http.client;
 
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.internal.net.NettyBootstraps;
-import eu.arrowhead.kalix.internal.net.http.client.NettyHttpClientConnection;
+import eu.arrowhead.kalix.internal.net.http.client.FutureHttpClientConnection;
 import eu.arrowhead.kalix.internal.net.http.client.NettyHttpClientConnectionInitializer;
 import eu.arrowhead.kalix.security.X509KeyStore;
 import eu.arrowhead.kalix.security.X509TrustStore;
@@ -32,7 +32,7 @@ public class HttpClient {
         bootstrap = NettyBootstraps.createBootstrapUsing(builder.scheduler != null
             ? builder.scheduler
             : FutureScheduler.getDefault());
-        encodings = builder.encodings;
+        encodings = Objects.requireNonNull(builder.encodings, "Expected encodings");
         if (encodings.length == 0) {
             throw new IllegalArgumentException("Expected encodings.length > 0");
         }
@@ -87,16 +87,13 @@ public class HttpClient {
     {
         Objects.requireNonNull(remoteSocketAddress, "Expected remoteSocketAddress");
 
-        final var connection = new NettyHttpClientConnection(encodings);
+        final var futureConnection = new FutureHttpClientConnection();
         return adapt(bootstrap.clone()
-            .handler(new NettyHttpClientConnectionInitializer(connection, sslContext))
+            .handler(new NettyHttpClientConnectionInitializer(encodings, futureConnection, sslContext))
             .connect(remoteSocketAddress, localSocketAddress != null
                 ? localSocketAddress
                 : this.localSocketAddress))
-            .map(channel -> {
-                connection.setChannel(channel);
-                return connection;
-            });
+            .flatMap(ignored -> futureConnection);
     }
 
     /**
@@ -115,7 +112,6 @@ public class HttpClient {
         final HttpClientRequest request)
     {
         Objects.requireNonNull(request, "Expected request");
-        request.header("connection", "close");
         return connect(remoteSocketAddress)
             .flatMap(connection -> connection.sendAndClose(request));
     }

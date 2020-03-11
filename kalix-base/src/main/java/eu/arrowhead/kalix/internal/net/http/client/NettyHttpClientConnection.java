@@ -7,7 +7,6 @@ import eu.arrowhead.kalix.dto.WriteException;
 import eu.arrowhead.kalix.internal.dto.binary.ByteBufWriter;
 import eu.arrowhead.kalix.internal.net.http.HttpMediaTypes;
 import eu.arrowhead.kalix.internal.util.concurrent.NettyFutures;
-import eu.arrowhead.kalix.net.http.HttpPeer;
 import eu.arrowhead.kalix.net.http.HttpVersion;
 import eu.arrowhead.kalix.net.http.client.HttpClientConnection;
 import eu.arrowhead.kalix.net.http.client.HttpClientRequest;
@@ -28,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.security.cert.X509Certificate;
 import java.util.LinkedList;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.CancellationException;
 import java.util.function.Consumer;
@@ -38,15 +38,26 @@ import static eu.arrowhead.kalix.internal.net.http.NettyHttpAdapters.adapt;
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
 
 @Internal
-public class NettyHttpClientConnection implements HttpClientConnection, HttpPeer {
+public class NettyHttpClientConnection implements HttpClientConnection {
+    private final X509Certificate[] certificateChain;
+    private final Channel channel;
     private final EncodingDescriptor[] encodings;
     private final Queue<FutureResponse> pendingResponseQueue = new LinkedList<>();
 
-    private Channel channel = null;
-    private X509Certificate[] certificateChain = null;
-
-    public NettyHttpClientConnection(final EncodingDescriptor[] encodings) {
-        this.encodings = encodings;
+    public NettyHttpClientConnection(
+        final EncodingDescriptor[] encodings,
+        final Channel channel,
+        final X509Certificate[] certificateChain)
+    {
+        this.certificateChain = certificateChain;
+        if (certificateChain != null && certificateChain.length == 0) {
+            throw new IllegalArgumentException("Expected certificateChain.length > 0");
+        }
+        this.channel = Objects.requireNonNull(channel, "Expected channel");
+        this.encodings = Objects.requireNonNull(encodings, "Expected encodings");
+        if (encodings.length == 0) {
+            throw new IllegalArgumentException("Expected encodings.length > 0");
+        }
     }
 
     @Override
@@ -74,8 +85,12 @@ public class NettyHttpClientConnection implements HttpClientConnection, HttpPeer
 
     @Override
     public Future<HttpClientResponse> send(final HttpClientRequest request) {
+        return send(request, true);
+    }
+
+    private Future<HttpClientResponse> send(final HttpClientRequest request, final boolean keepAlive) {
         try {
-            writeRequestToChannel(request);
+            writeRequestToChannel(request, keepAlive);
         }
         catch (final Throwable throwable) {
             return Future.failure(throwable);
@@ -87,12 +102,16 @@ public class NettyHttpClientConnection implements HttpClientConnection, HttpPeer
 
     @Override
     public Future<HttpClientResponse> sendAndClose(final HttpClientRequest request) {
-        return send(request)
-            .flatMap(response -> close().map(ignored -> response))
-            .flatMapError(fault -> close().map(ignored -> fault));
+        return send(request, false)
+            .flatMapResult(result -> {
+                if (channel.isActive()) {
+                    return close().mapResult(ignored -> result);
+                }
+                return Future.of(result);
+            });
     }
 
-    private void writeRequestToChannel(final HttpClientRequest request) throws WriteException, IOException {
+    private void writeRequestToChannel(final HttpClientRequest request, final boolean keepAlive) throws WriteException, IOException {
         final var body = request.body().orElse(null);
         final var headers = request.headers().unwrap();
         final var method = adapt(request.method().orElseThrow(() -> new IllegalArgumentException("Expected method")));
@@ -100,6 +119,7 @@ public class NettyHttpClientConnection implements HttpClientConnection, HttpPeer
         final var version = adapt(request.version().orElse(HttpVersion.HTTP_11));
 
         headers.set(HOST, remoteSocketAddress().getHostString());
+        HttpUtil.setKeepAlive(headers, version, keepAlive);
 
         final ByteBuf content;
         if (body == null) {
@@ -168,22 +188,6 @@ public class NettyHttpClientConnection implements HttpClientConnection, HttpPeer
      */
     public EncodingDescriptor[] encodings() {
         return encodings;
-    }
-
-    /**
-     * @param certificateChain The certificate chain, if any, that represents
-     *                         the remote host communicated with via this
-     *                         client.
-     */
-    public void setCertificateChain(final X509Certificate[] certificateChain) {
-        this.certificateChain = certificateChain;
-    }
-
-    /**
-     * @param channel The channel through which requests are to be sent.
-     */
-    public void setChannel(final Channel channel) {
-        this.channel = channel;
     }
 
     public boolean onResponseResult(final Result<HttpClientResponse> result) {
