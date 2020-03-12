@@ -21,7 +21,7 @@ public interface SystemDefinition {
     @JsonName("authenticationInfo")
     Optional<String> publicKeyBase64();
 
-    Instant createdAt();
+    String createdAt();
 
-    Instant updatedAt();
+    String updatedAt();
 }

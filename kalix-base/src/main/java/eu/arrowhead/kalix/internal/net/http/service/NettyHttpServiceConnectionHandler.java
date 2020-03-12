@@ -75,7 +75,7 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
             ));
         }
 
-        final var serviceRequestBody = new NettyHttpBodyReceiver(ctx.alloc(), encoding, request.headers());
+        final var serviceRequestBody = new NettyHttpBodyReceiver(ctx.alloc(), request.headers(), encoding);
         final var serviceRequest = new NettyHttpServiceRequest.Builder()
             .body(serviceRequestBody)
             .queryStringDecoder(queryStringDecoder)

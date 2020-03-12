@@ -121,42 +121,34 @@ public class DtoSpecificationFactory {
                 }
             }
 
-            if (property.isOptional()) {
-                switch (property.descriptor()) {
-                case LIST:
-                    constructor
-                        .addStatement("this.$1N = builder.$1N == null ? null : $2T.unmodifiableList(builder.$1N)",
-                            name, Collections.class);
-                    break;
+            switch (property.descriptor()) {
+            case ARRAY:
+                constructor.addStatement("this.$1N = builder.$1N == null " +
+                        "? new $2T{} : builder.$1N",
+                    name, inputTypeName);
+                break;
 
-                case MAP:
-                    constructor
-                        .addStatement("this.$1N = builder.$1N == null ? null : $2T.unmodifiableMap(builder.$1N)",
-                            name, Collections.class);
-                    break;
+            case LIST:
+                constructor.addStatement("this.$1N = builder.$1N == null || builder.$1N.size() == 0 " +
+                        "? $2T.emptyList() : $2T.unmodifiableList(builder.$1N)",
+                    name, Collections.class);
+                break;
 
-                default:
+            case MAP:
+                constructor.addStatement("this.$1N = builder.$1N == null || builder.$1N.size() == 0 " +
+                        "? $2T.emptyMap() : $2T.unmodifiableMap(builder.$1N)",
+                    name, Collections.class);
+                break;
+
+            default:
+                if (property.isOptional()) {
                     constructor.addStatement("this.$1N = builder.$1N", name);
-                    break;
                 }
-            }
-            else {
-                switch (property.descriptor()) {
-                case LIST:
-                    constructor.addStatement("this.$1N = $2T.unmodifiableList($3T.requireNonNull(builder.$1N))",
-                        name, Collections.class, Objects.class);
-                    break;
-
-                case MAP:
-                    constructor.addStatement("this.$1N = $2T.unmodifiableMap($3T.requireNonNull(builder.$1N))",
-                        name, Collections.class, Objects.class);
-                    break;
-
-                default:
-                    constructor.addStatement("this.$1N = $2T.requireNonNull(builder.$1N)",
+                else {
+                    constructor.addStatement("this.$1N = $2T.requireNonNull(builder.$1N, \"$1N\")",
                         name, Objects.class);
-                    break;
                 }
+                break;
             }
         });
 

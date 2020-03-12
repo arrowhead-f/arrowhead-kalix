@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.net.http.client;
 
+import eu.arrowhead.kalix.dto.DataEncoding;
 import eu.arrowhead.kalix.dto.DataWritable;
 import eu.arrowhead.kalix.net.http.HttpBodySender;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
@@ -18,6 +19,7 @@ public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
     private final Map<String, List<String>> queryParameters = new HashMap<>();
 
     private Object body = null;
+    private DataEncoding encoding = null;
     private HttpMethod method = null;
     private String uri = null;
     private HttpVersion version = null;
@@ -29,32 +31,45 @@ public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
 
     @Override
     public HttpClientRequest body(final byte[] byteArray) {
+        encoding = null;
         body = byteArray;
         return this;
     }
 
     @Override
-    public HttpClientRequest body(final DataWritable dto) {
-        body = dto;
+    public HttpClientRequest body(final DataEncoding encoding, final DataWritable data) {
+        this.encoding = encoding;
+        body = data;
         return this;
     }
 
     @Override
     public HttpClientRequest body(final Path path) {
+        encoding = null;
         body = path;
         return this;
     }
 
     @Override
     public HttpClientRequest body(final String string) {
+        encoding = null;
         body = string;
         return this;
     }
 
     @Override
     public HttpClientRequest clearBody() {
+        encoding = null;
         body = null;
         return this;
+    }
+
+    /**
+     * @return Encoding set with the most recent call to
+     * {@link #body(DataEncoding, DataWritable)}, if any.
+     */
+    public Optional<DataEncoding> encoding() {
+        return Optional.ofNullable(encoding);
     }
 
     /**

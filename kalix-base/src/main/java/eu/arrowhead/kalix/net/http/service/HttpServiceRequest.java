@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.net.http.service;
 
+import eu.arrowhead.kalix.dto.DataEncoding;
 import eu.arrowhead.kalix.dto.DataReadable;
 import eu.arrowhead.kalix.net.http.*;
 import eu.arrowhead.kalix.util.concurrent.FutureProgress;
@@ -15,6 +16,27 @@ import java.util.Optional;
  * The head and body of an incoming HTTP request.
  */
 public interface HttpServiceRequest extends HttpBodyReceiver {
+    /**
+     * Requests that the incoming HTTP body be collected and parsed, using an
+     * automatically chosen encoding, as an instance of the provided
+     * {@code class_}.
+     * <p>
+     * Note that only so-called Data Transfer Object (DTO) types may be decoded
+     * using this method. More details about such types can be read in the
+     * documentation for the {@link eu.arrowhead.kalix.dto} package.
+     * <p>
+     * Note also that a body can typically only be requested once via this
+     * interface. Any further requests will likely cause exceptions to be
+     * thrown.
+     *
+     * @param class_ Class to decode incoming HTTP body into.
+     * @param <R>    Type of {@code class_}.
+     * @return Future completed when the incoming HTTP body has been fully
+     * received and then decoded into an instance of {@code class_}.
+     * @throws IllegalStateException If the body has already been requested.
+     */
+    <R extends DataReadable> FutureProgress<R> bodyAs(final Class<R> class_);
+
     /**
      * Gets value of first header with given {@code name}, if any such.
      *
@@ -129,6 +151,14 @@ public interface HttpServiceRequest extends HttpBodyReceiver {
             @Override
             public <R extends DataReadable> FutureProgress<R> bodyAs(final Class<R> class_) {
                 return self.bodyAs(class_);
+            }
+
+            @Override
+            public <R extends DataReadable> FutureProgress<R> bodyAs(
+                final DataEncoding encoding,
+                final Class<R> class_)
+            {
+                return self.bodyAs(encoding, class_);
             }
 
             @Override

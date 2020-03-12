@@ -88,34 +88,6 @@ public final class JsonToken {
         return Instant.ofEpochSecond(integer, (long) ((number - integer) * 1e9));
     }
 
-    public LocalDate readLocalDate(final BinaryReader source) {
-        return LocalDate.parse(readRawString(source));
-    }
-
-    public LocalDate readLocalDateNumber(final BinaryReader source) {
-        final var number = Double.parseDouble(readRawString(source));
-        return LocalDate.ofEpochDay((long) number);
-    }
-
-    public LocalDateTime readLocalDateTime(final BinaryReader source) {
-        return LocalDateTime.parse(readRawString(source));
-    }
-
-    public LocalDateTime readLocalDateTimeNumber(final BinaryReader source) {
-        final var number = Double.parseDouble(readRawString(source));
-        final long integer = (long) number;
-        return LocalDateTime.ofEpochSecond(integer, (int) ((number - integer) * 1e9), ZoneOffset.UTC);
-    }
-
-    public LocalTime readLocalTime(final BinaryReader source) {
-        return LocalTime.parse(readRawString(source));
-    }
-
-    public LocalTime readLocalTimeNumber(final BinaryReader source) {
-        final var number = Double.parseDouble(readRawString(source));
-        return LocalTime.ofNanoOfDay((long) (number * 1e9));
-    }
-
     public long readLong(final BinaryReader source) {
         return Long.parseLong(requireNotHex(readRawString(source)));
     }
@@ -129,7 +101,7 @@ public final class JsonToken {
     }
 
     public OffsetDateTime readOffsetDateTimeNumber(final BinaryReader source) {
-        return OffsetDateTime.ofInstant(readInstantNumber(source), ZoneOffset.UTC);
+        return OffsetDateTime.ofInstant(readInstantNumber(source), ZoneId.systemDefault());
     }
 
     public OffsetTime readOffsetTime(final BinaryReader source) {
@@ -137,7 +109,7 @@ public final class JsonToken {
     }
 
     public OffsetTime readOffsetTimeNumber(final BinaryReader source) {
-        return OffsetTime.of(readLocalTimeNumber(source), ZoneOffset.UTC);
+        return OffsetTime.ofInstant(readInstant(source), ZoneId.systemDefault());
     }
 
     public Period readPeriod(final BinaryReader source) {

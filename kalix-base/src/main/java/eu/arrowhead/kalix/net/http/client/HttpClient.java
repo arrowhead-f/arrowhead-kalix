@@ -1,6 +1,5 @@
 package eu.arrowhead.kalix.net.http.client;
 
-import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.internal.net.NettyBootstraps;
 import eu.arrowhead.kalix.internal.net.http.client.FutureHttpClientConnection;
 import eu.arrowhead.kalix.internal.net.http.client.NettyHttpClientConnectionInitializer;
@@ -24,7 +23,6 @@ import static eu.arrowhead.kalix.internal.util.concurrent.NettyFutures.adapt;
  */
 public class HttpClient {
     private final Bootstrap bootstrap;
-    private final EncodingDescriptor[] encodings;
     private final InetSocketAddress localSocketAddress;
     private final SslContext sslContext;
 
@@ -32,10 +30,6 @@ public class HttpClient {
         bootstrap = NettyBootstraps.createBootstrapUsing(builder.scheduler != null
             ? builder.scheduler
             : FutureScheduler.getDefault());
-        encodings = Objects.requireNonNull(builder.encodings, "Expected encodings");
-        if (encodings.length == 0) {
-            throw new IllegalArgumentException("Expected encodings.length > 0");
-        }
         localSocketAddress = builder.localSocketAddress;
 
         if (builder.isInsecure) {
@@ -89,7 +83,7 @@ public class HttpClient {
 
         final var futureConnection = new FutureHttpClientConnection();
         return adapt(bootstrap.clone()
-            .handler(new NettyHttpClientConnectionInitializer(encodings, futureConnection, sslContext))
+            .handler(new NettyHttpClientConnectionInitializer(futureConnection, sslContext))
             .connect(remoteSocketAddress, localSocketAddress != null
                 ? localSocketAddress
                 : this.localSocketAddress))
@@ -120,37 +114,11 @@ public class HttpClient {
      * Builder useful for creating {@link HttpClient} instances.
      */
     public static class Builder {
-        private EncodingDescriptor[] encodings;
         private InetSocketAddress localSocketAddress;
         private X509KeyStore keyStore;
         private X509TrustStore trustStore;
         private boolean isInsecure = false;
         private FutureScheduler scheduler;
-
-        /**
-         * Declares what data encodings this client can read and write.
-         * <b>Must be specified.</b>
-         * <p>
-         * While the created {@link HttpClient} will prevent messages claimed
-         * to be encoded with other encodings from being received, stating that
-         * an encoding can be read and written does not itself guarantee it.
-         * It is up to the {@link HttpClient} creator to ensure that such
-         * capabilities are indeed available. For most intents and purposes,
-         * the most adequate way of achieving this is by using Data Transfer
-         * Objects (DTOs), more of which you can read about in the package
-         * documentation for the {@code eu.arrowhead.kalix.dto} package.
-         *
-         * @param encodings Encodings declared to be supported. At least one
-         *                  must be provided. The first specified encoding is
-         *                  used by default when sent requests do not include
-         *                  enough details about their bodies.
-         * @return This builder.
-         * @see eu.arrowhead.kalix.dto
-         */
-        public final Builder encodings(final EncodingDescriptor... encodings) {
-            this.encodings = encodings.clone();
-            return this;
-        }
 
         /**
          * Ensures that the identified local network interface is used by

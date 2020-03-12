@@ -51,6 +51,15 @@ public class Result<V> {
     }
 
     /**
+     * Creates new successful {@code Result} with {@code null} value.
+     *
+     * @return New {@code Result}.
+     */
+    public static Result<?> done() {
+        return success(null);
+    }
+
+    /**
      * @return {@code true} if this {@code Result} contains a value.
      */
     public boolean isSuccess() {
@@ -127,7 +136,7 @@ public class Result<V> {
      * @return New result containing either output of mapping or an error
      * passed on from this result.
      */
-    public <U> Result<U> map(final Function<? super V, ? extends U> mapper) {
+    public <U> Result<U> map(final Function<? super V, U> mapper) {
         if (isSuccess()) {
             return success(mapper.apply(value()));
         }

@@ -46,14 +46,18 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
     private boolean isBodyRequested = false;
     private boolean isFinished = false;
 
+    public NettyHttpBodyReceiver(final ByteBufAllocator alloc, final HttpHeaders headers) {
+        this(alloc, headers, null);
+    }
+
     public NettyHttpBodyReceiver(
         final ByteBufAllocator alloc,
-        final EncodingDescriptor encoding,
-        final HttpHeaders headers)
+        final HttpHeaders headers,
+        final EncodingDescriptor encoding)
     {
-        this.alloc = alloc;
+        this.alloc = Objects.requireNonNull(alloc, "Expected alloc");
+        this.headers = Objects.requireNonNull(headers, "Expected headers");
         this.encoding = encoding;
-        this.headers = headers;
     }
 
     public void abort(final Throwable throwable) {
@@ -121,14 +125,21 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
         }
     }
 
-    @Override
     public <R extends DataReadable> FutureProgress<R> bodyAs(final Class<R> class_) {
+        if (encoding == null) {
+            throw new IllegalStateException("No default encoding has been set");
+        }
         final var dataEncoding = encoding.asDataEncoding()
             .orElseThrow(() -> new UnsupportedOperationException("" +
                 "There is no DTO support for the \"" + encoding +
                 "\" encoding; request body cannot be decoded"));
 
         return handleBodyRequest(() -> new FutureBodyAs<>(alloc, headers, class_, dataEncoding));
+    }
+
+    @Override
+    public <R extends DataReadable> FutureProgress<R> bodyAs(final DataEncoding encoding, final Class<R> class_) {
+        return handleBodyRequest(() -> new FutureBodyAs<>(alloc, headers, class_, encoding));
     }
 
     @Override

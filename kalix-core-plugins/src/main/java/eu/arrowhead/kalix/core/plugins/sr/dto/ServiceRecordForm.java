@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.core.plugins.sr.dto;
 
+import eu.arrowhead.kalix.descriptor.InterfaceDescriptor;
 import eu.arrowhead.kalix.descriptor.SecurityDescriptor;
 import eu.arrowhead.kalix.dto.Writable;
 import eu.arrowhead.kalix.dto.json.JsonName;
@@ -21,15 +22,15 @@ public interface ServiceRecordForm {
     String basePath();
 
     @JsonName("endOfValidity")
-    Optional<Instant> expiresAt();
+    Optional<String> expiresAt();
 
     @JsonName("secure")
     Optional<SecurityDescriptor> security();
 
-    Optional<Map<String, String>> metadata();
+    Map<String, String> metadata();
 
     Optional<Integer> version();
 
     @JsonName("interfaces")
-    List<InterfaceDefinition> supportedInterfaces();
+    List<InterfaceDescriptor> supportedInterfaces();
 }

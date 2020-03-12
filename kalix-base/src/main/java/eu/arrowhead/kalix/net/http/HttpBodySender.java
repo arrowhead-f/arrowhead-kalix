@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.net.http;
 
+import eu.arrowhead.kalix.dto.DataEncoding;
 import eu.arrowhead.kalix.dto.DataWritable;
 
 import java.nio.file.Path;
@@ -33,13 +34,14 @@ public interface HttpBodySender<Self> {
      * for the {@code @Writable} annotation for more information about writable
      * data transfer objects.
      *
-     * @param dto Data transfer object to send to receiver of the body.
+     * @param encoding Encoding to use when encoding {@code data}.
+     * @param data     Data transfer object to send to receiver of the body.
      * @return This.
      * @throws NullPointerException If {@code encoding} or {@code body} is
      *                              {@code null}.
      * @see eu.arrowhead.kalix.dto.Writable @Writable
      */
-    Self body(final DataWritable dto);
+    Self body(final DataEncoding encoding, final DataWritable data);
 
     /**
      * Sets outgoing HTTP body, replacing any previously set such.

@@ -1,6 +1,7 @@
 package eu.arrowhead.kalix.internal.net.http.service;
 
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
+import eu.arrowhead.kalix.dto.DataEncoding;
 import eu.arrowhead.kalix.dto.DataWritable;
 import eu.arrowhead.kalix.dto.DataWriter;
 import eu.arrowhead.kalix.dto.WriteException;
@@ -34,6 +35,7 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
     private final io.netty.handler.codec.http.HttpHeaders nettyHeaders;
 
     private Object body = null;
+    private DataEncoding dataEncoding = null;
     private HttpHeaders headers = null;
     private HttpStatus status = null;
     private HttpVersion version = null;
@@ -62,9 +64,11 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
             content = Unpooled.wrappedBuffer((byte[]) body);
         }
         else if (body instanceof DataWritable) {
-            final var dataEncoding = encoding.asDataEncoding().orElseThrow(() -> new UnsupportedOperationException("" +
-                "There is no DTO support for the \"" + encoding +
-                "\" encoding; response body cannot be encoded"));
+            if (dataEncoding == null) {
+                dataEncoding = encoding.asDataEncoding().orElseThrow(() -> new UnsupportedOperationException("" +
+                    "There is no DTO support for the \"" + encoding +
+                    "\" encoding; response body cannot be encoded"));
+            }
             content = channel.alloc().buffer();
             DataWriter.write((DataWritable) body, dataEncoding, new ByteBufWriter(content));
         }
@@ -107,9 +111,16 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
     }
 
     @Override
-    public HttpServiceResponse body(final DataWritable dto) {
-        body = dto;
+    public HttpServiceResponse body(final DataWritable data) {
+        body = data;
         return this;
+    }
+
+    @Override
+    public HttpServiceResponse body(final DataEncoding encoding, final DataWritable data) {
+        dataEncoding = encoding;
+        body = data;
+        return null;
     }
 
     @Override

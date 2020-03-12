@@ -40,9 +40,6 @@ public class DtoPropertyFactory {
     // Temporal types.
     private final DeclaredType durationType;
     private final DeclaredType instantType;
-    private final DeclaredType localDateType;
-    private final DeclaredType localDateTimeType;
-    private final DeclaredType localTimeType;
     private final DeclaredType monthDayType;
     private final DeclaredType offsetDateTimeType;
     private final DeclaredType offsetTimeType;
@@ -82,9 +79,6 @@ public class DtoPropertyFactory {
 
         durationType = getDeclaredType.apply(Duration.class);
         instantType = getDeclaredType.apply(Instant.class);
-        localDateType = getDeclaredType.apply(LocalDate.class);
-        localDateTimeType = getDeclaredType.apply(LocalDateTime.class);
-        localTimeType = getDeclaredType.apply(LocalTime.class);
         monthDayType = getDeclaredType.apply(MonthDay.class);
         offsetDateTimeType = getDeclaredType.apply(OffsetDateTime.class);
         offsetTimeType = getDeclaredType.apply(OffsetTime.class);
@@ -200,15 +194,6 @@ public class DtoPropertyFactory {
         }
         if (typeUtils.isSameType(integerType, type)) {
             return toElementType(type, DtoDescriptor.INTEGER_BOXED);
-        }
-        if (typeUtils.isSameType(localDateType, type)) {
-            return toElementType(type, DtoDescriptor.LOCAL_DATE);
-        }
-        if (typeUtils.isSameType(localDateTimeType, type)) {
-            return toElementType(type, DtoDescriptor.LOCAL_DATE_TIME);
-        }
-        if (typeUtils.isSameType(localTimeType, type)) {
-            return toElementType(type, DtoDescriptor.LOCAL_TIME);
         }
         if (typeUtils.isSameType(longType, type)) {
             return toElementType(type, DtoDescriptor.LONG_BOXED);

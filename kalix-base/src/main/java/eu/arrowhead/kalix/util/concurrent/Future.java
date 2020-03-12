@@ -128,7 +128,7 @@ public interface Future<V> {
      * successfully.
      * @throws NullPointerException If the mapping function is {@code null}.
      */
-    default <U> Future<U> map(final ThrowingFunction<? super V, ? extends U> mapper) {
+    default <U> Future<U> map(final ThrowingFunction<? super V, U> mapper) {
         Objects.requireNonNull(mapper);
         final var source = this;
         return new Future<>() {
@@ -297,7 +297,7 @@ public interface Future<V> {
      * successfully.
      * @throws NullPointerException If the mapping function is {@code null}.
      */
-    default <U> Future<U> mapResult(final ThrowingFunction<Result<? super V>, Result<U>> mapper) {
+    default <U> Future<U> mapResult(final ThrowingFunction<Result<V>, Result<U>> mapper) {
         Objects.requireNonNull(mapper);
         final var source = this;
         return new Future<>() {
@@ -503,7 +503,7 @@ public interface Future<V> {
      * for the {@code Future} returned by the mapper to complete.
      * @throws NullPointerException If the mapping function is {@code null}.
      */
-    default Future<V> flatMapError(final ThrowingFunction<Throwable, ? extends Future<? extends Throwable>> mapper) {
+    default Future<V> flatMapError(final ThrowingFunction<Throwable, ? extends Future<Throwable>> mapper) {
         Objects.requireNonNull(mapper);
         final var source = this;
         final var cancelTarget = new AtomicReference<Future<?>>(this);

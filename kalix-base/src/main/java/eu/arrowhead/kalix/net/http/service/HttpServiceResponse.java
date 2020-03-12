@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.net.http.service;
 
+import eu.arrowhead.kalix.dto.DataWritable;
 import eu.arrowhead.kalix.net.http.HttpBodySender;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpStatus;
@@ -11,6 +12,23 @@ import java.util.Optional;
  * An outgoing HTTP response, to be sent by an {@link HttpService}.
  */
 public interface HttpServiceResponse extends HttpBodySender<HttpServiceResponse> {
+    /**
+     * Sets outgoing HTTP body, replacing any previously set such.
+     * <p>
+     * The provided writable data transfer object is scheduled for encoding,
+     * using the encoding chosen automatically for this response, and
+     * transmission to the receiver of the body. Please refer to the Javadoc
+     * for the {@code @Writable} annotation for more information about writable
+     * data transfer objects.
+     *
+     * @param data Data transfer object to send to receiver of the body.
+     * @return This.
+     * @throws NullPointerException If {@code encoding} or {@code body} is
+     *                              {@code null}.
+     * @see eu.arrowhead.kalix.dto.Writable @Writable
+     */
+    HttpServiceResponse body(final DataWritable data);
+
     /**
      * Removes all currently set headers.
      *

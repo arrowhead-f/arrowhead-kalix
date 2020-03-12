@@ -1,6 +1,7 @@
 package eu.arrowhead.kalix.internal.net.http;
 
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
+import eu.arrowhead.kalix.dto.DataEncoding;
 import eu.arrowhead.kalix.util.annotation.Internal;
 
 import java.util.List;
@@ -346,6 +347,19 @@ public class HttpMediaTypes {
             nx += 1;
         }
         return true;
+    }
+
+    /**
+     * Converts given {@code encoding} to a media type.
+     *
+     * @param encoding DTO encoding to convert.
+     * @return Media type string.
+     */
+    public static String toMediaType(final DataEncoding encoding) {
+        if (encoding == DataEncoding.JSON) {
+            return "application/json";
+        }
+        throw new IllegalStateException("Supported DTO encoding could not be converted to media type");
     }
 
     /**

@@ -16,6 +16,10 @@ public class JsonTokenReader {
         offset = 0;
     }
 
+    public boolean atEnd() {
+        return offset == tokens.size();
+    }
+
     public JsonToken next() {
         return tokens.get(offset++);
     }

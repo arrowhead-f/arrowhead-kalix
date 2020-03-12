@@ -1,6 +1,6 @@
 package eu.arrowhead.kalix.internal.net.http.client;
 
-import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
+import eu.arrowhead.kalix.dto.DataEncoding;
 import eu.arrowhead.kalix.dto.DataReadable;
 import eu.arrowhead.kalix.internal.net.http.NettyHttpBodyReceiver;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
@@ -20,26 +20,20 @@ import static eu.arrowhead.kalix.internal.net.http.NettyHttpAdapters.adapt;
 @Internal
 public class NettyHttpClientResponse implements HttpClientResponse {
     private final NettyHttpBodyReceiver body;
-    private final EncodingDescriptor encoding;
     private final HttpResponse response;
 
     private HttpHeaders headers = null;
     private HttpStatus status = null;
     private HttpVersion version = null;
 
-    public NettyHttpClientResponse(
-        final NettyHttpBodyReceiver body,
-        final EncodingDescriptor encoding,
-        final HttpResponse response)
-    {
+    public NettyHttpClientResponse(final NettyHttpBodyReceiver body, final HttpResponse response) {
         this.body = Objects.requireNonNull(body, "Expected body");
-        this.encoding = Objects.requireNonNull(encoding, "Expected encoding");
         this.response = Objects.requireNonNull(response, "Expected response");
     }
 
     @Override
-    public <R extends DataReadable> FutureProgress<R> bodyAs(final Class<R> class_) {
-        return body.bodyAs(class_);
+    public <R extends DataReadable> FutureProgress<R> bodyAs(final DataEncoding encoding, final Class<R> class_) {
+        return body.bodyAs(encoding, class_);
     }
 
     @Override
@@ -60,11 +54,6 @@ public class NettyHttpClientResponse implements HttpClientResponse {
     @Override
     public FutureProgress<Path> bodyTo(final Path path, final boolean append) {
         return body.bodyTo(path, append);
-    }
-
-    @Override
-    public EncodingDescriptor encoding() {
-        return encoding;
     }
 
     @Override

@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.net.http;
 
+import eu.arrowhead.kalix.dto.DataEncoding;
 import eu.arrowhead.kalix.dto.DataReadable;
 import eu.arrowhead.kalix.util.concurrent.FutureProgress;
 
@@ -18,17 +19,18 @@ public interface HttpBodyReceiver {
      * using this method. More details about such types can be read in the
      * documentation for the {@link eu.arrowhead.kalix.dto} package.
      * <p>
-     * Note that a body can typically only be requested once via this
+     * Note also that a body can typically only be requested once via this
      * interface. Any further requests will likely cause exceptions to be
      * thrown.
      *
+     * @param encoding Encoding to use when decoding incoming HTTP body.
      * @param class_   Class to decode incoming HTTP body into.
      * @param <R>      Type of {@code class_}.
      * @return Future completed when the incoming HTTP body has been fully
      * received and then decoded into an instance of {@code class_}.
      * @throws IllegalStateException If the body has already been requested.
      */
-    <R extends DataReadable> FutureProgress<R> bodyAs(final Class<R> class_);
+    <R extends DataReadable> FutureProgress<R> bodyAs(final DataEncoding encoding, final Class<R> class_);
 
     /**
      * Requests that the incoming HTTP body be collected into a regular Java

@@ -1,6 +1,5 @@
 package eu.arrowhead.kalix.internal.net.http.client;
 
-import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.dto.DataWritable;
 import eu.arrowhead.kalix.dto.DataWriter;
 import eu.arrowhead.kalix.dto.WriteException;
@@ -41,11 +40,9 @@ import static io.netty.handler.codec.http.HttpHeaderNames.*;
 public class NettyHttpClientConnection implements HttpClientConnection {
     private final X509Certificate[] certificateChain;
     private final Channel channel;
-    private final EncodingDescriptor[] encodings;
     private final Queue<FutureResponse> pendingResponseQueue = new LinkedList<>();
 
     public NettyHttpClientConnection(
-        final EncodingDescriptor[] encodings,
         final Channel channel,
         final X509Certificate[] certificateChain)
     {
@@ -54,10 +51,6 @@ public class NettyHttpClientConnection implements HttpClientConnection {
             throw new IllegalArgumentException("Expected certificateChain.length > 0");
         }
         this.channel = Objects.requireNonNull(channel, "Expected channel");
-        this.encodings = Objects.requireNonNull(encodings, "Expected encodings");
-        if (encodings.length == 0) {
-            throw new IllegalArgumentException("Expected encodings.length > 0");
-        }
     }
 
     @Override
@@ -130,20 +123,11 @@ public class NettyHttpClientConnection implements HttpClientConnection {
         }
         else if (body instanceof DataWritable) {
             final var contentType = headers.get(CONTENT_TYPE);
-            final var encoding = HttpMediaTypes.findEncodingCompatibleWithContentType(encodings, contentType)
-                .orElseThrow(() -> new UnsupportedOperationException("" +
-                    "The content-type \"" + contentType + "\" is not compatible " +
-                    "with eny encoding declared for the HTTP client owning this " +
-                    "connection " + Stream.of(encodings)
-                    .map(EncodingDescriptor::toString)
-                    .collect(Collectors.joining(", ", "(", ")."))));
-
-            final var dataEncoding = encoding.asDataEncoding().orElseThrow(() -> new UnsupportedOperationException("" +
-                "There is no DTO support for the \"" + encoding +
-                "\" encoding; request body cannot be encoded"));
+            final var encoding = request.encoding().orElseThrow(() -> new IllegalStateException("" +
+                "DTO body set without encoding being specified"));
 
             content = channel.alloc().buffer();
-            DataWriter.write((DataWritable) body, dataEncoding, new ByteBufWriter(content));
+            DataWriter.write((DataWritable) body, encoding, new ByteBufWriter(content));
 
             final var mediaType = HttpMediaTypes.toMediaType(encoding);
             if (!headers.contains(ACCEPT)) {
@@ -181,13 +165,6 @@ public class NettyHttpClientConnection implements HttpClientConnection {
     @Override
     public Future<?> close() {
         return NettyFutures.adapt(channel.close());
-    }
-
-    /**
-     * @return Descriptors of supported encodings.
-     */
-    public EncodingDescriptor[] encodings() {
-        return encodings;
     }
 
     public boolean onResponseResult(final Result<HttpClientResponse> result) {

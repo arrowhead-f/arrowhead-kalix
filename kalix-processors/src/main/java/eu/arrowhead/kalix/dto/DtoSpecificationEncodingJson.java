@@ -37,6 +37,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
 
     private void implementReadMethodsFor(final DtoTarget target, final TypeSpec.Builder implementation) throws DtoException {
         final var dataTypeName = target.dataTypeName();
+        final var dataSimpleName = target.dataSimpleName();
 
         implementation.addMethod(MethodSpec.methodBuilder("readJson")
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
@@ -97,24 +98,28 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         if (hasNumber) {
             builder
                 .beginControlFlow("catch (final $T ignored)", NumberFormatException.class)
-                .addStatement("error = \"Invalid number\"")
+                .addStatement("error = \"($N) Invalid number\"", dataSimpleName)
                 .endControlFlow();
         }
         if (hasMandatory) {
             builder
                 .beginControlFlow("catch (final $T exception)", NullPointerException.class)
-                .addStatement("error = \"Mandatory field `\" + exception.getMessage() + \"` missing in object\"")
+                .addStatement("error = \"($N) Mandatory field `\" + exception.getMessage() + \"` missing in object\"",
+                    dataSimpleName)
                 .endControlFlow();
         }
         if (hasEnum) {
             builder
                 .beginControlFlow("catch (final $T exception)", IllegalArgumentException.class)
-                .addStatement("error = exception.getMessage()")
+                .addStatement("error = \"($N) \" + exception.getMessage()", dataSimpleName)
                 .endControlFlow();
         }
 
-        builder.addCode("throw new $1T($2T.JSON, error, token.readString(source), token.begin());\n",
-            ReadException.class, DataEncoding.class);
+        builder
+            .addStatement("final var atEnd = reader.atEnd()")
+            .addStatement("throw new $1T($2T.JSON, error, atEnd " +
+                    "? \"{\" : token.readString(source), atEnd ? 0 : token.begin())",
+                ReadException.class, DataEncoding.class);
 
         implementation.addMethod(builder.build());
     }
@@ -178,18 +183,6 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
 
         case INTERFACE:
             readInterface((DtoInterface) type, assignment, builder);
-            break;
-
-        case LOCAL_DATE:
-            readTemporal(LocalDate.class, descriptor.isNumber(), assignment, builder);
-            break;
-
-        case LOCAL_DATE_TIME:
-            readTemporal(LocalDateTime.class, descriptor.isNumber(), assignment, builder);
-            break;
-
-        case LOCAL_TIME:
-            readTemporal(LocalTime.class, descriptor.isNumber(), assignment, builder);
             break;
 
         case LONG_BOXED:
@@ -479,9 +472,6 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
 
         case DURATION:
         case INSTANT:
-        case LOCAL_DATE:
-        case LOCAL_DATE_TIME:
-        case LOCAL_TIME:
         case MONTH_DAY:
         case OFFSET_DATE_TIME:
         case OFFSET_TIME:

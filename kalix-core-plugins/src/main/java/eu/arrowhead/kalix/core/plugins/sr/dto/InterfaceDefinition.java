@@ -1,10 +1,9 @@
 package eu.arrowhead.kalix.core.plugins.sr.dto;
 
+import eu.arrowhead.kalix.descriptor.InterfaceDescriptor;
 import eu.arrowhead.kalix.dto.Readable;
 import eu.arrowhead.kalix.dto.Writable;
 import eu.arrowhead.kalix.dto.json.JsonName;
-
-import java.time.Instant;
 
 @Readable
 @Writable
@@ -12,9 +11,9 @@ public interface InterfaceDefinition {
     long id();
 
     @JsonName("interfaceName")
-    String name();
+    InterfaceDescriptor name();
 
-    Instant createdAt();
+    String createdAt();
 
-    Instant updatedAt();
+    String updatedAt();
 }

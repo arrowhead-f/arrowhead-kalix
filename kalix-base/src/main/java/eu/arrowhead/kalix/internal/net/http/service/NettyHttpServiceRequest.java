@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.internal.net.http.service;
 
+import eu.arrowhead.kalix.dto.DataEncoding;
 import eu.arrowhead.kalix.dto.DataReadable;
 import eu.arrowhead.kalix.internal.net.http.NettyHttpBodyReceiver;
 import eu.arrowhead.kalix.internal.net.http.NettyHttpPeer;
@@ -42,7 +43,12 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
 
     @Override
     public <R extends DataReadable> FutureProgress<R> bodyAs(final Class<R> class_) {
-        return body.bodyAs(class_);
+        return null;
+    }
+
+    @Override
+    public <R extends DataReadable> FutureProgress<R> bodyAs(final DataEncoding encoding, final Class<R> class_) {
+        return body.bodyAs(encoding, class_);
     }
 
     @Override

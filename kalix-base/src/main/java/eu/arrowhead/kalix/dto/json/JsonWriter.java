@@ -39,18 +39,6 @@ public final class JsonWriter {
         target.write(instant.toString().getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    public static void write(final LocalDate localDate, final BinaryWriter target) {
-        target.write(localDate.toString().getBytes(StandardCharsets.ISO_8859_1));
-    }
-
-    public static void write(final LocalDateTime localDateTime, final BinaryWriter target) {
-        target.write(localDateTime.toString().getBytes(StandardCharsets.ISO_8859_1));
-    }
-
-    public static void write(final LocalTime localTime, final BinaryWriter target) {
-        target.write(localTime.toString().getBytes(StandardCharsets.ISO_8859_1));
-    }
-
     public static void write(final MonthDay monthDay, final BinaryWriter target) {
         target.write(monthDay.toString().getBytes(StandardCharsets.ISO_8859_1));
     }

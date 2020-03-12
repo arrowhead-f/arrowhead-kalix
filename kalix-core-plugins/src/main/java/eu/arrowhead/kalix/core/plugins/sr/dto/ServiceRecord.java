@@ -7,6 +7,7 @@ import eu.arrowhead.kalix.dto.json.JsonName;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Readable
 public interface ServiceRecord {
@@ -21,7 +22,7 @@ public interface ServiceRecord {
     String basePath();
 
     @JsonName("endOfValidity")
-    Instant expiresAt();
+    Optional<String> expiresAt();
 
     @JsonName("secure")
     SecurityDescriptor security();
@@ -31,9 +32,9 @@ public interface ServiceRecord {
     int version();
 
     @JsonName("interfaces")
-    List<InterfaceDefinition> supportedInterfaces();
+    InterfaceDefinition[] supportedInterfaces();
 
-    Instant createdAt();
+    String createdAt();
 
-    Instant updatedAt();
+    String updatedAt();
 }

@@ -14,19 +14,13 @@ import java.util.Objects;
 
 @Internal
 public class NettyHttpClientConnectionInitializer extends ChannelInitializer<SocketChannel> {
-    private final EncodingDescriptor[] encodings;
     private final FutureHttpClientConnection futureConnection;
     private final SslContext sslContext;
 
     public NettyHttpClientConnectionInitializer(
-        final EncodingDescriptor[] encodings,
         final FutureHttpClientConnection futureConnection,
         final SslContext sslContext)
     {
-        this.encodings = Objects.requireNonNull(encodings, "Expected encodings");
-        if (encodings.length == 0) {
-            throw new IllegalArgumentException("Expected encodings.length > 0");
-        }
         this.futureConnection = Objects.requireNonNull(futureConnection, "Expected futureConnection");
         this.sslContext = sslContext;
     }
@@ -47,6 +41,6 @@ public class NettyHttpClientConnectionInitializer extends ChannelInitializer<Soc
             //.addLast(new LoggingHandler(LogLevel.INFO))
             .addLast(new HttpClientCodec()) // TODO: Make message size restrictions configurable.
             //.addLast(new IdleStateHandler(10, 10, 15))
-            .addLast(new NettyHttpClientConnectionHandler(encodings, futureConnection, sslHandler));
+            .addLast(new NettyHttpClientConnectionHandler(futureConnection, sslHandler));
     }
 }

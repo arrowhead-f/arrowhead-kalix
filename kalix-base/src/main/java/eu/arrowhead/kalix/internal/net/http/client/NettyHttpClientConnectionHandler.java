@@ -1,9 +1,6 @@
 package eu.arrowhead.kalix.internal.net.http.client;
 
-import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
-import eu.arrowhead.kalix.internal.net.http.HttpMediaTypes;
 import eu.arrowhead.kalix.internal.net.http.NettyHttpBodyReceiver;
-import eu.arrowhead.kalix.net.http.client.HttpClientResponseException;
 import eu.arrowhead.kalix.util.Result;
 import eu.arrowhead.kalix.util.annotation.Internal;
 import io.netty.channel.ChannelHandlerContext;
@@ -13,12 +10,9 @@ import io.netty.handler.ssl.SslHandler;
 
 import java.security.cert.X509Certificate;
 import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Internal
 public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandler<HttpObject> {
-    private final EncodingDescriptor[] encodings;
     private final SslHandler sslHandler;
 
     private FutureHttpClientConnection futureConnection;
@@ -26,14 +20,9 @@ public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandle
     private NettyHttpBodyReceiver body = null;
 
     public NettyHttpClientConnectionHandler(
-        final EncodingDescriptor[] encodings,
         final FutureHttpClientConnection futureConnection,
         final SslHandler sslHandler)
     {
-        this.encodings = Objects.requireNonNull(encodings, "Expected encodings");
-        if (encodings.length == 0) {
-            throw new IllegalArgumentException("Expected encodings.length > 0");
-        }
         this.futureConnection = Objects.requireNonNull(futureConnection, "Expected connection");
         this.sslHandler = sslHandler;
     }
@@ -64,13 +53,13 @@ public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandle
                         }
                         x509chain[i] = (X509Certificate) chain[i];
                     }
-                    connection = new NettyHttpClientConnection(encodings, ctx.channel(), x509chain);
+                    connection = new NettyHttpClientConnection(ctx.channel(), x509chain);
                     futureConnection.setResult(Result.success(connection));
                     futureConnection = null;
                 });
             }
             else {
-                connection = new NettyHttpClientConnection(encodings, ctx.channel(), null);
+                connection = new NettyHttpClientConnection(ctx.channel(), null);
                 futureConnection.setResult(Result.success(connection));
                 futureConnection = null;
             }
@@ -99,17 +88,8 @@ public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandle
     private void handleResponseHead(final ChannelHandlerContext ctx, final HttpResponse response) {
         // TODO: Enable and check size restrictions.
 
-        final var contentType = response.headers().get("content-type");
-        final var encoding = HttpMediaTypes.findEncodingCompatibleWithContentType(encodings, contentType)
-            .orElseThrow(() -> new HttpClientResponseException("" +
-                "The content-type \"" + contentType + "\" is not compatible " +
-                "with eny encoding declared for the HTTP client owning this " +
-                "connection " + Stream.of(encodings)
-                .map(EncodingDescriptor::toString)
-                .collect(Collectors.joining(", ", "(", ")."))));
-
-        final var serviceResponseBody = new NettyHttpBodyReceiver(ctx.alloc(), encoding, response.headers());
-        final var serviceResponse = new NettyHttpClientResponse(serviceResponseBody, encoding, response);
+        final var serviceResponseBody = new NettyHttpBodyReceiver(ctx.alloc(), response.headers());
+        final var serviceResponse = new NettyHttpClientResponse(serviceResponseBody, response);
 
         this.body = serviceResponseBody;
 

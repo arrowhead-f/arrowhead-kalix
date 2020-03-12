@@ -44,7 +44,7 @@ public class FutureResult<V> implements Future<V> {
     }
 
     @Override
-    public <U> Future<U> map(final ThrowingFunction<? super V, ? extends U> mapper) {
+    public <U> Future<U> map(final ThrowingFunction<? super V, U> mapper) {
         Objects.requireNonNull(mapper, "Expected mapper");
         Throwable fault;
         if (result.isSuccess()) {
@@ -92,7 +92,7 @@ public class FutureResult<V> implements Future<V> {
     }
 
     @Override
-    public <U> Future<U> mapResult(final ThrowingFunction<Result<? super V>, Result<U>> mapper) {
+    public <U> Future<U> mapResult(final ThrowingFunction<Result<V>, Result<U>> mapper) {
         Objects.requireNonNull(mapper, "Expected mapper");
         try {
             return new FutureResult<>(mapper.apply(result));
@@ -135,7 +135,7 @@ public class FutureResult<V> implements Future<V> {
     }
 
     @Override
-    public Future<V> flatMapError(final ThrowingFunction<Throwable, ? extends Future<? extends Throwable>> mapper) {
+    public Future<V> flatMapError(final ThrowingFunction<Throwable, ? extends Future<Throwable>> mapper) {
         Objects.requireNonNull(mapper, "Expected mapper");
         if (result.isSuccess()) {
             return this;
