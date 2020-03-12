@@ -51,16 +51,34 @@ public class SystemDescription {
     }
 
     /**
-     * @return Certificate chain of system, if any.
+     * @return Certificate chain of system. The certificate at index 0 is the
+     * one associated with the private key of the system. The other
+     * certificates account for its chain of issuers.
+     * @throws UnsupportedOperationException If the system does not have a
+     *                                       certificate chain. This will only
+     *                                       be the case if the system that
+     *                                       retrieved this description runs in
+     *                                       the <i>insecure</i> security mode.
      */
     public X509Certificate[] certificateChain() {
+        if (certificateChain == null) {
+            throw new UnsupportedOperationException("Not in secure mode");
+        }
         return certificateChain;
     }
 
     /**
-     * @return System certificate, if any.
+     * @return System certificate.
+     * @throws UnsupportedOperationException If the system does not have a
+     *                                       certificate chain. This will only
+     *                                       be the case if the system that
+     *                                       retrieved this description runs in
+     *                                       the <i>insecure</i> security mode.
      */
     public X509Certificate certificate() {
+        if (certificateChain == null) {
+            throw new UnsupportedOperationException("Not in secure mode");
+        }
         return certificateChain[0];
     }
 

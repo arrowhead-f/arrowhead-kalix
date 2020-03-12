@@ -59,25 +59,25 @@ public class HttpClient {
      * security mode, local network interface and scheduler as the given
      * system.
      *
-     * @param arrowheadSystem Arrowhead system from which to extract
+     * @param system Arrowhead system from which to extract
      *                        configuration.
      * @return Created client.
      * @throws SSLException If creating SSL/TLS context from given Arrowhead
      *                      system fails.
      */
-    public static HttpClient from(final ArrowheadSystem<?> arrowheadSystem) throws SSLException {
+    public static HttpClient from(final ArrowheadSystem system) throws SSLException {
         final var builder = new Builder();
-        if (arrowheadSystem.isSecured()) {
+        if (system.isSecure()) {
             builder
-                .keyStore(arrowheadSystem.keyStore())
-                .trustStore(arrowheadSystem.trustStore());
+                .keyStore(system.keyStore())
+                .trustStore(system.trustStore());
         }
         else {
             builder.insecure();
         }
         return builder
-            .localSocketAddress(new InetSocketAddress(arrowheadSystem.localAddress(), 0))
-            .scheduler(arrowheadSystem.scheduler())
+            .localSocketAddress(new InetSocketAddress(system.localAddress(), 0))
+            .scheduler(system.scheduler())
             .build();
     }
 

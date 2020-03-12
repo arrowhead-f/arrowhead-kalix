@@ -1,6 +1,9 @@
 package eu.arrowhead.kalix;
 
 import eu.arrowhead.kalix.description.ServiceDescription;
+import eu.arrowhead.kalix.internal.SystemServer;
+import eu.arrowhead.kalix.internal.net.http.HttpSystemServer;
+import eu.arrowhead.kalix.net.http.service.HttpService;
 import eu.arrowhead.kalix.security.X509ArrowheadName;
 import eu.arrowhead.kalix.security.X509Certificates;
 import eu.arrowhead.kalix.security.X509KeyStore;
@@ -10,24 +13,29 @@ import eu.arrowhead.kalix.util.concurrent.FutureScheduler;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
- * Base class for all Arrowhead systems.
- *
- * @param <S> Type of service provided by this system.
+ * An arrowhead system.
  */
-public abstract class ArrowheadSystem<S> {
+public class ArrowheadSystem {
     private final String name;
-    private final InetSocketAddress socketAddress;
-    private final boolean isSecured;
+    private final AtomicReference<InetSocketAddress> localSocketAddress = new AtomicReference<>();
+    private final boolean isSecure;
     private final X509KeyStore keyStore;
     private final X509TrustStore trustStore;
     private final FutureScheduler scheduler;
 
-    protected ArrowheadSystem(final Builder<?, ? extends ArrowheadSystem<?>> builder) {
+    private List<ServiceDescription> cachedDescriptionsOfProvidedServices = null;
+    private SystemServer server = null;
+
+    private ArrowheadSystem(final Builder builder) {
         var name = builder.name;
-        socketAddress = Objects.requireNonNullElseGet(builder.socketAddress, () -> new InetSocketAddress(0));
+        localSocketAddress.setPlain(Objects.requireNonNullElseGet(builder.socketAddress, () ->
+            new InetSocketAddress(0)));
 
         if (builder.scheduler == null) {
             scheduler = FutureScheduler.getDefault();
@@ -36,8 +44,33 @@ public abstract class ArrowheadSystem<S> {
             scheduler = builder.scheduler;
         }
 
-        if (builder.isInsecure) {
-            isSecured = false;
+        if (builder.isSecure) {
+            isSecure = true;
+            if (builder.keyStore == null || builder.trustStore == null) {
+                throw new IllegalArgumentException("Expected keyStore and " +
+                    "trustStore; required in secure mode");
+            }
+            keyStore = builder.keyStore;
+            trustStore = builder.trustStore;
+
+            final var arrowheadName = X509Certificates.subjectArrowheadNameOf(keyStore.certificate());
+            if (arrowheadName.isEmpty()) {
+                throw new IllegalArgumentException("No subject common name " +
+                    "in keyStore certificate; required to determine system " +
+                    "name");
+            }
+            final var arrowheadName0 = arrowheadName.get();
+            final var system = arrowheadName0.system();
+            if (system.isEmpty()) {
+                throw new IllegalArgumentException("No Arrowhead system " +
+                    "name in keyStore certificate common name \"" +
+                    arrowheadName0 + "\"; that name must match " +
+                    "`<system>.<cloud>.<company>.arrowhead.eu`");
+            }
+            this.name = system.get();
+        }
+        else {
+            isSecure = false;
             if (builder.keyStore != null || builder.trustStore != null) {
                 throw new IllegalArgumentException("Unexpected keyStore or " +
                     "trustStore; not permitted in insecure mode");
@@ -50,31 +83,6 @@ public abstract class ArrowheadSystem<S> {
                     "in insecure mode");
             }
             this.name = name;
-        }
-        else {
-            isSecured = true;
-            if (builder.keyStore == null || builder.trustStore == null) {
-                throw new IllegalArgumentException("Expected keyStore and " +
-                    "trustStore; required in secure mode");
-            }
-            keyStore = builder.keyStore;
-            trustStore = builder.trustStore;
-
-            final var descriptor = X509Certificates.subjectArrowheadNameOf(keyStore.certificate());
-            if (descriptor.isEmpty()) {
-                throw new IllegalArgumentException("No subject common name " +
-                    "in keyStore certificate; required to determine system " +
-                    "name");
-            }
-            final var descriptor0 = descriptor.get();
-            final var system = descriptor0.system();
-            if (system.isEmpty()) {
-                throw new IllegalArgumentException("No Arrowhead system " +
-                    "name in keyStore certificate common name \"" +
-                    descriptor0 + "\"; that name must match " +
-                    "`<system>.<cloud>.<company>.arrowhead.eu`");
-            }
-            this.name = system.get();
         }
     }
 
@@ -89,22 +97,22 @@ public abstract class ArrowheadSystem<S> {
      * @return Network interface address.
      */
     public InetAddress localAddress() {
-        return socketAddress.getAddress();
+        return localSocketAddress.get().getAddress();
     }
 
     /**
      * @return Port through which this system exposes its provided services.
      */
     public int localPort() {
-        return socketAddress.getPort();
+        return localSocketAddress.get().getPort();
     }
 
     /**
      * @return {@code true} if and only if this system is configured to run
      * in secure mode.
      */
-    public boolean isSecured() {
-        return isSecured;
+    public final boolean isSecure() {
+        return isSecure;
     }
 
     /**
@@ -112,8 +120,8 @@ public abstract class ArrowheadSystem<S> {
      * @throws UnsupportedOperationException If this system is not running in
      *                                       secure mode.
      */
-    public X509KeyStore keyStore() {
-        if (!isSecured) {
+    public final X509KeyStore keyStore() {
+        if (!isSecure) {
             throw new UnsupportedOperationException("System \"" + name() + "\" not in secure mode");
         }
         return keyStore;
@@ -124,8 +132,8 @@ public abstract class ArrowheadSystem<S> {
      * @throws UnsupportedOperationException If this system is not running in
      *                                       secure mode.
      */
-    public X509TrustStore trustStore() {
-        if (!isSecured) {
+    public final X509TrustStore trustStore() {
+        if (!isSecure) {
             throw new UnsupportedOperationException("System \"" + name() + "\" not in secure mode");
         }
         return trustStore;
@@ -143,7 +151,21 @@ public abstract class ArrowheadSystem<S> {
      * system. The returned array should be a copy that can be modified without
      * having any impact on the set kept internally by this class.
      */
-    public abstract ServiceDescription[] providedServices();
+    public synchronized List<ServiceDescription> providedServices() {
+        if (cachedDescriptionsOfProvidedServices == null) {
+            cachedDescriptionsOfProvidedServices = server.providedServices().stream()
+                .map(service -> new ServiceDescription.Builder()
+                    .name(service.name())
+                    .qualifier(service.qualifier())
+                    .security(service.security())
+                    .metadata(service.metadata())
+                    .version(service.version())
+                    .supportedInterfaces(service.supportedInterfaces())
+                    .build())
+                .collect(Collectors.toUnmodifiableList());
+        }
+        return cachedDescriptionsOfProvidedServices;
+    }
 
     /**
      * Registers given {@code service} with system and makes its immediately
@@ -153,11 +175,35 @@ public abstract class ArrowheadSystem<S> {
      * effect.
      *
      * @param service Service to be provided by this system.
+     * @return Future completed when the service ... TODO
      * @throws NullPointerException  If {@code service} is {@code null}.
      * @throws IllegalStateException If {@code service} configuration conflicts
      *                               with an already provided service.
      */
-    public abstract void provideService(final S service);
+    public synchronized Future<?> provideService(final ArrowheadService service) {
+        Objects.requireNonNull(service, "Expected service");
+        final Future<?> future;
+        if (server == null) {
+            if (service instanceof HttpService) {
+                server = new HttpSystemServer(this);
+            }
+            else {
+                throw new IllegalArgumentException("No server available for services of type " + service.getClass());
+            }
+            future = server.start()
+                .map(socketAddress -> {
+                    localSocketAddress.set(socketAddress);
+                    return null;
+                });
+        }
+        else {
+            future = Future.done();
+        }
+        if (server.provideService(service)) {
+            cachedDescriptionsOfProvidedServices = null;
+        }
+        return future;
+    }
 
     /**
      * Deregisters given {@code service} from this system, immediately making
@@ -169,44 +215,57 @@ public abstract class ArrowheadSystem<S> {
      * @param service Service to no longer be provided by this system.
      * @throws NullPointerException If {@code service} is {@code null}.
      */
-    public abstract void dismissService(final S service);
+    public synchronized void dismissService(final ArrowheadService service) {
+        Objects.requireNonNull(service, "Expected service");
+        if (server == null) {
+            return;
+        }
+        if (server.dismissService(service)) {
+            cachedDescriptionsOfProvidedServices = null;
+        }
+    }
 
     /**
      * Deregisters all currently registered services from this system.
      */
-    public abstract void dismissAllServices();
+    public synchronized void dismissAllServices() {
+        if (server == null) {
+            return;
+        }
+        server.dismissAllServices();
+        cachedDescriptionsOfProvidedServices = null;
+    }
 
     /**
-     * Starts Arrowhead system.
+     * Dismisses all services and stops system.
      * <p>
-     * Note that services may be registered via {@link #provideService(Object)}
-     * both before and after this method is called.
+     * The system turns on again if provided with new services. It is not safe,
+     * however, to provide new services until after the returned future
+     * completes.
      *
-     * @return Future completed only if (1) starting the system fails, (2) this
-     * system crashes or (3) the {@link FutureScheduler} used by this system is
-     * shut down.
+     * @return Future completed when stopping finishes.
      */
-    public abstract Future<?> serve();
+    public synchronized Future<?> stop() {
+        dismissAllServices();
+        if (server == null) {
+            return Future.done();
+        }
+        final var server0 = server;
+        server = null;
+        return server0.stop();
+    }
 
     /**
-     * Builder useful for creating instances of classes extending the
-     * {@link ArrowheadSystem} class.
-     *
-     * @param <B>  Type of extending builder class.
-     * @param <AS> Type of created {@link ArrowheadSystem} class.
+     * Builder useful for creating instances of the {@link ArrowheadSystem}
+     * class.
      */
-    public static abstract class Builder<B extends Builder<?, AS>, AS extends ArrowheadSystem<?>> {
+    public static class Builder {
         private String name;
         private InetSocketAddress socketAddress;
         private X509KeyStore keyStore;
         private X509TrustStore trustStore;
-        private boolean isInsecure = false;
+        private boolean isSecure = true;
         private FutureScheduler scheduler;
-
-        /**
-         * @return This builder.
-         */
-        protected abstract B self();
 
         /**
          * Sets system name.
@@ -228,9 +287,9 @@ public abstract class ArrowheadSystem<S> {
          * @return This builder.
          * @see X509ArrowheadName More about Arrowhead certifiate names
          */
-        public final B name(final String name) {
+        public Builder name(final String name) {
             this.name = name;
-            return self();
+            return this;
         }
 
         /**
@@ -249,7 +308,7 @@ public abstract class ArrowheadSystem<S> {
          *                network interface.
          * @return This builder.
          */
-        public final B localAddress(final InetAddress address) {
+        public Builder localAddress(final InetAddress address) {
             if (socketAddress != null) {
                 return localAddressPort(address, socketAddress.getPort());
             }
@@ -268,9 +327,9 @@ public abstract class ArrowheadSystem<S> {
          *                      preferred network interface.
          * @return This builder.
          */
-        public final B localSocketAddress(final InetSocketAddress socketAddress) {
+        public Builder localSocketAddress(final InetSocketAddress socketAddress) {
             this.socketAddress = socketAddress;
-            return self();
+            return this;
         }
 
         /**
@@ -287,7 +346,7 @@ public abstract class ArrowheadSystem<S> {
          *                      system will choose a random port.
          * @return This builder.
          */
-        public final B localAddressPort(final InetAddress socketAddress, final int port) {
+        public Builder localAddressPort(final InetAddress socketAddress, final int port) {
             return localSocketAddress(new InetSocketAddress(socketAddress, port));
         }
 
@@ -308,7 +367,7 @@ public abstract class ArrowheadSystem<S> {
          *                 will choose a random port.
          * @return This builder.
          */
-        public final B localHostnamePort(final String hostname, final int port) {
+        public Builder localHostnamePort(final String hostname, final int port) {
             return localSocketAddress(new InetSocketAddress(hostname, port));
         }
 
@@ -327,7 +386,7 @@ public abstract class ArrowheadSystem<S> {
          *             choose a random port.
          * @return This builder.
          */
-        public final B localPort(final int port) {
+        public Builder localPort(final int port) {
             if (socketAddress != null) {
                 final var address = socketAddress.getAddress();
                 if (address != null) {
@@ -352,9 +411,9 @@ public abstract class ArrowheadSystem<S> {
          * @param keyStore Key store to use.
          * @return This builder.
          */
-        public final B keyStore(final X509KeyStore keyStore) {
+        public final Builder keyStore(final X509KeyStore keyStore) {
             this.keyStore = keyStore;
-            return self();
+            return this;
         }
 
         /**
@@ -368,9 +427,9 @@ public abstract class ArrowheadSystem<S> {
          * @param trustStore Trust store to use.
          * @return This builder.
          */
-        public final B trustStore(final X509TrustStore trustStore) {
+        public final Builder trustStore(final X509TrustStore trustStore) {
             this.trustStore = trustStore;
-            return self();
+            return this;
         }
 
         /**
@@ -386,9 +445,9 @@ public abstract class ArrowheadSystem<S> {
          *
          * @return This builder.
          */
-        public final B insecure() {
-            this.isInsecure = true;
-            return self();
+        public final Builder insecure() {
+            this.isSecure = false;
+            return this;
         }
 
         /**
@@ -406,14 +465,16 @@ public abstract class ArrowheadSystem<S> {
          * @param scheduler Asynchronous task scheduler.
          * @return This builder.
          */
-        public final B scheduler(final FutureScheduler scheduler) {
+        public Builder scheduler(final FutureScheduler scheduler) {
             this.scheduler = scheduler;
-            return self();
+            return this;
         }
 
         /**
          * @return New {@link ArrowheadSystem}.
          */
-        public abstract AS build();
+        public ArrowheadSystem build() {
+            return new ArrowheadSystem(this);
+        }
     }
 }

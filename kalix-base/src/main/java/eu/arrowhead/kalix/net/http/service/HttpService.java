@@ -1,6 +1,10 @@
 package eu.arrowhead.kalix.net.http.service;
 
+import eu.arrowhead.kalix.ArrowheadService;
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
+import eu.arrowhead.kalix.descriptor.InterfaceDescriptor;
+import eu.arrowhead.kalix.descriptor.SecurityDescriptor;
+import eu.arrowhead.kalix.descriptor.TransportDescriptor;
 import eu.arrowhead.kalix.internal.net.http.service.HttpPaths;
 import eu.arrowhead.kalix.internal.net.http.service.HttpRouteSequence;
 import eu.arrowhead.kalix.internal.net.http.service.HttpRouteSequenceFactory;
@@ -8,8 +12,8 @@ import eu.arrowhead.kalix.net.http.HttpMethod;
 import eu.arrowhead.kalix.net.http.HttpStatus;
 import eu.arrowhead.kalix.util.concurrent.Future;
 
-import java.util.ArrayList;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * A concrete Arrowhead service, exposing its functions as HTTP endpoints.
@@ -17,11 +21,13 @@ import java.util.Objects;
  * TODO: Write more extensive documentation, including about validators, routes
  * and catchers, as well as about patterns and matching.
  */
-public class HttpService {
+public class HttpService implements ArrowheadService {
     private final String name;
     private final String basePath;
-    private final EncodingDescriptor[] encodings;
-    private final HttpRouteSequence[] routeSequences;
+    private final List<EncodingDescriptor> encodings;
+    private final List<HttpRouteSequence> routeSequences;
+
+    private List<InterfaceDescriptor> cachedSupportedInterfaces = null;
 
     private HttpService(final Builder builder) {
         name = Objects.requireNonNull(builder.name, "Expected name");
@@ -37,28 +43,57 @@ public class HttpService {
                 "forward slash (/) unless it is the root path \"/\"");
         }
 
-        encodings = Objects.requireNonNull(builder.encodings, "Expected encodings");
-        if (encodings.length == 0) {
-            throw new IllegalArgumentException("Expected encodings.length > 0");
+        encodings = Collections.unmodifiableList(Objects.requireNonNull(builder.encodings, "Expected encodings"));
+        if (encodings.size() == 0) {
+            throw new IllegalArgumentException("Expected encodings.size() > 0");
         }
 
         final var routeSequenceFactory = new HttpRouteSequenceFactory(builder.catchers, builder.validators);
         routeSequences = builder.routes.stream()
             .sorted()
             .map(routeSequenceFactory::createRouteSequenceFor)
-            .toArray(HttpRouteSequence[]::new);
+            .collect(Collectors.toUnmodifiableList());
     }
 
-    /**
-     * @return Name, or <i>service definition</i>, of this service.
-     */
+    @Override
     public String name() {
         return name;
     }
 
+    @Override
+    public String qualifier() {
+        return basePath;
+    }
+
+    @Override
+    public SecurityDescriptor security() {
+        return null;
+    }
+
+    @Override
+    public Map<String, String> metadata() {
+        return null;
+    }
+
+    @Override
+    public int version() {
+        return 0;
+    }
+
+    @Override
+    public List<InterfaceDescriptor> supportedInterfaces() {
+        if (cachedSupportedInterfaces == null) {
+            final var isSecure = security() != SecurityDescriptor.NOT_SECURE;
+            cachedSupportedInterfaces = encodings.stream()
+                .map(encoding -> InterfaceDescriptor.getOrCreate(TransportDescriptor.HTTP, isSecure, encoding))
+                .collect(Collectors.toUnmodifiableList());
+        }
+        return cachedSupportedInterfaces;
+    }
+
     /**
      * @return Base path that the paths of all requests targeted at this
-     * service must begin with.
+     * service.
      */
     public String basePath() {
         return basePath;
@@ -68,14 +103,14 @@ public class HttpService {
      * @return The encoding to use by default.
      */
     public EncodingDescriptor defaultEncoding() {
-        return encodings[0];
+        return encodings.get(0);
     }
 
     /**
      * @return Data encodings supported by this service.
      */
-    public EncodingDescriptor[] encodings() {
-        return encodings.clone();
+    public List<EncodingDescriptor> encodings() {
+        return encodings;
     }
 
     /**
@@ -122,7 +157,7 @@ public class HttpService {
 
         private String name;
         private String basePath;
-        private EncodingDescriptor[] encodings;
+        private List<EncodingDescriptor> encodings;
 
         private int catcherOrdinal = 0;
         private int filterOrdinal = 0;
@@ -189,7 +224,7 @@ public class HttpService {
          * @see eu.arrowhead.kalix.dto
          */
         public Builder encodings(final EncodingDescriptor... encodings) {
-            this.encodings = encodings.clone();
+            this.encodings = Arrays.asList(encodings.clone());
             return this;
         }
 

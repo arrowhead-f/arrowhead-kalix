@@ -51,15 +51,15 @@ public class HttpMediaTypes {
      * @see <a href="https://www.iana.org/assignments/media-types/media-types.xhtml">IANA Media Types</a>
      */
     public static Optional<EncodingDescriptor> findEncodingCompatibleWithContentType(
-        final EncodingDescriptor[] encodings,
+        final List<EncodingDescriptor> encodings,
         final String contentType)
     {
         Objects.requireNonNull(encodings, "Expected encodings");
-        if (encodings.length == 0) {
-            throw new IllegalArgumentException("Expected encodings.length > 0");
+        if (encodings.size() == 0) {
+            throw new IllegalArgumentException("Expected encodings.size() > 0");
         }
         if (contentType == null || contentType.length() == 0) {
-            return Optional.of(encodings[0]);
+            return Optional.of(encodings.get(0));
         }
 
         int c0 = 0, c1;
@@ -85,7 +85,7 @@ public class HttpMediaTypes {
         }
 
         if (c0 == c1) {
-            return Optional.of(encodings[0]);
+            return Optional.of(encodings.get(0));
         }
 
         // Ensure type is "application".
@@ -135,9 +135,9 @@ public class HttpMediaTypes {
      * assumed to be a list of HTTP "header" field values.
      * <p>
      * This method uses a similar matching schema as
-     * {@link #findEncodingCompatibleWithContentType(EncodingDescriptor[], String)},
-     * with the exception that it also respects the presence of wildcards
-     * ({@code *}) and q-factors, which are ignored, in the accept headers.
+     * {@link #findEncodingCompatibleWithContentType(List, String)}, with the
+     * exception that it also respects the presence of wildcards ({@code *})
+     * and q-factors, which are ignored, in the accept headers.
      * <p>
      * The accept header syntax is specified in RFC 7231, Section 5.3.2.
      *
@@ -148,15 +148,15 @@ public class HttpMediaTypes {
      * @see <a href="https://tools.ietf.org/html/rfc7231#section-5.3.2">RFC 7231, Section 5.3.2</a>
      */
     public static Optional<EncodingDescriptor> findEncodingCompatibleWithAcceptHeaders(
-        final EncodingDescriptor[] encodings,
+        final List<EncodingDescriptor> encodings,
         final List<String> acceptHeaders)
     {
         Objects.requireNonNull(encodings, "Expected encodings");
-        if (encodings.length == 0) {
-            throw new IllegalArgumentException("Expected encodings.length > 0");
+        if (encodings.size() == 0) {
+            throw new IllegalArgumentException("Expected encodings.size() > 0");
         }
         if (acceptHeaders == null || acceptHeaders.size() == 0) {
-            return Optional.of(encodings[0]);
+            return Optional.of(encodings.get(0));
         }
 
         for (final var acceptHeader : acceptHeaders) {
@@ -170,7 +170,7 @@ public class HttpMediaTypes {
     }
 
     private static EncodingDescriptor findEncodingCompatibleWithAcceptHeader(
-        final EncodingDescriptor[] encodings,
+        final List<EncodingDescriptor> encodings,
         final String acceptHeader)
     {
         int a0 = 0, a1, a2 = 0;
@@ -226,7 +226,7 @@ public class HttpMediaTypes {
 
             // If subtype is "*", return the first of the provided encodings.
             if (a0 + 1 == a1 && acceptHeader.charAt(a0) == '*') {
-                return encodings[0];
+                return encodings.get(0);
             }
 
             // If a suffix is present in subtype, skip everything else.
@@ -260,93 +260,6 @@ public class HttpMediaTypes {
             }
         }
         return null;
-    }
-
-    /**
-     * Determines if the provided {@code encoding} could be used to decode
-     * and/or encode objects from/to the media type specified in
-     * {@code contentType}, which is assumed to be an HTTP "content-type"
-     * header field value.
-     *
-     * @param encoding    Tested encoding.
-     * @param contentType A content type, assumed to follow the specification
-     *                    for the "content-type" HTTP header field. If
-     *                    {@code null} or an empty string, {@code true} is
-     *                    returned immediately.
-     * @return {@code true} if tested encoding is compatible with provided
-     * "content-type" field, or if the content type is {@code null} or an
-     * empty string.
-     * @see #findEncodingCompatibleWithContentType(EncodingDescriptor[], String)
-     */
-    public static boolean isEncodingCompatibleWithContentType(
-        final EncodingDescriptor encoding,
-        final String contentType)
-    {
-        Objects.requireNonNull(encoding, "Expected encoding");
-        if (contentType == null || contentType.length() == 0) {
-            return true;
-        }
-
-        int c0 = 0, c1;
-
-        // Find end of media type.
-        c1 = contentType.indexOf(';');
-        if (c1 == -1) {
-            c1 = contentType.length();
-        }
-
-        // Trim trailing and leading whitespace.
-        while (c1 != 0) {
-            if (contentType.charAt(--c1) > ' ') {
-                c1 += 1;
-                break;
-            }
-        }
-        while (c0 < c1) {
-            if (contentType.charAt(c0) > ' ') {
-                break;
-            }
-            c0 += 1;
-        }
-
-        if (c0 == c1) {
-            return true;
-        }
-
-        // Ensure type is "application".
-        if (contentType.startsWith("application/", c0)) {
-            c0 += 12;
-        }
-        else {
-            return false;
-        }
-
-        // If a suffix is present in subtype, skip everything else.
-        for (var cx = c1; cx > c0; ) {
-            final var c = contentType.charAt(--cx);
-            if (c == '+' || c == '-') { // EXI uses '-' as suffix delimiter.
-                c0 = cx + 1;
-                break;
-            }
-        }
-
-        // Test if encoding matches the subtype or suffix ignoring case.
-        final var name = encoding.name();
-        if (c1 - c0 != name.length()) {
-            return false;
-        }
-        var cx = c0;
-        var nx = 0;
-        while (cx < c1) {
-            final var cc = Character.toLowerCase(contentType.charAt(cx));
-            final var nc = Character.toLowerCase(name.charAt(nx));
-            if (cc != nc) {
-                return false;
-            }
-            cx += 1;
-            nx += 1;
-        }
-        return true;
     }
 
     /**

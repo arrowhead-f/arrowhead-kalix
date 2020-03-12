@@ -34,16 +34,16 @@ public class ServiceDescription {
     }
 
     /**
-     * @return Name, or <i>service definition</i>, of service.
+     * @return Name, or <i>service definition</i>, of this service.
      */
     public String name() {
         return name;
     }
 
     /**
-     * Returns a qualifier that distinguishes this service from other such
-     * provided by the same system. How it is used depends on the application-
-     * level transport protocol employed by the service.
+     * Qualifier that distinguishes this service from other such provided by
+     * the same system. How it is used depends on the application-level
+     * transport protocol employed by the service.
      * <p>
      * For example, if this service uses HTTP, then the qualifier is a URL base
      * path.
@@ -55,37 +55,39 @@ public class ServiceDescription {
     }
 
     /**
-     * @return Security mechanism used to authenticate service users.
+     * @return Security schema used to authenticate and authorize service
+     * users.
      */
     public SecurityDescriptor security() {
         return security;
     }
 
     /**
-     * @return Metadata associated with the described service. Its significance
-     * and use depends on the service.
+     * @return Metadata associated with this service. Their significance and
+     * use depend on the service.
      */
     public Map<String, String> metadata() {
         return metadata;
     }
 
     /**
-     * @return Service version. Will be 0 if not set explicitly.
+     * @return Service version.
      */
     public int version() {
         return version;
     }
 
     /**
-     * Returns unmodifiable list of interface triplets supported by the
-     * service.
-     *
-     * @return Interface triplets supported by the described service.
+     * @return Interface triplets supported by the described service. The
+     * returned list should be unmodifiable.
      */
     public List<InterfaceDescriptor> supportedInterfaces() {
         return supportedInterfaces;
     }
 
+    /**
+     * Builder useful for creating {@link ServiceDescription} instances.
+     */
     public static class Builder {
         private String name;
         private List<InterfaceDescriptor> supportedInterfaces;

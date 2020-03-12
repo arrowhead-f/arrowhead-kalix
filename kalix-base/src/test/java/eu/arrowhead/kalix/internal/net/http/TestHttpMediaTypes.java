@@ -21,7 +21,7 @@ public class TestHttpMediaTypes {
         final EncodingDescriptor[] encodings,
         final EncodingDescriptor expected)
     {
-        final var actual = HttpMediaTypes.findEncodingCompatibleWithContentType(encodings, contentType);
+        final var actual = HttpMediaTypes.findEncodingCompatibleWithContentType(Arrays.asList(encodings), contentType);
         assertTrue(actual.isPresent());
         assertEquals(expected, actual.get());
     }
@@ -61,7 +61,7 @@ public class TestHttpMediaTypes {
     @ParameterizedTest
     @MethodSource("incompatibleContentTypeEncodingArguments")
     void shouldNotFindCompatibleEncoding(final String contentType, final EncodingDescriptor[] encodings) {
-        final var actual = HttpMediaTypes.findEncodingCompatibleWithContentType(encodings, contentType);
+        final var actual = HttpMediaTypes.findEncodingCompatibleWithContentType(Arrays.asList(encodings), contentType);
         assertFalse(actual.isPresent());
     }
 
@@ -100,11 +100,11 @@ public class TestHttpMediaTypes {
     @ParameterizedTest
     @MethodSource("compatibleAcceptFieldsEncodingArguments")
     void shouldFindCompatibleEncodingAmongAcceptFields(
-        final List<String> acceptFields,
+        final List<String> headers,
         final EncodingDescriptor[] encodings,
         final EncodingDescriptor expected)
     {
-        final var actual = HttpMediaTypes.findEncodingCompatibleWithAcceptHeaders(encodings, acceptFields);
+        final var actual = HttpMediaTypes.findEncodingCompatibleWithAcceptHeaders(Arrays.asList(encodings), headers);
         assertTrue(actual.isPresent());
         assertEquals(expected, actual.get());
     }
@@ -148,10 +148,10 @@ public class TestHttpMediaTypes {
     @ParameterizedTest
     @MethodSource("incompatibleAcceptFieldsEncodingArguments")
     void shouldNotFindCompatibleEncodingAmongAcceptFields(
-        final List<String> acceptFields,
+        final List<String> headers,
         final EncodingDescriptor[] encodings)
     {
-        final var actual = HttpMediaTypes.findEncodingCompatibleWithAcceptHeaders(encodings, acceptFields);
+        final var actual = HttpMediaTypes.findEncodingCompatibleWithAcceptHeaders(Arrays.asList(encodings), headers);
         assertFalse(actual.isPresent());
     }
 
