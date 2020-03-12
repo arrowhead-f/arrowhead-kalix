@@ -112,14 +112,6 @@ public class HttpService {
             });
     }
 
-    public Future<?> handle(final HttpServiceRequest request, final Throwable throwable) {
-        throw new UnsupportedOperationException(); // TODO: Implement
-    }
-
-    public Future<?> handle(final Throwable throwable) {
-        throw new UnsupportedOperationException(); // TODO: Implement.
-    }
-
     /**
      * Builder useful for constructing {@link HttpService} instances.
      */

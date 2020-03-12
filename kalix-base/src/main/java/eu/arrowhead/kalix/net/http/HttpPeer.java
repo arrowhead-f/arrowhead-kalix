@@ -1,6 +1,7 @@
 package eu.arrowhead.kalix.net.http;
 
 import java.net.InetSocketAddress;
+import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 
 /**
@@ -8,6 +9,16 @@ import java.security.cert.X509Certificate;
  * communicated with.
  */
 public interface HttpPeer {
+    /**
+     * @return Public key of peer.
+     * @throws UnsupportedOperationException If the connection to the peer is
+     *                                       not encrypted in such a way that a
+     *                                       peer certificate becomes available.
+     */
+    default PublicKey publickey() {
+        return certificate().getPublicKey();
+    }
+
     /**
      * @return Certificate of peer.
      * @throws UnsupportedOperationException If the connection to the peer is

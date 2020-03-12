@@ -45,7 +45,7 @@ public class X509TrustStore {
             final var certificate = keyStore.getCertificate(alias);
             if (!(certificate instanceof X509Certificate)) {
                 throw new KeyStoreException("Only x.509 certificates are " +
-                    "permitted in provided trust stores; the following " +
+                    "permitted in X509TrustStore instances; the following " +
                     "certificate does not comply with that specification: " +
                     certificate);
             }

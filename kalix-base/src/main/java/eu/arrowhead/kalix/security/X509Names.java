@@ -1,6 +1,5 @@
 package eu.arrowhead.kalix.security;
 
-import eu.arrowhead.kalix.descriptor.CertificateDescriptor;
 import eu.arrowhead.kalix.internal.charset.Unicode;
 
 import java.io.ByteArrayOutputStream;
@@ -25,7 +24,7 @@ public class X509Names {
 
     /**
      * Searches for and extracts the Common Name (CN) from given DN, and then
-     * converts it into an Arrowhead {@link CertificateDescriptor}.
+     * converts it into an {@link X509ArrowheadName}.
      * <p>
      * As an LDAP DN is hierarchical, with the top level being the rightmost
      * Relative DN (RDN), the leftmost RDN containing a CN is assumed to
@@ -34,15 +33,15 @@ public class X509Names {
      *
      * @param dn String representation of LDAP DN, as described in RFC 4515,
      *           Section 3, as well as RFC 4512, Section 1.4.
-     * @return Arrowhead certificate descriptor, if a valid CN is present in
-     * given DN string.
+     * @return x.509 Arrowhead name, if a valid CN is present in given DN
+     * string.
      * @throws X509NameException If provided DN string is not standards-
      *                           compliant.
      * @see <a href="https://tools.ietf.org/html/rfc4514#section-3">RFC 4515, Section 3</a>
      * @see <a href="https://tools.ietf.org/html/rfc4512#section-1.4">RFC 4512, Section 1.4</a>
      */
-    public static Optional<CertificateDescriptor> certificateDescriptorOf(final String dn) throws X509NameException {
-        return commonNameOf(dn).map(CertificateDescriptor::valueOf);
+    public static Optional<X509ArrowheadName> arrowheadNameOf(final String dn) throws X509NameException {
+        return commonNameOf(dn).map(X509ArrowheadName::valueOf);
     }
 
     /**

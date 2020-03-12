@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.net.http.client;
 
+import eu.arrowhead.kalix.ArrowheadSystem;
 import eu.arrowhead.kalix.internal.net.NettyBootstraps;
 import eu.arrowhead.kalix.internal.net.http.client.FutureHttpClientConnection;
 import eu.arrowhead.kalix.internal.net.http.client.NettyHttpClientConnectionInitializer;
@@ -19,7 +20,8 @@ import java.util.Objects;
 import static eu.arrowhead.kalix.internal.util.concurrent.NettyFutures.adapt;
 
 /**
- * A factory for creating {@link HttpClientConnection} instances.
+ * Allows for the creation of TCP connections through which HTTP messages can
+ * be sent.
  */
 public class HttpClient {
     private final Bootstrap bootstrap;
@@ -47,6 +49,36 @@ public class HttpClient {
             }
             sslContext = sslContextBuilder.build();
         }
+    }
+
+    /**
+     * Creates new {@code HttpClient} that takes its configuration details from
+     * the given {@code arrowheadSystem}.
+     * <p>
+     * The created HTTP client will use the same key store, trust store,
+     * security mode, local network interface and scheduler as the given
+     * system.
+     *
+     * @param arrowheadSystem Arrowhead system from which to extract
+     *                        configuration.
+     * @return Created client.
+     * @throws SSLException If creating SSL/TLS context from given Arrowhead
+     *                      system fails.
+     */
+    public static HttpClient from(final ArrowheadSystem<?> arrowheadSystem) throws SSLException {
+        final var builder = new Builder();
+        if (arrowheadSystem.isSecured()) {
+            builder
+                .keyStore(arrowheadSystem.keyStore())
+                .trustStore(arrowheadSystem.trustStore());
+        }
+        else {
+            builder.insecure();
+        }
+        return builder
+            .localSocketAddress(new InetSocketAddress(arrowheadSystem.localAddress(), 0))
+            .scheduler(arrowheadSystem.scheduler())
+            .build();
     }
 
     /**

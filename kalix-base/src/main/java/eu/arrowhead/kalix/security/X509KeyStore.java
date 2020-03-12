@@ -250,8 +250,9 @@ public class X509KeyStore {
 
         private KeyStoreException certificateNotPermitted(final Certificate certificate) {
             return new KeyStoreException("Only x.509 certificates are " +
-                "permitted in provided key stores; the following certificate" +
-                "does not comply with that specification: " + certificate);
+                "permitted in X509KeyStore instances; the following" +
+                "certificate does not comply with that specification: " +
+                certificate);
         }
     }
 }

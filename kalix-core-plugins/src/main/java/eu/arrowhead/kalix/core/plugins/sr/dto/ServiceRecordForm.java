@@ -19,7 +19,7 @@ public interface ServiceRecordForm {
     SystemDefinitionForm provider();
 
     @JsonName("serviceUri")
-    String basePath();
+    String qualifier();
 
     @JsonName("endOfValidity")
     Optional<String> expiresAt();

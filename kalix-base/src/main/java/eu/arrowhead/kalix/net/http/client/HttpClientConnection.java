@@ -6,11 +6,8 @@ import eu.arrowhead.kalix.util.concurrent.Future;
 import java.net.InetSocketAddress;
 
 /**
- * Client useful for sending HTTP requests to a single remote socket address.
- * <p>
- * HTTP clients are intended to be short-lived. When created, they should hold
- * live TCP connections through which messages can be exchanged until the
- * connection is closed, intentionally or not.
+ * Connection useful for sending HTTP requests to a single remote socket
+ * address.
  */
 public interface HttpClientConnection extends HttpPeer {
     /**

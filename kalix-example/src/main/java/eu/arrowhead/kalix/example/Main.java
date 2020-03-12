@@ -52,7 +52,7 @@ public class Main {
                     .port(13370)
                     .publicKeyBase64(keyStore.publicKeyBase64())
                     .build())
-                .basePath("/example-x")
+                .qualifier("/example-x")
                 .security(SecurityDescriptor.TOKEN)
                 .version(1)
                 .supportedInterfaces(InterfaceDescriptor.HTTP_SECURE_JSON)

@@ -1,6 +1,7 @@
 package eu.arrowhead.kalix;
 
-import eu.arrowhead.kalix.descriptor.ServiceDescriptor;
+import eu.arrowhead.kalix.description.ServiceDescription;
+import eu.arrowhead.kalix.security.X509ArrowheadName;
 import eu.arrowhead.kalix.security.X509Certificates;
 import eu.arrowhead.kalix.security.X509KeyStore;
 import eu.arrowhead.kalix.security.X509TrustStore;
@@ -59,7 +60,7 @@ public abstract class ArrowheadSystem<S> {
             keyStore = builder.keyStore;
             trustStore = builder.trustStore;
 
-            final var descriptor = X509Certificates.subjectDescriptorOf(keyStore.certificate());
+            final var descriptor = X509Certificates.subjectArrowheadNameOf(keyStore.certificate());
             if (descriptor.isEmpty()) {
                 throw new IllegalArgumentException("No subject common name " +
                     "in keyStore certificate; required to determine system " +
@@ -142,7 +143,7 @@ public abstract class ArrowheadSystem<S> {
      * system. The returned array should be a copy that can be modified without
      * having any impact on the set kept internally by this class.
      */
-    public abstract ServiceDescriptor[] providedServices();
+    public abstract ServiceDescription[] providedServices();
 
     /**
      * Registers given {@code service} with system and makes its immediately
@@ -176,9 +177,10 @@ public abstract class ArrowheadSystem<S> {
     public abstract void dismissAllServices();
 
     /**
-     * Starts Arrowhead system, making it serve any services registered via
-     * {@link #provideService(Object)} either before or after this method is
-     * called.
+     * Starts Arrowhead system.
+     * <p>
+     * Note that services may be registered via {@link #provideService(Object)}
+     * both before and after this method is called.
      *
      * @return Future completed only if (1) starting the system fails, (2) this
      * system crashes or (3) the {@link FutureScheduler} used by this system is
@@ -224,6 +226,7 @@ public abstract class ArrowheadSystem<S> {
          *
          * @param name Name of this system.
          * @return This builder.
+         * @see X509ArrowheadName More about Arrowhead certifiate names
          */
         public final B name(final String name) {
             this.name = name;

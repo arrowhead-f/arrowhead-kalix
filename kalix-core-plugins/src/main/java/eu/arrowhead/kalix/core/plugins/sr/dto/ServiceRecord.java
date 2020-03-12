@@ -19,7 +19,7 @@ public interface ServiceRecord {
     SystemDefinition provider();
 
     @JsonName("serviceUri")
-    String basePath();
+    String qualifier();
 
     @JsonName("endOfValidity")
     Optional<String> expiresAt();
@@ -32,7 +32,7 @@ public interface ServiceRecord {
     int version();
 
     @JsonName("interfaces")
-    InterfaceDefinition[] supportedInterfaces();
+    List<InterfaceDefinition> supportedInterfaces();
 
     String createdAt();
 

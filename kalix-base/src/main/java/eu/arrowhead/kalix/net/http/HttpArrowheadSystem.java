@@ -2,7 +2,7 @@ package eu.arrowhead.kalix.net.http;
 
 import eu.arrowhead.kalix.ArrowheadSystem;
 import eu.arrowhead.kalix.descriptor.InterfaceDescriptor;
-import eu.arrowhead.kalix.descriptor.ServiceDescriptor;
+import eu.arrowhead.kalix.description.ServiceDescription;
 import eu.arrowhead.kalix.descriptor.TransportDescriptor;
 import eu.arrowhead.kalix.internal.net.NettyBootstraps;
 import eu.arrowhead.kalix.internal.net.http.service.NettyHttpServiceConnectionInitializer;
@@ -32,7 +32,7 @@ public class HttpArrowheadSystem extends ArrowheadSystem<HttpService> {
     private final TreeMap<String, HttpService> providedServices = new TreeMap<>();
 
     // Created when requested.
-    private ServiceDescriptor[] providedServiceDescriptors = null;
+    private ServiceDescription[] providedServiceDescriptions = null;
 
     private HttpArrowheadSystem(final Builder builder) {
         super(builder);
@@ -55,18 +55,18 @@ public class HttpArrowheadSystem extends ArrowheadSystem<HttpService> {
     }
 
     @Override
-    public synchronized ServiceDescriptor[] providedServices() {
-        if (providedServiceDescriptors == null) {
-            final var descriptors = new ServiceDescriptor[providedServices.size()];
+    public synchronized ServiceDescription[] providedServices() {
+        if (providedServiceDescriptions == null) {
+            final var descriptors = new ServiceDescription[providedServices.size()];
             var i = 0;
             for (final var service : providedServices.values()) {
-                descriptors[i++] = new ServiceDescriptor(service.name(), Stream.of(service.encodings())
+              /*  descriptors[i++] = new ServiceDescription(service.name(), Stream.of(service.encodings())
                     .map(encoding -> InterfaceDescriptor.getOrCreate(TransportDescriptor.HTTP, isSecured(), encoding))
-                    .collect(Collectors.toList()));
+                    .collect(Collectors.toList()));*/
             }
-            providedServiceDescriptors = descriptors;
+            providedServiceDescriptions = descriptors;
         }
-        return providedServiceDescriptors.clone();
+        return providedServiceDescriptions.clone();
     }
 
     @Override
@@ -82,21 +82,21 @@ public class HttpArrowheadSystem extends ArrowheadSystem<HttpService> {
                 existingService.name() + "\"; cannot provide \"" +
                 service.name() + "\"");
         }
-        providedServiceDescriptors = null; // Force recreation.
+        providedServiceDescriptions = null; // Force recreation.
     }
 
     @Override
     public synchronized void dismissService(final HttpService service) {
         Objects.requireNonNull(service, "Expected service");
         if (providedServices.remove(service.basePath()) != null) {
-            providedServiceDescriptors = null; // Force recreation.
+            providedServiceDescriptions = null; // Force recreation.
         }
     }
 
     @Override
     public synchronized void dismissAllServices() {
         providedServices.clear();
-        providedServiceDescriptors = null; // Force recreation.
+        providedServiceDescriptions = null; // Force recreation.
     }
 
     private synchronized Optional<HttpService> getServiceByPath(final String path) {

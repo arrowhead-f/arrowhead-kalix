@@ -1,7 +1,5 @@
 package eu.arrowhead.kalix.security;
 
-import eu.arrowhead.kalix.descriptor.CertificateDescriptor;
-
 import java.security.cert.X509Certificate;
 import java.util.Optional;
 
@@ -15,7 +13,7 @@ public class X509Certificates {
     /**
      * Searches for and extracts the leftmost Common Name (CN) from the subject
      * Distinguished Name (DN) of the given x.509 {@code certificate}, which is
-     * then converted into an Arrowhead {@link CertificateDescriptor}.
+     * then converted into an Arrowhead {@link X509ArrowheadName}.
      * <p>
      * The current evaluation version of Arrowhead Framework demands that only
      * one CN is stated in the subject field of an x.509 certificate, and that
@@ -44,9 +42,9 @@ public class X509Certificates {
      * @see <a href="https://tools.ietf.org/html/rfc4514#section-3">RFC 4515, Section 3</a>
      * @see <a href="https://tools.ietf.org/html/rfc4512#section-1.4">RFC 4512, Section 1.4</a>
      */
-    public static Optional<CertificateDescriptor> subjectDescriptorOf(final X509Certificate certificate) {
+    public static Optional<X509ArrowheadName> subjectArrowheadNameOf(final X509Certificate certificate) {
         final var dn = certificate.getSubjectX500Principal().getName();
-        return X509Names.certificateDescriptorOf(dn);
+        return X509Names.arrowheadNameOf(dn);
     }
 
     /**

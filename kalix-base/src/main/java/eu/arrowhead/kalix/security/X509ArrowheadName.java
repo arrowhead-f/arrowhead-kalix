@@ -1,6 +1,4 @@
-package eu.arrowhead.kalix.descriptor;
-
-import eu.arrowhead.kalix.security.X509Certificates;
+package eu.arrowhead.kalix.security;
 
 import java.security.cert.X509Certificate;
 import java.util.Objects;
@@ -10,18 +8,39 @@ import java.util.regex.Pattern;
 /**
  * Describes an Arrowhead system, operator, cloud or company certificate.
  * <p>
- * As the name of this class implies, this kind of descriptor are assumed to
- * originate from x.509 certificates used to represent Arrowhead entities. A
- * certificate descriptor describes a certificate owned by either an Arrowhead
+ * As the name of this class implies, the data it contains are assumed to
+ * originate from x.509 certificates used to represent Arrowhead entities.
+ * <p>
+ * An x.509 Arrowhead name describes a certificate owned by either an Arrowhead
  * system, operator, cloud or company, depending on which of these fields are
- * present in the descriptor. In other words, if only a company and master
- * name is part of the descriptor, it describes a company certificate. If a
- * cloud name, company name and master name is present, it describes a cloud.
- * If all names are present, it describes either a system or an operator.
+ * present in the descriptor. If only a company and master name is part of the
+ * descriptor, it describes a company certificate, as follows:
+ * <pre>
+ *     company-inc.arrowhead.eu
+ *     |_________| |__________|
+ *          |           |
+ *       Company      Master
+ * </pre>
+ * If a cloud name, company name and master name is present, it describes a
+ * cloud, as follows:
+ * <pre>
+ *     cloud24.company-inc.arrowhead.eu
+ *     |_____| |_________| |__________|
+ *        |         |           |
+ *      Cloud    Company      Master
+ * </pre>
+ * And, lastly, if all names are present, it describes either a system or an
+ * operator, as follows:
+ * <pre>
+ *     system3.cloud24.company-inc.arrowhead.eu
+ *     |_____| |_____| |_________| |__________|
+ *        |       |         |           |
+ *     System   Cloud    Company      Master
+ * </pre>
  *
- * @see X509Certificates#subjectDescriptorOf(X509Certificate)
+ * @see X509Certificates#subjectArrowheadNameOf(X509Certificate)
  */
-public class CertificateDescriptor {
+public class X509ArrowheadName {
     private static final Pattern NAME_PATTERN = Pattern.compile(
         "^(?:([^.\\s]+)\\.)?(?:([^.\\s]+)\\.)?([^.\\s]+)\\.arrowhead\\.eu$"
     );
@@ -32,7 +51,7 @@ public class CertificateDescriptor {
 
     private String cachedStringRepresentation;
 
-    public CertificateDescriptor(final String system, final String cloud, final String company) {
+    public X509ArrowheadName(final String system, final String cloud, final String company) {
         if (cloud == null && system != null) {
             throw new IllegalArgumentException("If system is provided, cloud must not be null");
         }
@@ -41,7 +60,7 @@ public class CertificateDescriptor {
         this.company = Objects.requireNonNull(company);
     }
 
-    private CertificateDescriptor(final String system, final String cloud, final String company, final String name) {
+    private X509ArrowheadName(final String system, final String cloud, final String company, final String name) {
         this.system = system;
         this.cloud = cloud;
         this.company = company;
@@ -65,7 +84,7 @@ public class CertificateDescriptor {
      * @throws IllegalArgumentException If provided {@code name} is not a valid
      *                                  certificate descriptor.
      */
-    public static CertificateDescriptor valueOf(final String name) {
+    public static X509ArrowheadName valueOf(final String name) {
         final var matcher = NAME_PATTERN.matcher(name);
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Invalid Arrowhead certificate descriptor \"" +
@@ -77,7 +96,7 @@ public class CertificateDescriptor {
             group2 = group1;
             group1 = null;
         }
-        return new CertificateDescriptor(group1, group2, matcher.group(3), name);
+        return new X509ArrowheadName(group1, group2, matcher.group(3), name);
     }
 
     /**
