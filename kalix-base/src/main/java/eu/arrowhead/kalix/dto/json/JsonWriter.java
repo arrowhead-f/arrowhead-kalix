@@ -32,13 +32,11 @@ public final class JsonWriter {
     }
 
     public static void write(final Duration duration, final BinaryWriter target) {
-        final var number = duration.toSecondsPart() + "." + duration.toNanosPart();
-        target.write(number.getBytes(StandardCharsets.ISO_8859_1));
+        target.write(duration.toString().getBytes(StandardCharsets.ISO_8859_1));
     }
 
     public static void write(final Instant instant, final BinaryWriter target) {
-        final var number = instant.getEpochSecond() + "." + instant.getNano();
-        target.write(number.getBytes(StandardCharsets.ISO_8859_1));
+        target.write(instant.toString().getBytes(StandardCharsets.ISO_8859_1));
     }
 
     public static void write(final LocalDate localDate, final BinaryWriter target) {

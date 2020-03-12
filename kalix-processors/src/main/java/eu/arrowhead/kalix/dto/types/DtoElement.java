@@ -2,13 +2,13 @@ package eu.arrowhead.kalix.dto.types;
 
 import com.squareup.javapoet.TypeName;
 
-import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
 
-public class DtoObject implements DtoType {
+public class DtoElement implements DtoType {
     private final TypeName typeName;
     private final DtoDescriptor descriptor;
 
-    public DtoObject(final DeclaredType type, final DtoDescriptor descriptor) {
+    public DtoElement(final TypeMirror type, final DtoDescriptor descriptor) {
         this.typeName = TypeName.get(type);
         this.descriptor = descriptor;
     }

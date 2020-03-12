@@ -10,6 +10,7 @@ import eu.arrowhead.kalix.dto.util.Expander;
 
 import javax.lang.model.element.Modifier;
 import java.time.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
@@ -123,7 +124,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         switch (descriptor) {
         case ARRAY:
         case LIST:
-            readArray((DtoArrayOrList) type, assignment, builder);
+            readArray((DtoSequence) type, assignment, builder);
             break;
 
         case BIG_DECIMAL:
@@ -251,21 +252,38 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         }
     }
 
-    private void readArray(final DtoArrayOrList type, final Expander assignment, final MethodSpec.Builder builder) {
+    private void readArray(final DtoSequence type, final Expander assignment, final MethodSpec.Builder builder) {
         final var element = type.element();
+        final var elementTypeName = element.inputTypeName();
 
         builder
             .addStatement("token = reader.next()")
             .beginControlFlow("if (token.type() != $T.ARRAY)", JsonType.class)
             .addStatement("error = \"Expected array\"")
             .addStatement("break error")
-            .endControlFlow()
-            .addStatement("final var items$L = new $T[token.nChildren()]", level, element.inputTypeName())
-            .beginControlFlow("for (var i$1L = 0; i$1L < items$1L.length; ++i$1L)", level);
+            .endControlFlow();
 
-        final var lhs = "items" + level + "[i" + level + "] = ";
+        final Expander assignment0;
+        if (type.descriptor() == DtoDescriptor.ARRAY) {
+            builder
+                .addStatement("final var items$L = new $T[token.nChildren()]", level, elementTypeName)
+                .beginControlFlow("for (var i$1L = 0; i$1L < items$1L.length; ++i$1L)", level);
+
+            final var leader = "items" + level + "[i" + level + "] = ";
+            assignment0 = x -> leader + x;
+        }
+        else {
+            builder
+                .addStatement("var n$L = token.nChildren()", level)
+                .addStatement("final var items$1L = new $2T<$3T>(n$1L)", level, ArrayList.class, elementTypeName)
+                .beginControlFlow("while (n$1L-- != 0)", level);
+
+            final var leader = "items" + level + ".add(";
+            assignment0 = x -> leader + x + ")";
+        }
+
         level += 1;
-        readValue(element, x -> lhs + x, builder);
+        readValue(element, assignment0, builder);
         level -= 1;
 
         builder
@@ -321,9 +339,9 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             .beginControlFlow("while (n$L-- != 0)", level)
             .addStatement("final var key$L = reader.next().readString(source)", level);
 
-        final var lhs = "final var value" + level + " = ";
+        final var leader = "final var value" + level + " = ";
         level += 1;
-        readValue(value, x -> lhs + x, builder);
+        readValue(value, x -> leader + x, builder);
         level -= 1;
 
         builder
@@ -436,9 +454,46 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             writeArray(type, name, builder);
             break;
 
+        case BOOLEAN_BOXED:
+        case BOOLEAN_UNBOXED:
+        case BIG_DECIMAL:
+        case BIG_INTEGER:
+        case BYTE_BOXED:
+        case BYTE_UNBOXED:
+        case DOUBLE_BOXED:
+        case DOUBLE_UNBOXED:
+        case FLOAT_BOXED:
+        case FLOAT_UNBOXED:
+        case INTEGER_BOXED:
+        case INTEGER_UNBOXED:
+        case LONG_BOXED:
+        case LONG_UNBOXED:
+        case SHORT_BOXED:
+        case SHORT_UNBOXED:
+            writeOther(name, builder);
+            break;
+
         case CHARACTER_BOXED:
         case CHARACTER_UNBOXED:
             throw characterTypesNotSupportedException();
+
+        case DURATION:
+        case INSTANT:
+        case LOCAL_DATE:
+        case LOCAL_DATE_TIME:
+        case LOCAL_TIME:
+        case MONTH_DAY:
+        case OFFSET_DATE_TIME:
+        case OFFSET_TIME:
+        case PERIOD:
+        case STRING:
+        case YEAR:
+        case YEAR_MONTH:
+        case ZONED_DATE_TIME:
+        case ZONE_ID:
+        case ZONE_OFFSET:
+            writeString(name, builder);
+            break;
 
         case ENUM:
             writeEnum(name, builder);
@@ -452,17 +507,8 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             writeMap(type, name, builder);
             break;
 
-        case STRING:
-            writeString(name, builder);
-            break;
-
         default:
-            if (descriptor.isPrimitive() || descriptor.isNumber() || descriptor.isTemporal()) {
-                writeOther(name, builder);
-            }
-            else {
-                throw new IllegalStateException("Unexpected type: " + type);
-            }
+            throw new IllegalStateException("Unexpected type: " + type);
         }
     }
 
@@ -483,7 +529,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
 
         final var itemName = "item" + level;
         level += 1;
-        writeValue(((DtoArrayOrList) type).element(), itemName, builder);
+        writeValue(((DtoSequence) type).element(), itemName, builder);
         level -= 1;
 
         writeCache.addWriteIfNotEmpty(builder);

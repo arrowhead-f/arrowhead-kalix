@@ -8,7 +8,7 @@ import java.util.List;
 @Readable
 public interface ServiceRecordResultSet {
     @JsonName("serviceQueryData")
-    ServiceRecord[] entries();
+    List<ServiceRecord> entries();
 
     int unfilteredHits();
 }

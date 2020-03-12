@@ -129,7 +129,7 @@ public class DtoPropertyFactory {
 
         if (type.getKind().isPrimitive()) {
             return builder
-                .type(toPrimitiveType(type, DtoDescriptor.valueOf(type.getKind())))
+                .type(toElementType(type, DtoDescriptor.valueOf(type.getKind())))
                 .isOptional(false)
                 .build();
         }
@@ -166,70 +166,70 @@ public class DtoPropertyFactory {
 
     private DtoType resolveType(final ExecutableElement method, final TypeMirror type) throws DtoException {
         if (type.getKind().isPrimitive()) {
-            return toPrimitiveType(type, DtoDescriptor.valueOf(type.getKind()));
+            return toElementType(type, DtoDescriptor.valueOf(type.getKind()));
         }
         if (type.getKind() == TypeKind.ARRAY) {
             return toArrayType(method, type);
         }
         if (typeUtils.isSameType(bigDecimalType, type)) {
-            return toObjectType(type, DtoDescriptor.BIG_DECIMAL);
+            return toElementType(type, DtoDescriptor.BIG_DECIMAL);
         }
         if (typeUtils.isSameType(bigIntegerType, type)) {
-            return toObjectType(type, DtoDescriptor.BIG_INTEGER);
+            return toElementType(type, DtoDescriptor.BIG_INTEGER);
         }
         if (typeUtils.isSameType(booleanType, type)) {
-            return toObjectType(type, DtoDescriptor.BOOLEAN_BOXED);
+            return toElementType(type, DtoDescriptor.BOOLEAN_BOXED);
         }
         if (typeUtils.isSameType(byteType, type)) {
-            return toObjectType(type, DtoDescriptor.BYTE_BOXED);
+            return toElementType(type, DtoDescriptor.BYTE_BOXED);
         }
         if (typeUtils.isSameType(characterType, type)) {
-            return toObjectType(type, DtoDescriptor.CHARACTER_BOXED);
+            return toElementType(type, DtoDescriptor.CHARACTER_BOXED);
         }
         if (typeUtils.isSameType(doubleType, type)) {
-            return toObjectType(type, DtoDescriptor.DOUBLE_BOXED);
+            return toElementType(type, DtoDescriptor.DOUBLE_BOXED);
         }
         if (typeUtils.isSameType(durationType, type)) {
-            return toObjectType(type, DtoDescriptor.DURATION);
+            return toElementType(type, DtoDescriptor.DURATION);
         }
         if (typeUtils.isSameType(floatType, type)) {
-            return toObjectType(type, DtoDescriptor.FLOAT_BOXED);
+            return toElementType(type, DtoDescriptor.FLOAT_BOXED);
         }
         if (typeUtils.isSameType(instantType, type)) {
-            return toObjectType(type, DtoDescriptor.INSTANT);
+            return toElementType(type, DtoDescriptor.INSTANT);
         }
         if (typeUtils.isSameType(integerType, type)) {
-            return toObjectType(type, DtoDescriptor.INTEGER_BOXED);
+            return toElementType(type, DtoDescriptor.INTEGER_BOXED);
         }
         if (typeUtils.isSameType(localDateType, type)) {
-            return toObjectType(type, DtoDescriptor.LOCAL_DATE);
+            return toElementType(type, DtoDescriptor.LOCAL_DATE);
         }
         if (typeUtils.isSameType(localDateTimeType, type)) {
-            return toObjectType(type, DtoDescriptor.LOCAL_DATE_TIME);
+            return toElementType(type, DtoDescriptor.LOCAL_DATE_TIME);
         }
         if (typeUtils.isSameType(localTimeType, type)) {
-            return toObjectType(type, DtoDescriptor.LOCAL_TIME);
+            return toElementType(type, DtoDescriptor.LOCAL_TIME);
         }
         if (typeUtils.isSameType(longType, type)) {
-            return toObjectType(type, DtoDescriptor.LONG_BOXED);
+            return toElementType(type, DtoDescriptor.LONG_BOXED);
         }
         if (typeUtils.isSameType(monthDayType, type)) {
-            return toObjectType(type, DtoDescriptor.MONTH_DAY);
+            return toElementType(type, DtoDescriptor.MONTH_DAY);
         }
         if (typeUtils.isSameType(offsetDateTimeType, type)) {
-            return toObjectType(type, DtoDescriptor.OFFSET_DATE_TIME);
+            return toElementType(type, DtoDescriptor.OFFSET_DATE_TIME);
         }
         if (typeUtils.isSameType(offsetTimeType, type)) {
-            return toObjectType(type, DtoDescriptor.OFFSET_TIME);
+            return toElementType(type, DtoDescriptor.OFFSET_TIME);
         }
         if (typeUtils.isSameType(periodType, type)) {
-            return toObjectType(type, DtoDescriptor.PERIOD);
+            return toElementType(type, DtoDescriptor.PERIOD);
         }
         if (typeUtils.isSameType(shortType, type)) {
-            return toObjectType(type, DtoDescriptor.SHORT_BOXED);
+            return toElementType(type, DtoDescriptor.SHORT_BOXED);
         }
         if (typeUtils.asElement(type).getKind() == ElementKind.ENUM) {
-            return toObjectType(type, DtoDescriptor.ENUM);
+            return toElementType(type, DtoDescriptor.ENUM);
         }
         if (typeUtils.isAssignable(typeUtils.erasure(type), listType)) {
             return toListType(method, type);
@@ -238,25 +238,25 @@ public class DtoPropertyFactory {
             return toMapType(method, type);
         }
         if (typeUtils.isSameType(stringType, type)) {
-            return toObjectType(type, DtoDescriptor.STRING);
+            return toElementType(type, DtoDescriptor.STRING);
         }
         if (typeUtils.isSameType(yearType, type)) {
-            return toObjectType(type, DtoDescriptor.YEAR);
+            return toElementType(type, DtoDescriptor.YEAR);
         }
         if (typeUtils.isSameType(yearMonthType, type)) {
-            return toObjectType(type, DtoDescriptor.YEAR_MONTH);
+            return toElementType(type, DtoDescriptor.YEAR_MONTH);
         }
         if (typeUtils.isSameType(zonedDateTimeType, type)) {
-            return toObjectType(type, DtoDescriptor.ZONED_DATE_TIME);
+            return toElementType(type, DtoDescriptor.ZONED_DATE_TIME);
         }
         if (typeUtils.isSameType(zoneIdType, type)) {
-            return toObjectType(type, DtoDescriptor.ZONE_ID);
+            return toElementType(type, DtoDescriptor.ZONE_ID);
         }
         if (typeUtils.isSameType(zoneOffsetType, type)) {
-            return toObjectType(type, DtoDescriptor.ZONE_OFFSET);
+            return toElementType(type, DtoDescriptor.ZONE_OFFSET);
         }
         if (isEnumLike(type)) {
-            return toObjectType(type, DtoDescriptor.ENUM);
+            return toElementType(type, DtoDescriptor.ENUM);
         }
         return toInterfaceType(method, type);
     }
@@ -305,10 +305,10 @@ public class DtoPropertyFactory {
         return hasValueOf && hasToString;
     }
 
-    private DtoArray toArrayType(final ExecutableElement method, final TypeMirror type) throws DtoException {
+    private DtoSequence toArrayType(final ExecutableElement method, final TypeMirror type) throws DtoException {
         final var arrayType = (ArrayType) type;
         final var element = resolveType(method, arrayType.getComponentType());
-        return new DtoArray(arrayType, element);
+        return DtoSequence.newArray(arrayType, element);
     }
 
     private DtoInterface toInterfaceType(final ExecutableElement method, final TypeMirror type) throws DtoException {
@@ -340,10 +340,10 @@ public class DtoPropertyFactory {
         return new DtoInterface(declaredType, readableEncodings, writableEncodings);
     }
 
-    private DtoList toListType(final ExecutableElement method, final TypeMirror type) throws DtoException {
+    private DtoSequence toListType(final ExecutableElement method, final TypeMirror type) throws DtoException {
         final var declaredType = (DeclaredType) type;
         final var element = resolveType(method, declaredType.getTypeArguments().get(0));
-        return new DtoList(declaredType, element);
+        return DtoSequence.newList(declaredType, element);
     }
 
     private DtoMap toMapType(final ExecutableElement method, final TypeMirror type) throws DtoException {
@@ -358,11 +358,7 @@ public class DtoPropertyFactory {
         return new DtoMap(declaredType, key, value);
     }
 
-    private DtoType toObjectType(final TypeMirror type, final DtoDescriptor descriptor) {
-        return new DtoObject((DeclaredType) type, descriptor);
-    }
-
-    private DtoPrimitive toPrimitiveType(final TypeMirror type, final DtoDescriptor primitiveType) {
-        return new DtoPrimitive((PrimitiveType) type, primitiveType);
+    private DtoType toElementType(final TypeMirror type, final DtoDescriptor descriptor) {
+        return new DtoElement(type, descriptor);
     }
 }

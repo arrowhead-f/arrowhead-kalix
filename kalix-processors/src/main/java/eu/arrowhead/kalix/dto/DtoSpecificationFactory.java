@@ -1,8 +1,9 @@
 package eu.arrowhead.kalix.dto;
 
 import com.squareup.javapoet.*;
+import eu.arrowhead.kalix.dto.types.DtoSequence;
+import eu.arrowhead.kalix.dto.types.DtoCollection;
 import eu.arrowhead.kalix.dto.types.DtoDescriptor;
-import eu.arrowhead.kalix.dto.types.DtoList;
 import eu.arrowhead.kalix.dto.util.Expander;
 
 import javax.lang.model.element.Modifier;
@@ -57,15 +58,26 @@ public class DtoSpecificationFactory {
                 break;
 
             case LIST:
-                getter.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)
-                    .addMember("value", "\"unchecked\"").build());
-                getter.addStatement(output.expand("(List) $N"), name);
+                if (((DtoCollection) property.type()).containsInterfaceType()) {
+                    getter.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)
+                        .addMember("value", "\"unchecked\"").build());
+                    getter.addStatement(output.expand("(List) $N"), name);
+                }
+                else {
+                    getter.addStatement(output.expand("$N"), name);
+
+                }
                 break;
 
             case MAP:
-                getter.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)
-                    .addMember("value", "\"unchecked\"").build());
-                getter.addStatement(output.expand("(Map) $N"), name);
+                if (((DtoCollection) property.type()).containsInterfaceType()) {
+                    getter.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)
+                        .addMember("value", "\"unchecked\"").build());
+                    getter.addStatement(output.expand("(Map) $N"), name);
+                }
+                else {
+                    getter.addStatement(output.expand("$N"), name);
+                }
                 break;
 
             default:
@@ -94,7 +106,7 @@ public class DtoSpecificationFactory {
             builder.addMethod(fieldSetter.build());
 
             if (descriptor == DtoDescriptor.LIST) {
-                final var element = ((DtoList) property.type()).element();
+                final var element = ((DtoSequence) property.type()).element();
                 if (!element.descriptor().isCollection()) {
                     final var elementTypeName = element.inputTypeName();
 
