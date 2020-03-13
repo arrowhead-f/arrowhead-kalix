@@ -3,8 +3,8 @@ package eu.arrowhead.kalix;
 import eu.arrowhead.kalix.description.ServiceDescription;
 import eu.arrowhead.kalix.internal.ArrowheadServer;
 import eu.arrowhead.kalix.internal.net.http.HttpArrowheadServer;
+import eu.arrowhead.kalix.internal.plugin.PluginNotifier;
 import eu.arrowhead.kalix.net.http.service.HttpArrowheadService;
-import eu.arrowhead.kalix.plugin.Plug;
 import eu.arrowhead.kalix.plugin.Plugin;
 import eu.arrowhead.kalix.security.X509ArrowheadName;
 import eu.arrowhead.kalix.security.X509Certificates;
@@ -20,9 +20,7 @@ import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 /**
  * An arrowhead system.
@@ -33,9 +31,9 @@ public class ArrowheadSystem {
     private final boolean isSecure;
     private final X509KeyStore keyStore;
     private final X509TrustStore trustStore;
-    private final Map<Plug, Plugin> plugins;
+    private final PluginNotifier pluginNotifier;
     private final FutureScheduler scheduler;
-    private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
+
 
     private final Map<String, ServiceDescription> serviceDescriptions = new ConcurrentSkipListMap<>();
     private final Set<ArrowheadServer> servers = new CopyOnWriteArraySet<>();
@@ -44,13 +42,6 @@ public class ArrowheadSystem {
         var name = builder.name;
         localSocketAddress.setPlain(Objects.requireNonNullElseGet(builder.socketAddress, () ->
             new InetSocketAddress(0)));
-
-        if (builder.scheduler == null) {
-            scheduler = FutureScheduler.getDefault();
-        }
-        else {
-            scheduler = builder.scheduler;
-        }
 
         if (builder.isSecure) {
             isSecure = true;
@@ -93,31 +84,19 @@ public class ArrowheadSystem {
             this.name = name;
         }
 
-        final var self = this;
-        plugins = builder.plugins == null
-            ? Collections.emptyMap()
-            : builder.plugins.stream().collect(Collectors.toConcurrentMap(plugin ->
-                new Plug() {
-                    @Override
-                    public void detach() {
-                        plugins.remove(this);
-                    }
+        pluginNotifier = builder.plugins != null
+            ? new PluginNotifier(this, builder.plugins)
+            : null;
 
-                    @Override
-                    public ArrowheadSystem system() {
-                        return self;
-                    }
+        scheduler = builder.scheduler != null
+            ? builder.scheduler
+            : FutureScheduler.getDefault();
 
-                    @Override
-                    public boolean isSystemShuttingDown() {
-                        return isShuttingDown.get();
-                    }
-                },
-            plugin -> plugin)
-        );
-        for (final var entry : plugins.entrySet()) {
-            entry.getValue().onAttach(entry.getKey());
-        }
+        scheduler.addShutdownListener((scheduler, timeout) -> {
+            for (final var server : servers) {
+                server.stop(); // TODO: Notify plugins!
+            }
+        });
     }
 
     /**
@@ -284,6 +263,14 @@ public class ArrowheadSystem {
         serviceDescriptions.clear();
         return Futures.serialize(servers.stream().map(ArrowheadServer::stop).iterator())
             .map(Results::mergeFaults);
+    }
+
+    /**
+     * @return {@code true} only if the {@link FutureScheduler} this system is
+     * using is currently in the process of, or already has, shut down.
+     */
+    public boolean isShuttingDown() {
+        return scheduler.isShuttingDown();
     }
 
     /**

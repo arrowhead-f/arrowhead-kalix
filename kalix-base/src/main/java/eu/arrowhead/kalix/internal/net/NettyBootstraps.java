@@ -22,7 +22,7 @@ public class NettyBootstraps {
     private NettyBootstraps() {}
 
     public static Bootstrap createBootstrapUsing(final FutureScheduler scheduler) {
-        final var eventLoopGroup = (EventLoopGroup) scheduler.asScheduledExecutorService();
+        final var eventLoopGroup = scheduler.eventLoopGroup();
         final Class<? extends SocketChannel> socketChannelClass;
         if (eventLoopGroup instanceof EpollEventLoopGroup) {
             socketChannelClass = EpollSocketChannel.class;
@@ -43,7 +43,7 @@ public class NettyBootstraps {
     }
 
     public static ServerBootstrap createServerBootstrapUsing(final FutureScheduler scheduler) {
-        final var eventLoopGroup = (EventLoopGroup) scheduler.asScheduledExecutorService();
+        final var eventLoopGroup = scheduler.eventLoopGroup();
         final Class<? extends ServerSocketChannel> socketChannelClass;
         if (eventLoopGroup instanceof EpollEventLoopGroup) {
             socketChannelClass = EpollServerSocketChannel.class;

@@ -1,4 +1,4 @@
-package eu.arrowhead.kalix.internal.charset;
+package eu.arrowhead.kalix.internal.util.charset;
 
 import eu.arrowhead.kalix.util.annotation.Internal;
 

@@ -45,14 +45,23 @@ public interface Plugin {
     default void onDetach(final Plug plug) {}
 
     /**
+     * Called to notify the plugin that it was forcibly detached due to
+     * unexpectedly throwing an exception when one of its methods was called.
+     *
+     * @param plug  Plug, representing this plugin's connection to a system.
+     * @param cause The exception causing the plugin to be detached.
+     */
+    default void onDetach(final Plug plug, final Throwable cause) {}
+
+    /**
      * Called to notify the plugin that a new service is about to be finished
      * being built.
      * <p>
      * As built services cannot be modified, this method provides the only
-     * chance for this plugin to affect the internals of the service.
+     * opportunity for this plugin to affect the internals of the service.
      * <p>
      * Note that There is typically no point in calling the
-     * {@link ArrowheadServiceBuilder#build()} method, as it the service it
+     * {@link ArrowheadServiceBuilder#build()} method, as the service it
      * returns will not be added to the attached system. The builder must be
      * cast to a concrete service builder implementation to be of practical
      * use.
@@ -63,7 +72,7 @@ public interface Plugin {
      * @param plug    Plug, representing this plugin's connection to a system.
      * @param builder Builder being used to configure a service.
      */
-    default void onServiceBuilding(final Plug plug, final ArrowheadServiceBuilder builder) {}
+    default void onServicePrepared(final Plug plug, final ArrowheadServiceBuilder builder) {}
 
     /**
      * Called to notify the plugin that a new service is about to be provided
@@ -107,5 +116,4 @@ public interface Plugin {
      * @param plug Plug, representing this plugin's connection to a system.
      */
     default void onSystemStopped(final Plug plug) {}
-
 }

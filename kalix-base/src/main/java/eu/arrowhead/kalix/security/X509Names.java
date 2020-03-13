@@ -1,6 +1,6 @@
 package eu.arrowhead.kalix.security;
 
-import eu.arrowhead.kalix.internal.charset.Unicode;
+import eu.arrowhead.kalix.internal.util.charset.Unicode;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;

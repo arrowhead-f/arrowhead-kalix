@@ -1,6 +1,7 @@
 package eu.arrowhead.kalix.util.concurrent;
 
 import eu.arrowhead.kalix.util.Result;
+import eu.arrowhead.kalix.util.annotation.Internal;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
@@ -9,6 +10,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static eu.arrowhead.kalix.internal.util.concurrent.NettyFutures.adapt;
 
@@ -21,6 +23,7 @@ public final class FutureScheduler {
 
     private final EventLoopGroup eventLoopGroup;
     private final Set<FutureSchedulerShutdownListener> shutdownListeners = Collections.synchronizedSet(new HashSet<>());
+    private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 
     private FutureScheduler(final ThreadFactory threadFactory, final int nThreads) {
         final var os = System.getProperty("os.name", "").toLowerCase();
@@ -326,6 +329,9 @@ public final class FutureScheduler {
      * exceptions.
      */
     public synchronized Future<?> shutdown(final Duration timeout) {
+        if (isShuttingDown.getAndSet(true)) {
+            throw new IllegalStateException("Already shutting down");
+        }
         final var listenerThrowables = new ArrayList<Throwable>(0);
         for (final var listener : shutdownListeners) {
             try {
@@ -365,9 +371,15 @@ public final class FutureScheduler {
     }
 
     /**
-     * @return This scheduler as an {@link ScheduledExecutorService}.
+     * @return {@code true} only if this scheduler is in the process of, or
+     * already have, shut down.
      */
-    public ScheduledExecutorService asScheduledExecutorService() {
+    public boolean isShuttingDown() {
+        return isShuttingDown.get() || eventLoopGroup.isShuttingDown();
+    }
+
+    @Internal
+    public EventLoopGroup eventLoopGroup() {
         return eventLoopGroup;
     }
 }
