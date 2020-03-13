@@ -3,6 +3,7 @@ package eu.arrowhead.kalix.internal.net.http.service;
 import eu.arrowhead.kalix.net.http.service.*;
 import eu.arrowhead.kalix.util.annotation.Internal;
 import eu.arrowhead.kalix.util.concurrent.Future;
+import eu.arrowhead.kalix.util.concurrent.Futures;
 
 import java.util.ArrayList;
 
@@ -50,7 +51,7 @@ public class HttpRouteSequence {
         if (!route.match(task, pathParameters)) {
             return Future.success(false);
         }
-        return Future
+        return Futures
             .flatReducePlain(validators, false, (isHandled, validator) -> {
                 if (isHandled) {
                     return Future.success(true);
@@ -65,7 +66,7 @@ public class HttpRouteSequence {
                     .handle(task.request().cloneAndSet(pathParameters), task.response())
                     .map(ignored -> true);
             })
-            .flatMapCatch(throwable -> Future.flatReducePlain(catchers, false, (isHandled, catcher) -> {
+            .flatMapCatch(throwable -> Futures.flatReducePlain(catchers, false, (isHandled, catcher) -> {
                 if (isHandled) {
                     return Future.success(true);
                 }

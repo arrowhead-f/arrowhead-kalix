@@ -1,22 +1,24 @@
 package eu.arrowhead.kalix;
 
 import eu.arrowhead.kalix.description.ServiceDescription;
-import eu.arrowhead.kalix.internal.SystemServer;
-import eu.arrowhead.kalix.internal.net.http.HttpSystemServer;
+import eu.arrowhead.kalix.internal.ArrowheadServer;
+import eu.arrowhead.kalix.internal.net.http.HttpArrowheadServer;
 import eu.arrowhead.kalix.net.http.service.HttpService;
 import eu.arrowhead.kalix.security.X509ArrowheadName;
 import eu.arrowhead.kalix.security.X509Certificates;
 import eu.arrowhead.kalix.security.X509KeyStore;
 import eu.arrowhead.kalix.security.X509TrustStore;
+import eu.arrowhead.kalix.util.Results;
 import eu.arrowhead.kalix.util.concurrent.Future;
 import eu.arrowhead.kalix.util.concurrent.FutureScheduler;
+import eu.arrowhead.kalix.util.concurrent.Futures;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 /**
  * An arrowhead system.
@@ -29,8 +31,8 @@ public class ArrowheadSystem {
     private final X509TrustStore trustStore;
     private final FutureScheduler scheduler;
 
-    private List<ServiceDescription> cachedDescriptionsOfProvidedServices = null;
-    private SystemServer server = null;
+    private final Map<String, ServiceDescription> serviceDescriptions = new ConcurrentSkipListMap<>();
+    private final Set<ArrowheadServer> servers = new CopyOnWriteArraySet<>();
 
     private ArrowheadSystem(final Builder builder) {
         var name = builder.name;
@@ -147,67 +149,74 @@ public class ArrowheadSystem {
     }
 
     /**
-     * @return Descriptors representing all services currently provided by this
-     * system. The returned array should be a copy that can be modified without
-     * having any impact on the set kept internally by this class.
+     * @return Unmodifiable collection of descriptions representing all
+     * services currently provided, or are in the process of becoming provided,
+     * by this system.
      */
-    public synchronized List<ServiceDescription> providedServices() {
-        if (cachedDescriptionsOfProvidedServices == null) {
-            cachedDescriptionsOfProvidedServices = server.providedServices().stream()
-                .map(service -> new ServiceDescription.Builder()
-                    .name(service.name())
-                    .qualifier(service.qualifier())
-                    .security(service.security())
-                    .metadata(service.metadata())
-                    .version(service.version())
-                    .supportedInterfaces(service.supportedInterfaces())
-                    .build())
-                .collect(Collectors.toUnmodifiableList());
-        }
-        return cachedDescriptionsOfProvidedServices;
+    public Collection<ServiceDescription> providedServices() {
+        return Collections.unmodifiableCollection(serviceDescriptions.values());
     }
 
     /**
-     * Registers given {@code service} with system and makes its immediately
-     * accessible to other system.
+     * Registers given {@code service} with system and makes it accessible to
+     * other systems.
      * <p>
      * Calling this method with a service that is already being provided has no
      * effect.
      *
      * @param service Service to be provided by this system.
-     * @return Future completed when the service ... TODO
+     * @return Future completed when the service is visible to other systems.
      * @throws NullPointerException  If {@code service} is {@code null}.
      * @throws IllegalStateException If {@code service} configuration conflicts
      *                               with an already provided service.
      */
-    public synchronized Future<?> provideService(final ArrowheadService service) {
+    public Future<?> provideService(final ArrowheadService service) {
         Objects.requireNonNull(service, "Expected service");
-        final Future<?> future;
-        if (server == null) {
+
+        alreadyExists:
+        {
+            for (final var server : servers) {
+                if (server.canProvide(service)) {
+                    final var existingDescription = serviceDescriptions.computeIfAbsent(service.name(), ignored -> {
+                        server.provideService(service);
+                        return service.describe();
+                    });
+                    if (existingDescription != null) {
+                        break alreadyExists;
+                    }
+                    return Future.done();
+                }
+            }
+
+            final ArrowheadServer server;
             if (service instanceof HttpService) {
-                server = new HttpSystemServer(this);
+                server = new HttpArrowheadServer(this);
             }
             else {
                 throw new IllegalArgumentException("No server available for services of type " + service.getClass());
             }
-            future = server.start()
+            if (serviceDescriptions.computeIfAbsent(service.name(), ignored -> service.describe()) != null) {
+                break alreadyExists;
+            }
+            return server.start()
                 .map(socketAddress -> {
                     localSocketAddress.set(socketAddress);
+                    server.provideService(service);
+                    servers.add(server);
                     return null;
+                })
+                .mapFault(fault -> {
+                    serviceDescriptions.remove(service.name());
+                    return fault;
                 });
         }
-        else {
-            future = Future.done();
-        }
-        if (server.provideService(service)) {
-            cachedDescriptionsOfProvidedServices = null;
-        }
-        return future;
+        throw new IllegalStateException("A service named \"" + service.name() +
+            "\" is already provided");
     }
 
     /**
-     * Deregisters given {@code service} from this system, immediately making
-     * it inaccessible to other systems.
+     * Deregisters given {@code service} from this system, making it
+     * inaccessible to other systems.
      * <p>
      * Calling this method with a service that is not currently provided has no
      * effect.
@@ -215,25 +224,16 @@ public class ArrowheadSystem {
      * @param service Service to no longer be provided by this system.
      * @throws NullPointerException If {@code service} is {@code null}.
      */
-    public synchronized void dismissService(final ArrowheadService service) {
+    public void dismissService(final ArrowheadService service) {
         Objects.requireNonNull(service, "Expected service");
-        if (server == null) {
-            return;
+        if (serviceDescriptions.remove(service.name()) != null) {
+            for (final var server : servers) {
+                if (server.canProvide(service)) {
+                    server.dismissService(service);
+                    return;
+                }
+            }
         }
-        if (server.dismissService(service)) {
-            cachedDescriptionsOfProvidedServices = null;
-        }
-    }
-
-    /**
-     * Deregisters all currently registered services from this system.
-     */
-    public synchronized void dismissAllServices() {
-        if (server == null) {
-            return;
-        }
-        server.dismissAllServices();
-        cachedDescriptionsOfProvidedServices = null;
     }
 
     /**
@@ -243,16 +243,15 @@ public class ArrowheadSystem {
      * however, to provide new services until after the returned future
      * completes.
      *
-     * @return Future completed when stopping finishes.
+     * @return Future completed when stopping finishes. If this system is or
+     * has been providing services with different application-level protocols,
+     * the future might be failed with an exception containing suppressed
+     * exceptions.
      */
-    public synchronized Future<?> stop() {
-        dismissAllServices();
-        if (server == null) {
-            return Future.done();
-        }
-        final var server0 = server;
-        server = null;
-        return server0.stop();
+    public Future<?> stop() {
+        serviceDescriptions.clear();
+        return Futures.serialize(servers.stream().map(ArrowheadServer::stop).iterator())
+            .map(Results::mergeFaults);
     }
 
     /**

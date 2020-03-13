@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix;
 
+import eu.arrowhead.kalix.description.ServiceDescription;
 import eu.arrowhead.kalix.descriptor.InterfaceDescriptor;
 import eu.arrowhead.kalix.descriptor.SecurityDescriptor;
 
@@ -32,7 +33,7 @@ public interface ArrowheadService {
 
     /**
      * @return Metadata associated with this service. Their significance and
-     * use depend on the service.
+     * use depend on the service. The returned map should be unmodifiable.
      */
     Map<String, String> metadata();
 
@@ -46,4 +47,17 @@ public interface ArrowheadService {
      * returned list should be unmodifiable.
      */
     List<InterfaceDescriptor> supportedInterfaces();
+
+    /**
+     * @return Computed description of this service.
+     */
+    default ServiceDescription describe() {
+        return new ServiceDescription.Builder()
+            .name(name())
+            .qualifier(qualifier())
+            .security(security())
+            .metadata(metadata())
+            .version(version())
+            .build();
+    }
 }

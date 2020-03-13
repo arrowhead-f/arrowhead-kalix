@@ -11,6 +11,7 @@ import eu.arrowhead.kalix.internal.net.http.service.HttpRouteSequenceFactory;
 import eu.arrowhead.kalix.net.http.HttpMethod;
 import eu.arrowhead.kalix.net.http.HttpStatus;
 import eu.arrowhead.kalix.util.concurrent.Future;
+import eu.arrowhead.kalix.util.concurrent.Futures;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -129,7 +130,7 @@ public class HttpService implements ArrowheadService {
             .response(response)
             .build();
 
-        return Future.flatReducePlain(routeSequences, false,
+        return Futures.flatReducePlain(routeSequences, false,
             (isHandled, routeSequence) -> {
                 if (isHandled) {
                     return Future.success(true);

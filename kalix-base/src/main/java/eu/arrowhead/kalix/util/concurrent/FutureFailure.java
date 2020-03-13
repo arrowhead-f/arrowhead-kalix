@@ -77,7 +77,7 @@ class FutureFailure<V> implements FutureProgress<V> {
     }
 
     @Override
-    public Future<V> mapError(final ThrowingFunction<Throwable, Throwable> mapper) {
+    public Future<V> mapFault(final ThrowingFunction<Throwable, Throwable> mapper) {
         Objects.requireNonNull(mapper, "Expected mapper");
         Throwable err;
         try {
@@ -118,7 +118,7 @@ class FutureFailure<V> implements FutureProgress<V> {
     }
 
     @Override
-    public Future<V> flatMapError(final ThrowingFunction<Throwable, ? extends Future<Throwable>> mapper) {
+    public Future<V> flatMapFault(final ThrowingFunction<Throwable, ? extends Future<Throwable>> mapper) {
         Objects.requireNonNull(mapper, "Expected mapper");
         final var cancelTarget = new AtomicReference<Future<?>>();
         return new Future<>() {

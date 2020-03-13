@@ -72,7 +72,7 @@ class FutureSuccess<V> implements FutureProgress<V> {
     }
 
     @Override
-    public Future<V> mapError(final ThrowingFunction<Throwable, Throwable> mapper) {
+    public Future<V> mapFault(final ThrowingFunction<Throwable, Throwable> mapper) {
         Objects.requireNonNull(mapper, "Expected mapper");
         return new FutureSuccess<>(value);
     }
@@ -106,7 +106,7 @@ class FutureSuccess<V> implements FutureProgress<V> {
     }
 
     @Override
-    public Future<V> flatMapError(final ThrowingFunction<Throwable, ? extends Future<Throwable>> mapper) {
+    public Future<V> flatMapFault(final ThrowingFunction<Throwable, ? extends Future<Throwable>> mapper) {
         Objects.requireNonNull(mapper, "Expected mapper");
         return new FutureSuccess<>(value);
     }

@@ -4,15 +4,20 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * The result of an operation that can either succeed or fail, during which
- * exceptions would not end up at the appropriate caller if thrown.
+ * The result of an operation that can either succeed or fail.
  * <p>
  * A {@code Result} may either be a <i>success</i>, in which case a
  * <i>value</i> is available, or a <i>failure</i>, which makes an
- * <i>error</i> available. The {@link #isSuccess()} method is used to
+ * <i>fault</i> available. The {@link #isSuccess()} method is used to
  * determine which of the two situations is the case. The {@link #value()}
- * and {@link #fault()} methods are used to collect the value or error,
+ * and {@link #fault()} methods are used to collect the value or fault,
  * respectively.
+ * <p>
+ * This type is especially appropriate to use when throwing exceptions do not
+ * cause them to end up at the initiator of the execution in question. This is
+ * often the case when dealing with thread pools, as the threads in such pools
+ * can do nothing to meaningfully handle exceptions thrown while they are
+ * executing.
  *
  * @param <V> Type of value provided by {@code Result} if successful.
  */
@@ -42,8 +47,8 @@ public class Result<V> {
      * Creates new failure {@code Result}.
      *
      * @param throwable Reason for failure.
-     * @param <V>   Type of value that would have been provided by the
-     *              created {@code Result}, if it were successful.
+     * @param <V>       Type of value that would have been provided by the
+     *                  created {@code Result}, if it were successful.
      * @return New {@code Result}.
      */
     public static <V> Result<V> failure(final Throwable throwable) {
@@ -83,10 +88,10 @@ public class Result<V> {
     }
 
     /**
-     * Either returns {@code Result} value or throws its error, depending
+     * Either returns {@code Result} value or throws its fault, depending
      * on whether it is successful or not.
      * <p>
-     * In the case of being a failure, the error is thrown as-is if it is a
+     * In the case of being a failure, the fault is thrown as-is if it is a
      * subclass of {@link RuntimeException}. If not, it is wrapped in a
      * {@code RuntimeException} before being thrown.
      *
@@ -127,13 +132,13 @@ public class Result<V> {
 
     /**
      * If this result is successful, applies given {@code mapper} to its value.
-     * Otherwise, a new {@code Result} with the error contained in this one is
+     * Otherwise, a new {@code Result} with the fault contained in this one is
      * returned.
      *
      * @param <U>    Type of return value of {@code mapper}.
      * @param mapper Function to apply to result value, if this result is
      *               successful.
-     * @return New result containing either output of mapping or an error
+     * @return New result containing either output of mapping or an fault
      * passed on from this result.
      */
     public <U> Result<U> map(final Function<? super V, U> mapper) {
@@ -146,15 +151,15 @@ public class Result<V> {
     /**
      * If this result is successful, applies given {@code mapper} to its value,
      * and then returns the {@code Result} returned by the {@code mapper}. If
-     * this result is not successful, a new {@code FutureResult} with the error
-     * it contains is returned.
+     * this result is not successful, a new {@code Result} with the fault it
+     * contains is returned.
      *
-     * @param <U>    Type of value of {@code FutureResult} returned by
+     * @param <U>    Type of value of {@code Result} returned by
      *               {@code mapper}.
      * @param mapper Function to apply to result value, if this result is
      *               successful.
      * @return New result consisting either of result of {@code mapper} or an
-     * error passed on from this result.
+     * fault passed on from this result.
      */
     public <U> Result<U> flatMap(final Function<? super V, ? extends Result<U>> mapper) {
         if (isSuccess()) {
