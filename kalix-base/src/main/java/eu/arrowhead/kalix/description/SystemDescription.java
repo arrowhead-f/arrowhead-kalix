@@ -2,10 +2,8 @@ package eu.arrowhead.kalix.description;
 
 import java.net.InetSocketAddress;
 import java.security.PublicKey;
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * Describes an Arrowhead system, especially in terms of how it can be

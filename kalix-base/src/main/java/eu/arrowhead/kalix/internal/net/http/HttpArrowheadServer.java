@@ -85,23 +85,27 @@ public class HttpArrowheadServer extends ArrowheadServer {
     }
 
     @Override
-    public void provideService(final ArrowheadService service) {
+    public boolean provideService(final ArrowheadService service) {
         Objects.requireNonNull(service, "Expected service");
         if (!(service instanceof HttpArrowheadService)) {
             throw new IllegalArgumentException("Expected service to be HttpService");
         }
         final var existingService = providedServices.putIfAbsent(service.qualifier(), (HttpArrowheadService) service);
-        if (existingService != null && existingService != service) {
-            throw new IllegalStateException("Qualifier (base path) \"" +
-                service.qualifier() + "\" already in use by  \"" +
-                existingService.name() + "\"; cannot provide \"" +
-                service.name() + "\"");
+        if (existingService != null) {
+            if (existingService != service) {
+                throw new IllegalStateException("Qualifier (base path) \"" +
+                    service.qualifier() + "\" already in use by  \"" +
+                    existingService.name() + "\"; cannot provide \"" +
+                    service.name() + "\"");
+            }
+            return false;
         }
+        return true;
     }
 
     @Override
-    public void dismissService(final ArrowheadService service) {
+    public boolean dismissService(final ArrowheadService service) {
         Objects.requireNonNull(service, "Expected service");
-        providedServices.remove(service.qualifier());
+        return providedServices.remove(service.qualifier()) != null;
     }
 }

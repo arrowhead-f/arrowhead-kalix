@@ -20,7 +20,7 @@ public class PluginNotifier {
     public PluginNotifier(final ArrowheadSystem system, final Collection<Plugin> plugins0) {
         this.plugins = plugins0 == null
             ? Collections.emptyMap()
-            : plugins0.stream().collect(Collectors.toConcurrentMap(plugin ->
+            : plugins0.stream().collect(Collectors.toMap(plugin ->
                 new Plug() {
                     @Override
                     public void detach() {
@@ -40,6 +40,11 @@ public class PluginNotifier {
             plugin -> plugin)
         );
         forEach((plug, plugin) -> plugin.onAttach(plug));
+    }
+
+    public void clear() {
+        forEach((plug, plugin) -> plugin.onDetach(plug));
+        plugins.clear();
     }
 
     public void onServiceBuilding(final ArrowheadServiceBuilder builder) {

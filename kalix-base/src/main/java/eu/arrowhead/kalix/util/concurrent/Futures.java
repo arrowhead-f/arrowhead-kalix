@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Various utilities for working will collections of {@link Future Futures}.
@@ -47,6 +48,43 @@ public final class Futures {
         final ThrowingBiFunction<? super U, ? super T, ? extends U> accumulator)
     {
         return reduce(Arrays.asList(array), identity, accumulator);
+    }
+
+    /**
+     * Applies given {@code accumulator} to every element in {@code stream}
+     * in a way that corresponds with the following code:
+     * <pre>
+     *     U value = identity;
+     *     Iterator&lt;T&gt; iterator = stream.iterator();
+     *     while (iterator.hasNext()) {
+     *         T element = iterator.next();
+     *         // Wait for element to become available.
+     *         value = accumulator.apply(value, element);
+     *     }
+     *     return value; // Accumulated value.
+     * </pre>
+     * In other words, the elements of the {@code stream} are processed
+     * <i>serially</i>, from the first to the last. The waiting for each
+     * element to become available is performed in a non-blocking manner.
+     *
+     * @param stream      Stream of futures.
+     * @param identity    Initial input to the accumulator function.
+     * @param accumulator Function used to combine the last identity value with
+     *                    the successful result of a {@code Future} into the
+     *                    next identity value.
+     * @param <T>         Type of value provided by futures in array if they
+     *                    complete successfully.
+     * @param <U>         Type of identity value and accumulated value.
+     * @return Future, completed with accumulated value only if all futures in
+     * {@code array} completes successfully. Otherwise it is failed with the
+     * first encountered error.
+     */
+    public static <T, U> Future<U> reduce(
+        final Stream<Future<T>> stream,
+        final U identity,
+        final ThrowingBiFunction<? super U, ? super T, ? extends U> accumulator)
+    {
+        return reduce(stream.iterator(), identity, accumulator);
     }
 
     /**
@@ -170,6 +208,46 @@ public final class Futures {
     }
 
     /**
+     * Applies given {@code accumulator} to every element of {@code stream} in
+     * a way that corresponds with the following code:
+     * <pre>
+     *     U value0 = identity;
+     *     Iterator&lt;T&gt; iterator = stream.iterator();
+     *     while (iterator.hasNext()) {
+     *         T element = iterator.next();
+     *         // Wait for element to become available.
+     *         U value1 = accumulator.apply(value0, element);
+     *         // Wait for value1 to become available.
+     *         value0 = value1;
+     *     }
+     *     return value0; // Accumulated value.
+     * </pre>
+     * In other words, the elements of the stream are processed
+     * <i>serially</i>, from the first to the last. The waiting for each
+     * element to become available is performed in a non-blocking manner.
+     *
+     * @param stream      Stream of futures.
+     * @param identity    Initial input to the accumulator function.
+     * @param accumulator Function used to combine the last identity value with
+     *                    the successful result of a {@code Future} into
+     *                    another {@code Future}, which in turn completes with
+     *                    the next identity value.
+     * @param <T>         Type of value provided by futures in array if they
+     *                    complete successfully.
+     * @param <U>         Type of identity value and accumulated value.
+     * @return Future, completed with accumulated value only if all futures of
+     * {@code stream} completes successfully. Otherwise it is failed with the
+     * first encountered error.
+     */
+    public static <T, U> Future<U> flatReduce(
+        final Stream<Future<T>> stream,
+        final U identity,
+        final ThrowingBiFunction<? super U, ? super T, ? extends Future<U>> accumulator)
+    {
+        return flatReduce(stream.iterator(), identity, accumulator);
+    }
+
+    /**
      * Applies given {@code accumulator} to every element of {@code iterable}
      * in a way that corresponds with the following code:
      * <pre>
@@ -274,7 +352,7 @@ public final class Futures {
      * the first to the last. The waiting for each element to become available
      * is performed in a non-blocking manner.
      *
-     * @param array       Array of plain elements.
+     * @param array       Array of elements.
      * @param identity    Initial input to the accumulator function.
      * @param accumulator Function used to combine the last identity value with
      *                    the successful result of a {@code Future} into
@@ -296,6 +374,45 @@ public final class Futures {
     }
 
     /**
+     * Applies given {@code accumulator} to every element of {@code stream}
+     * in a way that corresponds with the following code:
+     * <pre>
+     *     U value0 = identity;
+     *     Iterator&lt;T&gt; iterator = stream.iterator();
+     *     while (iterator.hasNext()) {
+     *         T element = iterator.next();
+     *         U value1 = accumulator.apply(value0, element);
+     *         // Wait for value1 to become available.
+     *         value0 = value1;
+     *     }
+     *     return value0; // Accumulated value.
+     * </pre>
+     * In other words, the elements of the stream are processed
+     * <i>serially</i>, from the first to the last. The waiting for each
+     * element to become available is performed in a non-blocking manner.
+     *
+     * @param stream      Stream of elements.
+     * @param identity    Initial input to the accumulator function.
+     * @param accumulator Function used to combine the last identity value with
+     *                    the successful result of a {@code Future} into
+     *                    another {@code Future}, which in turn completes with
+     *                    the next identity value.
+     * @param <T>         Type of value provided by futures in array if they
+     *                    complete successfully.
+     * @param <U>         Type of identity value and accumulated value.
+     * @return Future, completed with accumulated value only if all futures of
+     * {@code stream} completes successfully. Otherwise it is failed with the
+     * first encountered error.
+     */
+    public static <T, U> Future<U> flatReducePlain(
+        final Stream<T> stream,
+        final U identity,
+        final ThrowingBiFunction<? super U, ? super T, ? extends Future<U>> accumulator)
+    {
+        return flatReducePlain(stream.iterator(), identity, accumulator);
+    }
+
+    /**
      * Applies given {@code accumulator} to every element of {@code iterable}
      * in a way that corresponds with the following code:
      * <pre>
@@ -313,7 +430,7 @@ public final class Futures {
      * <i>serially</i>, from the first to the last. The waiting for each
      * element to become available is performed in a non-blocking manner.
      *
-     * @param iterable    Iterable of plain elements.
+     * @param iterable    Iterable of elements.
      * @param identity    Initial input to the accumulator function.
      * @param accumulator Function used to combine the last identity value with
      *                    the successful result of a {@code Future} into
@@ -351,7 +468,7 @@ public final class Futures {
      * <i>serially</i>, from the first to the last. The waiting for each
      * element to become available is performed in a non-blocking manner.
      *
-     * @param iterator    Iterator of plain elements.
+     * @param iterator    Iterator of elements.
      * @param identity    Initial input to the accumulator function.
      * @param accumulator Function used to combine the last identity value with
      *                    the successful result of a {@code Future} into
@@ -393,6 +510,20 @@ public final class Futures {
      */
     public static <V> Future<List<Result<? extends V>>> serialize(final Future<V>[] array) {
         return serialize(Arrays.asList(array));
+    }
+
+    /**
+     * Executes every future in {@code stream} in sequence, collecting every
+     * result into a list.
+     *
+     * @param stream Stream of futures.
+     * @param <V>    Type of value futures completes with if successful.
+     * @return Future completed with list of results from all provided futures,
+     * with the results being in the same order as the futures in the given
+     * {@code stream}.
+     */
+    public static <V> Future<List<Result<? extends V>>> serialize(final Stream<? extends Future<? extends V>> stream) {
+        return serialize(stream.iterator());
     }
 
     /**

@@ -1,6 +1,5 @@
 package eu.arrowhead.kalix;
 
-import eu.arrowhead.kalix.description.ServiceDescription;
 import eu.arrowhead.kalix.internal.ArrowheadServer;
 import eu.arrowhead.kalix.internal.net.http.HttpArrowheadServer;
 import eu.arrowhead.kalix.internal.plugin.PluginNotifier;
@@ -18,9 +17,8 @@ import eu.arrowhead.kalix.util.concurrent.Futures;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * An arrowhead system.
@@ -34,9 +32,10 @@ public class ArrowheadSystem {
     private final PluginNotifier pluginNotifier;
     private final FutureScheduler scheduler;
 
-
-    private final Map<String, ServiceDescription> serviceDescriptions = new ConcurrentSkipListMap<>();
-    private final Set<ArrowheadServer> servers = new CopyOnWriteArraySet<>();
+    private final Object lock = this;
+    private Set<ArrowheadServer> servers = new HashSet<>();
+    private final Map<String, ArrowheadService> services = new HashMap<>();
+    private List<ArrowheadService> cachedServiceList = null;
 
     private ArrowheadSystem(final Builder builder) {
         var name = builder.name;
@@ -93,8 +92,21 @@ public class ArrowheadSystem {
             : FutureScheduler.getDefault();
 
         scheduler.addShutdownListener((scheduler, timeout) -> {
-            for (final var server : servers) {
-                server.stop(); // TODO: Notify plugins!
+            synchronized (lock) {
+                if (pluginNotifier != null) {
+                    pluginNotifier.onSystemStopped();
+                }
+                for (final var server : servers) {
+                    if (pluginNotifier != null) {
+                        for (final var service : server.providedServices()) {
+                            pluginNotifier.onServiceDismissed(service);
+                        }
+                    }
+                    server.stop();
+                }
+                if (pluginNotifier != null) {
+                    pluginNotifier.clear();
+                }
             }
         });
     }
@@ -107,7 +119,7 @@ public class ArrowheadSystem {
     }
 
     /**
-     * @return Network interface address.
+     * @return Local network interface address.
      */
     public InetAddress localAddress() {
         return localSocketAddress.get().getAddress();
@@ -160,12 +172,19 @@ public class ArrowheadSystem {
     }
 
     /**
-     * @return Unmodifiable collection of descriptions representing all
-     * services currently provided, or are in the process of becoming provided,
-     * by this system.
+     * @return Unmodifiable collection of all services currently provided by
+     * this system. The returned collection is not updated as new services are
+     * added or removed from the system.
      */
-    public Collection<ServiceDescription> providedServices() {
-        return Collections.unmodifiableCollection(serviceDescriptions.values());
+    public List<ArrowheadService> providedServices() {
+        synchronized (lock) {
+            if (cachedServiceList == null) {
+                cachedServiceList = services.values()
+                    .stream()
+                    .collect(Collectors.toUnmodifiableList());
+            }
+            return cachedServiceList;
+        }
     }
 
     /**
@@ -175,27 +194,39 @@ public class ArrowheadSystem {
      * Calling this method with a service that is already being provided has no
      * effect.
      *
-     * @param service Service to be provided by this system.
+     * @param builder Service to be provided by this system.
      * @return Future completed when the service is visible to other systems.
      * @throws NullPointerException  If {@code service} is {@code null}.
      * @throws IllegalStateException If {@code service} configuration conflicts
      *                               with an already provided service.
      */
-    public Future<?> provideService(final ArrowheadService service) {
-        Objects.requireNonNull(service, "Expected service");
+    public Future<?> provideService(final ArrowheadServiceBuilder builder) {
+        Objects.requireNonNull(builder, "Expected builder");
+
+        synchronized (lock) {
+            if (pluginNotifier != null) {
+                pluginNotifier.onServiceBuilding(builder);
+            }
+        }
+        final var service = builder.build();
 
         alreadyExists:
         {
-            for (final var server : servers) {
-                if (server.canProvide(service)) {
-                    final var existingDescription = serviceDescriptions.computeIfAbsent(service.name(), ignored -> {
-                        server.provideService(service);
-                        return service.describe();
-                    });
-                    if (existingDescription != null) {
-                        break alreadyExists;
+            synchronized (lock) {
+                for (final var server : servers) {
+                    if (server.canProvide(service)) {
+                        if (server.provideService(service)) {
+                            if (services.putIfAbsent(service.name(), service) != null) {
+                                break alreadyExists;
+                            }
+                            cachedServiceList = null;
+
+                            if (pluginNotifier != null) {
+                                pluginNotifier.onServiceProvided(service);
+                            }
+                        }
+                        return Future.done();
                     }
-                    return Future.done();
                 }
             }
 
@@ -206,20 +237,36 @@ public class ArrowheadSystem {
             else {
                 throw new IllegalArgumentException("No server available for services of type " + service.getClass());
             }
-            if (serviceDescriptions.computeIfAbsent(service.name(), ignored -> service.describe()) != null) {
-                break alreadyExists;
+
+            synchronized (lock) {
+                if (services.putIfAbsent(service.name(), service) != null) {
+                    break alreadyExists;
+                }
+                return server.start()
+                    .map(socketAddress -> {
+                        localSocketAddress.set(socketAddress);
+                        synchronized (lock) {
+                            server.provideService(service);
+                            cachedServiceList = null;
+
+                            servers.add(server);
+
+                            if (pluginNotifier != null) {
+                                if (servers.size() == 1) {
+                                    pluginNotifier.onSystemStarted();
+                                }
+                                pluginNotifier.onServiceProvided(service);
+                            }
+                        }
+                        return null;
+                    })
+                    .mapFault(fault -> {
+                        synchronized (lock) {
+                            services.remove(service.name());
+                        }
+                        return fault;
+                    });
             }
-            return server.start()
-                .map(socketAddress -> {
-                    localSocketAddress.set(socketAddress);
-                    server.provideService(service);
-                    servers.add(server);
-                    return null;
-                })
-                .mapFault(fault -> {
-                    serviceDescriptions.remove(service.name());
-                    return fault;
-                });
         }
         throw new IllegalStateException("A service named \"" + service.name() +
             "\" is already provided");
@@ -237,11 +284,20 @@ public class ArrowheadSystem {
      */
     public void dismissService(final ArrowheadService service) {
         Objects.requireNonNull(service, "Expected service");
-        if (serviceDescriptions.remove(service.name()) != null) {
-            for (final var server : servers) {
-                if (server.canProvide(service)) {
-                    server.dismissService(service);
-                    return;
+
+        synchronized (lock) {
+            if (services.remove(service.name()) != null) {
+                for (final var server : servers) {
+                    if (server.canProvide(service)) {
+                        server.dismissService(service);
+                        cachedServiceList = null;
+
+                        if (pluginNotifier != null) {
+                            pluginNotifier.onServiceDismissed(service);
+                        }
+
+                        return;
+                    }
                 }
             }
         }
@@ -260,8 +316,19 @@ public class ArrowheadSystem {
      * exceptions.
      */
     public Future<?> stop() {
-        serviceDescriptions.clear();
-        return Futures.serialize(servers.stream().map(ArrowheadServer::stop).iterator())
+        final Set<ArrowheadServer> servers0;
+        synchronized (lock) {
+            if (pluginNotifier != null) {
+                pluginNotifier.onSystemStopped();
+                for (final var service : services.values()) {
+                    pluginNotifier.onServiceDismissed(service);
+                }
+            }
+            services.clear();
+            servers0 = servers;
+            servers = new HashSet<>();
+        }
+        return Futures.serialize(servers0.stream().map(ArrowheadServer::stop))
             .map(Results::mergeFaults);
     }
 

@@ -58,11 +58,12 @@ public abstract class ArrowheadServer {
      * effect.
      *
      * @param service Service to be provided by this server.
+     * @return {@code true} only if {@code service} is not already provided.
      * @throws NullPointerException  If {@code service} is {@code null}.
      * @throws IllegalStateException If {@code service} configuration conflicts
      *                               with an already provided service.
      */
-    public abstract void provideService(final ArrowheadService service);
+    public abstract boolean provideService(final ArrowheadService service);
 
     /**
      * Deregisters given {@code service} from this server, immediately making
@@ -72,9 +73,10 @@ public abstract class ArrowheadServer {
      * effect.
      *
      * @param service Service to no longer be provided by this server.
+     * @return {@code true} only if {@code service} was being provided.
      * @throws NullPointerException If {@code service} is {@code null}.
      */
-    public abstract void dismissService(final ArrowheadService service);
+    public abstract boolean dismissService(final ArrowheadService service);
 
     /**
      * @return Arrowhead system owning this server.
