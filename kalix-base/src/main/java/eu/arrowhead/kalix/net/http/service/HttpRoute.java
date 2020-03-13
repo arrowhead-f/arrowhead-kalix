@@ -16,7 +16,7 @@ public class HttpRoute implements HttpRoutable {
     private final HttpRouteHandler handler;
 
     /**
-     * Creates new {@link HttpService} route.
+     * Creates new {@link HttpArrowheadService} route.
      *
      * @param method  HTTP method to require for given requests to match this
      *                route. Use {@code null} to allow any method.

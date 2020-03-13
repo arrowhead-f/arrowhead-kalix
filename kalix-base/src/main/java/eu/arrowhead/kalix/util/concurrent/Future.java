@@ -95,7 +95,7 @@ public interface Future<V> {
     default void onFailure(final Consumer<Throwable> consumer) {
         Objects.requireNonNull(consumer);
         onResult(result -> {
-            if (!result.isSuccess()) {
+            if (result.isFailure()) {
                 consumer.accept(result.fault());
             }
         });

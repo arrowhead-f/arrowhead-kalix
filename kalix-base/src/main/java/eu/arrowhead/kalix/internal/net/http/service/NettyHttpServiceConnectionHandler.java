@@ -4,7 +4,7 @@ import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.internal.net.http.HttpMediaTypes;
 import eu.arrowhead.kalix.internal.net.http.NettyHttpBodyReceiver;
 import eu.arrowhead.kalix.internal.net.http.NettyHttpPeer;
-import eu.arrowhead.kalix.net.http.service.HttpService;
+import eu.arrowhead.kalix.net.http.service.HttpArrowheadService;
 import eu.arrowhead.kalix.util.annotation.Internal;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
@@ -47,7 +47,7 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
         final var queryStringDecoder = new QueryStringDecoder(request.uri());
         final var path = queryStringDecoder.path();
 
-        final HttpService service;
+        final HttpArrowheadService service;
         {
             final var optionalService = serviceLookup.getServiceByPath(path);
             if (optionalService.isEmpty()) {
@@ -116,7 +116,7 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
      * instead. If neither field is specified, the configured default encoding
      * is assumed to be adequate. No other content-negotiation is possible.
      */
-    private Optional<EncodingDescriptor> determineEncodingFrom(final HttpService service, final HttpHeaders headers) {
+    private Optional<EncodingDescriptor> determineEncodingFrom(final HttpArrowheadService service, final HttpHeaders headers) {
         final var contentType = headers.get("content-type");
         if (contentType != null) {
             return HttpMediaTypes.findEncodingCompatibleWithContentType(service.encodings(), contentType);

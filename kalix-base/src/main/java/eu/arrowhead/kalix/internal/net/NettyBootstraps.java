@@ -4,6 +4,7 @@ import eu.arrowhead.kalix.util.annotation.Internal;
 import eu.arrowhead.kalix.util.concurrent.FutureScheduler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.epoll.EpollSocketChannel;
@@ -21,7 +22,7 @@ public class NettyBootstraps {
     private NettyBootstraps() {}
 
     public static Bootstrap createBootstrapUsing(final FutureScheduler scheduler) {
-        final var eventLoopGroup = scheduler.eventLoopGroup();
+        final var eventLoopGroup = (EventLoopGroup) scheduler.asScheduledExecutorService();
         final Class<? extends SocketChannel> socketChannelClass;
         if (eventLoopGroup instanceof EpollEventLoopGroup) {
             socketChannelClass = EpollSocketChannel.class;
@@ -42,7 +43,7 @@ public class NettyBootstraps {
     }
 
     public static ServerBootstrap createServerBootstrapUsing(final FutureScheduler scheduler) {
-        final var eventLoopGroup = scheduler.eventLoopGroup();
+        final var eventLoopGroup = (EventLoopGroup) scheduler.asScheduledExecutorService();
         final Class<? extends ServerSocketChannel> socketChannelClass;
         if (eventLoopGroup instanceof EpollEventLoopGroup) {
             socketChannelClass = EpollServerSocketChannel.class;

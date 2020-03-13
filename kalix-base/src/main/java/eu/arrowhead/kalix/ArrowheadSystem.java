@@ -3,7 +3,9 @@ package eu.arrowhead.kalix;
 import eu.arrowhead.kalix.description.ServiceDescription;
 import eu.arrowhead.kalix.internal.ArrowheadServer;
 import eu.arrowhead.kalix.internal.net.http.HttpArrowheadServer;
-import eu.arrowhead.kalix.net.http.service.HttpService;
+import eu.arrowhead.kalix.net.http.service.HttpArrowheadService;
+import eu.arrowhead.kalix.plugin.Plug;
+import eu.arrowhead.kalix.plugin.Plugin;
 import eu.arrowhead.kalix.security.X509ArrowheadName;
 import eu.arrowhead.kalix.security.X509Certificates;
 import eu.arrowhead.kalix.security.X509KeyStore;
@@ -18,7 +20,9 @@ import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * An arrowhead system.
@@ -29,7 +33,9 @@ public class ArrowheadSystem {
     private final boolean isSecure;
     private final X509KeyStore keyStore;
     private final X509TrustStore trustStore;
+    private final Map<Plug, Plugin> plugins;
     private final FutureScheduler scheduler;
+    private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 
     private final Map<String, ServiceDescription> serviceDescriptions = new ConcurrentSkipListMap<>();
     private final Set<ArrowheadServer> servers = new CopyOnWriteArraySet<>();
@@ -85,6 +91,32 @@ public class ArrowheadSystem {
                     "in insecure mode");
             }
             this.name = name;
+        }
+
+        final var self = this;
+        plugins = builder.plugins == null
+            ? Collections.emptyMap()
+            : builder.plugins.stream().collect(Collectors.toConcurrentMap(plugin ->
+                new Plug() {
+                    @Override
+                    public void detach() {
+                        plugins.remove(this);
+                    }
+
+                    @Override
+                    public ArrowheadSystem system() {
+                        return self;
+                    }
+
+                    @Override
+                    public boolean isSystemShuttingDown() {
+                        return isShuttingDown.get();
+                    }
+                },
+            plugin -> plugin)
+        );
+        for (final var entry : plugins.entrySet()) {
+            entry.getValue().onAttach(entry.getKey());
         }
     }
 
@@ -189,7 +221,7 @@ public class ArrowheadSystem {
             }
 
             final ArrowheadServer server;
-            if (service instanceof HttpService) {
+            if (service instanceof HttpArrowheadService) {
                 server = new HttpArrowheadServer(this);
             }
             else {
@@ -264,6 +296,7 @@ public class ArrowheadSystem {
         private X509KeyStore keyStore;
         private X509TrustStore trustStore;
         private boolean isSecure = true;
+        private List<Plugin> plugins;
         private FutureScheduler scheduler;
 
         /**
@@ -446,6 +479,35 @@ public class ArrowheadSystem {
          */
         public final Builder insecure() {
             this.isSecure = false;
+            return this;
+        }
+
+        /**
+         * Sets {@link Plugin plugins} to be used by this system.
+         * <p>
+         * Plugins are useful for listening and reacting to system life-cycle
+         * event, and can be used to inject security functionality into
+         * services, automatically spin up services, among other things.
+         *
+         * @param plugins Desired system plugins.
+         * @return This builder.
+         */
+        public Builder plugins(final Plugin... plugins) {
+            return plugins(Arrays.asList(plugins));
+        }
+
+        /**
+         * Sets {@link Plugin plugins} to be used by this system.
+         * <p>
+         * Plugins are useful for listening and reacting to system life-cycle
+         * event, and can be used to inject security functionality into
+         * services, automatically spin up services, among other things.
+         *
+         * @param plugins Desired system plugins.
+         * @return This builder.
+         */
+        public Builder plugins(final List<Plugin> plugins) {
+            this.plugins = plugins;
             return this;
         }
 

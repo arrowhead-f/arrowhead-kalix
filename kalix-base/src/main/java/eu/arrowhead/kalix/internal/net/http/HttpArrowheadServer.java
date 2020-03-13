@@ -5,7 +5,7 @@ import eu.arrowhead.kalix.ArrowheadSystem;
 import eu.arrowhead.kalix.internal.ArrowheadServer;
 import eu.arrowhead.kalix.internal.net.NettyBootstraps;
 import eu.arrowhead.kalix.internal.net.http.service.NettyHttpServiceConnectionInitializer;
-import eu.arrowhead.kalix.net.http.service.HttpService;
+import eu.arrowhead.kalix.net.http.service.HttpArrowheadService;
 import eu.arrowhead.kalix.util.concurrent.Future;
 import io.netty.channel.Channel;
 import io.netty.handler.logging.LoggingHandler;
@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import static eu.arrowhead.kalix.internal.util.concurrent.NettyFutures.adapt;
 
 public class HttpArrowheadServer extends ArrowheadServer {
-    private final Map<String, HttpService> providedServices = new ConcurrentSkipListMap<>();
+    private final Map<String, HttpArrowheadService> providedServices = new ConcurrentSkipListMap<>();
 
     private Channel channel = null;
 
@@ -67,15 +67,15 @@ public class HttpArrowheadServer extends ArrowheadServer {
 
     @Override
     public boolean canProvide(final ArrowheadService service) {
-        return service instanceof HttpService;
+        return service instanceof HttpArrowheadService;
     }
 
     @Override
-    public synchronized Collection<HttpService> providedServices() {
+    public synchronized Collection<HttpArrowheadService> providedServices() {
         return Collections.unmodifiableCollection(providedServices.values());
     }
 
-    private Optional<HttpService> getServiceByPath(final String path) {
+    private Optional<HttpArrowheadService> getServiceByPath(final String path) {
         for (final var entry : providedServices.entrySet()) {
             if (path.startsWith(entry.getKey())) {
                 return Optional.of(entry.getValue());
@@ -87,10 +87,10 @@ public class HttpArrowheadServer extends ArrowheadServer {
     @Override
     public void provideService(final ArrowheadService service) {
         Objects.requireNonNull(service, "Expected service");
-        if (!(service instanceof HttpService)) {
+        if (!(service instanceof HttpArrowheadService)) {
             throw new IllegalArgumentException("Expected service to be HttpService");
         }
-        final var existingService = providedServices.putIfAbsent(service.qualifier(), (HttpService) service);
+        final var existingService = providedServices.putIfAbsent(service.qualifier(), (HttpArrowheadService) service);
         if (existingService != null && existingService != service) {
             throw new IllegalStateException("Qualifier (base path) \"" +
                 service.qualifier() + "\" already in use by  \"" +

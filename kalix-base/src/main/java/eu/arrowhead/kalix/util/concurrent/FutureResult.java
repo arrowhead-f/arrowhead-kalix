@@ -38,7 +38,7 @@ public class FutureResult<V> implements Future<V> {
             return;
         }
         isCompleted = true;
-        if (!result.isSuccess()) {
+        if (result.isFailure()) {
             consumer.accept(result.fault());
         }
     }

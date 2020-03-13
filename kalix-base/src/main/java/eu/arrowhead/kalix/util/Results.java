@@ -57,7 +57,7 @@ public final class Results {
         Throwable lastFault = null;
         while (iterator.hasNext()) {
             final var result = iterator.next();
-            if (!result.isSuccess()) {
+            if (result.isFailure()) {
                 final var fault = result.fault();
                 if (lastFault != null) {
                     fault.addSuppressed(lastFault);

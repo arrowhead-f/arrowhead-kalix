@@ -17,7 +17,7 @@ public class HttpRouteTask {
     }
 
     /**
-     * @return The base path of the {@link HttpService} that created this task.
+     * @return The base path of the {@link HttpArrowheadService} that created this task.
      */
     public String basePath() {
         return basePath;

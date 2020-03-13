@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * A {@link HttpService} validator, useful for verifying and/or responding to
+ * A {@link HttpArrowheadService} validator, useful for verifying and/or responding to
  * incoming HTTP requests before they are provided to their designated
  * {@link HttpRoute}s.
  */
@@ -20,7 +20,7 @@ public class HttpValidator implements HttpRoutable {
     private final HttpValidatorHandler handler;
 
     /**
-     * Creates new {@link HttpService} filter.
+     * Creates new {@link HttpArrowheadService} filter.
      *
      * @param ordinal When to execute the filter relative to other filters.
      *                Lower numbers are executed first.

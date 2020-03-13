@@ -1,13 +1,11 @@
 package eu.arrowhead.kalix.internal.net.http.service;
 
+import eu.arrowhead.kalix.net.http.service.HttpArrowheadService;
 import eu.arrowhead.kalix.util.annotation.Internal;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslContext;
 
 import javax.net.ssl.SSLEngine;
@@ -23,7 +21,7 @@ public class NettyHttpServiceConnectionInitializer extends ChannelInitializer<So
 
     /**
      * @param serviceLookup Function to use for determining what
-     *                      {@link eu.arrowhead.kalix.net.http.service.HttpService HttpService}
+     *                      {@link HttpArrowheadService HttpService}
      *                      to forward received requests to.
      * @param sslContext    SSL/TLS context from Netty bootstrap used to
      */

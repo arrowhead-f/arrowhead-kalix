@@ -1,11 +1,13 @@
 package eu.arrowhead.kalix.net.http.service;
 
 import eu.arrowhead.kalix.ArrowheadService;
+import eu.arrowhead.kalix.ArrowheadServiceBuilder;
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.descriptor.InterfaceDescriptor;
 import eu.arrowhead.kalix.descriptor.SecurityDescriptor;
 import eu.arrowhead.kalix.descriptor.TransportDescriptor;
 import eu.arrowhead.kalix.internal.net.http.service.HttpPaths;
+import eu.arrowhead.kalix.internal.net.http.service.HttpRoutables;
 import eu.arrowhead.kalix.internal.net.http.service.HttpRouteSequence;
 import eu.arrowhead.kalix.internal.net.http.service.HttpRouteSequenceFactory;
 import eu.arrowhead.kalix.net.http.HttpMethod;
@@ -22,7 +24,7 @@ import java.util.stream.Collectors;
  * TODO: Write more extensive documentation, including about validators, routes
  * and catchers, as well as about patterns and matching.
  */
-public class HttpService implements ArrowheadService {
+public class HttpArrowheadService implements ArrowheadService {
     private final String name;
     private final String basePath;
     private final List<EncodingDescriptor> encodings;
@@ -30,7 +32,7 @@ public class HttpService implements ArrowheadService {
 
     private List<InterfaceDescriptor> cachedSupportedInterfaces = null;
 
-    private HttpService(final Builder builder) {
+    private HttpArrowheadService(final Builder builder) {
         name = Objects.requireNonNull(builder.name, "Expected name");
         basePath = Objects.requireNonNull(builder.basePath, "Expected basePath");
         if (!HttpPaths.isValidPathWithoutPercentEncodings(basePath)) {
@@ -51,7 +53,7 @@ public class HttpService implements ArrowheadService {
 
         final var routeSequenceFactory = new HttpRouteSequenceFactory(builder.catchers, builder.validators);
         routeSequences = builder.routes.stream()
-            .sorted()
+            .sorted(HttpRoutables::compare)
             .map(routeSequenceFactory::createRouteSequenceFor)
             .collect(Collectors.toUnmodifiableList());
     }
@@ -149,9 +151,9 @@ public class HttpService implements ArrowheadService {
     }
 
     /**
-     * Builder useful for constructing {@link HttpService} instances.
+     * Builder useful for constructing {@link HttpArrowheadService} instances.
      */
-    public static class Builder {
+    public static class Builder implements ArrowheadServiceBuilder {
         private final ArrayList<HttpCatcher<?>> catchers = new ArrayList<>(0);
         private final ArrayList<HttpRoute> routes = new ArrayList<>(0);
         private final ArrayList<HttpValidator> validators = new ArrayList<>(0);
@@ -178,7 +180,7 @@ public class HttpService implements ArrowheadService {
 
         /**
          * Sets base path that must be matched by HTTP requests received by the
-         * created {@link HttpService}. <b>Must be specified.</b>
+         * created {@link HttpArrowheadService}. <b>Must be specified.</b>
          * <p>
          * The base path must start with a forward slash ({@code /}), must not
          * end with a forward slash, and may only contain the following
@@ -208,10 +210,10 @@ public class HttpService implements ArrowheadService {
          * Declares what data encodings this service can read and write.
          * <b>Must be specified.</b>
          * <p>
-         * While the created {@link HttpService} will prevent messages claimed
+         * While the created {@link HttpArrowheadService} will prevent messages claimed
          * to be encoded with other encodings from being received, stating that
          * an encoding can be read and written does not itself guarantee it.
-         * It is up to the {@link HttpService} creator to ensure that such
+         * It is up to the {@link HttpArrowheadService} creator to ensure that such
          * capabilities are indeed available. For most intents and purposes,
          * the most adequate way of achieving this is by using Data Transfer
          * Objects (DTOs), more of which you can read about in the package
@@ -230,7 +232,7 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds an exception catcher to the created {@link HttpService}.
+         * Adds an exception catcher to the created {@link HttpArrowheadService}.
          * <p>
          * An exception catcher is invoked whenever an exception occurs in a
          * validator, route handler, or other catcher, while handling an
@@ -251,7 +253,7 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds an exception catcher to the created {@link HttpService}.
+         * Adds an exception catcher to the created {@link HttpArrowheadService}.
          * <p>
          * An exception catcher is invoked whenever an exception occurs in a
          * validator, route handler, or other catcher, while handling an
@@ -282,7 +284,7 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds an exception catcher to the created {@link HttpService}.
+         * Adds an exception catcher to the created {@link HttpArrowheadService}.
          * <p>
          * An exception catcher is invoked whenever an exception occurs in a
          * validator, route handler, or other catcher, while handling an
@@ -306,7 +308,7 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds an exception catcher to the created {@link HttpService}.
+         * Adds an exception catcher to the created {@link HttpArrowheadService}.
          * <p>
          * An exception catcher is invoked whenever an exception occurs in a
          * validator, route handler, or other catcher, while handling an
@@ -326,7 +328,7 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds an exception catcher to the created {@link HttpService}.
+         * Adds an exception catcher to the created {@link HttpArrowheadService}.
          * <p>
          * An exception catcher is invoked whenever an exception occurs in a
          * validator, route handler, or other catcher, while handling an
@@ -350,7 +352,7 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds an exception catcher to the created {@link HttpService}.
+         * Adds an exception catcher to the created {@link HttpArrowheadService}.
          * <p>
          * An exception catcher is invoked whenever an exception occurs in a
          * validator, route handler, or other catcher, while handling an
@@ -370,7 +372,7 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds an exception catcher to the created {@link HttpService}.
+         * Adds an exception catcher to the created {@link HttpArrowheadService}.
          * <p>
          * An exception catcher is invoked whenever an exception occurs in a
          * validator, route handler, or other catcher, while handling an
@@ -394,7 +396,7 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds an exception catcher to the created {@link HttpService}.
+         * Adds an exception catcher to the created {@link HttpArrowheadService}.
          * <p>
          * An exception catcher is invoked whenever an exception occurs in a
          * validator, route handler, or other catcher, while handling an
@@ -417,7 +419,7 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds an exception catcher to the created {@link HttpService}.
+         * Adds an exception catcher to the created {@link HttpArrowheadService}.
          * <p>
          * An exception catcher is invoked whenever an exception occurs in a
          * validator, route handler, or other catcher, while handling an
@@ -437,7 +439,7 @@ public class HttpService implements ArrowheadService {
 
         /**
          * Adds incoming HTTP request validator to the created
-         * {@link HttpService}.
+         * {@link HttpArrowheadService}.
          * <p>
          * Validators are executed with incoming HTTP requests before they
          * end up at their designated routes. Each validator matching the
@@ -462,7 +464,7 @@ public class HttpService implements ArrowheadService {
 
         /**
          * Adds incoming HTTP request validator to the created
-         * {@link HttpService}.
+         * {@link HttpArrowheadService}.
          * <p>
          * Validators are executed with incoming HTTP requests before they
          * end up at their designated routes. Each validator matching the
@@ -486,7 +488,7 @@ public class HttpService implements ArrowheadService {
 
         /**
          * Adds incoming HTTP request validator to the created
-         * {@link HttpService}.
+         * {@link HttpArrowheadService}.
          * <p>
          * Validators are executed with incoming HTTP requests before they
          * end up at their designated routes. Each validator matching the
@@ -509,7 +511,7 @@ public class HttpService implements ArrowheadService {
 
         /**
          * Adds incoming HTTP request validator to the created
-         * {@link HttpService}.
+         * {@link HttpArrowheadService}.
          * <p>
          * Validators are executed with incoming HTTP requests before they
          * end up at their designated routes. Each validator matching the
@@ -532,7 +534,7 @@ public class HttpService implements ArrowheadService {
 
         /**
          * Adds incoming HTTP request validator to the created
-         * {@link HttpService}.
+         * {@link HttpArrowheadService}.
          * <p>
          * Validators are executed with incoming HTTP requests before they
          * end up at their designated routes. Each validator matching the
@@ -554,7 +556,7 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds incoming HTTP request route to the created {@link HttpService}.
+         * Adds incoming HTTP request route to the created {@link HttpArrowheadService}.
          * <p>
          * A route is a primary handler for a particular set of HTTP requests.
          * If an incoming HTTP request matches its method and path pattern, it
@@ -584,7 +586,7 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds incoming HTTP request route to the created {@link HttpService}.
+         * Adds incoming HTTP request route to the created {@link HttpArrowheadService}.
          * <p>
          * A route is a primary handler for a particular set of HTTP requests.
          * If an incoming HTTP request matches its method and path pattern, it
@@ -615,7 +617,7 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds incoming HTTP request route to the created {@link HttpService}.
+         * Adds incoming HTTP request route to the created {@link HttpArrowheadService}.
          * <p>
          * A route is a primary handler for a particular set of HTTP requests.
          * If an incoming HTTP request matches its method and path pattern, it
@@ -647,7 +649,7 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds incoming HTTP request route to the created {@link HttpService}.
+         * Adds incoming HTTP request route to the created {@link HttpArrowheadService}.
          * <p>
          * A route is a primary handler for a particular set of HTTP requests.
          * If an incoming HTTP request matches its method and path pattern, it
@@ -679,7 +681,7 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds incoming HTTP request route to the created {@link HttpService}.
+         * Adds incoming HTTP request route to the created {@link HttpArrowheadService}.
          * <p>
          * A route is a primary handler for a particular set of HTTP requests.
          * If an incoming HTTP request matches its method and path pattern, it
@@ -710,7 +712,7 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds incoming HTTP request route to the created {@link HttpService},
+         * Adds incoming HTTP request route to the created {@link HttpArrowheadService},
          * handling GET requests matching given pattern.
          *
          * @param handler Handler to invoke with matching requests.
@@ -723,7 +725,7 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds incoming HTTP request route to the created {@link HttpService},
+         * Adds incoming HTTP request route to the created {@link HttpArrowheadService},
          * handling POST requests matching given pattern.
          *
          * @param handler Handler to invoke with matching requests.
@@ -736,7 +738,7 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds incoming HTTP request route to the created {@link HttpService},
+         * Adds incoming HTTP request route to the created {@link HttpArrowheadService},
          * handling PUT requests matching given pattern.
          *
          * @param handler Handler to invoke with matching requests.
@@ -749,7 +751,7 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds incoming HTTP request route to the created {@link HttpService},
+         * Adds incoming HTTP request route to the created {@link HttpArrowheadService},
          * handling DELETE requests matching given pattern.
          *
          * @param handler Handler to invoke with matching requests.
@@ -762,7 +764,7 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds incoming HTTP request route to the created {@link HttpService},
+         * Adds incoming HTTP request route to the created {@link HttpArrowheadService},
          * handling HEAD requests matching given pattern.
          *
          * @param handler Handler to invoke with matching requests.
@@ -775,7 +777,7 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds incoming HTTP request route to the created {@link HttpService},
+         * Adds incoming HTTP request route to the created {@link HttpArrowheadService},
          * handling OPTIONS requests matching given pattern.
          *
          * @param handler Handler to invoke with matching requests.
@@ -788,21 +790,20 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds incoming HTTP request route to the created {@link HttpService},
+         * Adds incoming HTTP request route to the created {@link HttpArrowheadService},
          * handling CONNECT requests matching given pattern.
          *
          * @param handler Handler to invoke with matching requests.
          * @return This builder.
          * @see #route(HttpRoute)
          * @see <a href="https://tools.ietf.org/html/rfc7231#section-4.3.6">RFC 7231, Section 4.3.6</a>
-         * @see eu.arrowhead.kalix.net.http.HttpArrowheadSystem HttpArrowheadSystem
          */
         public Builder connect(final String path, final HttpRouteHandler handler) {
             return route(HttpMethod.CONNECT, path, handler);
         }
 
         /**
-         * Adds incoming HTTP request route to the created {@link HttpService},
+         * Adds incoming HTTP request route to the created {@link HttpArrowheadService},
          * handling PATCH requests matching given pattern.
          *
          * @param handler Handler to invoke with matching requests.
@@ -815,7 +816,7 @@ public class HttpService implements ArrowheadService {
         }
 
         /**
-         * Adds incoming HTTP request route to the created {@link HttpService},
+         * Adds incoming HTTP request route to the created {@link HttpArrowheadService},
          * handling TRACE requests matching given pattern.
          *
          * @param handler Handler to invoke with matching requests.
@@ -827,14 +828,9 @@ public class HttpService implements ArrowheadService {
             return route(HttpMethod.TRACE, path, handler);
         }
 
-        /**
-         * @return New {@link HttpService}.
-         * @throws IllegalArgumentException If {@code basePath} is invalid.
-         * @throws NullPointerException     If no {@code basePath} or
-         *                                  {@code encodings} are specified.
-         */
-        public HttpService build() {
-            return new HttpService(this);
+        @Override
+        public HttpArrowheadService build() {
+            return new HttpArrowheadService(this);
         }
     }
 }

@@ -9,7 +9,7 @@ import eu.arrowhead.kalix.net.http.HttpVersion;
 import java.util.Optional;
 
 /**
- * An outgoing HTTP response, to be sent by an {@link HttpService}.
+ * An outgoing HTTP response, to be sent by an {@link HttpArrowheadService}.
  */
 public interface HttpServiceResponse extends HttpBodySender<HttpServiceResponse> {
     /**

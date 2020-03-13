@@ -72,6 +72,13 @@ public class Result<V> {
     }
 
     /**
+     * @return {@code true} if this {@code Result} contains a fault.
+     */
+    public boolean isFailure() {
+        return !isSuccess;
+    }
+
+    /**
      * @return A {@code Throwable} if this {@code Result} is a failure.
      * {@code null} otherwise.
      */

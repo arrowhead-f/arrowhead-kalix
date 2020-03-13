@@ -3,7 +3,7 @@ package eu.arrowhead.kalix.net.http.service;
 import eu.arrowhead.kalix.net.http.HttpStatus;
 
 /**
- * Signifies that some HTTP request received by a {@link HttpService} contains
+ * Signifies that some HTTP request received by a {@link HttpArrowheadService} contains
  * an error and, therefore, will not be processed.
  * <p>
  * As these exceptions are expected to be quite common, and are caused by
@@ -21,7 +21,7 @@ public class HttpServiceRequestException extends RuntimeException {
      * @param message Human-readable description of issue.
      */
     public HttpServiceRequestException(final HttpStatus status, final String message) {
-        super(message, null, false, false); // Disable stack trace.
+        super(message, null, true, false); // Disable stack trace.
         this.status = status;
     }
 

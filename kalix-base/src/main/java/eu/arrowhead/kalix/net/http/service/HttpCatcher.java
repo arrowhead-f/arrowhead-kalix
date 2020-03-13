@@ -6,7 +6,7 @@ import eu.arrowhead.kalix.util.concurrent.Future;
 import java.util.*;
 
 /**
- * A {@link HttpService} exception catcher, useful for handling errors
+ * A {@link HttpArrowheadService} exception catcher, useful for handling errors
  * occurring while receiving or responding to HTTP requests.
  */
 public class HttpCatcher<T extends Throwable> implements HttpRoutable {
@@ -17,7 +17,7 @@ public class HttpCatcher<T extends Throwable> implements HttpRoutable {
     private final HttpCatcherHandler<T> handler;
 
     /**
-     * Creates new {@link HttpService} exception catcher.
+     * Creates new {@link HttpArrowheadService} exception catcher.
      *
      * @param ordinal        When to execute the filter relative to other
      *                       filters. Lower numbers are executed first.

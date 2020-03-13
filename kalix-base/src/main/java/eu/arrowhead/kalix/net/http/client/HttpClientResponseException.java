@@ -17,6 +17,6 @@ public class HttpClientResponseException extends RuntimeException {
      * @param message Human-readable description of issue.
      */
     public HttpClientResponseException(final String message) {
-        super(message, null, false, false); // Disable stack trace.
+        super(message, null, true, false); // Disable stack trace.
     }
 }

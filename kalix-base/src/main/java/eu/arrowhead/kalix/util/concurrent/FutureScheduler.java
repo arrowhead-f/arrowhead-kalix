@@ -1,15 +1,14 @@
 package eu.arrowhead.kalix.util.concurrent;
 
-import eu.arrowhead.kalix.util.annotation.Internal;
+import eu.arrowhead.kalix.util.Result;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 
 import java.time.Duration;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 
 import static eu.arrowhead.kalix.internal.util.concurrent.NettyFutures.adapt;
 
@@ -21,6 +20,7 @@ public final class FutureScheduler {
     private static Thread defaultSchedulerShutdownHook;
 
     private final EventLoopGroup eventLoopGroup;
+    private final Set<FutureSchedulerShutdownListener> shutdownListeners = Collections.synchronizedSet(new HashSet<>());
 
     private FutureScheduler(final ThreadFactory threadFactory, final int nThreads) {
         final var os = System.getProperty("os.name", "").toLowerCase();
@@ -161,6 +161,34 @@ public final class FutureScheduler {
     }
 
     /**
+     * Adds listener to be notified when this scheduler shuts down.
+     * <p>
+     * The event is guaranteed to only ever occur once during the life of every
+     * {@code FutureScheduler}, and occurs right when shutdown begins. This
+     * means that the shutdown listener is able to schedule tasks for a little
+     * while before the thread pool is forcibly emptied.
+     *
+     * @param listener Listener to be notified.
+     * @return {@code true} only if {@code listener} was not already registered
+     * for receiving shutdown events.
+     */
+    public boolean addShutdownListener(final FutureSchedulerShutdownListener listener) {
+        return shutdownListeners.add(listener);
+    }
+
+    /**
+     * Removes scheduler shutdown listener.
+     *
+     * @param listener Listener to no longer be notified when this scheduler
+     *                 shuts down.
+     * @return {@code true} only if {@code listener} was registered, and now no
+     * longer is registered, for receiving shutdown events.
+     */
+    public boolean removeShutdownListener(final FutureSchedulerShutdownListener listener) {
+        return shutdownListeners.remove(listener);
+    }
+
+    /**
      * Schedules given {@code command} for execution as soon as reasonably
      * possible.
      *
@@ -291,9 +319,22 @@ public final class FutureScheduler {
      *
      * @param timeout Time after which any lingering tasks will be terminated
      *                forcefully.
-     * @return {@code Future} completed after shutdown completion.
+     * @return {@code Future} completed after shutdown completion. If there are
+     * shutdown listeners and any of them throws an exception when notified
+     * about shutdown, the returned {@code Future} is failed, if not already,
+     * and any listener exceptions are added to the fault's list of suppressed
+     * exceptions.
      */
     public synchronized Future<?> shutdown(final Duration timeout) {
+        final var listenerThrowables = new ArrayList<Throwable>(0);
+        for (final var listener : shutdownListeners) {
+            try {
+                listener.onShutdown(this, timeout);
+            }
+            catch (final Throwable throwable) {
+                listenerThrowables.add(throwable);
+            }
+        }
         synchronized (FutureScheduler.class) {
             if (this == defaultScheduler && defaultSchedulerShutdownHook != null) {
                 if (Thread.currentThread() != defaultSchedulerShutdownHook) {
@@ -302,11 +343,31 @@ public final class FutureScheduler {
             }
         }
         final var millis = timeout.toMillis();
-        return adapt(eventLoopGroup.shutdownGracefully(millis / 5, millis, TimeUnit.MILLISECONDS));
+        return adapt(eventLoopGroup.shutdownGracefully(millis / 5, millis, TimeUnit.MILLISECONDS))
+            .mapResult(result -> {
+                if (listenerThrowables.size() > 0) {
+                    if (result.isSuccess()) {
+                        final var fault = new Exception("Shutdown successful, but listener exceptions were caught");
+                        for (final var throwable : listenerThrowables) {
+                            fault.addSuppressed(throwable);
+                        }
+                        return Result.failure(fault);
+                    }
+                    else {
+                        final var fault = result.fault();
+                        for (final var throwable : listenerThrowables) {
+                            fault.addSuppressed(throwable);
+                        }
+                    }
+                }
+                return result;
+            });
     }
 
-    @Internal
-    public EventLoopGroup eventLoopGroup() {
+    /**
+     * @return This scheduler as an {@link ScheduledExecutorService}.
+     */
+    public ScheduledExecutorService asScheduledExecutorService() {
         return eventLoopGroup;
     }
 }
