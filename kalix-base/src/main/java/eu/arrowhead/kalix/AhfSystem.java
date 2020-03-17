@@ -1,29 +1,40 @@
 package eu.arrowhead.kalix;
 
-import eu.arrowhead.kalix.internal.ArrowheadServer;
-import eu.arrowhead.kalix.internal.net.http.HttpArrowheadServer;
+import eu.arrowhead.kalix.description.ServiceDescription;
+import eu.arrowhead.kalix.internal.AhfServer;
+import eu.arrowhead.kalix.internal.net.http.service.HttpServer;
 import eu.arrowhead.kalix.internal.plugin.PluginNotifier;
-import eu.arrowhead.kalix.net.http.service.HttpArrowheadService;
+import eu.arrowhead.kalix.net.http.service.HttpService;
 import eu.arrowhead.kalix.plugin.Plugin;
 import eu.arrowhead.kalix.security.X509ArrowheadName;
 import eu.arrowhead.kalix.security.X509Certificates;
 import eu.arrowhead.kalix.security.X509KeyStore;
 import eu.arrowhead.kalix.security.X509TrustStore;
-import eu.arrowhead.kalix.util.Results;
+import eu.arrowhead.kalix.util.Result;
 import eu.arrowhead.kalix.util.concurrent.Future;
 import eu.arrowhead.kalix.util.concurrent.FutureScheduler;
+import eu.arrowhead.kalix.util.concurrent.FutureSchedulerShutdownListener;
 import eu.arrowhead.kalix.util.concurrent.Futures;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
- * An arrowhead system.
+ * An Arrowhead Framework (AHF) system.
  */
-public class ArrowheadSystem {
+public class AhfSystem {
+    private static final int STATE_STOPPED = 0;
+    private static final int STATE_STARTING = 1;
+    private static final int STATE_STARTED = 2;
+    private static final int STATE_STOPPING = 3;
+    private static final int STATE_SHUTTING_DOWN = 4;
+
+    private final AtomicInteger state = new AtomicInteger(STATE_STOPPED);
+
     private final String name;
     private final AtomicReference<InetSocketAddress> localSocketAddress = new AtomicReference<>();
     private final boolean isSecure;
@@ -31,13 +42,11 @@ public class ArrowheadSystem {
     private final X509TrustStore trustStore;
     private final PluginNotifier pluginNotifier;
     private final FutureScheduler scheduler;
+    private final FutureSchedulerShutdownListener schedulerShutdownListener;
 
-    private final Object lock = this;
-    private Set<ArrowheadServer> servers = new HashSet<>();
-    private final Map<String, ArrowheadService> services = new HashMap<>();
-    private List<ArrowheadService> cachedServiceList = null;
+    private final Set<AhfServer> servers = Collections.synchronizedSet(new HashSet<>());
 
-    private ArrowheadSystem(final Builder builder) {
+    private AhfSystem(final Builder builder) {
         var name = builder.name;
         localSocketAddress.setPlain(Objects.requireNonNullElseGet(builder.socketAddress, () ->
             new InetSocketAddress(0)));
@@ -58,14 +67,14 @@ public class ArrowheadSystem {
                     "name");
             }
             final var arrowheadName0 = arrowheadName.get();
-            final var system = arrowheadName0.system();
-            if (system.isEmpty()) {
+            final var systemName = arrowheadName0.system();
+            if (systemName.isEmpty()) {
                 throw new IllegalArgumentException("No Arrowhead system " +
                     "name in keyStore certificate common name \"" +
                     arrowheadName0 + "\"; that name must match " +
                     "`<system>.<cloud>.<company>.arrowhead.eu`");
             }
-            this.name = system.get();
+            this.name = systemName.get();
         }
         else {
             isSecure = false;
@@ -83,32 +92,18 @@ public class ArrowheadSystem {
             this.name = name;
         }
 
-        pluginNotifier = builder.plugins != null
-            ? new PluginNotifier(this, builder.plugins)
-            : null;
+        pluginNotifier = new PluginNotifier(this, builder.plugins != null
+            ? builder.plugins
+            : Collections.emptyList());
 
         scheduler = builder.scheduler != null
             ? builder.scheduler
             : FutureScheduler.getDefault();
 
-        scheduler.addShutdownListener((scheduler, timeout) -> {
-            synchronized (lock) {
-                if (pluginNotifier != null) {
-                    pluginNotifier.onSystemStopped();
-                }
-                for (final var server : servers) {
-                    if (pluginNotifier != null) {
-                        for (final var service : server.providedServices()) {
-                            pluginNotifier.onServiceDismissed(service);
-                        }
-                    }
-                    server.stop();
-                }
-                if (pluginNotifier != null) {
-                    pluginNotifier.clear();
-                }
-            }
-        });
+        schedulerShutdownListener = (scheduler, timeout) -> shutdown()
+            .onFailure(Throwable::printStackTrace); // TODO: Log properly.
+
+        scheduler.addShutdownListener(schedulerShutdownListener);
     }
 
     /**
@@ -172,143 +167,108 @@ public class ArrowheadSystem {
     }
 
     /**
-     * @return Unmodifiable collection of all services currently provided by
-     * this system. The returned collection is not updated as new services are
-     * added or removed from the system.
+     * @return Unmodifiable list of descriptions of all services currently
+     * provided by this system.
      */
-    public List<ArrowheadService> providedServices() {
-        synchronized (lock) {
-            if (cachedServiceList == null) {
-                cachedServiceList = services.values()
-                    .stream()
-                    .collect(Collectors.toUnmodifiableList());
-            }
-            return cachedServiceList;
-        }
+    public List<ServiceDescription> providedServices() {
+        return servers.stream()
+            .flatMap(server -> server.providedServices()
+                .map(AhfServiceHandle::description))
+            .collect(Collectors.toUnmodifiableList());
     }
 
     /**
-     * Registers given {@code service} with system and makes it accessible to
-     * other systems.
+     * Registers given {@code service} with this system, eventually making it
+     * accessible to remote Arrowhead systems.
      * <p>
-     * Calling this method with a service that is already being provided has no
-     * effect.
+     * It is only acceptable to register any given service once, unless it is
+     * first dismissed via the returned handle.
      *
-     * @param builder Service to be provided by this system.
-     * @return Future completed when the service is visible to other systems.
-     * @throws NullPointerException  If {@code service} is {@code null}.
-     * @throws IllegalStateException If {@code service} configuration conflicts
-     *                               with an already provided service.
-     */
-    public Future<?> provideService(final ArrowheadServiceBuilder builder) {
-        Objects.requireNonNull(builder, "Expected builder");
-
-        synchronized (lock) {
-            if (pluginNotifier != null) {
-                pluginNotifier.onServiceBuilding(builder);
-            }
-        }
-        final var service = builder.build();
-
-        alreadyExists:
-        {
-            synchronized (lock) {
-                for (final var server : servers) {
-                    if (server.canProvide(service)) {
-                        if (server.provideService(service)) {
-                            if (services.putIfAbsent(service.name(), service) != null) {
-                                break alreadyExists;
-                            }
-                            cachedServiceList = null;
-
-                            if (pluginNotifier != null) {
-                                pluginNotifier.onServiceProvided(service);
-                            }
-                        }
-                        return Future.done();
-                    }
-                }
-            }
-
-            final ArrowheadServer server;
-            if (service instanceof HttpArrowheadService) {
-                server = new HttpArrowheadServer(this);
-            }
-            else {
-                throw new IllegalArgumentException("No server available for services of type " + service.getClass());
-            }
-
-            synchronized (lock) {
-                if (services.putIfAbsent(service.name(), service) != null) {
-                    break alreadyExists;
-                }
-                return server.start()
-                    .map(socketAddress -> {
-                        localSocketAddress.set(socketAddress);
-                        synchronized (lock) {
-                            server.provideService(service);
-                            cachedServiceList = null;
-
-                            servers.add(server);
-
-                            if (pluginNotifier != null) {
-                                if (servers.size() == 1) {
-                                    pluginNotifier.onSystemStarted();
-                                }
-                                pluginNotifier.onServiceProvided(service);
-                            }
-                        }
-                        return null;
-                    })
-                    .mapFault(fault -> {
-                        synchronized (lock) {
-                            services.remove(service.name());
-                        }
-                        return fault;
-                    });
-            }
-        }
-        throw new IllegalStateException("A service named \"" + service.name() +
-            "\" is already provided");
-    }
-
-    /**
-     * Deregisters given {@code service} from this system, making it
-     * inaccessible to other systems.
-     * <p>
-     * Calling this method with a service that is not currently provided has no
-     * effect.
-     *
-     * @param service Service to no longer be provided by this system.
+     * @param service Service to be provided by this system.
+     * @return Future completed with service handle only if the service can be
+     * provided.
      * @throws NullPointerException If {@code service} is {@code null}.
      */
-    public void dismissService(final ArrowheadService service) {
+    public Future<AhfServiceHandle> provide(final AhfService service) {
         Objects.requireNonNull(service, "Expected service");
 
-        synchronized (lock) {
-            if (services.remove(service.name()) != null) {
-                for (final var server : servers) {
-                    if (server.canProvide(service)) {
-                        server.dismissService(service);
-                        cachedServiceList = null;
+        switch (state.get()) {
+        case STATE_STOPPED:
+        case STATE_STARTING:
+        case STATE_STARTED:
+        case STATE_STOPPING:
+            break;
 
-                        if (pluginNotifier != null) {
-                            pluginNotifier.onServiceDismissed(service);
-                        }
+        case STATE_SHUTTING_DOWN:
+            return Future.failure(new IllegalStateException("Cannot provide service; system is shutting down"));
 
-                        return;
-                    }
-                }
+        default:
+            return Future.failure(new IllegalStateException("System in illegal state: " + state.get()));
+        }
+
+        for (final var server : servers) {
+            if (server.canProvide(service)) {
+                return server.provide(service);
             }
         }
+
+        final AhfServer server;
+        if (service instanceof HttpService) {
+            server = new HttpServer(this, pluginNotifier);
+        }
+        else {
+            throw new IllegalArgumentException("No server available for services of type " + service.getClass());
+        }
+
+        return server.start().flatMap(socketAddress -> {
+            localSocketAddress.set(socketAddress);
+            servers.add(server);
+            return server.provide(service);
+        });
     }
 
     /**
-     * Dismisses all services and stops system.
-     * <p>
-     * The system turns on again if provided with new services. It is not safe,
-     * however, to provide new services until after the returned future
-     * completes.
+     * Starts system, making all of its services available to remote systems.
+     */
+    public Future<?> start() {
+        switch (state.compareAndExchange(STATE_STOPPED, STATE_STARTING)) {
+        case STATE_STOPPED:
+            break;
+
+        case STATE_STARTING:
+            return Future.failure(new IllegalStateException("Already starting"));
+
+        case STATE_STARTED:
+            return Future.done();
+
+        case STATE_STOPPING:
+            return Future.failure(new IllegalStateException("Cannot start while stopping"));
+
+        case STATE_SHUTTING_DOWN:
+            return Future.failure(new IllegalStateException("Cannot start while shutting down"));
+
+        default:
+            return Future.failure(new IllegalStateException("System in illegal state: " + state.get()));
+        }
+        return pluginNotifier.onSystemStarted()
+            .flatMap(ignored -> Futures.serialize(servers.stream().map(AhfServer::start))
+                .map(values -> {
+                    if (values.size() > 0) {
+                        localSocketAddress.set(values.get(0));
+                    }
+                    return null;
+                }))
+            .flatMapResult(result -> {
+                state.compareAndSet(STATE_STARTING, STATE_STARTED);
+                if (result.isFailure()) {
+                    return stop().map(ignored -> null);
+                }
+                return Future.of(Result.done());
+            });
+    }
+
+    /**
+     * Stops system, making all of its services unavailable to remote systems.
      *
      * @return Future completed when stopping finishes. If this system is or
      * has been providing services with different application-level protocols,
@@ -316,32 +276,69 @@ public class ArrowheadSystem {
      * exceptions.
      */
     public Future<?> stop() {
-        final Set<ArrowheadServer> servers0;
-        synchronized (lock) {
-            if (pluginNotifier != null) {
-                pluginNotifier.onSystemStopped();
-                for (final var service : services.values()) {
-                    pluginNotifier.onServiceDismissed(service);
-                }
-            }
-            services.clear();
-            servers0 = servers;
-            servers = new HashSet<>();
+        switch (state.compareAndExchange(STATE_STARTED, STATE_STOPPING)) {
+        case STATE_STOPPED:
+            return Future.done();
+
+        case STATE_STARTING:
+            return Future.failure(new IllegalStateException("Cannot stop while starting"));
+
+        case STATE_STARTED:
+            break;
+
+        case STATE_STOPPING:
+            return Future.failure(new IllegalStateException("Already stopping"));
+
+        case STATE_SHUTTING_DOWN:
+            return Future.failure(new IllegalStateException("Cannot stop while shutting down"));
+
+        default:
+            return Future.failure(new IllegalStateException("System in illegal state: " + state.get()));
         }
-        return Futures.serialize(servers0.stream().map(ArrowheadServer::stop))
-            .map(Results::mergeFaults);
+        return pluginNotifier.onSystemStopped()
+            .flatMap(ignored -> Futures.serialize(servers.stream().map(AhfServer::stop).iterator()))
+            .mapResult(result -> {
+                state.compareAndSet(STATE_STOPPING, STATE_STOPPED);
+                return result;
+            });
+    }
+
+    public Future<?> shutdown() {
+        switch (state.getAndSet(STATE_SHUTTING_DOWN)) {
+        case STATE_STOPPED:
+        case STATE_STARTING:
+        case STATE_STARTED:
+        case STATE_STOPPING:
+            break;
+
+        case STATE_SHUTTING_DOWN:
+            return Future.failure(new IllegalStateException("Already shutting down"));
+
+        default:
+            return Future.failure(new IllegalStateException("System in illegal state: " + state.get()));
+        }
+
+        scheduler.removeShutdownListener(schedulerShutdownListener);
+
+        return pluginNotifier.onSystemStopped()
+            .flatMap(ignored -> Futures.serialize(servers.stream().map(AhfServer::shutdown).iterator()))
+            .mapResult(result -> {
+                pluginNotifier.clear();
+                servers.clear();
+                return result;
+            });
     }
 
     /**
-     * @return {@code true} only if the {@link FutureScheduler} this system is
-     * using is currently in the process of, or already has, shut down.
+     * @return {@code true} only if this system is currently in the process of,
+     * or already has, shut down.
      */
     public boolean isShuttingDown() {
-        return scheduler.isShuttingDown();
+        return state.get() == STATE_SHUTTING_DOWN || scheduler.isShuttingDown();
     }
 
     /**
-     * Builder useful for creating instances of the {@link ArrowheadSystem}
+     * Builder useful for creating instances of the {@link AhfSystem}
      * class.
      */
     public static class Builder {
@@ -490,7 +487,7 @@ public class ArrowheadSystem {
          * Sets key store to use for representing the created system and its
          * services.
          * <p>
-         * An {@link ArrowheadSystem} either must have or must not have a
+         * An {@link AhfSystem} either must have or must not have a
          * key store, depending on whether it is running in secure mode or not,
          * respectively.
          *
@@ -506,7 +503,7 @@ public class ArrowheadSystem {
          * Sets trust store to use for determining what systems are trusted to
          * be communicated by the created system.
          * <p>
-         * An {@link ArrowheadSystem} either must have or must not have a
+         * An {@link AhfSystem} either must have or must not have a
          * trust store, depending on whether it is running in secure mode or
          * not, respectively.
          *
@@ -586,10 +583,10 @@ public class ArrowheadSystem {
         }
 
         /**
-         * @return New {@link ArrowheadSystem}.
+         * @return New {@link AhfSystem}.
          */
-        public ArrowheadSystem build() {
-            return new ArrowheadSystem(this);
+        public AhfSystem build() {
+            return new AhfSystem(this);
         }
     }
 }

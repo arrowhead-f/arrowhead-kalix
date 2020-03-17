@@ -17,8 +17,9 @@ public interface HttpCatcherHandler<T extends Throwable> {
      * @param response  An object useful for indicating how the request is to
      *                  be responded to. If a status code is set by this
      *                  handler, the provided request is responded to as soon
-     *                  as this handler completes, which implies that no more
-     *                  catchers are invoked with the request.
+     *                  as this handler completes, which implies the exception
+     *                  has been handled and that no more catchers are to be
+     *                  invoked with the request.
      * @return Future completed when catching is complete.
      * @throws Exception The exception should be passed on to the next matching
      *                   catcher, if any.

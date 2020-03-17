@@ -1,9 +1,10 @@
 package eu.arrowhead.kalix.net.http.service;
 
+import eu.arrowhead.kalix.internal.net.http.service.HttpServiceInternal;
 import eu.arrowhead.kalix.net.http.HttpStatus;
 
 /**
- * Signifies that some HTTP request received by a {@link HttpArrowheadService} contains
+ * Signifies that some HTTP request received by a {@link HttpServiceInternal} contains
  * an error and, therefore, will not be processed.
  * <p>
  * As these exceptions are expected to be quite common, and are caused by

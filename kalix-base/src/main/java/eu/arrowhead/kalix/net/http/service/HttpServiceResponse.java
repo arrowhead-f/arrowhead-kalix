@@ -1,6 +1,7 @@
 package eu.arrowhead.kalix.net.http.service;
 
 import eu.arrowhead.kalix.dto.DataWritable;
+import eu.arrowhead.kalix.internal.net.http.service.HttpServiceInternal;
 import eu.arrowhead.kalix.net.http.HttpBodySender;
 import eu.arrowhead.kalix.net.http.HttpHeaders;
 import eu.arrowhead.kalix.net.http.HttpStatus;
@@ -9,7 +10,7 @@ import eu.arrowhead.kalix.net.http.HttpVersion;
 import java.util.Optional;
 
 /**
- * An outgoing HTTP response, to be sent by an {@link HttpArrowheadService}.
+ * An outgoing HTTP response, to be sent by an {@link HttpServiceInternal}.
  */
 public interface HttpServiceResponse extends HttpBodySender<HttpServiceResponse> {
     /**

@@ -1,11 +1,9 @@
 package eu.arrowhead.kalix.internal.net.http.service;
 
-import eu.arrowhead.kalix.net.http.service.HttpArrowheadService;
 import eu.arrowhead.kalix.util.annotation.Internal;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.handler.codec.http.HttpRequestDecoder;
-import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.ssl.SslContext;
 
 import javax.net.ssl.SSLEngine;
@@ -21,7 +19,7 @@ public class NettyHttpServiceConnectionInitializer extends ChannelInitializer<So
 
     /**
      * @param serviceLookup Function to use for determining what
-     *                      {@link HttpArrowheadService HttpService}
+     *                      {@link HttpServiceInternal HttpService}
      *                      to forward received requests to.
      * @param sslContext    SSL/TLS context from Netty bootstrap used to
      */
@@ -41,8 +39,7 @@ public class NettyHttpServiceConnectionInitializer extends ChannelInitializer<So
         }
         pipeline
             //.addLast(new LoggingHandler(LogLevel.INFO))
-            .addLast(new HttpRequestDecoder()) // TODO: Make message size restrictions configurable.
-            .addLast(new HttpResponseEncoder())
+            .addLast(new HttpServerCodec()) // TODO: Make message size restrictions configurable.
             .addLast(new NettyHttpServiceConnectionHandler(serviceLookup, sslEngine));
     }
 }

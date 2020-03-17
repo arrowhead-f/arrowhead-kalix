@@ -1,5 +1,7 @@
 package eu.arrowhead.kalix.net.http.service;
 
+import eu.arrowhead.kalix.internal.net.http.service.HttpServiceInternal;
+
 import java.util.Objects;
 
 /**
@@ -17,7 +19,7 @@ public class HttpRouteTask {
     }
 
     /**
-     * @return The base path of the {@link HttpArrowheadService} that created this task.
+     * @return The base path of the {@link HttpServiceInternal} that created this task.
      */
     public String basePath() {
         return basePath;

@@ -140,16 +140,21 @@ public class FutureResult<V> implements Future<V> {
         if (result.isSuccess()) {
             return this;
         }
-        final var cancelTarget = new AtomicReference<Future<?>>();
         return new Future<>() {
+            private Future<?> cancelTarget = null;
+            private boolean isCancelled = false;
+
             @Override
             public void onResult(final Consumer<Result<V>> consumer) {
+                if (isCancelled) {
+                    return;
+                }
                 try {
                     final var future1 = mapper.apply(result.fault());
                     future1.onResult(result -> consumer.accept(Result.failure(result.isSuccess()
                         ? result.value()
                         : result.fault())));
-                    cancelTarget.set(future1);
+                    cancelTarget = future1;
                 }
                 catch (final Throwable throwable) {
                     consumer.accept(Result.failure(throwable));
@@ -158,9 +163,10 @@ public class FutureResult<V> implements Future<V> {
 
             @Override
             public void cancel(final boolean mayInterruptIfRunning) {
-                final var target = cancelTarget.getAndSet(null);
-                if (target != null) {
-                    target.cancel(mayInterruptIfRunning);
+                isCancelled = true;
+                if (cancelTarget != null) {
+                    cancelTarget.cancel(mayInterruptIfRunning);
+                    cancelTarget = null;
                 }
             }
         };

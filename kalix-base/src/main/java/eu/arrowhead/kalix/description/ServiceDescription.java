@@ -11,11 +11,34 @@ import java.util.Objects;
 /**
  * Describes an Arrowhead Framework service.
  */
-public interface ServiceDescription {
+public class ServiceDescription {
+    private final String name;
+    private final List<InterfaceDescriptor> supportedInterfaces;
+    private final String qualifier;
+    private final SecurityDescriptor security;
+    private final Map<String, String> metadata;
+    private final int version;
+
+    private ServiceDescription(final Builder builder) {
+        this.name = Objects.requireNonNull(builder.name, "Expected name");
+        if (builder.supportedInterfaces == null || builder.supportedInterfaces.size() == 0) {
+            throw new IllegalArgumentException("At least one supported interface must be specified");
+        }
+        this.supportedInterfaces = Collections.unmodifiableList(builder.supportedInterfaces);
+        this.qualifier = Objects.requireNonNull(builder.qualifier, "Expected qualifier");
+        this.security = Objects.requireNonNull(builder.security, "Expected security");
+        this.metadata = builder.metadata == null
+            ? Collections.emptyMap()
+            : Collections.unmodifiableMap(builder.metadata);
+        this.version = builder.version;
+    }
+
     /**
      * @return Name, or <i>service definition</i>, of this service.
      */
-    String name();
+    public String name() {
+        return name;
+    }
 
     /**
      * Qualifier that distinguishes this service from other such provided by
@@ -23,39 +46,49 @@ public interface ServiceDescription {
      * transport protocol employed by the service.
      * <p>
      * For example, if this service uses HTTP, then the qualifier is a URL base
-     * path.
+     * path, such as {@code "/base/path"}.
      *
      * @return Service qualifier.
      */
-    String qualifier();
+    public String qualifier() {
+        return qualifier;
+    }
 
     /**
      * @return Security schema used to authenticate and authorize service
      * users.
      */
-    SecurityDescriptor security();
+    public SecurityDescriptor security() {
+        return security;
+    }
 
     /**
      * @return Metadata associated with this service. Their significance and
      * use depend on the service.
      */
-     Map<String, String> metadata();
+    public Map<String, String> metadata() {
+        return metadata;
+    }
 
     /**
      * @return Service version.
      */
-    int version();
+    public int version() {
+        return version;
+    }
 
     /**
      * @return Interface triplets supported by the described service. The
      * returned list should be unmodifiable.
      */
-    List<InterfaceDescriptor> supportedInterfaces();
+    public List<InterfaceDescriptor> supportedInterfaces() {
+        return supportedInterfaces;
+    }
 
     /**
      * Builder useful for creating {@link ServiceDescription} instances.
      */
-    class Builder {
+    public static class Builder {
         private String name;
         private List<InterfaceDescriptor> supportedInterfaces;
         private String qualifier;
@@ -94,48 +127,7 @@ public interface ServiceDescription {
         }
 
         public ServiceDescription build() {
-            Objects.requireNonNull(name, "Expected name");
-            Objects.requireNonNull(qualifier, "Expected qualifier");
-            Objects.requireNonNull(security, "Expected security");
-            final var metadata = this.metadata == null
-                ? Collections.<String, String>emptyMap()
-                : Collections.unmodifiableMap(this.metadata);
-            if (supportedInterfaces == null || supportedInterfaces.size() == 0) {
-                throw new IllegalArgumentException("At least one supported interface must be specified");
-            }
-            final var supportedInterfaces = Collections.unmodifiableList(this.supportedInterfaces);
-
-            return new ServiceDescription() {
-                @Override
-                public String name() {
-                    return name;
-                }
-
-                @Override
-                public String qualifier() {
-                    return qualifier;
-                }
-
-                @Override
-                public SecurityDescriptor security() {
-                    return security;
-                }
-
-                @Override
-                public Map<String, String> metadata() {
-                    return metadata;
-                }
-
-                @Override
-                public int version() {
-                    return version;
-                }
-
-                @Override
-                public List<InterfaceDescriptor> supportedInterfaces() {
-                    return supportedInterfaces;
-                }
-            };
+            return new ServiceDescription(this);
         }
     }
 }

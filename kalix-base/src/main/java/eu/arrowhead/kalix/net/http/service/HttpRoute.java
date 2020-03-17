@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.net.http.service;
 
+import eu.arrowhead.kalix.internal.net.http.service.HttpServiceInternal;
 import eu.arrowhead.kalix.net.http.HttpMethod;
 import eu.arrowhead.kalix.util.concurrent.Future;
 
@@ -16,7 +17,7 @@ public class HttpRoute implements HttpRoutable {
     private final HttpRouteHandler handler;
 
     /**
-     * Creates new {@link HttpArrowheadService} route.
+     * Creates new {@link HttpServiceInternal} route.
      *
      * @param method  HTTP method to require for given requests to match this
      *                route. Use {@code null} to allow any method.

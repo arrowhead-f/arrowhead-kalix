@@ -1,5 +1,6 @@
 package eu.arrowhead.kalix.net.http.service;
 
+import eu.arrowhead.kalix.internal.net.http.service.HttpServiceInternal;
 import eu.arrowhead.kalix.net.http.HttpMethod;
 import eu.arrowhead.kalix.util.concurrent.Future;
 
@@ -9,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * A {@link HttpArrowheadService} validator, useful for verifying and/or responding to
+ * A {@link HttpServiceInternal} validator, useful for verifying and/or responding to
  * incoming HTTP requests before they are provided to their designated
  * {@link HttpRoute}s.
  */
@@ -20,7 +21,7 @@ public class HttpValidator implements HttpRoutable {
     private final HttpValidatorHandler handler;
 
     /**
-     * Creates new {@link HttpArrowheadService} filter.
+     * Creates new {@link HttpServiceInternal} filter.
      *
      * @param ordinal When to execute the filter relative to other filters.
      *                Lower numbers are executed first.

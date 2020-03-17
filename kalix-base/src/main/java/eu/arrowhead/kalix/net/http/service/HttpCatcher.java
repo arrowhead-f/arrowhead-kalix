@@ -1,12 +1,13 @@
 package eu.arrowhead.kalix.net.http.service;
 
+import eu.arrowhead.kalix.internal.net.http.service.HttpServiceInternal;
 import eu.arrowhead.kalix.net.http.HttpMethod;
 import eu.arrowhead.kalix.util.concurrent.Future;
 
 import java.util.*;
 
 /**
- * A {@link HttpArrowheadService} exception catcher, useful for handling errors
+ * A {@link HttpServiceInternal} exception catcher, useful for handling errors
  * occurring while receiving or responding to HTTP requests.
  */
 public class HttpCatcher<T extends Throwable> implements HttpRoutable {
@@ -17,7 +18,7 @@ public class HttpCatcher<T extends Throwable> implements HttpRoutable {
     private final HttpCatcherHandler<T> handler;
 
     /**
-     * Creates new {@link HttpArrowheadService} exception catcher.
+     * Creates new {@link HttpServiceInternal} exception catcher.
      *
      * @param ordinal        When to execute the filter relative to other
      *                       filters. Lower numbers are executed first.

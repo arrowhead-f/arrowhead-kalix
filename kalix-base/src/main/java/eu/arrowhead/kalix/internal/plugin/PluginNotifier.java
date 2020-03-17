@@ -1,34 +1,40 @@
 package eu.arrowhead.kalix.internal.plugin;
 
-import eu.arrowhead.kalix.ArrowheadService;
-import eu.arrowhead.kalix.ArrowheadServiceBuilder;
-import eu.arrowhead.kalix.ArrowheadSystem;
+import eu.arrowhead.kalix.AhfService;
+import eu.arrowhead.kalix.AhfSystem;
+import eu.arrowhead.kalix.description.ServiceDescription;
 import eu.arrowhead.kalix.plugin.Plug;
 import eu.arrowhead.kalix.plugin.Plugin;
 import eu.arrowhead.kalix.util.annotation.Internal;
+import eu.arrowhead.kalix.util.concurrent.Future;
+import eu.arrowhead.kalix.util.concurrent.Futures;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 @Internal
 public class PluginNotifier {
     private final Map<Plug, Plugin> plugins;
 
-    public PluginNotifier(final ArrowheadSystem system, final Collection<Plugin> plugins0) {
+    public PluginNotifier(final AhfSystem system, final Collection<Plugin> plugins0) {
         this.plugins = plugins0 == null
             ? Collections.emptyMap()
-            : plugins0.stream().collect(Collectors.toMap(plugin ->
+            : plugins0.stream().collect(Collectors.toConcurrentMap(plugin ->
                 new Plug() {
                     @Override
                     public void detach() {
-                        plugins.remove(this).onDetach(this);
+                        final var plugin = plugins.remove(this);
+                        if (plugin != null) {
+                            plugin.onDetach(this);
+                        }
                     }
 
                     @Override
-                    public ArrowheadSystem system() {
+                    public AhfSystem system() {
                         return system;
                     }
 
@@ -47,26 +53,6 @@ public class PluginNotifier {
         plugins.clear();
     }
 
-    public void onServiceBuilding(final ArrowheadServiceBuilder builder) {
-        forEach((plug, plugin) -> plugin.onServicePrepared(plug, builder));
-    }
-
-    public void onServiceProvided(final ArrowheadService service) {
-        forEach((plug, plugin) -> plugin.onServiceProvided(plug, service));
-    }
-
-    public void onServiceDismissed(final ArrowheadService service) {
-        forEach((plug, plugin) -> plugin.onServiceDismissed(plug, service));
-    }
-
-    public void onSystemStarted() {
-        forEach((plug, plugin) -> plugin.onSystemStarted(plug));
-    }
-
-    public void onSystemStopped() {
-        forEach((plug, plugin) -> plugin.onSystemStopped(plug));
-    }
-
     private void forEach(final BiConsumer<Plug, Plugin> consumer) {
         for (final var entry : plugins.entrySet()) {
             final var plugin = entry.getValue();
@@ -75,15 +61,48 @@ public class PluginNotifier {
                 consumer.accept(plug, plugin);
             }
             catch (final Throwable throwable) {
-                throwable.printStackTrace(); // TODO: Log properly.
                 plugins.remove(plug);
                 try {
                     plugin.onDetach(plug, throwable);
                 }
                 catch (final Throwable throwable1) {
+                    throwable1.addSuppressed(throwable);
                     throwable1.printStackTrace(); // TODO: Log properly.
                 }
             }
         }
+    }
+
+    public Future<?> onSystemStarted() {
+        return serialize((plug, plugin) -> plugin.onSystemStarted(plug));
+    }
+
+    public Future<?> onSystemStopped() {
+        return serialize((plug, plugin) -> plugin.onSystemStopped(plug));
+    }
+
+    public Future<?> onServicePrepared(final AhfService service) {
+        return serialize((plug, plugin) -> plugin.onServicePrepared(plug, service));
+    }
+
+    public Future<?> onServiceProvided(final ServiceDescription service) {
+        return serialize((plug, plugin) -> plugin.onServiceProvided(plug, service));
+    }
+
+    public Future<?> onServiceDismissed(final ServiceDescription service) {
+        return serialize((plug, plugin) -> plugin.onServiceDismissed(plug, service));
+    }
+
+    private Future<?> serialize(final BiFunction<Plug, Plugin, Future<?>> function) {
+        return Futures.serialize(plugins.entrySet()
+            .stream()
+            .map(entry -> {
+                try {
+                    return function.apply(entry.getKey(), entry.getValue());
+                }
+                catch (final Throwable throwable) {
+                    return Future.failure(throwable);
+                }
+            }));
     }
 }

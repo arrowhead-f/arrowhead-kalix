@@ -1,6 +1,6 @@
 package eu.arrowhead.kalix.net.http.client;
 
-import eu.arrowhead.kalix.ArrowheadSystem;
+import eu.arrowhead.kalix.AhfSystem;
 import eu.arrowhead.kalix.internal.net.NettyBootstraps;
 import eu.arrowhead.kalix.internal.net.http.client.FutureHttpClientConnection;
 import eu.arrowhead.kalix.internal.net.http.client.NettyHttpClientConnectionInitializer;
@@ -65,7 +65,7 @@ public class HttpClient {
      * @throws SSLException If creating SSL/TLS context from given Arrowhead
      *                      system fails.
      */
-    public static HttpClient from(final ArrowheadSystem system) throws SSLException {
+    public static HttpClient from(final AhfSystem system) throws SSLException {
         final var builder = new Builder();
         if (system.isSecure()) {
             builder

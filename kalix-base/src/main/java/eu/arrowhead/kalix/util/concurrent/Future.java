@@ -5,7 +5,6 @@ import eu.arrowhead.kalix.util.function.ThrowingFunction;
 
 import java.util.*;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.atomic.*;
 import java.util.function.Consumer;
 
 /**
@@ -22,6 +21,10 @@ import java.util.function.Consumer;
  * represented by the future will not start running this method is invoked.
  * Failing to call it may lead to memory or other resources never being
  * reclaimed.
+ * <p>
+ * Furthermore, implementations of this interface are likely <i>not</i> going
+ * to be thread safe. Unless otherwise advertised, sharing individual
+ * {@code Futures} between multiple threads may cause race conditions.
  *
  * @param <V> Type of value that can be retrieved if the operation succeeds.
  */
@@ -46,17 +49,19 @@ public interface Future<V> {
     /**
      * Signals that the result of this {@code Future} no longer is of interest.
      * <p>
-     * If this {@code Future} has already been cancelled or completed, calling
-     * this method should do nothing. Calling this method on a {@code Future}
-     * that has not yet completed does not prevent {@link #onResult(Consumer)}
-     * from being called, but rather ensures it eventually will be called with
-     * an fault of type {@link CancellationException}.
+     * No guarantees whatsoever are given about the implications of this call.
+     * It may prevent {@link #onResult(Consumer)} from being called, or may
+     * cause it to be called with a {@link CancellationException}, or something
+     * else entirely. However, the receiver of a {@code Future} that is no
+     * longer interested in its successful result <i>should</i> call this
+     * method to make it clear to the original issuer of the {@code Future},
+     * unless a result has already been received.
      *
      * @param mayInterruptIfRunning Whether or not the thread executing the
      *                              task associated with this {@code Future},
-     *                              should be interrupted. If not, in-progress
-     *                              tasks are allowed to complete. This
-     *                              parameter is not guaranteed to be honored.
+     *                              if any, should be interrupted. If not,
+     *                              in-progress tasks are allowed to complete.
+     *                              This parameter may be ignored.
      */
     void cancel(final boolean mayInterruptIfRunning);
 
@@ -65,11 +70,13 @@ public interface Future<V> {
      * and that evaluation of the {@code Future} should be gracefully
      * terminated.
      * <p>
-     * If this {@code Future} has already been cancelled or completed, calling
-     * this method should do nothing. Calling this method on a {@code Future}
-     * that has not yet completed does not prevent {@link #onResult(Consumer)}
-     * from being called, but rather ensures it will eventually be called with
-     * an fault of type {@link CancellationException}.
+     * No guarantees whatsoever are given about the implications of this call.
+     * It may prevent {@link #onResult(Consumer)} from being called, or may
+     * cause it to be called with a {@link CancellationException}, or something
+     * else entirely. However, the receiver of a {@code Future} that is no
+     * longer interested in its successful result <i>should</i> call this
+     * method to make it clear to the original issuer of the {@code Future},
+     * unless a result has already been received.
      */
     default void cancel() {
         cancel(false);
@@ -354,20 +361,21 @@ public interface Future<V> {
     default <U> Future<U> flatMap(final ThrowingFunction<? super V, ? extends Future<U>> mapper) {
         Objects.requireNonNull(mapper);
         final var source = this;
-        final var cancelTarget = new AtomicReference<Future<?>>(this);
         return new Future<>() {
+            private Future<?> cancelTarget = source;
+
             @Override
             public void onResult(final Consumer<Result<U>> consumer) {
                 source.onResult(result0 -> {
-                    Throwable cause;
-                    if (cancelTarget.get() == null) {
-                        cause = new CancellationException();
+                    if (cancelTarget == null) {
+                        return;
                     }
-                    else if (result0.isSuccess()) {
+                    Throwable cause;
+                    if (result0.isSuccess()) {
                         try {
                             final var future1 = mapper.apply(result0.value());
                             future1.onResult(consumer);
-                            cancelTarget.set(future1);
+                            cancelTarget = future1;
                             return;
                         }
                         catch (final Throwable throwable) {
@@ -383,9 +391,9 @@ public interface Future<V> {
 
             @Override
             public void cancel(final boolean mayInterruptIfRunning) {
-                final var target = cancelTarget.getAndSet(null);
-                if (target != null) {
-                    target.cancel(mayInterruptIfRunning);
+                if (cancelTarget != null) {
+                    cancelTarget.cancel(mayInterruptIfRunning);
+                    cancelTarget = null;
                 }
             }
         };
@@ -424,17 +432,17 @@ public interface Future<V> {
     default Future<V> flatMapCatch(final ThrowingFunction<Throwable, ? extends Future<V>> mapper) {
         Objects.requireNonNull(mapper);
         final var source = this;
-        final var cancelTarget = new AtomicReference<Future<?>>(this);
         return new Future<>() {
+            private Future<?> cancelTarget = source;
+
             @Override
             public void onResult(final Consumer<Result<V>> consumer) {
                 source.onResult(result0 -> {
                     Result<V> result1;
                     done:
                     {
-                        Throwable cause;
-                        if (cancelTarget.get() == null) {
-                            cause = new CancellationException();
+                        if (cancelTarget == null) {
+                            return;
                         }
                         else {
                             if (result0.isSuccess()) {
@@ -444,14 +452,13 @@ public interface Future<V> {
                             try {
                                 final var future1 = mapper.apply(result0.fault());
                                 future1.onResult(consumer);
-                                cancelTarget.set(future1);
+                                cancelTarget = future1;
                                 return;
                             }
                             catch (final Throwable throwable) {
-                                cause = throwable;
+                                result1 = Result.failure(throwable);
                             }
                         }
-                        result1 = Result.failure(cause);
                     }
                     consumer.accept(result1);
                 });
@@ -459,9 +466,9 @@ public interface Future<V> {
 
             @Override
             public void cancel(final boolean mayInterruptIfRunning) {
-                final var target = cancelTarget.getAndSet(null);
-                if (target != null) {
-                    target.cancel(mayInterruptIfRunning);
+                if (cancelTarget != null) {
+                    cancelTarget.cancel(mayInterruptIfRunning);
+                    cancelTarget = null;
                 }
             }
         };
@@ -503,36 +510,34 @@ public interface Future<V> {
     default Future<V> flatMapFault(final ThrowingFunction<Throwable, ? extends Future<Throwable>> mapper) {
         Objects.requireNonNull(mapper);
         final var source = this;
-        final var cancelTarget = new AtomicReference<Future<?>>(this);
         return new Future<>() {
+            private Future<?> cancelTarget = source;
+
             @Override
             public void onResult(final Consumer<Result<V>> consumer) {
                 source.onResult(result0 -> {
                     Result<V> result1;
                     done:
                     {
-                        Throwable cause;
-                        if (cancelTarget.get() == null) {
-                            cause = new CancellationException();
+                        if (cancelTarget == null) {
+                            return;
                         }
-                        else {
-                            if (result0.isSuccess()) {
-                                result1 = result0;
-                                break done;
-                            }
-                            try {
-                                final var future1 = mapper.apply(result0.fault());
-                                future1.onResult(result -> consumer.accept(Result.failure(result.isSuccess()
-                                    ? result.value()
-                                    : result.fault())));
-                                cancelTarget.set(future1);
-                                return;
-                            }
-                            catch (final Throwable throwable) {
-                                cause = throwable;
-                            }
+                        if (result0.isSuccess()) {
+                            result1 = result0;
+                            break done;
                         }
-                        result1 = Result.failure(cause);
+                        try {
+                            final var future1 = mapper.apply(result0.fault());
+                            future1.onResult(result -> consumer.accept(Result.failure(result.isSuccess()
+                                ? result.value()
+                                : result.fault())));
+                            cancelTarget = future1;
+                            return;
+                        }
+                        catch (final Throwable throwable) {
+                            result1 = Result.failure(throwable);
+                        }
+
                     }
                     consumer.accept(result1);
                 });
@@ -540,9 +545,9 @@ public interface Future<V> {
 
             @Override
             public void cancel(final boolean mayInterruptIfRunning) {
-                final var target = cancelTarget.getAndSet(null);
-                if (target != null) {
-                    target.cancel(mayInterruptIfRunning);
+                if (cancelTarget != null) {
+                    cancelTarget.cancel(mayInterruptIfRunning);
+                    cancelTarget = null;
                 }
             }
         };
@@ -582,35 +587,31 @@ public interface Future<V> {
     default <U> Future<U> flatMapResult(final ThrowingFunction<Result<V>, ? extends Future<U>> mapper) {
         Objects.requireNonNull(mapper);
         final var source = this;
-        final var cancelTarget = new AtomicReference<Future<?>>(this);
         return new Future<>() {
+            private Future<?> cancelTarget = source;
+
             @Override
             public void onResult(final Consumer<Result<U>> consumer) {
                 source.onResult(result0 -> {
-                    Throwable cause;
-                    if (cancelTarget.get() == null) {
-                        cause = new CancellationException();
+                    if (cancelTarget == null) {
+                        return;
                     }
-                    else {
-                        try {
-                            final var future1 = mapper.apply(result0);
-                            future1.onResult(consumer);
-                            cancelTarget.set(future1);
-                            return;
-                        }
-                        catch (final Throwable throwable) {
-                            cause = throwable;
-                        }
+                    try {
+                        final var future1 = mapper.apply(result0);
+                        future1.onResult(consumer);
+                        cancelTarget = future1;
                     }
-                    consumer.accept(Result.failure(cause));
+                    catch (final Throwable throwable) {
+                        consumer.accept(Result.failure(throwable));
+                    }
                 });
             }
 
             @Override
             public void cancel(final boolean mayInterruptIfRunning) {
-                final var target = cancelTarget.getAndSet(null);
-                if (target != null) {
-                    target.cancel(mayInterruptIfRunning);
+                if (cancelTarget != null) {
+                    cancelTarget.cancel(mayInterruptIfRunning);
+                    cancelTarget = null;
                 }
             }
         };

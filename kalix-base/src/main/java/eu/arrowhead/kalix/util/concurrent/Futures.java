@@ -1,6 +1,5 @@
 package eu.arrowhead.kalix.util.concurrent;
 
-import eu.arrowhead.kalix.util.Result;
 import eu.arrowhead.kalix.util.function.ThrowingBiFunction;
 
 import java.util.ArrayList;
@@ -500,7 +499,12 @@ public final class Futures {
 
     /**
      * Executes every future in {@code array} in sequence, collecting every
-     * result into a list.
+     * successful result into a list. If any future fails, the returned future
+     * is failed with the same {@code Throwable}. If more than one future fails
+     * each subsequent failing future suppresses the exception of prior one.
+     * <p>
+     * All futures in {@code array} are guaranteed to be executed, even if a
+     * future before another such in the given collection would fail.
      *
      * @param array Array of futures.
      * @param <V>   Type of value futures completes with if successful.
@@ -508,13 +512,18 @@ public final class Futures {
      * with the results being in the same order as the futures in the given
      * {@code array}.
      */
-    public static <V> Future<List<Result<? extends V>>> serialize(final Future<V>[] array) {
+    public static <V> Future<List<V>> serialize(final Future<? extends V>[] array) {
         return serialize(Arrays.asList(array));
     }
 
     /**
      * Executes every future in {@code stream} in sequence, collecting every
-     * result into a list.
+     * successful result into a list. If any future fails, the returned future
+     * is failed with the same {@code Throwable}. If more than one future fails
+     * each subsequent failing future suppresses the exception of prior one.
+     * <p>
+     * All futures in {@code stream} are guaranteed to be executed, even if a
+     * future before another such in the given collection would fail.
      *
      * @param stream Stream of futures.
      * @param <V>    Type of value futures completes with if successful.
@@ -522,13 +531,18 @@ public final class Futures {
      * with the results being in the same order as the futures in the given
      * {@code stream}.
      */
-    public static <V> Future<List<Result<? extends V>>> serialize(final Stream<? extends Future<? extends V>> stream) {
+    public static <V> Future<List<V>> serialize(final Stream<? extends Future<? extends V>> stream) {
         return serialize(stream.iterator());
     }
 
     /**
      * Executes every future in {@code iterable} in sequence, collecting every
-     * result into a list.
+     * successful result into a list. If any future fails, the returned future
+     * is failed with the same {@code Throwable}. If more than one future fails
+     * each subsequent failing future suppresses the exception of prior one.
+     * <p>
+     * All futures in {@code iterable} are guaranteed to be executed, even if a
+     * future before another such in the given collection would fail.
      *
      * @param iterable Iterable of futures.
      * @param <V>      Type of value futures completes with if successful.
@@ -536,25 +550,54 @@ public final class Futures {
      * with the results being in the same order as the futures in the given
      * {@code iterable}.
      */
-    public static <V> Future<List<Result<? extends V>>> serialize(final Iterable<? extends Future<? extends V>> iterable) {
+    public static <V> Future<List<V>> serialize(final Iterable<? extends Future<? extends V>> iterable) {
         return serialize(iterable.iterator());
     }
 
     /**
      * Executes every future in {@code iterator} in sequence, collecting every
-     * result into a list.
+     * successful result into a list. If any future fails, the returned future
+     * is failed with the same {@code Throwable}. If more than one future fails
+     * each subsequent failing future suppresses the exception of the prior
+     * one.
+     * <p>
+     * All futures in {@code iterator} are guaranteed to be executed, even if a
+     * future before another such in the given collection would fail.
      *
      * @param iterator Iterator of futures.
      * @param <V>      Type of value futures completes with if successful.
      * @return Future completed with list of results from all provided futures,
      * with the results being in the same order as the futures in the given
-     * {@code iterator}.
+     * {@code iterator}. Never fails.
      */
-    public static <V> Future<List<Result<? extends V>>> serialize(final Iterator<? extends Future<? extends V>> iterator) {
-        return flatReducePlain(iterator, new ArrayList<>(), (list, future) ->
-            future.mapResult(result -> {
-                list.add(result);
-                return Result.success(list);
-            }));
+    public static <V> Future<List<V>> serialize(final Iterator<? extends Future<? extends V>> iterator) {
+        return serializeInner(iterator, new ArrayList<>(), null);
+    }
+
+    private static <V> Future<List<V>> serializeInner(
+        final Iterator<? extends Future<? extends V>> iterator,
+        final List<V> values,
+        final Throwable fault)
+    {
+        if (!iterator.hasNext()) {
+            return fault == null
+                ? Future.success(values)
+                : Future.failure(fault);
+        }
+        return iterator.next()
+            .flatMapResult(result -> {
+                final Throwable fault0;
+                if (result.isSuccess()) {
+                    values.add(result.value());
+                    fault0 = fault;
+                }
+                else {
+                    fault0 = result.fault();
+                    if (fault != null) {
+                        fault0.addSuppressed(fault);
+                    }
+                }
+                return serializeInner(iterator, values, fault0);
+            });
     }
 }
