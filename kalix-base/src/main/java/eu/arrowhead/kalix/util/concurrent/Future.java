@@ -30,16 +30,18 @@ import java.util.function.Consumer;
  */
 public interface Future<V> {
     /**
-     * Sets function to receive result of this {@code Future}, when it becomes
-     * available.
+     * Sets function to receive result of this {@code Future}, when and if it
+     * becomes available.
      * <p>
-     * If this method has been called previously on the same object, any
-     * previously set consumer should be replaced by the one given.
+     * If this method has been called previously on the same {@code Future},
+     * any previously set consumer should be replaced by the one given. If a
+     * previous consumer has already been called when a new one is set, the new
+     * one <i>might</i> be called with the same result as the previous.
      * <p>
      * The given consumer function should never throw exceptions that need to
      * be handled explicitly. Any thrown exception will end up with the caller
-     * of the function, which is unlikely to be able to handle it in any other
-     * way than by logging it.
+     * of the {@code consumer}, which is unlikely to be able to handle it in
+     * any other way than by logging it.
      *
      * @param consumer Function invoked when this {@code Future} completes.
      * @throws NullPointerException If {@code consumer} is {@code null}.
@@ -100,7 +102,7 @@ public interface Future<V> {
      * @throws NullPointerException If {@code consumer} is {@code null}.
      */
     default void onFailure(final Consumer<Throwable> consumer) {
-        Objects.requireNonNull(consumer);
+        Objects.requireNonNull(consumer, "Expected consumer");
         onResult(result -> {
             if (result.isFailure()) {
                 consumer.accept(result.fault());
@@ -133,7 +135,7 @@ public interface Future<V> {
      * @throws NullPointerException If the mapping function is {@code null}.
      */
     default <U> Future<U> map(final ThrowingFunction<? super V, U> mapper) {
-        Objects.requireNonNull(mapper);
+        Objects.requireNonNull(mapper, "Expected mapper");
         final var source = this;
         return new Future<>() {
             @Override
@@ -192,7 +194,7 @@ public interface Future<V> {
      * @throws NullPointerException If the mapping function is {@code null}.
      */
     default Future<V> mapCatch(final ThrowingFunction<Throwable, ? extends V> mapper) {
-        Objects.requireNonNull(mapper);
+        Objects.requireNonNull(mapper, "Expected mapper");
         final var source = this;
         return new Future<>() {
             @Override
@@ -246,7 +248,7 @@ public interface Future<V> {
      * @throws NullPointerException If the mapping function is {@code null}.
      */
     default Future<V> mapFault(final ThrowingFunction<Throwable, Throwable> mapper) {
-        Objects.requireNonNull(mapper);
+        Objects.requireNonNull(mapper, "Expected mapper");
         final var source = this;
         return new Future<>() {
             @Override
@@ -302,7 +304,7 @@ public interface Future<V> {
      * @throws NullPointerException If the mapping function is {@code null}.
      */
     default <U> Future<U> mapResult(final ThrowingFunction<Result<V>, Result<U>> mapper) {
-        Objects.requireNonNull(mapper);
+        Objects.requireNonNull(mapper, "Expected mapper");
         final var source = this;
         return new Future<>() {
             @Override
@@ -359,7 +361,7 @@ public interface Future<V> {
      * @throws NullPointerException If the mapping function is {@code null}.
      */
     default <U> Future<U> flatMap(final ThrowingFunction<? super V, ? extends Future<U>> mapper) {
-        Objects.requireNonNull(mapper);
+        Objects.requireNonNull(mapper, "Expected mapper");
         final var source = this;
         return new Future<>() {
             private Future<?> cancelTarget = source;
@@ -430,7 +432,7 @@ public interface Future<V> {
      * @throws NullPointerException If the mapping function is {@code null}.
      */
     default Future<V> flatMapCatch(final ThrowingFunction<Throwable, ? extends Future<V>> mapper) {
-        Objects.requireNonNull(mapper);
+        Objects.requireNonNull(mapper, "Expected mapper");
         final var source = this;
         return new Future<>() {
             private Future<?> cancelTarget = source;
@@ -508,7 +510,7 @@ public interface Future<V> {
      * @throws NullPointerException If the mapping function is {@code null}.
      */
     default Future<V> flatMapFault(final ThrowingFunction<Throwable, ? extends Future<Throwable>> mapper) {
-        Objects.requireNonNull(mapper);
+        Objects.requireNonNull(mapper, "Expected mapper");
         final var source = this;
         return new Future<>() {
             private Future<?> cancelTarget = source;
@@ -585,7 +587,7 @@ public interface Future<V> {
      * @throws NullPointerException If the mapping function is {@code null}.
      */
     default <U> Future<U> flatMapResult(final ThrowingFunction<Result<V>, ? extends Future<U>> mapper) {
-        Objects.requireNonNull(mapper);
+        Objects.requireNonNull(mapper, "Expected mapper");
         final var source = this;
         return new Future<>() {
             private Future<?> cancelTarget = source;
@@ -618,12 +620,45 @@ public interface Future<V> {
     }
 
     /**
-     * Creates new {@code Future} that always succeeds with {@code null}.
+     * Returns new {@code Future} that is guaranteed to fail with given
+     * {@code throwable}.
+     * <p>
+     * If this {@code Future} fails, its fault is added as a suppressed
+     * exception to the provided {@code throwable}. If this {@code Future}
+     * succeeds, its result is ignored.
      *
-     * @return New {@code Future}.
+     * @param throwable Fault to include in returned {@code Future}.
+     * @return A {@code Future} that will complete with given {@code throwable}
+     * as fault.
+     */
+    default <U> Future<U> fail(final Throwable throwable) {
+        Objects.requireNonNull(throwable, "Expected throwable");
+        final var source = this;
+        return new Future<>() {
+            @Override
+            public void onResult(final Consumer<Result<U>> consumer) {
+                source.onResult(result -> {
+                    if (result.isFailure()) {
+                        throwable.addSuppressed(result.fault());
+                    }
+                    consumer.accept(Result.failure(throwable));
+                });
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                source.cancel(mayInterruptIfRunning);
+            }
+        };
+    }
+
+    /**
+     * Returns {@code Future} that always succeeds with {@code null}.
+     *
+     * @return Cached {@code Future}.
      */
     static Future<?> done() {
-        return new FutureSuccess<>(null);
+        return FutureSuccess.NULL;
     }
 
     /**

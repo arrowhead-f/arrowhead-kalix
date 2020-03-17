@@ -8,12 +8,12 @@ import eu.arrowhead.kalix.plugin.Plugin;
 import eu.arrowhead.kalix.util.annotation.Internal;
 import eu.arrowhead.kalix.util.concurrent.Future;
 import eu.arrowhead.kalix.util.concurrent.Futures;
+import eu.arrowhead.kalix.util.function.ThrowingBiConsumer;
+import eu.arrowhead.kalix.util.function.ThrowingBiFunction;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 @Internal
@@ -29,7 +29,12 @@ public class PluginNotifier {
                     public void detach() {
                         final var plugin = plugins.remove(this);
                         if (plugin != null) {
-                            plugin.onDetach(this);
+                            try {
+                                plugin.onDetach(this);
+                            }
+                            catch (final Throwable throwable) {
+                                throwable.printStackTrace(); // TODO: Log properly.
+                            }
                         }
                     }
 
@@ -65,7 +70,7 @@ public class PluginNotifier {
         forEach((plug, plugin) -> plugin.onServiceDismissed(plug, service));
     }
 
-    private void forEach(final BiConsumer<Plug, Plugin> consumer) {
+    private void forEach(final ThrowingBiConsumer<Plug, Plugin> consumer) {
         for (final var entry : plugins.entrySet()) {
             final var plugin = entry.getValue();
             final var plug = entry.getKey();
@@ -85,7 +90,7 @@ public class PluginNotifier {
         }
     }
 
-    private Future<?> serialize(final BiFunction<Plug, Plugin, Future<?>> function) {
+    private Future<?> serialize(final ThrowingBiFunction<Plug, Plugin, Future<?>> function) {
         return Futures.serialize(plugins.entrySet()
             .stream()
             .map(entry -> {

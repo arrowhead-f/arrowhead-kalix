@@ -2,6 +2,7 @@ package eu.arrowhead.kalix;
 
 import eu.arrowhead.kalix.description.ServiceDescription;
 import eu.arrowhead.kalix.internal.AhfServer;
+import eu.arrowhead.kalix.internal.AhfServerRegistry;
 import eu.arrowhead.kalix.internal.net.http.service.HttpServer;
 import eu.arrowhead.kalix.internal.plugin.PluginNotifier;
 import eu.arrowhead.kalix.net.http.service.HttpService;
@@ -10,6 +11,7 @@ import eu.arrowhead.kalix.security.X509ArrowheadName;
 import eu.arrowhead.kalix.security.X509Certificates;
 import eu.arrowhead.kalix.security.X509KeyStore;
 import eu.arrowhead.kalix.security.X509TrustStore;
+import eu.arrowhead.kalix.util.Result;
 import eu.arrowhead.kalix.util.concurrent.Future;
 import eu.arrowhead.kalix.util.concurrent.FutureScheduler;
 import eu.arrowhead.kalix.util.concurrent.FutureSchedulerShutdownListener;
@@ -192,7 +194,7 @@ public class AhfSystem {
         Objects.requireNonNull(service, "Expected service");
 
         if (isShuttingDown.get()) {
-            return Future.failure(new IllegalStateException("Cannot provide service; system is shutting down"));
+            return Future.failure(cannotProvideServiceShuttingDownException());
         }
 
         for (final var server : servers) {
@@ -201,20 +203,24 @@ public class AhfSystem {
             }
         }
 
-        final Future<AhfServer> serverFuture;
-        if (service instanceof HttpService) {
-            serverFuture = HttpServer.create(this, pluginNotifier);
-        }
-        else {
-            throw new IllegalArgumentException("No server available for " +
-                "services of type \"" + service.getClass() + "\"");
-        }
+        final var serverConstructor = AhfServerRegistry.get(service.getClass())
+            .orElseThrow(() -> new IllegalArgumentException("" +
+                "No Arrowhead server exists for services of type \"" +
+                service.getClass() + "\""));
 
-        return serverFuture.flatMap(server -> {
-            localSocketAddress.set(server.localSocketAddress());
-            servers.add(server);
-            return server.provide(service);
-        });
+        return serverConstructor.construct(this, pluginNotifier)
+            .flatMap(server -> {
+                if (isShuttingDown.get()) {
+                    return server.close().fail(cannotProvideServiceShuttingDownException());
+                }
+                localSocketAddress.set(server.localSocketAddress());
+                servers.add(server);
+                return server.provide(service);
+            });
+    }
+
+    private Throwable cannotProvideServiceShuttingDownException() {
+        return new IllegalStateException("Cannot provide service; system is shutting down");
     }
 
     /**

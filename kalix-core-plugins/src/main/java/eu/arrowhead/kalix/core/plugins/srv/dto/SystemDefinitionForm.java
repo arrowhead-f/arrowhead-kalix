@@ -1,4 +1,4 @@
-package eu.arrowhead.kalix.core.plugins.sr.dto;
+package eu.arrowhead.kalix.core.plugins.srv.dto;
 
 import eu.arrowhead.kalix.dto.Writable;
 import eu.arrowhead.kalix.dto.json.JsonName;

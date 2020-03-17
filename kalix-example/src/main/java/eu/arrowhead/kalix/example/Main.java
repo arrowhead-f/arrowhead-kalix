@@ -1,17 +1,19 @@
 package eu.arrowhead.kalix.example;
 
-import eu.arrowhead.kalix.core.plugins.sr.HttpServiceRegistry;
-import eu.arrowhead.kalix.core.plugins.sr.dto.ServiceRecordFormBuilder;
-import eu.arrowhead.kalix.core.plugins.sr.dto.SystemDefinitionFormBuilder;
-import eu.arrowhead.kalix.descriptor.InterfaceDescriptor;
+import eu.arrowhead.kalix.AhfSystem;
+import eu.arrowhead.kalix.core.plugins.srv.HttpServiceRegistrationPlugin;
+import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.descriptor.SecurityDescriptor;
 import eu.arrowhead.kalix.dto.DataEncoding;
-import eu.arrowhead.kalix.net.http.client.HttpClient;
+import eu.arrowhead.kalix.net.http.HttpStatus;
+import eu.arrowhead.kalix.net.http.service.HttpService;
 import eu.arrowhead.kalix.security.X509KeyStore;
 import eu.arrowhead.kalix.security.X509TrustStore;
+import eu.arrowhead.kalix.util.concurrent.Future;
 
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
+import java.util.Arrays;
 
 public class Main {
     public static void main(final String[] args) {
@@ -20,8 +22,6 @@ public class Main {
             System.exit(1);
         }
         try {
-            System.out.println("Hello, Example!");
-
             final var keyStorePath = Path.of(args[0]);
             final var trustStorePath = Path.of(args[1]);
 
@@ -31,37 +31,42 @@ public class Main {
                 .keyStorePath(keyStorePath)
                 .keyStorePassword(password)
                 .load();
-
             final var trustStore = X509TrustStore.read(trustStorePath, password);
+            Arrays.fill(password, '0');
 
-            final var client = new HttpClient.Builder()
+            final var system = new AhfSystem.Builder()
                 .keyStore(keyStore)
                 .trustStore(trustStore)
+                .plugins(new HttpServiceRegistrationPlugin.Builder()
+                    .encoding(DataEncoding.JSON)
+                    .remoteSocketAddress(new InetSocketAddress("172.23.2.13", 8446))
+                    .build())
                 .build();
 
-            final var serviceRegistry = new HttpServiceRegistry(
-                client,
-                DataEncoding.JSON,
-                new InetSocketAddress("172.23.2.13", 8446));
-
-            serviceRegistry.register(new ServiceRecordFormBuilder()
-                .serviceName("data_consumer-service10")
-                .provider(new SystemDefinitionFormBuilder()
-                    .name("data_consumer")
-                    .hostname("127.0.0.1")
-                    .port(13370)
-                    .publicKeyBase64(keyStore.publicKeyBase64())
-                    .build())
-                .qualifier("/example-x")
+            system.provide(new HttpService()
+                .name("kalix-example-service")
+                .encodings(EncodingDescriptor.JSON)
                 .security(SecurityDescriptor.TOKEN)
-                .version(1)
-                .supportedInterfaces(InterfaceDescriptor.HTTP_SECURE_JSON)
-                .build())
-                .onResult(result -> {
-                    result.ifSuccess(record -> System.out.println("Success. Record ID: " + record.id()));
-                    result.ifFailure(Throwable::printStackTrace);
-                    System.exit(0);
-                });
+                .basePath("/example")
+                .get("/ping", (request, response) -> {
+                    response
+                        .status(HttpStatus.OK)
+                        .header("content-type", "application/json")
+                        .body("{\"ping\":\"pong\"}");
+
+                    return Future.done();
+                })
+                .post("/echoes", ((request, response) ->
+                    request.bodyAsString()
+                        .map(body -> {
+                            response
+                                .status(HttpStatus.OK)
+                                .header("content-type", request.header("content-type").orElse("text/plain"))
+                                .body(body);
+
+                            return null;
+                        })))
+            );
         }
         catch (final Throwable e) {
             e.printStackTrace();

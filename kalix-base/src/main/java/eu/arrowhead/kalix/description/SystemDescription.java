@@ -82,6 +82,11 @@ public class SystemDescription {
 
     /**
      * @return Public key of system, if any.
+     * @throws UnsupportedOperationException If the system does not have a
+     *                                       certificate chain. This will only
+     *                                       be the case if the system that
+     *                                       retrieved this description runs in
+     *                                       the <i>insecure</i> security mode.
      */
     public PublicKey publicKey() {
         return certificate().getPublicKey();

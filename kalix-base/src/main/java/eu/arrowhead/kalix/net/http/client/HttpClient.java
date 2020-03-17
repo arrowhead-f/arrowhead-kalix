@@ -15,7 +15,10 @@ import io.netty.handler.ssl.SslContextBuilder;
 
 import javax.net.ssl.SSLException;
 import java.net.InetSocketAddress;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
+import java.util.WeakHashMap;
 
 import static eu.arrowhead.kalix.internal.util.concurrent.NettyFutures.adapt;
 
@@ -24,6 +27,8 @@ import static eu.arrowhead.kalix.internal.util.concurrent.NettyFutures.adapt;
  * be sent.
  */
 public class HttpClient {
+    private static final Map<AhfSystem, HttpClient> cache = Collections.synchronizedMap(new WeakHashMap<>());
+
     private final Bootstrap bootstrap;
     private final InetSocketAddress localSocketAddress;
     private final SslContext sslContext;
@@ -52,20 +57,24 @@ public class HttpClient {
     }
 
     /**
-     * Creates new {@code HttpClient} that takes its configuration details from
-     * the given {@code arrowheadSystem}.
+     * Creates new or gets a cached {@code HttpClient} that takes its
+     * configuration details from the given Arrowhead {@code system}.
      * <p>
-     * The created HTTP client will use the same key store, trust store,
+     * The return HTTP client will use the same key store, trust store,
      * security mode, local network interface and scheduler as the given
      * system.
      *
-     * @param system Arrowhead system from which to extract
-     *                        configuration.
-     * @return Created client.
+     * @param system Arrowhead system from which to extract configuration.
+     * @return Created or cached client.
      * @throws SSLException If creating SSL/TLS context from given Arrowhead
      *                      system fails.
      */
     public static HttpClient from(final AhfSystem system) throws SSLException {
+        var client = cache.get(system);
+        if (client != null) {
+            return client;
+        }
+
         final var builder = new Builder();
         if (system.isSecure()) {
             builder
@@ -75,10 +84,14 @@ public class HttpClient {
         else {
             builder.insecure();
         }
-        return builder
+
+        client = builder
             .localSocketAddress(new InetSocketAddress(system.localAddress(), 0))
             .scheduler(system.scheduler())
             .build();
+
+        cache.put(system, client);
+        return client;
     }
 
     /**

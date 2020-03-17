@@ -1,11 +1,10 @@
-package eu.arrowhead.kalix.core.plugins.sr.dto;
+package eu.arrowhead.kalix.core.plugins.srv.dto;
 
 import eu.arrowhead.kalix.descriptor.InterfaceDescriptor;
 import eu.arrowhead.kalix.descriptor.SecurityDescriptor;
 import eu.arrowhead.kalix.dto.Writable;
 import eu.arrowhead.kalix.dto.json.JsonName;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -13,7 +12,7 @@ import java.util.Optional;
 @Writable
 public interface ServiceRecordForm {
     @JsonName("serviceDefinition")
-    String serviceName();
+    String name();
 
     @JsonName("providerSystem")
     SystemDefinitionForm provider();

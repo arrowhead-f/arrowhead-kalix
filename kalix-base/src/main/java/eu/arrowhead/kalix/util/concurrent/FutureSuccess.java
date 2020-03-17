@@ -12,9 +12,9 @@ import java.util.function.Consumer;
  * @param <V> Type of value.
  */
 class FutureSuccess<V> implements FutureProgress<V> {
-    private final V value;
+    static final FutureSuccess<?> NULL = new FutureSuccess<>(null);
 
-    private boolean isCompleted = false;
+    private final V value;
 
     /**
      * Creates new successful {@link Future}.
@@ -28,10 +28,6 @@ class FutureSuccess<V> implements FutureProgress<V> {
     @Override
     public void onResult(final Consumer<Result<V>> consumer) {
         Objects.requireNonNull(consumer, "Expected consumer");
-        if (isCompleted) {
-            return;
-        }
-        isCompleted = true;
         consumer.accept(Result.success(value));
     }
 
@@ -43,7 +39,6 @@ class FutureSuccess<V> implements FutureProgress<V> {
     @Override
     public void onFailure(final Consumer<Throwable> consumer) {
         Objects.requireNonNull(consumer);
-        isCompleted = true;
         // Does nothing.
     }
 

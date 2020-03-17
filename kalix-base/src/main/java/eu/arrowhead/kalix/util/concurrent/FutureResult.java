@@ -4,13 +4,10 @@ import eu.arrowhead.kalix.util.Result;
 import eu.arrowhead.kalix.util.function.ThrowingFunction;
 
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public class FutureResult<V> implements Future<V> {
     private final Result<V> result;
-
-    private boolean isCompleted = false;
 
     public FutureResult(final Result<V> result) {
         this.result = result;
@@ -19,10 +16,6 @@ public class FutureResult<V> implements Future<V> {
     @Override
     public void onResult(final Consumer<Result<V>> consumer) {
         Objects.requireNonNull(consumer, "Expected consumer");
-        if (isCompleted) {
-            return;
-        }
-        isCompleted = true;
         consumer.accept(result);
     }
 
@@ -34,10 +27,6 @@ public class FutureResult<V> implements Future<V> {
     @Override
     public void onFailure(final Consumer<Throwable> consumer) {
         Objects.requireNonNull(consumer, "Expected consumer");
-        if (isCompleted) {
-            return;
-        }
-        isCompleted = true;
         if (result.isFailure()) {
             consumer.accept(result.fault());
         }

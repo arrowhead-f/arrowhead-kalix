@@ -7,6 +7,8 @@ import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.descriptor.InterfaceDescriptor;
 import eu.arrowhead.kalix.descriptor.SecurityDescriptor;
 import eu.arrowhead.kalix.descriptor.TransportDescriptor;
+import eu.arrowhead.kalix.internal.AhfServerRegistry;
+import eu.arrowhead.kalix.internal.net.http.service.HttpServer;
 import eu.arrowhead.kalix.net.http.HttpMethod;
 
 import java.util.*;
@@ -18,7 +20,11 @@ import java.util.stream.Collectors;
  * TODO: Write more extensive documentation, including about validators, routes
  * and catchers, as well as about patterns and matching.
  */
-public class HttpService implements AhfService {
+public final class HttpService implements AhfService {
+    static {
+        AhfServerRegistry.set(HttpService.class, HttpServer::create);
+    }
+
     private final ArrayList<HttpCatcher<?>> catchers = new ArrayList<>(0);
     private final ArrayList<HttpRoute> routes = new ArrayList<>(0);
     private final ArrayList<HttpValidator> validators = new ArrayList<>(0);
@@ -103,11 +109,12 @@ public class HttpService implements AhfService {
      * Declares what security mode this service is to use. <b>Must be
      * specified.</b>
      * <p>
-     * It is an error to specify {@link SecurityDescriptor#NOT_SECURE
-     * NOT_SECURE} if the {@link AhfSystem system}
-     * that is to run the service is running in secure mode. The opposite is
-     * also the case. If the system is running in insecure mode, then must
-     * {@link SecurityDescriptor#NOT_SECURE NOT_SECURE} be specified here.
+     * Note that it is typically an error to specify
+     * {@link SecurityDescriptor#NOT_SECURE NOT_SECURE} if the
+     * {@link AhfSystem system} that is to run the service is running in secure
+     * mode. The opposite is also the case. If the system is running in
+     * insecure mode, then {@link SecurityDescriptor#NOT_SECURE NOT_SECURE}
+     * should be specified here.
      *
      * @param security Desired security mode.
      * @return This service.
@@ -794,7 +801,7 @@ public class HttpService implements AhfService {
      * @return Value associated with {@code key}, if any.
      */
     public Optional<String> metadata(final String key) {
-        return Optional.ofNullable(metadata.get(key));
+        return Optional.ofNullable(metadata().get(key));
     }
 
     /**

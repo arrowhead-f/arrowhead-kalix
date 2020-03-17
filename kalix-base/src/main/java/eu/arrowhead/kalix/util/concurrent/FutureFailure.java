@@ -14,8 +14,6 @@ import java.util.function.Consumer;
 class FutureFailure<V> implements FutureProgress<V> {
     private final Throwable fault;
 
-    private boolean isCompleted = false;
-
     /**
      * Creates new failing {@link Future}.
      *
@@ -29,10 +27,6 @@ class FutureFailure<V> implements FutureProgress<V> {
     @Override
     public void onResult(final Consumer<Result<V>> consumer) {
         Objects.requireNonNull(consumer, "Expected consumer");
-        if (isCompleted) {
-            return;
-        }
-        isCompleted = true;
         consumer.accept(Result.failure(fault));
     }
 
@@ -44,10 +38,6 @@ class FutureFailure<V> implements FutureProgress<V> {
     @Override
     public void onFailure(final Consumer<Throwable> consumer) {
         Objects.requireNonNull(consumer);
-        if (isCompleted) {
-            return;
-        }
-        isCompleted = true;
         consumer.accept(fault);
     }
 

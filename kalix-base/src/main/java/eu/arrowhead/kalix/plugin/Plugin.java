@@ -29,7 +29,7 @@ public interface Plugin {
      *
      * @param plug Plug, representing the plugin's connection to the system.
      */
-    default void onAttach(final Plug plug) {}
+    default void onAttach(final Plug plug) throws Exception {}
 
     /**
      * Called to notify the plugin that it now is detached from its
@@ -47,7 +47,7 @@ public interface Plugin {
      *
      * @param plug Plug, representing this plugin's connection to a system.
      */
-    default void onDetach(final Plug plug) {}
+    default void onDetach(final Plug plug) throws Exception {}
 
     /**
      * Called to notify the plugin that it was forcibly detached due to
@@ -59,7 +59,7 @@ public interface Plugin {
      * @param plug  Plug, representing this plugin's connection to a system.
      * @param cause The exception causing the plugin to be detached.
      */
-    default void onDetach(final Plug plug, final Throwable cause) {}
+    default void onDetach(final Plug plug, final Throwable cause) throws Exception {}
 
     /**
      * Called to notify the plugin that a new service is prepared for being
@@ -85,7 +85,7 @@ public interface Plugin {
      * provided and the fault is relayed to the caller trying to cause the
      * service to be provided.
      */
-    default Future<?> onServicePrepared(final Plug plug, final AhfService service) {
+    default Future<?> onServicePrepared(final Plug plug, final AhfService service) throws Exception {
         return Future.done();
     }
 
@@ -110,7 +110,7 @@ public interface Plugin {
      * and the fault is relayed to the caller trying to cause the service to be
      * provided.
      */
-    default Future<?> onServiceProvided(final Plug plug, final ServiceDescription service) {
+    default Future<?> onServiceProvided(final Plug plug, final ServiceDescription service) throws Exception {
         return Future.done();
     }
 
@@ -124,5 +124,5 @@ public interface Plugin {
      * @param plug    Plug, representing this plugin's connection to a system.
      * @param service A description of the service being removed.
      */
-    default void onServiceDismissed(final Plug plug, final ServiceDescription service) {}
+    default void onServiceDismissed(final Plug plug, final ServiceDescription service) throws Exception {}
 }
