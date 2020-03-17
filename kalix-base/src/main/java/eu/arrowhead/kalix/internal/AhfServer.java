@@ -15,6 +15,8 @@ import java.util.stream.Stream;
  */
 @Internal
 public interface AhfServer {
+    InetSocketAddress localSocketAddress();
+
     boolean canProvide(AhfService service);
 
     /**
@@ -40,26 +42,11 @@ public interface AhfServer {
     Stream<AhfServiceHandle> providedServices();
 
     /**
-     * Starts server, making its services available.
-     *
-     * @return Future completed with the socket address of the concrete local
-     * network interface through which the server provides its services.
-     */
-    Future<InetSocketAddress> start();
-
-    /**
-     * Stops server, making its services unavailable without removing them.
-     *
-     * @return Future completed when stopping is complete.
-     */
-    Future<?> stop();
-
-    /**
      * Shuts server down, making it impossible to start it again.
      * <p>
      * All services owned by this server are removed.
      *
      * @return Future completed when shutting down is complete.
      */
-    Future<?> shutdown();
+    Future<?> close();
 }

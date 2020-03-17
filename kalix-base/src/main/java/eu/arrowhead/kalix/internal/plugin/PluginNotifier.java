@@ -53,6 +53,18 @@ public class PluginNotifier {
         plugins.clear();
     }
 
+    public Future<?> onServicePrepared(final AhfService service) {
+        return serialize((plug, plugin) -> plugin.onServicePrepared(plug, service));
+    }
+
+    public Future<?> onServiceProvided(final ServiceDescription service) {
+        return serialize((plug, plugin) -> plugin.onServiceProvided(plug, service));
+    }
+
+    public void onServiceDismissed(final ServiceDescription service) {
+        forEach((plug, plugin) -> plugin.onServiceDismissed(plug, service));
+    }
+
     private void forEach(final BiConsumer<Plug, Plugin> consumer) {
         for (final var entry : plugins.entrySet()) {
             final var plugin = entry.getValue();
@@ -71,26 +83,6 @@ public class PluginNotifier {
                 }
             }
         }
-    }
-
-    public Future<?> onSystemStarted() {
-        return serialize((plug, plugin) -> plugin.onSystemStarted(plug));
-    }
-
-    public Future<?> onSystemStopped() {
-        return serialize((plug, plugin) -> plugin.onSystemStopped(plug));
-    }
-
-    public Future<?> onServicePrepared(final AhfService service) {
-        return serialize((plug, plugin) -> plugin.onServicePrepared(plug, service));
-    }
-
-    public Future<?> onServiceProvided(final ServiceDescription service) {
-        return serialize((plug, plugin) -> plugin.onServiceProvided(plug, service));
-    }
-
-    public Future<?> onServiceDismissed(final ServiceDescription service) {
-        return serialize((plug, plugin) -> plugin.onServiceDismissed(plug, service));
     }
 
     private Future<?> serialize(final BiFunction<Plug, Plugin, Future<?>> function) {

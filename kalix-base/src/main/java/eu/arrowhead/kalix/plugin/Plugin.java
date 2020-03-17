@@ -62,47 +62,6 @@ public interface Plugin {
     default void onDetach(final Plug plug, final Throwable cause) {}
 
     /**
-     * Called to notify the plugin that an attached {@link AhfSystem}
-     * went from being stopped to being started.
-     * <p>
-     * If this method throws an exception the plugin is detached and
-     * {@link #onDetach(Plug, Throwable)} is invoked with the exception.
-     * Exceptions intended for the system starter must be provided via the
-     * returned {@link Future}.
-     *
-     * @param plug Plug, representing this plugin's connection to a system.
-     * @return {@code Future} that must complete when this method is done
-     * reacting to the attached system being started. If the {@code Future} is
-     * completed with a fault, the service is never provided and the fault is
-     * relayed to the caller trying to cause the service to be provided.
-     */
-    default Future<?> onSystemStarted(final Plug plug) {
-        return Future.done();
-    }
-
-    /**
-     * Called to notify the plugin that an attached {@link AhfSystem} is
-     * being stopped.
-     * <p>
-     * This event is caused either by (1) the {@link Plug#detach()} method of
-     * the {@link Plug} owned by this plugin was called, or (2) the
-     * {@link AhfSystem} is being irreversibly shut down. The two scenarios
-     * can be told apart via the {@link Plug#isSystemShuttingDown()} method.
-     * This method is guaranteed to be called before {@link #onDetach(Plug)} if
-     * a system is shutting down.
-     * <p>
-     * If this method throws an exception the plugin is detached and
-     * {@link #onDetach(Plug, Throwable)} is invoked with the exception.
-     * Exceptions intended for the system stopper must be provided via the
-     * returned {@link Future}.
-     *
-     * @param plug Plug, representing this plugin's connection to a system.
-     */
-    default Future<?> onSystemStopped(final Plug plug) {
-        return Future.done();
-    }
-
-    /**
      * Called to notify the plugin that a new service is prepared for being
      * provided by an attached {@link AhfSystem}.
      * <p>
@@ -159,18 +118,11 @@ public interface Plugin {
      * Called to notify the plugin that an existing service is about to be
      * dismissed by an attached {@link AhfSystem}.
      * <p>
-     * If this method throws an exception the returned {@code Future} is failed
-     * with the same exception.
+     * If this method throws an exception the plugin is detached and
+     * {@link #onDetach(Plug, Throwable)} is invoked with the exception.
      *
      * @param plug    Plug, representing this plugin's connection to a system.
      * @param service A description of the service being removed.
-     * @return {@code Future} that must complete when this method is done
-     * reacting to the described {@code service} being dismissed. If the
-     * {@code Future} is completed with a fault, the service is never dismissed
-     * and the fault is relayed to the caller trying to cause the service to be
-     * dismissed.
      */
-    default Future<?> onServiceDismissed(final Plug plug, final ServiceDescription service) {
-        return Future.done();
-    }
+    default void onServiceDismissed(final Plug plug, final ServiceDescription service) {}
 }

@@ -10,7 +10,6 @@ import eu.arrowhead.kalix.security.X509ArrowheadName;
 import eu.arrowhead.kalix.security.X509Certificates;
 import eu.arrowhead.kalix.security.X509KeyStore;
 import eu.arrowhead.kalix.security.X509TrustStore;
-import eu.arrowhead.kalix.util.Result;
 import eu.arrowhead.kalix.util.concurrent.Future;
 import eu.arrowhead.kalix.util.concurrent.FutureScheduler;
 import eu.arrowhead.kalix.util.concurrent.FutureSchedulerShutdownListener;
@@ -19,7 +18,7 @@ import eu.arrowhead.kalix.util.concurrent.Futures;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -27,24 +26,17 @@ import java.util.stream.Collectors;
  * An Arrowhead Framework (AHF) system.
  */
 public class AhfSystem {
-    private static final int STATE_STOPPED = 0;
-    private static final int STATE_STARTING = 1;
-    private static final int STATE_STARTED = 2;
-    private static final int STATE_STOPPING = 3;
-    private static final int STATE_SHUTTING_DOWN = 4;
-
-    private final AtomicInteger state = new AtomicInteger(STATE_STOPPED);
-
     private final String name;
     private final AtomicReference<InetSocketAddress> localSocketAddress = new AtomicReference<>();
     private final boolean isSecure;
     private final X509KeyStore keyStore;
     private final X509TrustStore trustStore;
-    private final PluginNotifier pluginNotifier;
     private final FutureScheduler scheduler;
     private final FutureSchedulerShutdownListener schedulerShutdownListener;
+    private final PluginNotifier pluginNotifier;
 
     private final Set<AhfServer> servers = Collections.synchronizedSet(new HashSet<>());
+    private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 
     private AhfSystem(final Builder builder) {
         var name = builder.name;
@@ -92,10 +84,6 @@ public class AhfSystem {
             this.name = name;
         }
 
-        pluginNotifier = new PluginNotifier(this, builder.plugins != null
-            ? builder.plugins
-            : Collections.emptyList());
-
         scheduler = builder.scheduler != null
             ? builder.scheduler
             : FutureScheduler.getDefault();
@@ -104,6 +92,10 @@ public class AhfSystem {
             .onFailure(Throwable::printStackTrace); // TODO: Log properly.
 
         scheduler.addShutdownListener(schedulerShutdownListener);
+
+        pluginNotifier = new PluginNotifier(this, builder.plugins != null
+            ? builder.plugins
+            : Collections.emptyList());
     }
 
     /**
@@ -114,17 +106,24 @@ public class AhfSystem {
     }
 
     /**
+     * @return Address and port number of locally bound network interface.
+     */
+    public InetSocketAddress localSocketAddress() {
+        return localSocketAddress.get();
+    }
+
+    /**
      * @return Local network interface address.
      */
     public InetAddress localAddress() {
-        return localSocketAddress.get().getAddress();
+        return localSocketAddress().getAddress();
     }
 
     /**
      * @return Port through which this system exposes its provided services.
      */
     public int localPort() {
-        return localSocketAddress.get().getPort();
+        return localSocketAddress().getPort();
     }
 
     /**
@@ -192,18 +191,8 @@ public class AhfSystem {
     public Future<AhfServiceHandle> provide(final AhfService service) {
         Objects.requireNonNull(service, "Expected service");
 
-        switch (state.get()) {
-        case STATE_STOPPED:
-        case STATE_STARTING:
-        case STATE_STARTED:
-        case STATE_STOPPING:
-            break;
-
-        case STATE_SHUTTING_DOWN:
+        if (isShuttingDown.get()) {
             return Future.failure(new IllegalStateException("Cannot provide service; system is shutting down"));
-
-        default:
-            return Future.failure(new IllegalStateException("System in illegal state: " + state.get()));
         }
 
         for (final var server : servers) {
@@ -212,116 +201,39 @@ public class AhfSystem {
             }
         }
 
-        final AhfServer server;
+        final Future<AhfServer> serverFuture;
         if (service instanceof HttpService) {
-            server = new HttpServer(this, pluginNotifier);
+            serverFuture = HttpServer.create(this, pluginNotifier);
         }
         else {
-            throw new IllegalArgumentException("No server available for services of type " + service.getClass());
+            throw new IllegalArgumentException("No server available for " +
+                "services of type \"" + service.getClass() + "\"");
         }
 
-        return server.start().flatMap(socketAddress -> {
-            localSocketAddress.set(socketAddress);
+        return serverFuture.flatMap(server -> {
+            localSocketAddress.set(server.localSocketAddress());
             servers.add(server);
             return server.provide(service);
         });
     }
 
     /**
-     * Starts system, making all of its services available to remote systems.
-     */
-    public Future<?> start() {
-        switch (state.compareAndExchange(STATE_STOPPED, STATE_STARTING)) {
-        case STATE_STOPPED:
-            break;
-
-        case STATE_STARTING:
-            return Future.failure(new IllegalStateException("Already starting"));
-
-        case STATE_STARTED:
-            return Future.done();
-
-        case STATE_STOPPING:
-            return Future.failure(new IllegalStateException("Cannot start while stopping"));
-
-        case STATE_SHUTTING_DOWN:
-            return Future.failure(new IllegalStateException("Cannot start while shutting down"));
-
-        default:
-            return Future.failure(new IllegalStateException("System in illegal state: " + state.get()));
-        }
-        return pluginNotifier.onSystemStarted()
-            .flatMap(ignored -> Futures.serialize(servers.stream().map(AhfServer::start))
-                .map(values -> {
-                    if (values.size() > 0) {
-                        localSocketAddress.set(values.get(0));
-                    }
-                    return null;
-                }))
-            .flatMapResult(result -> {
-                state.compareAndSet(STATE_STARTING, STATE_STARTED);
-                if (result.isFailure()) {
-                    return stop().map(ignored -> null);
-                }
-                return Future.of(Result.done());
-            });
-    }
-
-    /**
-     * Stops system, making all of its services unavailable to remote systems.
+     * Initiates system shutdown, causing all of its services to be dismissed.
+     * <p>
+     * System shutdown is irreversible, meaning it the system cannot be used to
+     * provide any more services.
+     * <p>
+     * System shutdown can also be initiated by shutting down the
+     * {@link FutureScheduler scheduler} used by this system.
      *
-     * @return Future completed when stopping finishes. If this system is or
-     * has been providing services with different application-level protocols,
-     * the future might be failed with an exception containing suppressed
-     * exceptions.
+     * @return Future completed when shutdown is finished.
      */
-    public Future<?> stop() {
-        switch (state.compareAndExchange(STATE_STARTED, STATE_STOPPING)) {
-        case STATE_STOPPED:
-            return Future.done();
-
-        case STATE_STARTING:
-            return Future.failure(new IllegalStateException("Cannot stop while starting"));
-
-        case STATE_STARTED:
-            break;
-
-        case STATE_STOPPING:
-            return Future.failure(new IllegalStateException("Already stopping"));
-
-        case STATE_SHUTTING_DOWN:
-            return Future.failure(new IllegalStateException("Cannot stop while shutting down"));
-
-        default:
-            return Future.failure(new IllegalStateException("System in illegal state: " + state.get()));
-        }
-        return pluginNotifier.onSystemStopped()
-            .flatMap(ignored -> Futures.serialize(servers.stream().map(AhfServer::stop).iterator()))
-            .mapResult(result -> {
-                state.compareAndSet(STATE_STOPPING, STATE_STOPPED);
-                return result;
-            });
-    }
-
     public Future<?> shutdown() {
-        switch (state.getAndSet(STATE_SHUTTING_DOWN)) {
-        case STATE_STOPPED:
-        case STATE_STARTING:
-        case STATE_STARTED:
-        case STATE_STOPPING:
-            break;
-
-        case STATE_SHUTTING_DOWN:
-            return Future.failure(new IllegalStateException("Already shutting down"));
-
-        default:
-            return Future.failure(new IllegalStateException("System in illegal state: " + state.get()));
+        if (isShuttingDown.getAndSet(true)) {
+            return Future.done();
         }
-
         scheduler.removeShutdownListener(schedulerShutdownListener);
-
-        return pluginNotifier.onSystemStopped()
-            .flatMap(ignored -> Futures.serialize(servers.stream().map(AhfServer::shutdown).iterator()))
+        return Futures.serialize(servers.stream().map(AhfServer::close))
             .mapResult(result -> {
                 pluginNotifier.clear();
                 servers.clear();
@@ -334,7 +246,7 @@ public class AhfSystem {
      * or already has, shut down.
      */
     public boolean isShuttingDown() {
-        return state.get() == STATE_SHUTTING_DOWN || scheduler.isShuttingDown();
+        return isShuttingDown.get() || scheduler.isShuttingDown();
     }
 
     /**
