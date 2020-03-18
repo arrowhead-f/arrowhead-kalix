@@ -13,6 +13,16 @@ import eu.arrowhead.kalix.util.concurrent.Future;
 import java.net.InetSocketAddress;
 import java.util.Objects;
 
+/**
+ * A plugin that manages automatic registration and unregistration of services
+ * with a specific HTTP service registry.
+ * <p>
+ * The plugin must be instantiated and then provided to one or more
+ * {@link eu.arrowhead.kalix.AhfSystem systems} before they provide any
+ * services. When those systems are assigned services to provide, or have their
+ * services dismissed, this plugin will automatically attempt to register or
+ * unregister those services from one particular HTTP service registry.
+ */
 public class HttpServiceRegistrationPlugin implements Plugin {
     private final String basePath;
     private final DataEncoding encoding;
@@ -20,7 +30,7 @@ public class HttpServiceRegistrationPlugin implements Plugin {
 
     private HttpServiceRegistry serviceRegistry = null;
 
-    public HttpServiceRegistrationPlugin(final Builder builder) {
+    private HttpServiceRegistrationPlugin(final Builder builder) {
         basePath = builder.basePath;
         encoding = Objects.requireNonNull(builder.encoding, "Expected encoding");
         remoteSocketAddress = Objects.requireNonNull(builder.remoteSocketAddress, "Expected remoteSocketAddress");
@@ -39,9 +49,9 @@ public class HttpServiceRegistrationPlugin implements Plugin {
     @Override
     public Future<?> onServiceProvided(final Plug plug, final ServiceDescription service) {
         final var system = plug.system();
-        final var form = new ServiceRecordFormBuilder()
+        final var registration = new ServiceRegistrationBuilder()
             .name(service.name())
-            .provider(new SystemDefinitionFormBuilder()
+            .provider(new SystemDefinitionBuilder()
                 .name(system.name())
                 .hostname(system.localAddress().getHostAddress())
                 .port(system.localPort())
@@ -56,11 +66,12 @@ public class HttpServiceRegistrationPlugin implements Plugin {
             .supportedInterfaces(service.supportedInterfaces())
             .build();
 
-        return serviceRegistry.register(form)
+        return serviceRegistry.register(registration)
             .flatMapCatch(HttpClientResponseRejectedException.class, fault -> {
+                // If registration fails with 400 BAD REQUEST, try to unregister it and then try again.
                 if (fault.status() == HttpStatus.BAD_REQUEST) {
                     return serviceRegistry.unregister(service.name(), system.name(), system.localSocketAddress())
-                        .flatMap(ignored -> serviceRegistry.register(form).pass(null));
+                        .flatMap(ignored -> serviceRegistry.register(registration).pass(null));
                 }
                 return Future.failure(fault);
             });
@@ -76,26 +87,56 @@ public class HttpServiceRegistrationPlugin implements Plugin {
             });
     }
 
+    /**
+     * Builder useful for constructing {@link HttpServiceRegistrationPlugin}
+     * instances.
+     */
     public static class Builder {
         private String basePath;
         private DataEncoding encoding;
         private InetSocketAddress remoteSocketAddress;
 
+        /**
+         * Service registry base path.
+         * <p>
+         * Defaults to "/serviceregistry".
+         *
+         * @param basePath Base path.
+         * @return This builder.
+         */
         public Builder basePath(final String basePath) {
             this.basePath = basePath;
             return this;
         }
 
+        /**
+         * Encoding that must be used to encode and decode messages sent to and
+         * received from the service registry. <b>Must be specified.</b>
+         *
+         * @param encoding HTTP body encoding.
+         * @return This builder.
+         */
         public Builder encoding(final DataEncoding encoding) {
             this.encoding = encoding;
             return this;
         }
 
+        /**
+         * The hostname/port of the service registry. <b>Must be specified.</b>
+         *
+         * @param remoteSocketAddress Hostname/port.
+         * @return This builder.
+         */
         public Builder remoteSocketAddress(final InetSocketAddress remoteSocketAddress) {
             this.remoteSocketAddress = remoteSocketAddress;
             return this;
         }
 
+        /**
+         * Finishes construction of {@link HttpServiceRegistrationPlugin}.
+         *
+         * @return New HTTP service registry plugin.
+         */
         public HttpServiceRegistrationPlugin build() {
             return new HttpServiceRegistrationPlugin(this);
         }
