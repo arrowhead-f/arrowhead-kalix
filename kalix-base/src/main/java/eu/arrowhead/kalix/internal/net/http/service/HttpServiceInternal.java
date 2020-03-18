@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 public class HttpServiceInternal implements AhfService {
     private final ServiceDescription description;
     private final List<EncodingDescriptor> encodings;
-    private final List<HttpRouteSequence> routeSequences;
+    private final HttpRouteSequence[] routeSequences;
 
     public HttpServiceInternal(final HttpService service) {
         description = service.describe();
@@ -43,7 +43,7 @@ public class HttpServiceInternal implements AhfService {
         routeSequences = service.routes().stream()
             .sorted(HttpRoutables::compare)
             .map(routeSequenceFactory::createRouteSequenceFor)
-            .collect(Collectors.toUnmodifiableList());
+            .toArray(HttpRouteSequence[]::new);
     }
 
     /**
@@ -91,13 +91,7 @@ public class HttpServiceInternal implements AhfService {
             .response(response)
             .build();
 
-        return Futures.flatReducePlain(routeSequences, false,
-            (isHandled, routeSequence) -> {
-                if (isHandled) {
-                    return Future.success(true);
-                }
-                return routeSequence.tryHandle(task);
-            })
+        return trySequences(task, 0)
             .map(isHandled -> {
                 if (!isHandled) {
                     response
@@ -106,6 +100,20 @@ public class HttpServiceInternal implements AhfService {
                         .clearBody();
                 }
                 return null;
+            });
+    }
+
+    private Future<Boolean> trySequences(final HttpRouteTask task, final int index) {
+        if (index >= routeSequences.length) {
+            return Future.success(false);
+        }
+        final var routeSequence = routeSequences[index];
+        return routeSequence.tryHandle(task)
+            .flatMap(isHandled -> {
+                if (isHandled) {
+                    return Future.success(true);
+                }
+                return trySequences(task, index + 1);
             });
     }
 

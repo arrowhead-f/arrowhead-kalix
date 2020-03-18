@@ -143,7 +143,8 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
 
     @Override
     public HttpServiceResponse clearHeaders() {
-        return null;
+        nettyHeaders.clear();
+        return this;
     }
 
     @Override

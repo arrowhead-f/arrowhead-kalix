@@ -1,5 +1,5 @@
 plugins {
-    id 'java-library'
+    id 'application'
 }
 
 group = 'eu.arrowhead.kalix'
@@ -8,13 +8,15 @@ version = '0.1.0-SNAPSHOT'
 sourceCompatibility = '11'
 targetCompatibility = '11'
 
+mainClassName = 'eu.arrowhead.kalix.example.EchoSystem'
+
 ext {
     versionJunitJupiter = '5.6.0'
 }
 
 dependencies {
-    api project(':kalix-base')
-    api project(':kalix-core-plugins')
+    compile project(':kalix-base')
+    compile project(':kalix-core-plugins')
     annotationProcessor project(':kalix-processors')
 
     testImplementation "org.junit.jupiter:junit-jupiter:$versionJunitJupiter"

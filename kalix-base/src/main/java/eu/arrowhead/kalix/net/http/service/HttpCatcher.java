@@ -90,10 +90,8 @@ public class HttpCatcher<T extends Throwable> implements HttpRoutable {
      * @param task      Incoming HTTP request route task.
      * @return Future completed when catching is complete. Its value is
      * {@code true} only if the throwable was handled.
-     * @throws Exception Whatever exception the handle may want to throw. This
-     *                   exception is only thrown if the handle is executed.
      */
-    public Future<Boolean> tryHandle(final Throwable throwable, final HttpRouteTask task) throws Exception {
+    public Future<Boolean> tryHandle(final Throwable throwable, final HttpRouteTask task) {
         mismatch:
         {
             if (method != null && !method.equals(task.request().method())) {
@@ -113,8 +111,15 @@ public class HttpCatcher<T extends Throwable> implements HttpRoutable {
                 pathParameters = Collections.emptyList();
             }
             final var response = task.response();
-            return handler.handle(exceptionClass.cast(throwable), task.request().cloneAndSet(pathParameters), response)
-                .map(ignored -> response.status().isPresent());
+            try {
+                return handler.handle(exceptionClass.cast(throwable),
+                    task.request().cloneAndSet(pathParameters), response)
+                    .map(ignored -> response.status().isPresent());
+            }
+            catch (final Throwable throwable1) {
+                throwable1.addSuppressed(throwable);
+                return Future.failure(throwable);
+            }
         }
         return Future.success(false);
     }

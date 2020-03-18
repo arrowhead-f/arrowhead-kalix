@@ -5,7 +5,9 @@ import eu.arrowhead.kalix.net.http.service.HttpRoute;
 import eu.arrowhead.kalix.net.http.service.HttpValidator;
 import eu.arrowhead.kalix.util.annotation.Internal;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Factory class useful for constructing sound {@link HttpRouteSequence}
@@ -28,8 +30,8 @@ public class HttpRouteSequenceFactory {
      * @param validators Route validation handlers.
      */
     public HttpRouteSequenceFactory(final List<HttpCatcher<?>> catchers, final List<HttpValidator> validators) {
-        this.catchers = catchers;
-        this.validators = validators;
+        this.catchers = new ArrayList<>(catchers);
+        this.validators = new ArrayList<>(validators);
 
         this.catchers.sort(HttpRoutables::compareCatchers);
         this.validators.sort(HttpRoutables::compareValidators);

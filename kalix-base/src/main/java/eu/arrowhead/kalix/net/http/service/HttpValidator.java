@@ -80,15 +80,8 @@ public class HttpValidator implements HttpRoutable {
      * @param task Incoming HTTP request route task.
      * @return Future completed when validation is complete. Its value is
      * {@code true} only if the request was handled.
-     * @throws Exception Whatever exception the handle may want to throw. If
-     *                   the HTTP service owning this handle knows how to
-     *                   translate the exception into a certain kind of HTTP
-     *                   response, it should. Otherwise the requester should
-     *                   receive a 500 Internal Server Error response without
-     *                   any details and the exception be logged (if logging is
-     *                   enabled).
      */
-    public Future<Boolean> tryHandle(final HttpRouteTask task) throws Exception {
+    public Future<Boolean> tryHandle(final HttpRouteTask task) {
         mismatch:
         {
             if (method != null && !method.equals(task.request().method())) {
@@ -105,8 +98,13 @@ public class HttpValidator implements HttpRoutable {
                 pathParameters = Collections.emptyList();
             }
             final var response = task.response();
-            return handler.handle(task.request().cloneAndSet(pathParameters), response)
-                .map(ignored -> response.status().isPresent());
+            try {
+                return handler.handle(task.request().cloneAndSet(pathParameters), response)
+                    .map(ignored -> response.status().isPresent());
+            }
+            catch (final Throwable throwable) {
+                return Future.failure(throwable);
+            }
         }
         return Future.success(false);
     }

@@ -3,7 +3,6 @@ package eu.arrowhead.kalix.internal.net.http.service;
 import eu.arrowhead.kalix.net.http.service.*;
 import eu.arrowhead.kalix.util.annotation.Internal;
 import eu.arrowhead.kalix.util.concurrent.Future;
-import eu.arrowhead.kalix.util.concurrent.Futures;
 
 import java.util.ArrayList;
 
@@ -51,13 +50,7 @@ public class HttpRouteSequence {
         if (!route.match(task, pathParameters)) {
             return Future.success(false);
         }
-        return Futures
-            .flatReducePlain(validators, false, (isHandled, validator) -> {
-                if (isHandled) {
-                    return Future.success(true);
-                }
-                return validator.tryHandle(task);
-            })
+        return tryValidators(task, 0)
             .flatMap(isHandled -> {
                 if (isHandled) {
                     return Future.success(true);
@@ -66,11 +59,34 @@ public class HttpRouteSequence {
                     .handle(task.request().cloneAndSet(pathParameters), task.response())
                     .map(ignored -> true);
             })
-            .flatMapCatch(throwable -> Futures.flatReducePlain(catchers, false, (isHandled, catcher) -> {
+            .flatMapCatch(throwable -> tryCatchers(throwable, task, 0));
+    }
+
+    private Future<Boolean> tryValidators(final HttpRouteTask task, final int index) {
+        if (index >= validators.length) {
+            return Future.success(false);
+        }
+        final var validator = validators[index];
+        return validator.tryHandle(task)
+            .flatMap(isHandled -> {
                 if (isHandled) {
                     return Future.success(true);
                 }
-                return catcher.tryHandle(throwable, task);
-            }));
+                return tryValidators(task, index + 1);
+            });
+    }
+
+    private Future<Boolean> tryCatchers(final Throwable throwable, final HttpRouteTask task, final int index) {
+        if (index >= catchers.length) {
+            return Future.failure(throwable);
+        }
+        final var catcher = catchers[index];
+        return catcher.tryHandle(throwable, task)
+            .flatMap(isHandled -> {
+                if (isHandled) {
+                    return Future.success(true);
+                }
+                return tryCatchers(throwable, task, index + 1);
+            });
     }
 }

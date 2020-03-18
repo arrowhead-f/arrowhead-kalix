@@ -25,9 +25,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.LinkedList;
 import java.util.Objects;
-import java.util.Queue;
 import java.util.concurrent.CancellationException;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -39,8 +37,6 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
     private final HttpHeaders headers;
 
     private FutureBody<?> body;
-    private Queue<HttpContent> pendingContent;
-    private Throwable pendingThrowable;
 
     private boolean isAborted = false;
     private boolean isBodyRequested = false;
@@ -68,42 +64,22 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
         if (isFinished) {
             throw new IllegalStateException("Cannot abort; body finished", throwable);
         }
+        if (!isBodyRequested) {
+            throw new RuntimeException(throwable);
+        }
         isAborted = true;
 
-        if (isBodyRequested) {
-            body.abort(throwable);
-        }
-        else {
-            pendingThrowable = throwable;
-        }
+        body.abort(throwable);
     }
 
     public void append(final HttpContent content) {
         if (isAborted || isFinished) {
             return;
         }
-
-        // TODO: Ensure body size does not exceed some configured limit.
-
-        if (!isBodyRequested) {
-            if (pendingContent == null) {
-                pendingContent = new LinkedList<>();
-            }
-            pendingContent.add(content);
-            return;
-        }
-
         if (body.isCancelled()) {
             return;
         }
-
-        if (pendingContent != null) {
-            for (final var content0 : pendingContent) {
-                body.append(content0);
-            }
-            pendingContent = null;
-        }
-
+        // TODO: Ensure body size does not exceed some configured limit.
         body.append(content);
     }
 
@@ -163,6 +139,15 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
     }
 
     private <V> FutureProgress<V> handleBodyRequest(final Supplier<FutureBody<V>> futureBodySupplier) {
+        if (isAborted) {
+            throw new IllegalStateException("Incoming HTTP body has already " +
+                "been aborted");
+        }
+        if (isFinished) {
+            throw new IllegalStateException("Incoming HTTP body has already " +
+                "been received and discarded since it wasn't immediately " +
+                "listened for");
+        }
         if (isBodyRequested) {
             throw new IllegalStateException("Incoming HTTP body has already " +
                 "been requested; the handler or other context that requests " +
@@ -170,23 +155,8 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
         }
         isBodyRequested = true;
 
-        if (isAborted) {
-            return FutureProgress.failure(pendingThrowable);
-        }
-
         final var body = futureBodySupplier.get();
         this.body = body;
-
-        if (isFinished) {
-            if (pendingContent != null) {
-                for (final var content : pendingContent) {
-                    body.append(content);
-                }
-                pendingContent = null;
-            }
-            body.finish();
-        }
-
         return body;
     }
 

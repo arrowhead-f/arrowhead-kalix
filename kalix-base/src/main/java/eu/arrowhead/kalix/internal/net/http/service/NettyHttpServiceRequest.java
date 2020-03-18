@@ -43,7 +43,7 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
 
     @Override
     public <R extends DataReadable> FutureProgress<R> bodyAs(final Class<R> class_) {
-        return null;
+        return body.bodyAs(class_);
     }
 
     @Override
