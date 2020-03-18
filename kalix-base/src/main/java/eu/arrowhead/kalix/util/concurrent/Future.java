@@ -171,8 +171,8 @@ public interface Future<V> {
     }
 
     /**
-     * Catches any fault produced by this {@code Future} and uses
-     * {@code mapper} to transform it into a new value.
+     * Catches any fault produced by this {@code Future} that is assignable to
+     * {@code class_} and uses {@code mapper} to transform it into a new value.
      * <p>
      * In other words, this method performs the asynchronous counterpart to the
      * following code:
@@ -180,20 +180,25 @@ public interface Future<V> {
      *     try {
      *         return originalFutureOperation();
      *     }
-     *     catch (final Throwable throwable) {
+     *     catch (final U throwable) {
      *         return mapper.apply(throwable);
      *     }
      * </pre>
      * Any exception thrown by {@code mapper} leads to the returned
      * {@code Future} being failed with the same exception.
      *
+     * @param class_ Class caught exceptions must be assignable to.
      * @param mapper The mapping function to apply to the fault of this
      *               {@code Future}, if it becomes available.
      * @return A {@code Future} that may eventually hold the result of applying
      * a mapping function to the fault of this {@code Future}.
      * @throws NullPointerException If the mapping function is {@code null}.
      */
-    default Future<V> mapCatch(final ThrowingFunction<Throwable, ? extends V> mapper) {
+    default <U extends Throwable> Future<V> mapCatch(
+        final Class<U> class_,
+        final ThrowingFunction<U, ? extends V> mapper)
+    {
+        Objects.requireNonNull(mapper, "Expected class");
         Objects.requireNonNull(mapper, "Expected mapper");
         final var source = this;
         return new Future<>() {
@@ -201,16 +206,22 @@ public interface Future<V> {
             public void onResult(final Consumer<Result<V>> consumer) {
                 source.onResult(result0 -> {
                     Result<V> result1;
+                    result:
                     if (result0.isSuccess()) {
                         result1 = result0;
                     }
                     else {
-                        try {
-                            result1 = Result.success(mapper.apply(result0.fault()));
+                        var fault = result0.fault();
+                        if (class_.isAssignableFrom(fault.getClass())) {
+                            try {
+                                result1 = Result.success(mapper.apply(class_.cast(fault)));
+                                break result;
+                            }
+                            catch (final Throwable throwable) {
+                                fault = throwable;
+                            }
                         }
-                        catch (final Throwable throwable) {
-                            result1 = Result.failure(throwable);
-                        }
+                        result1 = Result.failure(fault);
                     }
                     consumer.accept(result1);
                 });
@@ -453,12 +464,12 @@ public interface Future<V> {
     }
 
     /**
-     * Catches any fault produced by this {@code Future} and uses
-     * {@code mapper} to transform it into a new value.
+     * Catches any fault produced by this {@code Future} that is assignable to
+     * {@code class_} and uses {@code mapper} to transform it into a new value.
      * <p>
      * The difference between this method and
-     * {@link #mapCatch(ThrowingFunction)} is that this method expects its
-     * {@code mapper} to return a {@code Future} rather than a plain value.
+     * {@link #mapCatch(Class, ThrowingFunction)} is that this method expects
+     * its {@code mapper} to return a {@code Future} rather than a plain value.
      * <p>
      * In other words, this method performs the asynchronous counterpart to the
      * following code:
@@ -466,7 +477,7 @@ public interface Future<V> {
      *     try {
      *         return originalFutureOperation();
      *     }
-     *     catch (final Throwable throwable) {
+     *     catch (final U throwable) {
      *         V value = mapper.apply(throwable);
      *         // Wait for new value to become available.
      *         return value;
@@ -475,14 +486,20 @@ public interface Future<V> {
      * Any exception thrown by {@code mapper} leads to the returned
      * {@code Future} being failed with the same exception.
      *
+     * @param class_ Class that caught exceptions must be assignable to.
      * @param mapper The mapping function to apply to the fault of this
      *               {@code Future}, if it becomes available.
      * @return A {@code Future} that may eventually hold the result of applying
      * a mapping function to the fault of this {@code Future}, and then waiting
      * for the {@code Future} returned by the mapper to complete.
-     * @throws NullPointerException If the mapping function is {@code null}.
+     * @throws NullPointerException If {@code class_} or {@code mapper}is
+     *                              {@code null}.
      */
-    default Future<V> flatMapCatch(final ThrowingFunction<Throwable, ? extends Future<V>> mapper) {
+    default <U extends Throwable> Future<V> flatMapCatch(
+        final Class<U> class_,
+        final ThrowingFunction<U, ? extends Future<V>> mapper)
+    {
+        Objects.requireNonNull(class_, "Expected class_");
         Objects.requireNonNull(mapper, "Expected mapper");
         final var source = this;
         return new Future<>() {
@@ -497,21 +514,26 @@ public interface Future<V> {
                         if (cancelTarget == null) {
                             return;
                         }
-                        else {
-                            if (result0.isSuccess()) {
-                                result1 = result0;
-                                break done;
-                            }
+                        if (result0.isSuccess()) {
+                            result1 = result0;
+                            break done;
+                        }
+                        var fault = result0.fault();
+                        if (class_.isAssignableFrom(fault.getClass())) {
                             try {
-                                final var future1 = mapper.apply(result0.fault());
+                                final var future1 = mapper.apply(class_.cast(fault));
                                 future1.onResult(consumer);
                                 cancelTarget = future1;
                                 return;
                             }
                             catch (final Throwable throwable) {
-                                result1 = Result.failure(throwable);
+                                fault = throwable;
                             }
                         }
+                        else {
+                            fault = result0.fault();
+                        }
+                        result1 = Result.failure(fault);
                     }
                     consumer.accept(result1);
                 });
@@ -666,6 +688,38 @@ public interface Future<V> {
                     cancelTarget.cancel(mayInterruptIfRunning);
                     cancelTarget = null;
                 }
+            }
+        };
+    }
+
+    /**
+     * Returns new {@code Future} that succeeds with given {@code value} if
+     * this {@code Future} completes successfully.
+     * <p>
+     * If this {@code Future} fails, on the other hand, the returned
+     * {@code Future} is failed with the same fault.
+     *
+     * @param value Value to include in the returned {@code Future}.
+     * @return A {@code Future} that will complete with given {@code throwable}
+     * as fault.
+     */
+    default <U> Future<U> pass(final U value) {
+        Objects.requireNonNull(value, "Expected value");
+        final var source = this;
+        return new Future<>() {
+            @Override
+            public void onResult(final Consumer<Result<U>> consumer) {
+                source.onResult(result -> {
+                    if (result.isSuccess()) {
+                        consumer.accept(Result.success(value));
+                    }
+                    consumer.accept(Result.failure(result.fault()));
+                });
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                source.cancel(mayInterruptIfRunning);
             }
         };
     }

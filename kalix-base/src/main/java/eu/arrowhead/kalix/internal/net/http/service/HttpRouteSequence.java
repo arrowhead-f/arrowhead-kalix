@@ -59,7 +59,7 @@ public class HttpRouteSequence {
                     .handle(task.request().cloneAndSet(pathParameters), task.response())
                     .map(ignored -> true);
             })
-            .flatMapCatch(throwable -> tryCatchers(throwable, task, 0));
+            .flatMapCatch(Throwable.class, throwable -> tryCatchers(throwable, task, 0));
     }
 
     private Future<Boolean> tryValidators(final HttpRouteTask task, final int index) {

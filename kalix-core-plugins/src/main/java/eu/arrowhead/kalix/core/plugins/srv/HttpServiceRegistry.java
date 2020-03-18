@@ -43,9 +43,6 @@ public class HttpServiceRegistry implements AhfServiceRegistry {
                 }
                 if (status.isClientError() && response.header("content-length").isPresent()) {
                     return response.bodyAsString()
-                        .map(body -> {
-                            return body;
-                        })
                         .mapThrow(HttpClientResponseException::new);
                 }
                 return Future.failure(response.reject("Failed to register service \"" + form.name() + "\""));
@@ -67,11 +64,8 @@ public class HttpServiceRegistry implements AhfServiceRegistry {
                 if (status.isSuccess()) {
                     return Future.done();
                 }
-                if (status.isClientError() && response.header("content-length").isPresent()) {
+                if (status.isClientError() && response.header("content-length").map(Integer::parseInt).orElse(0) > 0) {
                     return response.bodyAsString()
-                        .map(body -> {
-                            return body;
-                        })
                         .mapThrow(HttpClientResponseException::new);
                 }
                 return Future.failure(response.reject("Failed to unregister service \"" + serviceName + "\""));

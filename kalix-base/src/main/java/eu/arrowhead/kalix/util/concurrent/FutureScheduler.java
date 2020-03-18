@@ -11,8 +11,8 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import static eu.arrowhead.kalix.internal.util.concurrent.NettyFutures.adapt;
 
@@ -315,12 +315,9 @@ public final class FutureScheduler {
     }
 
     /**
-     * Waits for currently executing tasks to complete before releasing the
-     * thread pool and completing the returned {@code Future}, which receives a
-     * {@code null} value if shutdown was successful.
-     * <p>
-     * If given {@code timeout} expires, the currently executing tasks will be
-     * terminated forcefully.
+     * Waits for a brief moment before preventing new tasks from being added to
+     * the scheduler, which are allowed to execute no longer than the specified
+     * {@code timeout} before being forcefully terminated.
      *
      * @param timeout Time after which any lingering tasks will be terminated
      *                forcefully.
@@ -334,6 +331,7 @@ public final class FutureScheduler {
         if (isShuttingDown.getAndSet(true)) {
             throw new IllegalStateException("Already shutting down");
         }
+
         final var listenerThrowables = new ArrayList<Throwable>(0);
         for (final var listener : shutdownListeners) {
             try {
@@ -343,6 +341,7 @@ public final class FutureScheduler {
                 listenerThrowables.add(throwable);
             }
         }
+
         synchronized (FutureScheduler.class) {
             if (this == defaultScheduler && defaultSchedulerShutdownHook != null) {
                 if (Thread.currentThread() != defaultSchedulerShutdownHook) {
@@ -350,46 +349,61 @@ public final class FutureScheduler {
                 }
             }
         }
-        final var millis = timeout.toMillis();
-        return new RunnableFuture<>(
-            onResult -> {
-                final var isDone = new AtomicBoolean(false);
-                final Runnable shutdown = () ->
-                    eventLoopGroup.shutdownGracefully(millis / 2, millis, TimeUnit.MILLISECONDS)
-                        .addListener(future -> {
-                            if (isDone.compareAndSet(false, true)) {
-                                onResult.accept(future.isSuccess()
-                                    ? Result.success(null)
-                                    : Result.failure(future.cause()));
-                            }
-                        });
-                eventLoopGroup.schedule(shutdown, millis / 5, TimeUnit.MILLISECONDS)
-                    .addListener(future -> {
-                        if (!future.isSuccess()) {
-                            if (isDone.compareAndSet(false, true)) {
-                                onResult.accept(Result.failure(future.cause()));
-                            }
-                        }
-                    });
-            })
-            .mapResult(result -> {
-                if (listenerThrowables.size() > 0) {
-                    if (result.isSuccess()) {
-                        final var fault = new Exception("Shutdown successful, but listener exceptions were caught");
-                        for (final var throwable : listenerThrowables) {
-                            fault.addSuppressed(throwable);
-                        }
-                        return Result.failure(fault);
+
+        final var nanos = timeout.toNanos();
+        final var delayNanos = Math.min(nanos / 10, 100_000_000);
+        final var quietNanos = Math.min(nanos / 3, 100_000_000);
+        final var forceNanos = nanos - delayNanos;
+
+        final var shutdownConsumer = new AtomicReference<Consumer<Result<Object>>>(null);
+        final var shutdownFuture = new AtomicReference<io.netty.util.concurrent.Future<?>>(null);
+
+        final var future0 = eventLoopGroup.schedule(() -> {
+            final var future1 = eventLoopGroup.shutdownGracefully(quietNanos, forceNanos, TimeUnit.NANOSECONDS);
+            if (shutdownFuture.getAndSet(future1) == null) {
+                future1.cancel(true);
+            }
+            else {
+                final var consumer = shutdownConsumer.get();
+                if (consumer != null) {
+                    consumer.accept(Result.success(null));
+                }
+            }
+        }, delayNanos, TimeUnit.NANOSECONDS);
+
+        shutdownFuture.set(future0);
+
+        return new Future<>() {
+            @Override
+            public void onResult(final Consumer<Result<Object>> consumer) {
+                shutdownConsumer.set(consumer);
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                final var future = shutdownFuture.getAndSet(null);
+                if (future != null) {
+                    future.cancel(mayInterruptIfRunning);
+                }
+            }
+        }.mapResult(result -> {
+            if (listenerThrowables.size() > 0) {
+                if (result.isSuccess()) {
+                    final var fault = new Exception("Shutdown successful, but listener exceptions were caught");
+                    for (final var throwable : listenerThrowables) {
+                        fault.addSuppressed(throwable);
                     }
-                    else {
-                        final var fault = result.fault();
-                        for (final var throwable : listenerThrowables) {
-                            fault.addSuppressed(throwable);
-                        }
+                    return Result.failure(fault);
+                }
+                else {
+                    final var fault = result.fault();
+                    for (final var throwable : listenerThrowables) {
+                        fault.addSuppressed(throwable);
                     }
                 }
-                return result;
-            });
+            }
+            return result;
+        });
     }
 
     /**
@@ -403,30 +417,5 @@ public final class FutureScheduler {
     @Internal
     public EventLoopGroup eventLoopGroup() {
         return eventLoopGroup;
-    }
-
-    private static class RunnableFuture<V> implements Runnable, Future<V> {
-        private final Consumer<Consumer<Result<V>>> resultCallback;
-
-        private Consumer<Result<V>> consumer = null;
-
-        private RunnableFuture(final Consumer<Consumer<Result<V>>> callback) {
-            resultCallback = callback;
-        }
-
-        @Override
-        public void run() {
-            resultCallback.accept(result -> consumer.accept(result));
-        }
-
-        @Override
-        public void onResult(final Consumer<Result<V>> consumer) {
-            this.consumer = consumer;
-        }
-
-        @Override
-        public void cancel(final boolean mayInterruptIfRunning) {
-            // Does nothing.
-        }
     }
 }

@@ -37,7 +37,7 @@ public class HttpServiceRegistrationPlugin implements Plugin {
     }
 
     @Override
-    public Future<?> onServiceProvided(final Plug plug, final ServiceDescription service) throws Exception {
+    public Future<?> onServiceProvided(final Plug plug, final ServiceDescription service) {
         final var system = plug.system();
         final var form = new ServiceRecordFormBuilder()
             .name(service.name())
@@ -50,7 +50,6 @@ public class HttpServiceRegistrationPlugin implements Plugin {
                     : null)
                 .build())
             .qualifier(service.qualifier())
-            .expiresAt(null) // TODO: Short expiration and regular refresh.
             .security(service.security())
             .metadata(service.metadata())
             .version(service.version())
@@ -58,19 +57,17 @@ public class HttpServiceRegistrationPlugin implements Plugin {
             .build();
 
         return serviceRegistry.register(form)
-            .flatMapCatch(fault -> {
-                if (fault instanceof HttpClientResponseRejectedException) {
-                    if (((HttpClientResponseRejectedException) fault).status() == HttpStatus.BAD_REQUEST) {
-                        return serviceRegistry.unregister(service.name(), system.name(), system.localSocketAddress())
-                            .flatMap(ignored -> serviceRegistry.register(form).map(ignored1 -> null));
-                    }
+            .flatMapCatch(HttpClientResponseRejectedException.class, fault -> {
+                if (fault.status() == HttpStatus.BAD_REQUEST) {
+                    return serviceRegistry.unregister(service.name(), system.name(), system.localSocketAddress())
+                        .flatMap(ignored -> serviceRegistry.register(form).pass(null));
                 }
-                throw fault;
+                return Future.failure(fault);
             });
     }
 
     @Override
-    public void onServiceDismissed(final Plug plug, final ServiceDescription service) throws Exception {
+    public void onServiceDismissed(final Plug plug, final ServiceDescription service) {
         final var system = plug.system();
         serviceRegistry.unregister(service.name(), system.name(), system.localSocketAddress())
             .onFailure(fault -> {
