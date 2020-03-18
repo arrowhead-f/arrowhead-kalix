@@ -86,7 +86,7 @@ public class EchoSystem {
                 // HTTP POST endpoint that echoes back whatever body is in the
                 // requests it receives. Note that since EncodingDescriptor.JSON
                 // was specified via the ".encodings()" method above, only
-                // requests that claims to carry JSON bodies, or have no bodies
+                // requests that claim to carry JSON bodies, or have no bodies
                 // at all, are accepted and reach the endpoints specified here.
                 .post("/echoes", (request, response) ->
                     request.bodyAsString()
@@ -110,8 +110,8 @@ public class EchoSystem {
                         .onFailure(Throwable::printStackTrace);
 
                     return Future.done();
-                })
-            ).onFailure(Throwable::printStackTrace);
+                }))
+                .onFailure(Throwable::printStackTrace);
 
             System.out.println("Echo system running ...");
         }
