@@ -73,7 +73,7 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
     }
 
     public void append(final HttpContent content) {
-        if (isAborted || isFinished) {
+        if (isAborted || isFinished || !isBodyRequested) {
             return;
         }
         if (body.isCancelled()) {
@@ -88,7 +88,7 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
     }
 
     public void finish(final LastHttpContent lastContent) {
-        if (isAborted || isFinished) {
+        if (isAborted || isFinished || !isBodyRequested) {
             return;
         }
         isFinished = true;
@@ -96,9 +96,7 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
         if (lastContent != null) {
             headers.add(lastContent.trailingHeaders());
         }
-        if (isBodyRequested) {
-            body.finish();
-        }
+        body.finish();
     }
 
     public <R extends DataReadable> FutureProgress<R> bodyAs(final Class<R> class_) {

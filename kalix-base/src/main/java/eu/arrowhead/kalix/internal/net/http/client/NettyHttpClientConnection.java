@@ -108,7 +108,18 @@ public class NettyHttpClientConnection implements HttpClientConnection {
         final var body = request.body().orElse(null);
         final var headers = request.headers().unwrap();
         final var method = adapt(request.method().orElseThrow(() -> new IllegalArgumentException("Expected method")));
-        final var uri = request.uri().orElseThrow(() -> new IllegalArgumentException("Expected uri"));
+
+        final var queryStringEncoder = new QueryStringEncoder(request.uri()
+            .orElseThrow(() -> new IllegalArgumentException("Expected uri")));
+
+        for (final var entry : request.queryParameters().entrySet()) {
+            final var name = entry.getKey();
+            for (final var value : entry.getValue()) {
+                queryStringEncoder.addParam(name, value);
+            }
+        }
+
+        final var uri = queryStringEncoder.toString();
         final var version = adapt(request.version().orElse(HttpVersion.HTTP_11));
 
         headers.set(HOST, remoteSocketAddress().getHostString());

@@ -224,6 +224,57 @@ public interface Future<V> {
     }
 
     /**
+     * Takes any successful result produced by this {@code Future} and uses
+     * {@code mapper} to transform it into a fault.
+     * <p>
+     * In other words, this method performs the asynchronous counterpart to the
+     * following code:
+     * <pre>
+     *     V value = originalFutureOperation();
+     *     // Wait for value to become available.
+     *     Throwable fault = mapper.apply(value);
+     *     return fault;
+     * </pre>
+     * Any exception thrown by {@code mapper} leads to the returned
+     * {@code Future} being failed with the same exception.
+     *
+     * @param mapper The mapping function to apply to the value of this
+     *               {@code Future}, if it becomes available.
+     * @return A {@code Future} that may eventually hold the result of applying
+     * a mapping function to the value of this {@code Future}.
+     * @throws NullPointerException If the mapping function is {@code null}.
+     */
+    default <U> Future<U> mapThrow(final ThrowingFunction<? super V, Throwable> mapper) {
+        Objects.requireNonNull(mapper, "Expected mapper");
+        final var source = this;
+        return new Future<>() {
+            @Override
+            public void onResult(final Consumer<Result<U>> consumer) {
+                source.onResult(result0 -> {
+                    Throwable cause;
+                    if (result0.isSuccess()) {
+                        try {
+                            cause = mapper.apply(result0.value());
+                        }
+                        catch (final Throwable throwable) {
+                            cause = throwable;
+                        }
+                    }
+                    else {
+                        cause = result0.fault();
+                    }
+                    consumer.accept(Result.failure(cause));
+                });
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                source.cancel(mayInterruptIfRunning);
+            }
+        };
+    }
+
+    /**
      * Applies any fault produced by this {@code Future} to {@code mapper} and
      * then fails the returned future with the {@code Throwable} it returns.
      * <p>

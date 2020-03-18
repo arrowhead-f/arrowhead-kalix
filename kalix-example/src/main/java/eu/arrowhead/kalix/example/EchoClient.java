@@ -74,30 +74,26 @@ public class EchoClient {
                     }
                 });
 
-            for (var i = 0; i < 1024; ++i) {
-
-                // HTTP POST request. Function composition.
-                client.send(echoSystemSocketAddress, new HttpClientRequest()
-                    .method(HttpMethod.POST)
-                    .uri("/example/pings")
-                    .body(DataEncoding.JSON, new PingBuilder()
-                        .ping("pong!")
-                        .build()))
-                    .flatMap(response -> response.bodyAsClassIfSuccess(DataEncoding.JSON, PingData.class))
-                    .map(body -> {
-                        System.err.println("\nPOST /example/pings result:");
-                        System.err.println(body.asString());
-                        return null;
-                    })
-                    .onFailure(throwable -> {
-                        System.err.println("\nPOST /example/pings failure:");
-                        throwable.printStackTrace();
-                    });
-
-            }
+            // HTTP POST request. Function composition.
+            client.send(echoSystemSocketAddress, new HttpClientRequest()
+                .method(HttpMethod.POST)
+                .uri("/example/pings")
+                .body(DataEncoding.JSON, new PingBuilder()
+                    .ping("pong!")
+                    .build()))
+                .flatMap(response -> response.bodyAsClassIfSuccess(DataEncoding.JSON, PingData.class))
+                .map(body -> {
+                    System.err.println("\nPOST /example/pings result:");
+                    System.err.println(body.asString());
+                    return null;
+                })
+                .onFailure(throwable -> {
+                    System.err.println("\nPOST /example/pings failure:");
+                    throwable.printStackTrace();
+                });
 
             // HTTP DELETE request.
-/*            client.send(echoSystemSocketAddress, new HttpClientRequest()
+            client.send(echoSystemSocketAddress, new HttpClientRequest()
                 .method(HttpMethod.DELETE)
                 .uri("/example/runtime"))
                 .onResult(result -> {
@@ -107,8 +103,9 @@ public class EchoClient {
 
                     // Exit in 0.5 seconds.
                     FutureScheduler.getDefault()
-                        .scheduleAfter(() -> System.exit(0), Duration.ofMillis(500));
-                });*/
+                        .scheduleAfter(() -> System.exit(0), Duration.ofMillis(500))
+                        .onFailure(Throwable::printStackTrace);
+                });
         }
         catch (final Throwable e) {
             e.printStackTrace();

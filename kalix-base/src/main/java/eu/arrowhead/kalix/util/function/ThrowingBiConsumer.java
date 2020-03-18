@@ -16,5 +16,5 @@ public interface ThrowingBiConsumer<T, U> {
      * @param u Second input value.
      * @throws Exception Any kind of exception.
      */
-    void accept(T t, U u) throws Exception;
+    void accept(T t, U u) throws Throwable;
 }

@@ -16,5 +16,5 @@ public interface ThrowingFunction<V, U> {
      * @return Output value.
      * @throws Exception Any kind of exception.
      */
-    U apply(V v) throws Exception;
+    U apply(V v) throws Throwable;
 }

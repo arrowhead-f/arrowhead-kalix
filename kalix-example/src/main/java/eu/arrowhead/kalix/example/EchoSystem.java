@@ -1,14 +1,17 @@
 package eu.arrowhead.kalix.example;
 
 import eu.arrowhead.kalix.AhfSystem;
+import eu.arrowhead.kalix.core.plugins.srv.HttpServiceRegistrationPlugin;
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.descriptor.SecurityDescriptor;
+import eu.arrowhead.kalix.dto.DataEncoding;
 import eu.arrowhead.kalix.net.http.HttpStatus;
 import eu.arrowhead.kalix.net.http.service.HttpService;
 import eu.arrowhead.kalix.security.X509KeyStore;
 import eu.arrowhead.kalix.security.X509TrustStore;
 import eu.arrowhead.kalix.util.concurrent.Future;
 
+import java.net.InetSocketAddress;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -35,15 +38,15 @@ public class EchoSystem {
             final var system = new AhfSystem.Builder()
                 .keyStore(keyStore)
                 .trustStore(trustStore)
-                .localPort(28080)
+                .localPort(28081)
 
                 // This plugin registers all services provided by the system
                 // with the HTTP-SECURE-JSON service registry at the specified
                 // IP address.
-                //.plugins(new HttpServiceRegistrationPlugin.Builder()
-                //    .encoding(DataEncoding.JSON)
-                //    .remoteSocketAddress(new InetSocketAddress("localhost", 8446))
-                //    .build())
+                .plugins(new HttpServiceRegistrationPlugin.Builder()
+                    .encoding(DataEncoding.JSON)
+                    .remoteSocketAddress(new InetSocketAddress("172.23.2.13", 8446))
+                    .build())
 
                 .build();
 
@@ -88,7 +91,7 @@ public class EchoSystem {
                 .post("/echoes", (request, response) ->
                     request.bodyAsString()
                         .map(body -> response
-                            .status(HttpStatus.OK)
+                            .status(HttpStatus.CREATED)
                             .header("content-type", request.header("content-type")
                                 .orElse("application/json"))
                             .body(body)))

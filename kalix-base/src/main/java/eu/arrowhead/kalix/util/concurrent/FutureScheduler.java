@@ -11,6 +11,8 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static eu.arrowhead.kalix.internal.util.concurrent.NettyFutures.adapt;
 
@@ -349,7 +351,27 @@ public final class FutureScheduler {
             }
         }
         final var millis = timeout.toMillis();
-        return adapt(eventLoopGroup.shutdownGracefully(millis / 5, millis, TimeUnit.MILLISECONDS))
+        return new RunnableFuture<>(
+            onResult -> {
+                final var isDone = new AtomicBoolean(false);
+                final Runnable shutdown = () ->
+                    eventLoopGroup.shutdownGracefully(millis / 2, millis, TimeUnit.MILLISECONDS)
+                        .addListener(future -> {
+                            if (isDone.compareAndSet(false, true)) {
+                                onResult.accept(future.isSuccess()
+                                    ? Result.success(null)
+                                    : Result.failure(future.cause()));
+                            }
+                        });
+                eventLoopGroup.schedule(shutdown, millis / 5, TimeUnit.MILLISECONDS)
+                    .addListener(future -> {
+                        if (!future.isSuccess()) {
+                            if (isDone.compareAndSet(false, true)) {
+                                onResult.accept(Result.failure(future.cause()));
+                            }
+                        }
+                    });
+            })
             .mapResult(result -> {
                 if (listenerThrowables.size() > 0) {
                     if (result.isSuccess()) {
@@ -381,5 +403,30 @@ public final class FutureScheduler {
     @Internal
     public EventLoopGroup eventLoopGroup() {
         return eventLoopGroup;
+    }
+
+    private static class RunnableFuture<V> implements Runnable, Future<V> {
+        private final Consumer<Consumer<Result<V>>> resultCallback;
+
+        private Consumer<Result<V>> consumer = null;
+
+        private RunnableFuture(final Consumer<Consumer<Result<V>>> callback) {
+            resultCallback = callback;
+        }
+
+        @Override
+        public void run() {
+            resultCallback.accept(result -> consumer.accept(result));
+        }
+
+        @Override
+        public void onResult(final Consumer<Result<V>> consumer) {
+            this.consumer = consumer;
+        }
+
+        @Override
+        public void cancel(final boolean mayInterruptIfRunning) {
+            // Does nothing.
+        }
     }
 }

@@ -18,5 +18,5 @@ public interface ThrowingBiFunction<T, U, R> {
      * @return Output value.
      * @throws Exception Any kind of exception.
      */
-    R apply(T t, U u) throws Exception;
+    R apply(T t, U u) throws Throwable;
 }
