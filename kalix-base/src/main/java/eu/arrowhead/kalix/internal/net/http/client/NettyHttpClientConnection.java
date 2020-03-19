@@ -30,8 +30,6 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.CancellationException;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static eu.arrowhead.kalix.internal.net.http.NettyHttpAdapters.adapt;
 import static io.netty.handler.codec.http.HttpHeaderNames.*;

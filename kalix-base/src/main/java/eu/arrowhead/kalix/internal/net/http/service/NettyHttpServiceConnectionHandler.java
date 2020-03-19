@@ -4,12 +4,16 @@ import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.internal.net.http.HttpMediaTypes;
 import eu.arrowhead.kalix.internal.net.http.NettyHttpBodyReceiver;
 import eu.arrowhead.kalix.internal.net.http.NettyHttpPeer;
+import eu.arrowhead.kalix.net.http.HttpStatus;
+import eu.arrowhead.kalix.net.http.service.HttpServiceRequestException;
 import eu.arrowhead.kalix.util.annotation.Internal;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
 
 import javax.net.ssl.SSLEngine;
 
@@ -21,7 +25,8 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
     private final HttpServiceLookup serviceLookup;
     private final SSLEngine sslEngine;
 
-    private NettyHttpBodyReceiver body;
+    private HttpRequest request = null;
+    private NettyHttpBodyReceiver body = null;
 
     public NettyHttpServiceConnectionHandler(final HttpServiceLookup serviceLookup, final SSLEngine sslEngine) {
         this.serviceLookup = serviceLookup;
@@ -41,6 +46,8 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
     private void readRequest(final ChannelHandlerContext ctx, final HttpRequest request) {
         // TODO: Enable and check size restrictions.
 
+        this.request = request;
+
         final var keepAlive = HttpUtil.isKeepAlive(request);
 
         final var queryStringDecoder = new QueryStringDecoder(request.uri());
@@ -50,7 +57,7 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
         {
             final var optionalService = serviceLookup.getServiceByPath(path);
             if (optionalService.isEmpty()) {
-                sendErrorAndCleanup(ctx, request, HttpResponseStatus.NOT_FOUND, keepAlive);
+                sendErrorAndCleanup(ctx, HttpResponseStatus.NOT_FOUND, keepAlive);
                 return;
             }
             service = optionalService.get();
@@ -60,7 +67,7 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
         {
             final var optionalEncoding = determineEncodingFrom(service, request.headers());
             if (optionalEncoding.isEmpty()) {
-                sendErrorAndCleanup(ctx, request, HttpResponseStatus.UNSUPPORTED_MEDIA_TYPE, keepAlive);
+                sendErrorAndCleanup(ctx, HttpResponseStatus.UNSUPPORTED_MEDIA_TYPE, keepAlive);
                 return;
             }
             encoding = optionalEncoding.get();
@@ -97,7 +104,7 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
                     }
                     return;
                 }
-                sendErrorAndCleanup(ctx, request, HttpResponseStatus.INTERNAL_SERVER_ERROR, keepAlive);
+                sendErrorAndCleanup(ctx, HttpResponseStatus.INTERNAL_SERVER_ERROR, keepAlive);
                 ctx.fireExceptionCaught(result.fault());
             }
             catch (final Throwable throwable) {
@@ -115,7 +122,10 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
      * instead. If neither field is specified, the configured default encoding
      * is assumed to be adequate. No other content-negotiation is possible.
      */
-    private Optional<EncodingDescriptor> determineEncodingFrom(final HttpServiceInternal service, final HttpHeaders headers) {
+    private Optional<EncodingDescriptor> determineEncodingFrom(
+        final HttpServiceInternal service,
+        final HttpHeaders headers)
+    {
         final var contentType = headers.get("content-type");
         if (contentType != null) {
             return HttpMediaTypes.findEncodingCompatibleWithContentType(service.encodings(), contentType);
@@ -128,6 +138,7 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
 
         return Optional.of(service.defaultEncoding());
     }
+
     private void readContent(final HttpContent content) {
         if (body == null) {
             return;
@@ -138,14 +149,47 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
         }
     }
 
+    @Override
+    public void channelReadComplete(final ChannelHandlerContext ctx) {
+        ctx.flush();
+    }
+
+
+    // TODO: Bring any response exceptions back to service.
+    @Override
+    public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
+        if (body != null) {
+            body.abort(cause);
+        }
+        else {
+            ctx.fireExceptionCaught(cause);
+        }
+    }
+
+    @Override
+    public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) throws Exception {
+        if (evt instanceof IdleStateEvent) {
+            final var idleStateEvent = (IdleStateEvent) evt;
+            if (idleStateEvent.state() == IdleState.READER_IDLE) {
+                if (body != null) {
+                    body.abort(new HttpServiceRequestException(HttpStatus.REQUEST_TIMEOUT, "Request body timed out"));
+                }
+                sendErrorAndCleanup(ctx, HttpResponseStatus.REQUEST_TIMEOUT, false);
+            }
+            ctx.close();
+        }
+    }
+
     private void sendErrorAndCleanup(
         final ChannelHandlerContext ctx,
-        final HttpRequest request,
         final HttpResponseStatus status,
         final boolean keepAlive)
     {
         final HttpHeaders headers;
-        final var version = request.protocolVersion();
+        final var version = request != null
+            ? request.protocolVersion()
+            : HttpVersion.HTTP_1_1;
+
         if (keepAlive) {
             headers = new DefaultHttpHeaders(false);
             HttpUtil.setKeepAlive(headers, version, true);
@@ -158,23 +202,6 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
 
         if (!keepAlive) {
             future.addListener(ChannelFutureListener.CLOSE);
-        }
-    }
-
-    @Override
-    public void channelReadComplete(final ChannelHandlerContext ctx) {
-        ctx.flush();
-    }
-
-    // TODO: Bring any response exceptions back to service.
-
-    @Override
-    public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
-        if (body != null) {
-            body.abort(cause);
-        }
-        else {
-            ctx.fireExceptionCaught(cause);
         }
     }
 }

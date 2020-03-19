@@ -1,16 +1,15 @@
 package eu.arrowhead.kalix.internal.net.http.client;
 
-import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.util.annotation.Internal;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.util.concurrent.Future;
+import io.netty.handler.timeout.IdleStateHandler;
 
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 @Internal
 public class NettyHttpClientConnectionInitializer extends ChannelInitializer<SocketChannel> {
@@ -26,7 +25,7 @@ public class NettyHttpClientConnectionInitializer extends ChannelInitializer<Soc
     }
 
     @Override
-    protected void initChannel(final SocketChannel ch) throws Exception {
+    protected void initChannel(final SocketChannel ch) {
         if (futureConnection.failIfCancelled()) {
             ch.close();
             return;
@@ -39,8 +38,8 @@ public class NettyHttpClientConnectionInitializer extends ChannelInitializer<Soc
         }
         pipeline
             //.addLast(new LoggingHandler(LogLevel.INFO))
+            .addLast(new IdleStateHandler(30, 120, 0, TimeUnit.SECONDS)) // TODO: Make configurable.
             .addLast(new HttpClientCodec()) // TODO: Make message size restrictions configurable.
-            //.addLast(new IdleStateHandler(10, 10, 15))
             .addLast(new NettyHttpClientConnectionHandler(futureConnection, sslHandler));
     }
 }

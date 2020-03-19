@@ -5,9 +5,11 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.ssl.SslContext;
+import io.netty.handler.timeout.IdleStateHandler;
 
 import javax.net.ssl.SSLEngine;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /**
  * {@link ChannelInitializer} useful for managing incoming HTTP connections.
@@ -39,6 +41,7 @@ public class NettyHttpServiceConnectionInitializer extends ChannelInitializer<So
         }
         pipeline
             //.addLast(new LoggingHandler(LogLevel.INFO))
+            .addLast(new IdleStateHandler(30, 90, 0, TimeUnit.SECONDS)) // TODO: Make configurable.
             .addLast(new HttpServerCodec()) // TODO: Make message size restrictions configurable.
             .addLast(new NettyHttpServiceConnectionHandler(serviceLookup, sslEngine));
     }

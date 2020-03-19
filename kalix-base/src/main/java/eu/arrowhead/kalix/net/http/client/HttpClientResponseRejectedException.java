@@ -17,7 +17,7 @@ public class HttpClientResponseRejectedException extends HttpClientResponseExcep
     private final HttpClientResponse response;
 
     /**
-     * Creates new HTTP request exception with given HTTP status and message.
+     * Creates new HTTP response rejection exception from given response.
      *
      * @param response Human-readable description of issue.
      */
@@ -26,12 +26,13 @@ public class HttpClientResponseRejectedException extends HttpClientResponseExcep
     }
 
     /**
-     * Creates new HTTP request exception with given HTTP status and message.
+     * Creates new HTTP response rejection exception from given response and
+     * message.
      *
      * @param message Human-readable description of issue.
      */
     public HttpClientResponseRejectedException(final HttpClientResponse response, final String message) {
-        super(message); // Disable stack trace.
+        super(message);
         this.response = response;
     }
 

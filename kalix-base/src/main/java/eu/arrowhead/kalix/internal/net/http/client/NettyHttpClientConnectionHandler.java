@@ -1,12 +1,16 @@
 package eu.arrowhead.kalix.internal.net.http.client;
 
 import eu.arrowhead.kalix.internal.net.http.NettyHttpBodyReceiver;
+import eu.arrowhead.kalix.net.http.client.HttpClientConnectionException;
+import eu.arrowhead.kalix.net.http.client.HttpClientResponseException;
 import eu.arrowhead.kalix.util.Result;
 import eu.arrowhead.kalix.util.annotation.Internal;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
 
 import java.security.cert.X509Certificate;
 import java.util.Objects;
@@ -122,5 +126,29 @@ public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandle
             return;
         }
         ctx.fireExceptionCaught(cause);
+    }
+
+    @Override
+    public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) {
+        if (evt instanceof IdleStateEvent) {
+            final var idleStateEvent = (IdleStateEvent) evt;
+            handled:
+            if (idleStateEvent.state() == IdleState.READER_IDLE) {
+                if (futureConnection != null) {
+                    futureConnection.setResult(Result.failure(new HttpClientConnectionException("Timeout exceeded")));
+                    break handled;
+                }
+                final var exception = new HttpClientResponseException("Incoming response body timed out");
+                if (body != null) {
+                    body.abort(exception);
+                    break handled;
+                }
+                if(!connection.onResponseResult(Result.failure(exception))) {
+                    // TODO: Someone should receive this exception.
+                    exception.printStackTrace();
+                }
+            }
+            ctx.close();
+        }
     }
 }
