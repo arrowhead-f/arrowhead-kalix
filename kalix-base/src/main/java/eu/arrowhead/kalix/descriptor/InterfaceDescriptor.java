@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
  * Describes an application message protocol, in terms of its transport
  * protocol, security requirements and message payload encoding.
  */
-public class InterfaceDescriptor {
+public class InterfaceDescriptor implements Comparable<InterfaceDescriptor> {
     private static final Pattern TRIPLET_PATTERN = Pattern.compile("^([0-9A-Z_]+)-(IN)?SECURE-([0-9A-Z_]+)$");
 
     private static final HashMap<TransportDescriptor, List<InterfaceDescriptor>> CACHE;
@@ -340,10 +340,10 @@ public class InterfaceDescriptor {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) { return true; }
-        if (o == null || getClass() != o.getClass()) { return false; }
-        InterfaceDescriptor triplet = (InterfaceDescriptor) o;
+    public boolean equals(final Object other) {
+        if (this == other) { return true; }
+        if (other == null || getClass() != other.getClass()) { return false; }
+        final var triplet = (InterfaceDescriptor) other;
         return transport.equals(triplet.transport) &&
             isSecure == triplet.isSecure &&
             encoding.equals(triplet.encoding);
@@ -357,5 +357,10 @@ public class InterfaceDescriptor {
     @Override
     public String toString() {
         return text;
+    }
+
+    @Override
+    public int compareTo(final InterfaceDescriptor other) {
+        return text.compareTo(other.text);
     }
 }

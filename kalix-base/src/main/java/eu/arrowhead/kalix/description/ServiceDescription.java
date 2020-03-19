@@ -13,24 +13,26 @@ import java.util.Objects;
  */
 public class ServiceDescription {
     private final String name;
-    private final List<InterfaceDescriptor> supportedInterfaces;
+    private final SystemDescription provider;
     private final String qualifier;
     private final SecurityDescriptor security;
     private final Map<String, String> metadata;
     private final int version;
+    private final List<InterfaceDescriptor> supportedInterfaces;
 
     private ServiceDescription(final Builder builder) {
         this.name = Objects.requireNonNull(builder.name, "Expected name");
         if (builder.supportedInterfaces == null || builder.supportedInterfaces.size() == 0) {
             throw new IllegalArgumentException("At least one supported interface must be specified");
         }
-        this.supportedInterfaces = Collections.unmodifiableList(builder.supportedInterfaces);
+        this.provider = Objects.requireNonNull(builder.provider, "Expected provider");
         this.qualifier = Objects.requireNonNull(builder.qualifier, "Expected qualifier");
         this.security = Objects.requireNonNull(builder.security, "Expected security");
         this.metadata = builder.metadata == null
             ? Collections.emptyMap()
             : Collections.unmodifiableMap(builder.metadata);
         this.version = builder.version;
+        this.supportedInterfaces = Collections.unmodifiableList(builder.supportedInterfaces);
     }
 
     /**
@@ -38,6 +40,13 @@ public class ServiceDescription {
      */
     public String name() {
         return name;
+    }
+
+    /**
+     * @return Description of system providing this service.
+     */
+    public SystemDescription provider() {
+        return provider;
     }
 
     /**
@@ -90,42 +99,94 @@ public class ServiceDescription {
      */
     public static class Builder {
         private String name;
+        private SystemDescription provider;
         private List<InterfaceDescriptor> supportedInterfaces;
         private String qualifier;
         private SecurityDescriptor security;
         private Map<String, String> metadata;
         private int version;
 
+        /**
+         * Service name. <b>Must be specified.</b>
+         *
+         * @param name Service name.
+         * @return This builder.
+         */
         public Builder name(final String name) {
             this.name = name;
             return this;
         }
 
+        /**
+         * Description of system providing this service. <b>Must be
+         * specified.</b>
+         *
+         * @param provider Providing system description.
+         * @return This builder.
+         */
+        public Builder provider(final SystemDescription provider) {
+            this.provider = provider;
+            return this;
+        }
+
+        /**
+         * Sets service qualifier. <b>Must be specified.</b>
+         *
+         * @return Service qualifier.
+         * @see ServiceDescription#qualifier()
+         */
         public Builder qualifier(final String qualifier) {
             this.qualifier = qualifier;
             return this;
         }
 
+        /**
+         * Sets security descriptor. <b>Must be specified.</b>
+         *
+         * @param security Security descriptor.
+         * @return This builder.
+         */
         public Builder security(final SecurityDescriptor security) {
             this.security = security;
             return this;
         }
 
+        /**
+         * Sets service metadata.
+         *
+         * @param metadata Service metadata.
+         * @return This builder.
+         */
         public Builder metadata(final Map<String, String> metadata) {
             this.metadata = metadata;
             return this;
         }
 
+        /**
+         * Sets service version. Defaults to 0.
+         *
+         * @param version Service version.
+         * @return This builder.
+         */
         public Builder version(final int version) {
             this.version = version;
             return this;
         }
 
+        /**
+         * Sets interface triplets supported by service.
+         *
+         * @param supportedInterfaces Interface triplets.
+         * @return This builder.
+         */
         public Builder supportedInterfaces(final List<InterfaceDescriptor> supportedInterfaces) {
             this.supportedInterfaces = supportedInterfaces;
             return this;
         }
 
+        /**
+         * @return New {@link ServiceDescription}.
+         */
         public ServiceDescription build() {
             return new ServiceDescription(this);
         }

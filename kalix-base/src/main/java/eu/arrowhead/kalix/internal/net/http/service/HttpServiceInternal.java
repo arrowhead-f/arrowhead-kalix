@@ -1,25 +1,23 @@
 package eu.arrowhead.kalix.internal.net.http.service;
 
-import eu.arrowhead.kalix.AhfService;
+import eu.arrowhead.kalix.AhfSystem;
 import eu.arrowhead.kalix.description.ServiceDescription;
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.net.http.HttpStatus;
 import eu.arrowhead.kalix.net.http.service.*;
 import eu.arrowhead.kalix.util.annotation.Internal;
 import eu.arrowhead.kalix.util.concurrent.Future;
-import eu.arrowhead.kalix.util.concurrent.Futures;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Internal
-public class HttpServiceInternal implements AhfService {
+public class HttpServiceInternal {
     private final ServiceDescription description;
     private final List<EncodingDescriptor> encodings;
     private final HttpRouteSequence[] routeSequences;
 
-    public HttpServiceInternal(final HttpService service) {
-        description = service.describe();
+    public HttpServiceInternal(final AhfSystem system, final HttpService service) {
+        description = service.describeAsProvidedBy(system);
 
         final var basePath = description.qualifier();
         if (!HttpPaths.isValidPathWithoutPercentEncodings(basePath)) {
@@ -117,8 +115,7 @@ public class HttpServiceInternal implements AhfService {
             });
     }
 
-    @Override
-    public ServiceDescription describe() {
+    public ServiceDescription description() {
         return description;
     }
 }

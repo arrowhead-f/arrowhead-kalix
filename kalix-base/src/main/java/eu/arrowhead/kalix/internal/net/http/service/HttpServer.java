@@ -33,17 +33,17 @@ public class HttpServer implements AhfServer {
     private final Map<String, HttpServiceInternal> services = new ConcurrentSkipListMap<>(Comparator.reverseOrder());
 
     private final PluginNotifier pluginNotifier;
+    private final AhfSystem system;
 
     private Channel channel;
 
-    private HttpServer(final PluginNotifier pluginNotifier) {
+    private HttpServer(final AhfSystem system, final PluginNotifier pluginNotifier) {
         this.pluginNotifier = Objects.requireNonNull(pluginNotifier, "Expected pluginNotifier");
+        this.system = Objects.requireNonNull(system, "Expected system");
     }
 
     public static Future<AhfServer> create(final AhfSystem system, final PluginNotifier pluginNotifier) {
-        Objects.requireNonNull(system, "Expected system");
-
-        final var server = new HttpServer(pluginNotifier);
+        final var server = new HttpServer(system, pluginNotifier);
         try {
             SslContext sslContext = null;
             if (system.isSecure()) {
@@ -98,7 +98,7 @@ public class HttpServer implements AhfServer {
             if (result0.isFailure()) {
                 return Future.failure(result0.fault());
             }
-            final var httpService = new HttpServiceInternal((HttpService) service);
+            final var httpService = new HttpServiceInternal(system, (HttpService) service);
             final var basePath = httpService.basePath();
 
             final var existingService = services.putIfAbsent(basePath, httpService);
@@ -116,7 +116,7 @@ public class HttpServer implements AhfServer {
 
             final var handle = new ServiceHandle(httpService, basePath);
 
-            return pluginNotifier.onServiceProvided(httpService.describe())
+            return pluginNotifier.onServiceProvided(httpService.description())
                 .mapResult(result1 -> {
                     handles.add(handle);
                     if (result1.isSuccess() && !isShuttingDown.get()) {
@@ -170,7 +170,7 @@ public class HttpServer implements AhfServer {
 
         @Override
         public ServiceDescription description() {
-            return httpService.describe();
+            return httpService.description();
         }
 
         @Override
@@ -179,6 +179,11 @@ public class HttpServer implements AhfServer {
                 pluginNotifier.onServiceDismissed(description());
                 services.remove(basePath);
             }
+        }
+
+        @Override
+        public boolean isDismissed() {
+            return isDismissed.get();
         }
     }
 }

@@ -2,7 +2,6 @@ package eu.arrowhead.kalix.description;
 
 import java.net.InetSocketAddress;
 import java.security.PublicKey;
-import java.security.cert.X509Certificate;
 import java.util.Objects;
 
 /**
@@ -12,7 +11,7 @@ import java.util.Objects;
 public class SystemDescription {
     private final String name;
     private final InetSocketAddress remoteSocketAddress;
-    private final X509Certificate[] certificateChain;
+    private final PublicKey publicKey;
 
     /**
      * Creates new Arrowhead system description.
@@ -20,18 +19,16 @@ public class SystemDescription {
      * @param name                System name.
      * @param remoteSocketAddress IP-address/hostname and port through which
      *                            the system can be contacted.
-     * @param certificateChain    System certificate chain.
+     * @param publicKey           System public key.
      */
     public SystemDescription(
         final String name,
         final InetSocketAddress remoteSocketAddress,
-        final X509Certificate[] certificateChain)
+        final PublicKey publicKey)
     {
         this.name = Objects.requireNonNull(name, "Expected name");
         this.remoteSocketAddress = Objects.requireNonNull(remoteSocketAddress, "Expected remoteSocketAddress");
-        this.certificateChain = certificateChain != null && certificateChain.length == 0
-            ? certificateChain
-            : null;
+        this.publicKey = publicKey;
     }
 
     /**
@@ -49,39 +46,7 @@ public class SystemDescription {
     }
 
     /**
-     * @return Certificate chain of system. The certificate at index 0 is the
-     * one associated with the private key of the system. The other
-     * certificates account for its chain of issuers.
-     * @throws UnsupportedOperationException If the system does not have a
-     *                                       certificate chain. This will only
-     *                                       be the case if the system that
-     *                                       retrieved this description runs in
-     *                                       the <i>insecure</i> security mode.
-     */
-    public X509Certificate[] certificateChain() {
-        if (certificateChain == null) {
-            throw new UnsupportedOperationException("Not in secure mode");
-        }
-        return certificateChain;
-    }
-
-    /**
-     * @return System certificate.
-     * @throws UnsupportedOperationException If the system does not have a
-     *                                       certificate chain. This will only
-     *                                       be the case if the system that
-     *                                       retrieved this description runs in
-     *                                       the <i>insecure</i> security mode.
-     */
-    public X509Certificate certificate() {
-        if (certificateChain == null) {
-            throw new UnsupportedOperationException("Not in secure mode");
-        }
-        return certificateChain[0];
-    }
-
-    /**
-     * @return Public key of system, if any.
+     * @return System public key.
      * @throws UnsupportedOperationException If the system does not have a
      *                                       certificate chain. This will only
      *                                       be the case if the system that
@@ -89,6 +54,9 @@ public class SystemDescription {
      *                                       the <i>insecure</i> security mode.
      */
     public PublicKey publicKey() {
-        return certificate().getPublicKey();
+        if (publicKey == null) {
+            throw new UnsupportedOperationException("Not in secure mode");
+        }
+        return publicKey;
     }
 }

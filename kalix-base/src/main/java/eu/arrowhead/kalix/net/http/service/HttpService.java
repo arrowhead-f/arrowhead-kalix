@@ -3,6 +3,7 @@ package eu.arrowhead.kalix.net.http.service;
 import eu.arrowhead.kalix.AhfService;
 import eu.arrowhead.kalix.AhfSystem;
 import eu.arrowhead.kalix.description.ServiceDescription;
+import eu.arrowhead.kalix.description.SystemDescription;
 import eu.arrowhead.kalix.descriptor.EncodingDescriptor;
 import eu.arrowhead.kalix.descriptor.InterfaceDescriptor;
 import eu.arrowhead.kalix.descriptor.SecurityDescriptor;
@@ -743,21 +744,6 @@ public final class HttpService implements AhfService {
         return validator(null, null, handler);
     }
 
-    @Override
-    public ServiceDescription describe() {
-        final var isSecure = security != SecurityDescriptor.NOT_SECURE;
-        return new ServiceDescription.Builder()
-            .name(name)
-            .qualifier(basePath)
-            .security(security)
-            .metadata(metadata != null ? metadata : Collections.emptyMap())
-            .version(version)
-            .supportedInterfaces(encodings.stream()
-                .map(encoding -> InterfaceDescriptor.getOrCreate(TransportDescriptor.HTTP, isSecure, encoding))
-                .collect(Collectors.toList()))
-            .build();
-    }
-
     /**
      * @return Currently set base path, if any.
      * @see #basePath(String)
@@ -844,5 +830,23 @@ public final class HttpService implements AhfService {
      */
     public int version() {
         return version;
+    }
+
+    @Override
+    public ServiceDescription describeAsProvidedBy(final AhfSystem system) {
+        final var isSecure = system.isSecure();
+        return new ServiceDescription.Builder()
+            .name(name)
+            .provider(new SystemDescription(system.name(), system.localSocketAddress(), isSecure
+                ? system.keyStore().publicKey()
+                : null))
+            .qualifier(basePath)
+            .security(security)
+            .metadata(metadata != null ? metadata : Collections.emptyMap())
+            .version(version)
+            .supportedInterfaces(encodings.stream()
+                .map(encoding -> InterfaceDescriptor.getOrCreate(TransportDescriptor.HTTP, isSecure, encoding))
+                .collect(Collectors.toList()))
+            .build();
     }
 }

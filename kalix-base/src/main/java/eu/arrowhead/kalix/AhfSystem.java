@@ -3,15 +3,12 @@ package eu.arrowhead.kalix;
 import eu.arrowhead.kalix.description.ServiceDescription;
 import eu.arrowhead.kalix.internal.AhfServer;
 import eu.arrowhead.kalix.internal.AhfServerRegistry;
-import eu.arrowhead.kalix.internal.net.http.service.HttpServer;
 import eu.arrowhead.kalix.internal.plugin.PluginNotifier;
-import eu.arrowhead.kalix.net.http.service.HttpService;
 import eu.arrowhead.kalix.plugin.Plugin;
 import eu.arrowhead.kalix.security.X509ArrowheadName;
 import eu.arrowhead.kalix.security.X509Certificates;
 import eu.arrowhead.kalix.security.X509KeyStore;
 import eu.arrowhead.kalix.security.X509TrustStore;
-import eu.arrowhead.kalix.util.Result;
 import eu.arrowhead.kalix.util.concurrent.Future;
 import eu.arrowhead.kalix.util.concurrent.FutureScheduler;
 import eu.arrowhead.kalix.util.concurrent.FutureSchedulerShutdownListener;
@@ -22,7 +19,7 @@ import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * An Arrowhead Framework (AHF) system.
@@ -38,6 +35,7 @@ public class AhfSystem {
     private final PluginNotifier pluginNotifier;
 
     private final Set<AhfServer> servers = Collections.synchronizedSet(new HashSet<>());
+    private final AhfServiceCache serviceCache = new AhfServiceCache();
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 
     private AhfSystem(final Builder builder) {
@@ -168,14 +166,28 @@ public class AhfSystem {
     }
 
     /**
-     * @return Unmodifiable list of descriptions of all services currently
-     * provided by this system.
+     * Cache of, potentially or previously, consumed services.
+     * <p>
+     * Searches made in this cache will never trigger any lookup in a remote
+     * service registry. The cache is strictly local. It might, however, be
+     * updated by any {@link eu.arrowhead.kalix.plugin.Plugin plugins} used by
+     * this {@link AhfSystem system}.
+     *
+     * @return Service description cache containing services that this system
+     * may have considered to consume.
      */
-    public List<ServiceDescription> providedServices() {
+    public AhfServiceCache consumedServices() {
+        return serviceCache;
+    }
+
+    /**
+     * @return Stream of descriptions of all services currently provided by
+     * this system.
+     */
+    public Stream<ServiceDescription> providedServices() {
         return servers.stream()
             .flatMap(server -> server.providedServices()
-                .map(AhfServiceHandle::description))
-            .collect(Collectors.toUnmodifiableList());
+                .map(AhfServiceHandle::description));
     }
 
     /**
