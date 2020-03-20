@@ -16,7 +16,7 @@ import java.util.*;
  * 3986 explicitly allows the following characters, as well as so-called
  * <i>percent encodings</i> to be used:
  * <pre>
- * A–Z a–z 0–9 - . _ ~ ! $ & ' ( ) * + , ; = : @
+ * A–Z a–z 0–9 - . _ ~ ! $ &amp; ' ( ) * + , ; = : @
  * </pre>
  * While all these characters are allowed in segments provided to this pattern
  * implementation, percent encodings are not (e.g. {@code %20} as a

@@ -16,7 +16,7 @@ public class HttpPaths {
      * Concretely, this means that {@code path} must begin with a forward slash
      * ({@code /}) and then consist of only the following characters:
      * <pre>
-     *     A–Z a–z 0–9 - . _ ~ ! $ & ' ( ) * + , ; / = : @
+     *     A–Z a–z 0–9 - . _ ~ ! $ &amp; ' ( ) * + , ; / = : @
      * </pre>
      *
      * @param path Tested path.
@@ -43,7 +43,7 @@ public class HttpPaths {
      * <p>
      * Concretely, those characters are:
      * <pre>
-     *     A–Z a–z 0–9 - . _ ~ ! $ % & ' ( ) * + , ; / = : @
+     *     A–Z a–z 0–9 - . _ ~ ! $ % &amp; ' ( ) * + , ; / = : @
      * </pre>
      *
      * @param c Tested character.

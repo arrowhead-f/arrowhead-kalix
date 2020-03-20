@@ -61,7 +61,7 @@ public final class HttpService implements ArService {
      * The base path must start with a forward slash ({@code /}), must not end
      * with a forward slash, and may only contain the following characters:
      * <pre>
-     *     A–Z a–z 0–9 - . _ ~ ! $ & ' ( ) * + , ; / = : @
+     *     A–Z a–z 0–9 - . _ ~ ! $ &amp; ' ( ) * + , ; / = : @
      * </pre>
      * Percent encodings may not be used. If the given path is the root path,
      * which consists only of a forward slash, the requirement of there being

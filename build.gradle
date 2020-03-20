@@ -11,7 +11,7 @@ allprojects {
 }
 
 subprojects {
-    group = 'eu.arrowhead.kalix'
+    group = 'se.arkalix'
     version = '0.1.0'
 
     tasks.withType(JavaCompile) {
@@ -35,7 +35,7 @@ configure([
         }
         publishing {
             publications {
-                maven(MavenPublication) {
+                mavenJava(MavenPublication) {
                     from components.java
                 }
             }
@@ -45,6 +45,11 @@ configure([
     publishing {
         repositories {
             maven {
+                credentials {
+                    // The RHS variables are collected from the user gradle.properties file.
+                    username = arkalixJiraUsername
+                    password = arkalixJiraPassword
+                }
                 def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
                 def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
                 url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
@@ -86,6 +91,28 @@ configure([
             if (JavaVersion.current().isJava9Compatible()) {
                 options.addBooleanOption('html5', true)
             }
+        }
+    }
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+    if (taskGraph.allTasks.any { it instanceof Sign }) {
+        def console = System.console()
+        console.printf("\nSignatures required. Using the following details from gradle.properties:\n")
+
+        // The RHS variables are collected from the user gradle.properties file.
+        def keyId = arkalixSigningKeyId
+        def file = arkalixSigningSecretKeyRingFile
+        def password = arkalixSigningPassword
+
+        console.printf("PGP Key Id: %s\n", keyId)
+        console.printf("PGP Secret Key Ring File: %s\n", file)
+        console.printf("PGP Private Key Password: ***\n\n")
+
+        allprojects {
+            ext."signing.keyId" = keyId
+            ext."signing.secretKeyRingFile" = file
+            ext."signing.password" = password
         }
     }
 }
