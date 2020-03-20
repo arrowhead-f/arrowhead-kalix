@@ -10,6 +10,37 @@ allprojects {
     }
 }
 
+subprojects {
+    group = 'eu.arrowhead.kalix'
+    version = '0.1.0'
+
+    tasks.withType(JavaCompile) {
+        sourceCompatibility = '11'
+        targetCompatibility = '11'
+    }
+}
+
+configure([
+        project(':kalix-base'),
+        project(':kalix-core-plugins'),
+        project(':kalix-processors')
+]) {
+    apply plugin: 'maven-publish'
+
+    publishing {
+        repositories {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/emanuelpalm/arrowhead-kalix")
+                credentials {
+                    username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+                    password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+                }
+            }
+        }
+    }
+}
+
 task clean(type: Delete) {
     delete rootProject.buildDir
 }

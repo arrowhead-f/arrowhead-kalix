@@ -2,12 +2,6 @@ plugins {
     id 'application'
 }
 
-group = 'eu.arrowhead.kalix'
-version = '0.1.0-SNAPSHOT'
-
-sourceCompatibility = '11'
-targetCompatibility = '11'
-
 mainClassName = 'eu.arrowhead.kalix.example.EchoSystem'
 
 ext {

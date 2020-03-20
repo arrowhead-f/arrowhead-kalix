@@ -2,12 +2,6 @@ plugins {
     id 'java-library'
 }
 
-group = 'eu.arrowhead.kalix'
-version = '0.1.0-SNAPSHOT'
-
-sourceCompatibility = '11'
-targetCompatibility = '11'
-
 ext {
     versionJunitJupiter = '5.6.0'
 }
@@ -23,5 +17,13 @@ test {
     useJUnitPlatform()
     testLogging {
         events 'FAILED', 'SKIPPED'
+    }
+}
+
+publishing {
+    publications {
+        gpr(MavenPublication) {
+            from(components.java)
+        }
     }
 }
