@@ -12,7 +12,7 @@ import java.net.InetSocketAddress;
 import java.util.Objects;
 
 /**
- * A {@link ArServiceRegistry} that communicated with over HTTP.
+ * A remote {@link ArServiceRegistry} that is communicated with via HTTP.
  */
 public class HttpServiceRegistry implements ArServiceRegistry {
     private final HttpClient client;
@@ -44,7 +44,7 @@ public class HttpServiceRegistry implements ArServiceRegistry {
                 if (status.isSuccess()) {
                     return Future.done();
                 }
-                if (status.isClientError() && response.header("content-length").isPresent()) {
+                if (status.isClientError() && response.headers().getAsInteger("content-length").orElse(0) > 0) {
                     return response.bodyAsString()
                         .mapThrow(HttpClientResponseException::new);
                 }
@@ -67,7 +67,7 @@ public class HttpServiceRegistry implements ArServiceRegistry {
                 if (status.isSuccess()) {
                     return Future.done();
                 }
-                if (status.isClientError() && response.header("content-length").map(Integer::parseInt).orElse(0) > 0) {
+                if (status.isClientError() && response.headers().getAsInteger("content-length").orElse(0) > 0) {
                     return response.bodyAsString()
                         .mapThrow(HttpClientResponseException::new);
                 }

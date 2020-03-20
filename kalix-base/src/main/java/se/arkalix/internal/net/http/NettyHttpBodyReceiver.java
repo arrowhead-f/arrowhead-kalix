@@ -215,7 +215,7 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
         }
 
         @Override
-        public Future<V> onProgress(final Listener listener) {
+        public Future<V> addProgressListener(final Listener listener) {
             this.listener = listener;
             return this;
         }

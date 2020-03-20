@@ -43,7 +43,7 @@ class FutureSuccess<V> implements FutureProgress<V> {
     }
 
     @Override
-    public FutureProgress<V> onProgress(final Listener listener) {
+    public FutureProgress<V> addProgressListener(final Listener listener) {
         Objects.requireNonNull(listener, "Expected listener");
         // Does nothing.
         return this;
@@ -71,19 +71,11 @@ class FutureSuccess<V> implements FutureProgress<V> {
     }
 
     @Override
-    public <U> Future<U> mapThrow(final ThrowingFunction<? super V, Throwable> mapper) {
-        Throwable fault;
-        try {
-            fault = mapper.apply(value);
-        }
-        catch (final Throwable throwable) {
-            fault = throwable;
-        }
-        return Future.failure(fault);
-    }
-
-    @Override
-    public Future<V> mapFault(final ThrowingFunction<Throwable, Throwable> mapper) {
+    public <T extends Throwable> Future<V> mapFault(
+        final Class<T> class_,
+        final ThrowingFunction<Throwable, Throwable> mapper)
+    {
+        Objects.requireNonNull(class_, "Expected class_");
         Objects.requireNonNull(mapper, "Expected mapper");
         return this;
     }
@@ -97,6 +89,18 @@ class FutureSuccess<V> implements FutureProgress<V> {
         catch (final Throwable throwable) {
             return Future.failure(throwable);
         }
+    }
+
+    @Override
+    public <U> Future<U> mapThrow(final ThrowingFunction<? super V, Throwable> mapper) {
+        Throwable fault;
+        try {
+            fault = mapper.apply(value);
+        }
+        catch (final Throwable throwable) {
+            fault = throwable;
+        }
+        return Future.failure(fault);
     }
 
     @Override
@@ -121,7 +125,11 @@ class FutureSuccess<V> implements FutureProgress<V> {
     }
 
     @Override
-    public Future<V> flatMapFault(final ThrowingFunction<Throwable, ? extends Future<Throwable>> mapper) {
+    public <T extends Throwable> Future<V> flatMapFault(
+        final Class<T> class_,
+        final ThrowingFunction<Throwable, ? extends Future<Throwable>> mapper)
+    {
+        Objects.requireNonNull(class_, "Expected class_");
         Objects.requireNonNull(mapper, "Expected mapper");
         return this;
     }
@@ -135,6 +143,42 @@ class FutureSuccess<V> implements FutureProgress<V> {
         catch (final Throwable throwable) {
             return Future.failure(throwable);
         }
+    }
+
+    @Override
+    public Future<V> flatMapThrow(final ThrowingFunction<V, ? extends Future<? extends Throwable>> mapper) {
+        Objects.requireNonNull(mapper, "Expected mapper");
+        final var self = this;
+        return new Future<>() {
+            private Future<?> cancelTarget = self;
+            private boolean isCancelled = false;
+
+            @Override
+            public void onResult(final Consumer<Result<V>> consumer) {
+                if (isCancelled) {
+                    return;
+                }
+                try {
+                    final var future = mapper.apply(value);
+                    cancelTarget = future;
+                    future.onResult(result -> consumer.accept(Result.failure(result.isSuccess()
+                        ? result.value()
+                        : result.fault())));
+                }
+                catch (final Throwable throwable) {
+                    consumer.accept(Result.failure(throwable));
+                }
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                if (cancelTarget != null) {
+                    cancelTarget.cancel(mayInterruptIfRunning);
+                    cancelTarget = null;
+                }
+                isCancelled = true;
+            }
+        };
     }
 
     @Override

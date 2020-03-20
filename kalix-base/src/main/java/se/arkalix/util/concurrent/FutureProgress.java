@@ -14,7 +14,7 @@ public interface FutureProgress<V> extends Future<V> {
      * @return This future, cast to {@link Future}.
      * @throws NullPointerException If {@code listener} is {@code null}.
      */
-    Future<V> onProgress(Listener listener);
+    Future<V> addProgressListener(Listener listener);
 
     /**
      * A receiver of progress updates.

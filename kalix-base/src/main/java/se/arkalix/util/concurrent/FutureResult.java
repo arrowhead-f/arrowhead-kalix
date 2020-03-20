@@ -73,6 +73,39 @@ public class FutureResult<V> implements Future<V> {
     }
 
     @Override
+    public <T extends Throwable> Future<V> mapFault(
+        final Class<T> class_,
+        final ThrowingFunction<Throwable, Throwable> mapper)
+    {
+        Objects.requireNonNull(class_, "Expected class_");
+        Objects.requireNonNull(mapper, "Expected mapper");
+        if (result.isSuccess()) {
+            return this;
+        }
+        var fault = result.fault();
+        if (class_.isAssignableFrom(fault.getClass())) {
+            try {
+                fault = mapper.apply(fault);
+            }
+            catch (final Throwable throwable) {
+                fault = throwable;
+            }
+        }
+        return Future.failure(fault);
+    }
+
+    @Override
+    public <U> Future<U> mapResult(final ThrowingFunction<Result<V>, Result<U>> mapper) {
+        Objects.requireNonNull(mapper, "Expected mapper");
+        try {
+            return Future.of(mapper.apply(result));
+        }
+        catch (final Throwable throwable) {
+            return Future.failure(throwable);
+        }
+    }
+
+    @Override
     public <U> Future<U> mapThrow(final ThrowingFunction<? super V, Throwable> mapper) {
         Objects.requireNonNull(mapper, "Expected mapper");
         Throwable fault;
@@ -88,33 +121,6 @@ public class FutureResult<V> implements Future<V> {
             fault = result.fault();
         }
         return Future.failure(fault);
-    }
-
-    @Override
-    public Future<V> mapFault(final ThrowingFunction<Throwable, Throwable> mapper) {
-        Objects.requireNonNull(mapper, "Expected mapper");
-        if (result.isSuccess()) {
-            return this;
-        }
-        Throwable fault;
-        try {
-            fault = mapper.apply(result.fault());
-        }
-        catch (final Throwable throwable) {
-            fault = throwable;
-        }
-        return Future.failure(fault);
-    }
-
-    @Override
-    public <U> Future<U> mapResult(final ThrowingFunction<Result<V>, Result<U>> mapper) {
-        Objects.requireNonNull(mapper, "Expected mapper");
-        try {
-            return Future.of(mapper.apply(result));
-        }
-        catch (final Throwable throwable) {
-            return Future.failure(throwable);
-        }
     }
 
     @Override
@@ -155,7 +161,11 @@ public class FutureResult<V> implements Future<V> {
     }
 
     @Override
-    public Future<V> flatMapFault(final ThrowingFunction<Throwable, ? extends Future<Throwable>> mapper) {
+    public <T extends Throwable> Future<V> flatMapFault(
+        final Class<T> class_,
+        final ThrowingFunction<Throwable, ? extends Future<Throwable>> mapper)
+    {
+        Objects.requireNonNull(class_, "Expected class_");
         Objects.requireNonNull(mapper, "Expected mapper");
         if (result.isSuccess()) {
             return this;
@@ -169,25 +179,30 @@ public class FutureResult<V> implements Future<V> {
                 if (isCancelled) {
                     return;
                 }
-                try {
-                    final var future1 = mapper.apply(result.fault());
-                    future1.onResult(result -> consumer.accept(Result.failure(result.isSuccess()
-                        ? result.value()
-                        : result.fault())));
-                    cancelTarget = future1;
+                var fault = result.fault();
+                if (class_.isAssignableFrom(fault.getClass())) {
+                    try {
+                        final var future1 = mapper.apply(fault);
+                        future1.onResult(result -> consumer.accept(Result.failure(result.isSuccess()
+                            ? result.value()
+                            : result.fault())));
+                        cancelTarget = future1;
+                        return;
+                    }
+                    catch (final Throwable throwable) {
+                        fault = throwable;
+                    }
                 }
-                catch (final Throwable throwable) {
-                    consumer.accept(Result.failure(throwable));
-                }
+                consumer.accept(Result.failure(fault));
             }
 
             @Override
             public void cancel(final boolean mayInterruptIfRunning) {
-                isCancelled = true;
                 if (cancelTarget != null) {
                     cancelTarget.cancel(mayInterruptIfRunning);
                     cancelTarget = null;
                 }
+                isCancelled = true;
             }
         };
     }
@@ -200,6 +215,45 @@ public class FutureResult<V> implements Future<V> {
         catch (final Throwable throwable) {
             return Future.failure(throwable);
         }
+    }
+
+    @Override
+    public Future<V> flatMapThrow(final ThrowingFunction<V, ? extends Future<? extends Throwable>> mapper) {
+        Objects.requireNonNull(mapper, "Expected mapper");
+        if (result.isFailure()) {
+            return this;
+        }
+        final var self = this;
+        return new Future<>() {
+            private Future<?> cancelTarget = self;
+            private boolean isCancelled = false;
+
+            @Override
+            public void onResult(final Consumer<Result<V>> consumer) {
+                if (isCancelled) {
+                    return;
+                }
+                try {
+                    final var future = mapper.apply(result.value());
+                    cancelTarget = future;
+                    future.onResult(result -> consumer.accept(Result.failure(result.isSuccess()
+                        ? result.value()
+                        : result.fault())));
+                }
+                catch (final Throwable throwable) {
+                    consumer.accept(Result.failure(throwable));
+                }
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                if (cancelTarget != null) {
+                    cancelTarget.cancel(mayInterruptIfRunning);
+                    cancelTarget = null;
+                }
+                isCancelled = true;
+            }
+        };
     }
 
     @Override

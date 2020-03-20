@@ -132,7 +132,7 @@ public interface Future<V> {
      * @return A {@code Future} that may eventually hold the result of applying
      * a mapping function to the value of this {@code Future}, if it completes
      * successfully.
-     * @throws NullPointerException If the mapping function is {@code null}.
+     * @throws NullPointerException If {@code mapper} is {@code null}.
      */
     default <U> Future<U> map(final ThrowingFunction<? super V, U> mapper) {
         Objects.requireNonNull(mapper, "Expected mapper");
@@ -192,13 +192,14 @@ public interface Future<V> {
      *               {@code Future}, if it becomes available.
      * @return A {@code Future} that may eventually hold the result of applying
      * a mapping function to the fault of this {@code Future}.
-     * @throws NullPointerException If the mapping function is {@code null}.
+     * @throws NullPointerException If {@code class_} or {@code mapper} is
+     *                              {@code null}.
      */
-    default <U extends Throwable> Future<V> mapCatch(
-        final Class<U> class_,
-        final ThrowingFunction<U, ? extends V> mapper)
+    default <T extends Throwable> Future<V> mapCatch(
+        final Class<T> class_,
+        final ThrowingFunction<T, ? extends V> mapper)
     {
-        Objects.requireNonNull(mapper, "Expected class");
+        Objects.requireNonNull(class_, "Expected class_");
         Objects.requireNonNull(mapper, "Expected mapper");
         final var source = this;
         return new Future<>() {
@@ -235,59 +236,9 @@ public interface Future<V> {
     }
 
     /**
-     * Takes any successful result produced by this {@code Future} and uses
-     * {@code mapper} to transform it into a fault.
-     * <p>
-     * In other words, this method performs the asynchronous counterpart to the
-     * following code:
-     * <pre>
-     *     V value = originalFutureOperation();
-     *     // Wait for value to become available.
-     *     Throwable fault = mapper.apply(value);
-     *     return fault;
-     * </pre>
-     * Any exception thrown by {@code mapper} leads to the returned
-     * {@code Future} being failed with the same exception.
-     *
-     * @param mapper The mapping function to apply to the value of this
-     *               {@code Future}, if it becomes available.
-     * @return A {@code Future} that may eventually hold the result of applying
-     * a mapping function to the value of this {@code Future}.
-     * @throws NullPointerException If the mapping function is {@code null}.
-     */
-    default <U> Future<U> mapThrow(final ThrowingFunction<? super V, Throwable> mapper) {
-        Objects.requireNonNull(mapper, "Expected mapper");
-        final var source = this;
-        return new Future<>() {
-            @Override
-            public void onResult(final Consumer<Result<U>> consumer) {
-                source.onResult(result0 -> {
-                    Throwable cause;
-                    if (result0.isSuccess()) {
-                        try {
-                            cause = mapper.apply(result0.value());
-                        }
-                        catch (final Throwable throwable) {
-                            cause = throwable;
-                        }
-                    }
-                    else {
-                        cause = result0.fault();
-                    }
-                    consumer.accept(Result.failure(cause));
-                });
-            }
-
-            @Override
-            public void cancel(final boolean mayInterruptIfRunning) {
-                source.cancel(mayInterruptIfRunning);
-            }
-        };
-    }
-
-    /**
-     * Applies any fault produced by this {@code Future} to {@code mapper} and
-     * then fails the returned future with the {@code Throwable} it returns.
+     * Applies any fault produced by this {@code Future} that is assignable to
+     * {@code class_} to {@code mapper} and then fails the returned future
+     * with the {@code Throwable} it returns.
      * <p>
      * In other words, this method performs the asynchronous counterpart to the
      * following code:
@@ -295,7 +246,7 @@ public interface Future<V> {
      *     try {
      *         return originalFutureOperation();
      *     }
-     *     catch (final Throwable throwable) {
+     *     catch (final T throwable) {
      *         throw mapper.apply(throwable);
      *     }
      * </pre>
@@ -307,9 +258,14 @@ public interface Future<V> {
      *               {@code Future}, if it becomes available.
      * @return A {@code Future} that may eventually hold the result of applying
      * a mapping function to the fault of this {@code Future}.
-     * @throws NullPointerException If the mapping function is {@code null}.
+     * @throws NullPointerException If {@code class_} or {@code mapper} is
+     *                              {@code null}.
      */
-    default Future<V> mapFault(final ThrowingFunction<Throwable, Throwable> mapper) {
+    default <T extends Throwable> Future<V> mapFault(
+        final Class<T> class_,
+        final ThrowingFunction<Throwable, Throwable> mapper)
+    {
+        Objects.requireNonNull(class_, "Expected class_");
         Objects.requireNonNull(mapper, "Expected mapper");
         final var source = this;
         return new Future<>() {
@@ -321,12 +277,14 @@ public interface Future<V> {
                         result1 = result0;
                     }
                     else {
-                        Throwable cause1;
-                        try {
-                            cause1 = mapper.apply(result0.fault());
-                        }
-                        catch (final Throwable throwable) {
-                            cause1 = throwable;
+                        Throwable cause1 = result0.fault();
+                        if (class_.isAssignableFrom(cause1.getClass())) {
+                            try {
+                                cause1 = mapper.apply(result0.fault());
+                            }
+                            catch (final Throwable throwable) {
+                                cause1 = throwable;
+                            }
                         }
                         result1 = Result.failure(cause1);
                     }
@@ -363,7 +321,7 @@ public interface Future<V> {
      * @return A {@code Future} that may eventually hold the result of applying
      * a mapping function to the value of this {@code Future}, if it completes
      * successfully.
-     * @throws NullPointerException If the mapping function is {@code null}.
+     * @throws NullPointerException If {@code mapper} is {@code null}.
      */
     default <U> Future<U> mapResult(final ThrowingFunction<Result<V>, Result<U>> mapper) {
         Objects.requireNonNull(mapper, "Expected mapper");
@@ -381,6 +339,57 @@ public interface Future<V> {
                         result1 = Result.failure(throwable);
                     }
                     consumer.accept(result1);
+                });
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                source.cancel(mayInterruptIfRunning);
+            }
+        };
+    }
+
+    /**
+     * Takes any successful result produced by this {@code Future} and uses
+     * {@code mapper} to transform it into a fault.
+     * <p>
+     * In other words, this method performs the asynchronous counterpart to the
+     * following code:
+     * <pre>
+     *     V value = originalFutureOperation();
+     *     // Wait for value to become available.
+     *     Throwable fault = mapper.apply(value);
+     *     throw fault;
+     * </pre>
+     * Any exception thrown by {@code mapper} leads to the returned
+     * {@code Future} being failed with the same exception.
+     *
+     * @param mapper The mapping function to apply to the value of this
+     *               {@code Future}, if it becomes available.
+     * @return A {@code Future} that may eventually hold the result of applying
+     * a mapping function to the value of this {@code Future}.
+     * @throws NullPointerException If {@code mapper} is {@code null}.
+     */
+    default <U> Future<U> mapThrow(final ThrowingFunction<? super V, Throwable> mapper) {
+        Objects.requireNonNull(mapper, "Expected mapper");
+        final var source = this;
+        return new Future<>() {
+            @Override
+            public void onResult(final Consumer<Result<U>> consumer) {
+                source.onResult(result0 -> {
+                    Throwable cause;
+                    if (result0.isSuccess()) {
+                        try {
+                            cause = mapper.apply(result0.value());
+                        }
+                        catch (final Throwable throwable) {
+                            cause = throwable;
+                        }
+                    }
+                    else {
+                        cause = result0.fault();
+                    }
+                    consumer.accept(Result.failure(cause));
                 });
             }
 
@@ -420,7 +429,7 @@ public interface Future<V> {
      * @return A {@code Future} that may eventually hold the result of applying
      * a mapping function to the value of this {@code Future}, and then waiting
      * for the {@code Future} returned by the mapper to complete.
-     * @throws NullPointerException If the mapping function is {@code null}.
+     * @throws NullPointerException If {@code mapper} is {@code null}.
      */
     default <U> Future<U> flatMap(final ThrowingFunction<? super V, ? extends Future<U>> mapper) {
         Objects.requireNonNull(mapper, "Expected mapper");
@@ -492,12 +501,12 @@ public interface Future<V> {
      * @return A {@code Future} that may eventually hold the result of applying
      * a mapping function to the fault of this {@code Future}, and then waiting
      * for the {@code Future} returned by the mapper to complete.
-     * @throws NullPointerException If {@code class_} or {@code mapper}is
+     * @throws NullPointerException If {@code class_} or {@code mapper} is
      *                              {@code null}.
      */
-    default <U extends Throwable> Future<V> flatMapCatch(
-        final Class<U> class_,
-        final ThrowingFunction<U, ? extends Future<V>> mapper)
+    default <T extends Throwable> Future<V> flatMapCatch(
+        final Class<T> class_,
+        final ThrowingFunction<T, ? extends Future<V>> mapper)
     {
         Objects.requireNonNull(class_, "Expected class_");
         Objects.requireNonNull(mapper, "Expected mapper");
@@ -554,9 +563,9 @@ public interface Future<V> {
      * then fails the returned future with the {@code Throwable} it returns.
      * <p>
      * The difference between this method and
-     * {@link #mapFault(ThrowingFunction)} is that this method expects its
-     * {@code mapper} to return a {@code Future<Throwable>} rather than a plain
-     * {@code Throwable}.
+     * {@link #mapFault(Class, ThrowingFunction)} is that this method expects
+     * its {@code mapper} to return a {@code Future<Throwable>} rather than a
+     * plain {@code Throwable}.
      * <p>
      * In other words, this method performs the asynchronous counterpart to the
      * following code:
@@ -564,7 +573,7 @@ public interface Future<V> {
      *     try {
      *         return originalFutureOperation();
      *     }
-     *     catch (final Throwable throwable) {
+     *     catch (final T throwable) {
      *         Throwable fault = mapper.apply(throwable);
      *         // Wait for fault to become available.
      *         throw fault;
@@ -580,9 +589,14 @@ public interface Future<V> {
      * @return A {@code Future} that may eventually hold the result of applying
      * a mapping function to the fault of this {@code Future}, and then waiting
      * for the {@code Future} returned by the mapper to complete.
-     * @throws NullPointerException If the mapping function is {@code null}.
+     * @throws NullPointerException If {@code class_} or {@code mapper} is
+     *                              {@code null}.
      */
-    default Future<V> flatMapFault(final ThrowingFunction<Throwable, ? extends Future<Throwable>> mapper) {
+    default <T extends Throwable> Future<V> flatMapFault(
+        final Class<T> class_,
+        final ThrowingFunction<Throwable, ? extends Future<Throwable>> mapper)
+    {
+        Objects.requireNonNull(class_, "Expected class_");
         Objects.requireNonNull(mapper, "Expected mapper");
         final var source = this;
         return new Future<>() {
@@ -592,27 +606,28 @@ public interface Future<V> {
             public void onResult(final Consumer<Result<V>> consumer) {
                 source.onResult(result0 -> {
                     Result<V> result1;
-                    done:
-                    {
-                        if (cancelTarget == null) {
-                            return;
+                    if (cancelTarget == null) {
+                        return;
+                    }
+                    if (result0.isSuccess()) {
+                        result1 = result0;
+                    }
+                    else {
+                        Throwable cause1 = result0.fault();
+                        if (class_.isAssignableFrom(cause1.getClass())) {
+                            try {
+                                final var future1 = mapper.apply(cause1);
+                                future1.onResult(result -> consumer.accept(Result.failure(result.isSuccess()
+                                    ? result.value()
+                                    : result.fault())));
+                                cancelTarget = future1;
+                                return;
+                            }
+                            catch (final Throwable throwable) {
+                                cause1 = throwable;
+                            }
                         }
-                        if (result0.isSuccess()) {
-                            result1 = result0;
-                            break done;
-                        }
-                        try {
-                            final var future1 = mapper.apply(result0.fault());
-                            future1.onResult(result -> consumer.accept(Result.failure(result.isSuccess()
-                                ? result.value()
-                                : result.fault())));
-                            cancelTarget = future1;
-                            return;
-                        }
-                        catch (final Throwable throwable) {
-                            result1 = Result.failure(throwable);
-                        }
-
+                        result1 = Result.failure(cause1);
                     }
                     consumer.accept(result1);
                 });
@@ -657,7 +672,7 @@ public interface Future<V> {
      * @return A {@code Future} that may eventually hold the result of applying
      * a mapping function to the result of this {@code Future}, and then waiting
      * for the {@code Future} returned by the mapper to complete.
-     * @throws NullPointerException If the mapping function is {@code null}.
+     * @throws NullPointerException If {@code mapper} is {@code null}.
      */
     default <U> Future<U> flatMapResult(final ThrowingFunction<Result<V>, ? extends Future<U>> mapper) {
         Objects.requireNonNull(mapper, "Expected mapper");
@@ -693,6 +708,81 @@ public interface Future<V> {
     }
 
     /**
+     * Applies any value successfully produced by this {@code Future} to
+     * {@code mapper}, and then fails the returned future with the
+     * {@code Throwable} it returns.
+     * <p>
+     * The difference between this method and
+     * {@link #mapThrow(ThrowingFunction)} is that this method expects
+     * its {@code mapper} to return a {@code Future<Throwable>} rather than a
+     * plain {@code Throwable}.
+     * <p>
+     * In other words, this method performs the asynchronous counterpart to the
+     * following code:
+     * <pre>
+     *         V value = originalFutureOperation();
+     *         // Wait for value to become available.
+     *         Throwable fault = mapper.apply(value);
+     *         // Wait for fault to become available.
+     *         throw fault;
+     *     }
+     * </pre>
+     * Any exception thrown by {@code mapper} leads to the returned
+     * {@code Future} being failed with the same exception. Furthermore, if
+     * the {@code Future} returned by mapper fails, the {@code Future} returned
+     * by this method is failed with that exception.
+     *
+     * @param mapper The mapping function to apply to the value of this
+     *               {@code Future}, if it becomes available.
+     * @return A {@code Future} that may eventually hold the result of applying
+     * a mapping function to the value of this {@code Future}, and then waiting
+     * for the {@code Future} returned by the mapper to complete.
+     * @throws NullPointerException If {@code mapper} is {@code null}.
+     */
+    default Future<V> flatMapThrow(final ThrowingFunction<V, ? extends Future<? extends Throwable>> mapper) {
+        Objects.requireNonNull(mapper, "Expected mapper");
+        final var source = this;
+        return new Future<>() {
+            private Future<?> cancelTarget = source;
+
+            @Override
+            public void onResult(final Consumer<Result<V>> consumer) {
+                source.onResult(result0 -> {
+                    Result<V> result1;
+                    if (cancelTarget == null) {
+                        return;
+                    }
+                    if (result0.isFailure()) {
+                        result1 = result0;
+                    }
+                    else {
+                        try {
+                            final var future1 = mapper.apply(result0.value());
+                            future1.onResult(result -> consumer.accept(Result.failure(result.isSuccess()
+                                ? result.value()
+                                : result.fault())));
+                            cancelTarget = future1;
+                            return;
+                        }
+                        catch (final Throwable throwable) {
+                            result1 = Result.failure(throwable);
+                        }
+                    }
+                    consumer.accept(result1);
+                });
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                if (cancelTarget != null) {
+                    cancelTarget.cancel(mayInterruptIfRunning);
+                    cancelTarget = null;
+                }
+            }
+        };
+    }
+
+    /**
      * Returns new {@code Future} that succeeds with given {@code value} if
      * this {@code Future} completes successfully.
      * <p>
@@ -704,7 +794,6 @@ public interface Future<V> {
      * as fault.
      */
     default <U> Future<U> pass(final U value) {
-        Objects.requireNonNull(value, "Expected value");
         final var source = this;
         return new Future<>() {
             @Override
@@ -735,6 +824,7 @@ public interface Future<V> {
      * @param throwable Fault to include in returned {@code Future}.
      * @return A {@code Future} that will complete with given {@code throwable}
      * as fault.
+     * @throws NullPointerException If {@code throwable} is {@code null}.
      */
     default <U> Future<U> fail(final Throwable throwable) {
         Objects.requireNonNull(throwable, "Expected throwable");

@@ -9,8 +9,8 @@ ext {
 }
 
 dependencies {
-    compile project(':kalix-base')
-    compile project(':kalix-core-plugins')
+    implementation project(':kalix-base')
+    implementation project(':kalix-core-plugins')
     annotationProcessor project(':kalix-processors')
 
     testImplementation "org.junit.jupiter:junit-jupiter:$versionJunitJupiter"
