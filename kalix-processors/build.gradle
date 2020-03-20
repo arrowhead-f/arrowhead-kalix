@@ -13,8 +13,11 @@ dependencies {
 
 publishing {
     publications {
-        gpr(MavenPublication) {
-            from(components.java)
+        mavenJava(MavenPublication) {
+            pom {
+                name = 'Arrowhead Kalix: Annotation Processors'
+                description = 'Kalix annotation processors.'
+            }
         }
     }
 }

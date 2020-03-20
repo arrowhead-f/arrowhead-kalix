@@ -22,8 +22,12 @@ test {
 
 publishing {
     publications {
-        gpr(MavenPublication) {
-            from(components.java)
+        mavenJava(MavenPublication) {
+            pom {
+                name = 'Arrowhead Kalix: Base Library'
+                description = 'Basic abstractions and utilities for creating ' +
+                        'and interacting with Arrowhead Framework systems.'
+            }
         }
     }
 }
