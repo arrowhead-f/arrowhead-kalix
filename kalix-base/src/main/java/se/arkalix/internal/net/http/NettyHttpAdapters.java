@@ -1,8 +1,8 @@
 package se.arkalix.internal.net.http;
 
-import se.arkalix.http.HttpMethod;
-import se.arkalix.http.HttpStatus;
-import se.arkalix.http.HttpVersion;
+import se.arkalix.net.http.HttpMethod;
+import se.arkalix.net.http.HttpStatus;
+import se.arkalix.net.http.HttpVersion;
 import se.arkalix.util.annotation.Internal;
 import io.netty.handler.codec.http.HttpResponseStatus;
 

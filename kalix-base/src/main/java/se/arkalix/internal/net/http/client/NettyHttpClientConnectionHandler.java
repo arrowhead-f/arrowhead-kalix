@@ -1,8 +1,8 @@
 package se.arkalix.internal.net.http.client;
 
 import se.arkalix.internal.net.http.NettyHttpBodyReceiver;
-import se.arkalix.http.client.HttpClientConnectionException;
-import se.arkalix.http.client.HttpClientResponseException;
+import se.arkalix.net.http.client.HttpClientConnectionException;
+import se.arkalix.net.http.client.HttpClientResponseException;
 import se.arkalix.util.Result;
 import se.arkalix.util.annotation.Internal;
 import io.netty.channel.ChannelHandlerContext;

@@ -6,7 +6,7 @@ import se.arkalix.dto.DtoReadable;
 import se.arkalix.dto.DtoReader;
 import se.arkalix.dto.DtoReadException;
 import se.arkalix.internal.dto.binary.ByteBufReader;
-import se.arkalix.http.HttpBodyReceiver;
+import se.arkalix.net.http.HttpBodyReceiver;
 import se.arkalix.util.Result;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;

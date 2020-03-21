@@ -1,6 +1,6 @@
 package se.arkalix.internal.net.http.client;
 
-import se.arkalix.http.client.HttpClientConnection;
+import se.arkalix.net.http.client.HttpClientConnection;
 import se.arkalix.util.Result;
 import se.arkalix.util.concurrent.Future;
 

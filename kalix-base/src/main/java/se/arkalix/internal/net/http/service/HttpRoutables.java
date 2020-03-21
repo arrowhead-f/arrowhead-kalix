@@ -1,6 +1,6 @@
 package se.arkalix.internal.net.http.service;
 
-import se.arkalix.http.service.*;
+import se.arkalix.net.http.service.*;
 import se.arkalix.util.annotation.Internal;
 
 /**

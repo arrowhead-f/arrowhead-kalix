@@ -1,6 +1,6 @@
 package se.arkalix.internal.net.http;
 
-import se.arkalix.http.HttpPeer;
+import se.arkalix.net.http.HttpPeer;
 import se.arkalix.util.annotation.Internal;
 
 import javax.net.ssl.SSLEngine;

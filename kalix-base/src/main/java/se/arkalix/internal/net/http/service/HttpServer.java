@@ -7,7 +7,7 @@ import se.arkalix.description.ServiceDescription;
 import se.arkalix.internal.ArServer;
 import se.arkalix.internal.net.NettyBootstraps;
 import se.arkalix.internal.plugin.PluginNotifier;
-import se.arkalix.http.service.HttpService;
+import se.arkalix.net.http.service.HttpService;
 import se.arkalix.util.Result;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;

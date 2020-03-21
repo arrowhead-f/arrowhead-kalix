@@ -1,9 +1,9 @@
 package se.arkalix.example;
 
 import se.arkalix.dto.DtoEncoding;
-import se.arkalix.http.HttpMethod;
-import se.arkalix.http.client.HttpClient;
-import se.arkalix.http.client.HttpClientRequest;
+import se.arkalix.net.http.HttpMethod;
+import se.arkalix.net.http.client.HttpClient;
+import se.arkalix.net.http.client.HttpClientRequest;
 import se.arkalix.security.X509KeyStore;
 import se.arkalix.security.X509TrustStore;
 import se.arkalix.util.concurrent.FutureScheduler;

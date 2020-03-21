@@ -1,8 +1,8 @@
 package se.arkalix.internal.net.http.service;
 
-import se.arkalix.http.service.HttpCatcher;
-import se.arkalix.http.service.HttpRoute;
-import se.arkalix.http.service.HttpValidator;
+import se.arkalix.net.http.service.HttpCatcher;
+import se.arkalix.net.http.service.HttpRoute;
+import se.arkalix.net.http.service.HttpValidator;
 import se.arkalix.util.annotation.Internal;
 
 import java.util.ArrayList;

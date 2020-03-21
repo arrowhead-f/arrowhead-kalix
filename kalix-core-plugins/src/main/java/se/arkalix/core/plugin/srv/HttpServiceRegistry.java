@@ -2,10 +2,10 @@ package se.arkalix.core.plugin.srv;
 
 import se.arkalix.core.plugin.srv.dto.ServiceRegistrationDto;
 import se.arkalix.dto.DtoEncoding;
-import se.arkalix.http.HttpMethod;
-import se.arkalix.http.client.HttpClient;
-import se.arkalix.http.client.HttpClientRequest;
-import se.arkalix.http.client.HttpClientResponseException;
+import se.arkalix.net.http.HttpMethod;
+import se.arkalix.net.http.client.HttpClient;
+import se.arkalix.net.http.client.HttpClientRequest;
+import se.arkalix.net.http.client.HttpClientResponseException;
 import se.arkalix.util.concurrent.Future;
 
 import java.net.InetSocketAddress;
@@ -53,7 +53,11 @@ public class HttpServiceRegistry implements ArServiceRegistry {
     }
 
     @Override
-    public Future<?> unregister(final String serviceName, final String systemName, final InetSocketAddress systemSocketAddress) {
+    public Future<?> unregister(
+        final String serviceName,
+        final String systemName,
+        final InetSocketAddress systemSocketAddress)
+    {
         return client
             .send(remoteSocketAddress, new HttpClientRequest()
                 .method(HttpMethod.DELETE)

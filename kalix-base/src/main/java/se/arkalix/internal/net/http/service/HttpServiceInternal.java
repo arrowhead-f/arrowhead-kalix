@@ -3,8 +3,8 @@ package se.arkalix.internal.net.http.service;
 import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.http.HttpStatus;
-import se.arkalix.http.service.*;
+import se.arkalix.net.http.HttpStatus;
+import se.arkalix.net.http.service.*;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;
 
