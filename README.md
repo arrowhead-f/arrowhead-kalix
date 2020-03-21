@@ -1,4 +1,4 @@
-![ar:kalix](https://raw.githubusercontent.com/emanuelpalm/arrowhead-kalix-website/master/images/logo.svg)
+![ar:kalix](docs/logo.svg)
 
 # The Arrowhead Kalix Libraries
 
