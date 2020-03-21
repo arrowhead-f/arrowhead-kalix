@@ -167,14 +167,14 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
     }
 
     @Override
-    public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) throws Exception {
+    public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) {
         if (evt instanceof IdleStateEvent) {
             final var idleStateEvent = (IdleStateEvent) evt;
             if (idleStateEvent.state() == IdleState.READER_IDLE) {
                 if (body != null) {
-                    body.abort(new HttpServiceRequestException(HttpStatus.REQUEST_TIMEOUT, "Request body timed out"));
+                    body.abort(new HttpServiceRequestException(HttpStatus.REQUEST_TIMEOUT));
+                    sendErrorAndCleanup(ctx, HttpResponseStatus.REQUEST_TIMEOUT, false);
                 }
-                sendErrorAndCleanup(ctx, HttpResponseStatus.REQUEST_TIMEOUT, false);
             }
             ctx.close();
         }
@@ -190,13 +190,13 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
             ? request.protocolVersion()
             : HttpVersion.HTTP_1_1;
 
+        headers = new DefaultHttpHeaders(false)
+            .add("content-length", "0");
+
         if (keepAlive) {
-            headers = new DefaultHttpHeaders(false);
             HttpUtil.setKeepAlive(headers, version, true);
         }
-        else {
-            headers = EmptyHttpHeaders.INSTANCE;
-        }
+
         final var future = ctx.writeAndFlush(new DefaultFullHttpResponse(
             version, status, Unpooled.EMPTY_BUFFER, headers, EmptyHttpHeaders.INSTANCE));
 

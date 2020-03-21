@@ -16,13 +16,23 @@ public class HttpServiceRequestException extends RuntimeException {
     private final HttpStatus status;
 
     /**
+     * Creates new HTTP request exception with given HTTP status.
+     *
+     * @param status HTTP status.
+     */
+    public HttpServiceRequestException(final HttpStatus status) {
+        super(status.text(), null, true, false); // Disable stack trace.
+        this.status = status;
+    }
+
+    /**
      * Creates new HTTP request exception with given HTTP status and message.
      *
      * @param status  HTTP status.
      * @param message Human-readable description of issue.
      */
     public HttpServiceRequestException(final HttpStatus status, final String message) {
-        super(message, null, true, false); // Disable stack trace.
+        super(status + " " + message, null, true, false); // Disable stack trace.
         this.status = status;
     }
 
@@ -31,10 +41,5 @@ public class HttpServiceRequestException extends RuntimeException {
      */
     public HttpStatus status() {
         return status;
-    }
-
-    @Override
-    public String getMessage() {
-        return status + " " + super.getMessage();
     }
 }

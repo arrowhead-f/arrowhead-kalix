@@ -132,20 +132,18 @@ public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandle
     public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) {
         if (evt instanceof IdleStateEvent) {
             final var idleStateEvent = (IdleStateEvent) evt;
-            handled:
             if (idleStateEvent.state() == IdleState.READER_IDLE) {
                 if (futureConnection != null) {
                     futureConnection.setResult(Result.failure(new HttpClientConnectionException("Timeout exceeded")));
-                    break handled;
                 }
-                final var exception = new HttpClientResponseException("Incoming response body timed out");
-                if (body != null) {
-                    body.abort(exception);
-                    break handled;
-                }
-                if(!connection.onResponseResult(Result.failure(exception))) {
-                    // TODO: Someone should receive this exception.
-                    exception.printStackTrace();
+                else {
+                    final var exception = new HttpClientResponseException("Incoming response body timed out");
+                    if (body != null) {
+                        body.abort(exception);
+                    }
+                    else {
+                        connection.onResponseResult(Result.failure(exception));
+                    }
                 }
             }
             ctx.close();
