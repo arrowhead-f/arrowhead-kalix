@@ -1,1 +1,1 @@
-include ':kalix-base', ':kalix-core-plugins', ':kalix-example', ':kalix-processors'
+include ':kalix-base', ':kalix-core-plugins', ':kalix-processors'

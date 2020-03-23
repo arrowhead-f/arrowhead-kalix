@@ -11,35 +11,15 @@ allprojects {
 }
 
 subprojects {
+    apply plugin: 'maven-publish'
+    apply plugin: 'signing'
+
     group = 'se.arkalix'
     version = '0.1.0'
 
     tasks.withType(JavaCompile) {
         sourceCompatibility = '11'
         targetCompatibility = '11'
-    }
-}
-
-configure([
-        project(':kalix-base'),
-        project(':kalix-core-plugins'),
-        project(':kalix-processors')
-]) {
-    apply plugin: 'maven-publish'
-    apply plugin: 'signing'
-
-    afterEvaluate {
-        java {
-            withJavadocJar()
-            withSourcesJar()
-        }
-        publishing {
-            publications {
-                mavenJava(MavenPublication) {
-                    from components.java
-                }
-            }
-        }
     }
 
     publishing {
@@ -87,15 +67,25 @@ configure([
     }
 
     afterEvaluate {
+        java {
+            withJavadocJar()
+            withSourcesJar()
+        }
         javadoc {
             if (JavaVersion.current().isJava9Compatible()) {
                 options.addBooleanOption('html5', true)
             }
             exclude '**/internal/**'
         }
-
         sourcesJar {
             exclude '**/internal/**'
+        }
+        publishing {
+            publications {
+                mavenJava(MavenPublication) {
+                    from components.java
+                }
+            }
         }
     }
 }
@@ -112,7 +102,7 @@ gradle.taskGraph.whenReady { taskGraph ->
 
         console.printf("PGP Key Id: %s\n", keyId)
         console.printf("PGP Secret Key Ring File: %s\n", file)
-        console.printf("PGP Private Key Password: ***\n\n")
+        console.printf("PGP Private Key Password: %s\n\n", password != null ? "***" : "-")
 
         allprojects {
             ext."signing.keyId" = keyId
