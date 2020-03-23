@@ -5,10 +5,8 @@ import se.arkalix.internal.ArServer;
 import se.arkalix.internal.ArServerRegistry;
 import se.arkalix.internal.plugin.PluginNotifier;
 import se.arkalix.plugin.Plugin;
-import se.arkalix.security.X509ArrowheadName;
-import se.arkalix.security.X509Certificates;
-import se.arkalix.security.X509KeyStore;
-import se.arkalix.security.X509TrustStore;
+import se.arkalix.security.identity.ArKeyStore;
+import se.arkalix.security.identity.ArTrustStore;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.concurrent.FutureScheduler;
 import se.arkalix.util.concurrent.FutureSchedulerShutdownListener;
@@ -28,8 +26,8 @@ public class ArSystem {
     private final String name;
     private final AtomicReference<InetSocketAddress> localSocketAddress = new AtomicReference<>();
     private final boolean isSecure;
-    private final X509KeyStore keyStore;
-    private final X509TrustStore trustStore;
+    private final ArKeyStore keyStore;
+    private final ArTrustStore trustStore;
     private final FutureScheduler scheduler;
     private final FutureSchedulerShutdownListener schedulerShutdownListener;
     private final PluginNotifier pluginNotifier;
@@ -39,7 +37,6 @@ public class ArSystem {
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 
     private ArSystem(final Builder builder) {
-        var name = builder.name;
         localSocketAddress.setPlain(Objects.requireNonNullElseGet(builder.socketAddress, () ->
             new InetSocketAddress(0)));
 
@@ -52,21 +49,13 @@ public class ArSystem {
             keyStore = builder.keyStore;
             trustStore = builder.trustStore;
 
-            final var arrowheadName = X509Certificates.subjectArrowheadNameOf(keyStore.certificate());
-            if (arrowheadName.isEmpty()) {
-                throw new IllegalArgumentException("No subject common name " +
-                    "in keyStore certificate; required to determine system " +
-                    "name");
+            final var name0 = keyStore.certificate().name();
+            if (builder.name != null && !Objects.equals(builder.name, name0)) {
+                throw new IllegalArgumentException("Expected name either " +
+                    "not be provided or to match keyStore certificate name; " +
+                    "\"" + builder.name + "\" != \"" + name0 + "\"");
             }
-            final var arrowheadName0 = arrowheadName.get();
-            final var systemName = arrowheadName0.system();
-            if (systemName.isEmpty()) {
-                throw new IllegalArgumentException("No Arrowhead system " +
-                    "name in keyStore certificate common name \"" +
-                    arrowheadName0 + "\"; that name must match " +
-                    "`<system>.<cloud>.<company>.arrowhead.eu`");
-            }
-            this.name = systemName.get();
+            name = name0;
         }
         else {
             isSecure = false;
@@ -77,11 +66,11 @@ public class ArSystem {
             keyStore = null;
             trustStore = null;
 
-            if (name == null || name.length() == 0) {
+            if (builder.name == null || builder.name.length() == 0) {
                 throw new IllegalArgumentException("Expected name; required " +
                     "in insecure mode");
             }
-            this.name = name;
+            name = builder.name;
         }
 
         scheduler = builder.scheduler != null
@@ -139,7 +128,7 @@ public class ArSystem {
      * @throws UnsupportedOperationException If this system is not running in
      *                                       secure mode.
      */
-    public final X509KeyStore keyStore() {
+    public final ArKeyStore keyStore() {
         if (!isSecure) {
             throw new UnsupportedOperationException("System \"" + name() + "\" not in secure mode");
         }
@@ -151,7 +140,7 @@ public class ArSystem {
      * @throws UnsupportedOperationException If this system is not running in
      *                                       secure mode.
      */
-    public final X509TrustStore trustStore() {
+    public final ArTrustStore trustStore() {
         if (!isSecure) {
             throw new UnsupportedOperationException("System \"" + name() + "\" not in secure mode");
         }
@@ -274,8 +263,8 @@ public class ArSystem {
     public static class Builder {
         private String name;
         private InetSocketAddress socketAddress;
-        private X509KeyStore keyStore;
-        private X509TrustStore trustStore;
+        private ArKeyStore keyStore;
+        private ArTrustStore trustStore;
         private boolean isSecure = true;
         private List<Plugin> plugins;
         private FutureScheduler scheduler;
@@ -290,15 +279,17 @@ public class ArSystem {
          * "system1" or not be set at all. Note that the Arrowhead standard
          * demands that the common name is a dot-separated hierarchical name.
          * If not set, then the least significant part of the certificate
-         * provided via {@link #keyStore(X509KeyStore)} is used as name.
+         * provided via {@link #keyStore(ArKeyStore)} is used as name.
          * <p>
          * If not running in secure mode, the name must be specified
          * explicitly. Avoid picking names that contain whitespace or anything
-         * but alphanumeric ASCII characters and dashes.
+         * but alphanumeric ASCII characters and dashes, as mandated for DNS
+         * names by RFC 1035, Section 2.3.1.
          *
          * @param name Name of this system.
          * @return This builder.
-         * @see X509ArrowheadName More about Arrowhead certifiate names
+         * @see se.arkalix.security.identity.ArCertificate More about Arrowhead certifiate names
+         * @see <a href="https://tools.ietf.org/html/rfc1035#section-2.3.1">RFC 1035, Section 2.3.1</a>
          */
         public Builder name(final String name) {
             this.name = name;
@@ -424,7 +415,7 @@ public class ArSystem {
          * @param keyStore Key store to use.
          * @return This builder.
          */
-        public final Builder keyStore(final X509KeyStore keyStore) {
+        public final Builder keyStore(final ArKeyStore keyStore) {
             this.keyStore = keyStore;
             return this;
         }
@@ -440,7 +431,7 @@ public class ArSystem {
          * @param trustStore Trust store to use.
          * @return This builder.
          */
-        public final Builder trustStore(final X509TrustStore trustStore) {
+        public final Builder trustStore(final ArTrustStore trustStore) {
             this.trustStore = trustStore;
             return this;
         }
@@ -453,8 +444,8 @@ public class ArSystem {
          * most kinds of production scenarios.
          * <p>
          * It is an error to provide a key store or a trust store via
-         * {@link #keyStore(X509KeyStore)} or
-         * {@link #trustStore(X509TrustStore)} if insecure mode is enabled.
+         * {@link #keyStore(ArKeyStore)} or
+         * {@link #trustStore(ArTrustStore)} if insecure mode is enabled.
          *
          * @return This builder.
          */

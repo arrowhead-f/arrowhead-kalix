@@ -8,7 +8,7 @@ import java.util.Optional;
 /**
  * Names a type of message payload encoding.
  */
-public class EncodingDescriptor {
+public final class EncodingDescriptor {
     private final String name;
     private final DtoEncoding dtoEncoding;
 
@@ -18,8 +18,8 @@ public class EncodingDescriptor {
     }
 
     /**
-     * Either acquires a cached encoding descriptor matching the given name or
-     * creates a new one.
+     * Either acquires a cached encoding descriptor matching the given name, or
+     * creates a new descriptor.
      *
      * @param name Desired encoding descriptor name.
      * @return New or existing encoding descriptor.

@@ -1,7 +1,7 @@
 package se.arkalix.description;
 
+import se.arkalix.descriptor.AccessDescriptor;
 import se.arkalix.descriptor.InterfaceDescriptor;
-import se.arkalix.descriptor.SecurityDescriptor;
 
 import java.util.Collections;
 import java.util.List;
@@ -15,7 +15,7 @@ public class ServiceDescription {
     private final String name;
     private final SystemDescription provider;
     private final String qualifier;
-    private final SecurityDescriptor security;
+    private final AccessDescriptor security;
     private final Map<String, String> metadata;
     private final int version;
     private final List<InterfaceDescriptor> supportedInterfaces;
@@ -67,7 +67,7 @@ public class ServiceDescription {
      * @return Security schema used to authenticate and authorize service
      * users.
      */
-    public SecurityDescriptor security() {
+    public AccessDescriptor security() {
         return security;
     }
 
@@ -102,7 +102,7 @@ public class ServiceDescription {
         private SystemDescription provider;
         private List<InterfaceDescriptor> supportedInterfaces;
         private String qualifier;
-        private SecurityDescriptor security;
+        private AccessDescriptor security;
         private Map<String, String> metadata;
         private int version;
 
@@ -146,7 +146,7 @@ public class ServiceDescription {
          * @param security Security descriptor.
          * @return This builder.
          */
-        public Builder security(final SecurityDescriptor security) {
+        public Builder security(final AccessDescriptor security) {
             this.security = security;
             return this;
         }

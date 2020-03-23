@@ -1,57 +1,59 @@
-package se.arkalix.security;
+package se.arkalix.security.identity;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.Base64;
 import java.util.Collections;
+import java.util.Objects;
 
 /**
- * Holds the x.509 certificates and private key required to manage an
- * <i>owned</i> identity.
+ * Holds the Arrowhead certificate and private key required to manage an
+ * <i>owned</i> system or operator identity.
+ * <p>
+ * Instances of this class are guaranteed to only hold x.509 certificates
+ * complying to the Arrowhead certificate {@link ArCertificate naming
+ * conventions}.
  *
  * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
  */
-public class X509KeyStore {
-    private final X509Certificate[] certificateChain;
+public class ArKeyStore {
+    private final ArCertificate certificate;
     private final PrivateKey privateKey;
 
     /**
-     * Creates new x.509 key store from provided certificates and private key.
+     * Creates new Arrowhead key store from provided Arrowhead certificate and
+     * private key.
+     * <p>
+     * An Arrowhead certificate is a x.509 certificate with certain naming
+     * requirements, as described {@link ArCertificate here}.
      *
-     * @param certificateChain Certificate chain establishing the credibility
-     *                         of the certificate at index 0 of the array,
-     *                         which must be associated with given
-     *                         {@code privateKey}.
-     * @param privateKey       Private key associated with certificate at index
-     *                         0 in {@code certificateChain}.
+     * @param certificate Arrowhead certificate associated with given {@code
+     *                    privateKey}.
+     * @param privateKey  Private key associated with {@code certificate}.
      * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      */
-    public X509KeyStore(final X509Certificate[] certificateChain, final PrivateKey privateKey) {
-        if (certificateChain.length < 1) {
-            throw new IllegalArgumentException("Empty certificateChain");
-        }
-        this.certificateChain = certificateChain;
-        this.privateKey = privateKey;
+    public ArKeyStore(final ArCertificate certificate, final PrivateKey privateKey) {
+        this.certificate = Objects.requireNonNull(certificate, "Expected certificate");
+        this.privateKey = Objects.requireNonNull(privateKey, "Expected privateKey");
     }
 
     /**
-     * @return Cloned chain of certificates, signing each other to form a chain
-     * ending with the certificate at index 0.
+     * @return Copy of the x.509 certificate chain held by the certificate
+     * contained in this key store.
      * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      */
     public X509Certificate[] certificateChain() {
-        return certificateChain.clone();
+        return certificate.toX509CertificateChain();
     }
 
     /**
-     * @return Owned certificate.
+     * @return Key store certificate.
      * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      */
-    public X509Certificate certificate() {
-        return certificateChain[0];
+    public ArCertificate certificate() {
+        return certificate;
     }
 
     /**
@@ -66,31 +68,12 @@ public class X509KeyStore {
      * @return Public key associated with certificate returned by
      * {@link #certificate()}.
      */
-    public PublicKey publicKey() {
-        return certificate().getPublicKey();
+    public ArPublicKey publicKey() {
+        return certificate().publicKey();
     }
 
     /**
-     * @return X.690 DER encoded byte array of public key associated with the
-     * certificate returned by {@link #certificate()}.
-     * @see <a href="https://www.itu.int/rec/T-REC-X.690-201508-I/en">X.690 : Information technology - ASN.1 encoding rules: Specification of Basic Encoding Rules (BER), Canonical Encoding Rules (CER) and Distinguished Encoding Rules (DER)</a>
-     */
-    public byte[] publicKeyDer() {
-        return publicKey().getEncoded();
-    }
-
-    /**
-     * @return Base64 representation of the X.690 DER encoded public key
-     * associated with the certificate returned by {@link #certificate()}.
-     * @see <a href="https://tools.ietf.org/html/rfc4648#section-4">RFC 4648, Section 4</a>
-     * @see <a href="https://www.itu.int/rec/T-REC-X.690-201508-I/en">X.690 : Information technology - ASN.1 encoding rules: Specification of Basic Encoding Rules (BER), Canonical Encoding Rules (CER) and Distinguished Encoding Rules (DER)</a>
-     */
-    public String publicKeyBase64() {
-        return Base64.getEncoder().encodeToString(publicKeyDer());
-    }
-
-    /**
-     * Helper class useful for creating {@link X509KeyStore} instances.
+     * Helper class useful for creating {@link ArKeyStore} instances.
      */
     public static final class Loader {
         private KeyStore keyStore;
@@ -170,7 +153,7 @@ public class X509KeyStore {
         /**
          * Uses provided details to load key store and extract a certificate
          * chain, certificate and private key, and then uses these to create a
-         * new {@link X509KeyStore} instance.
+         * new {@link ArKeyStore} instance.
          *
          * @return Loaded x.509 key store instance.
          * @throws GeneralSecurityException If the key store does not contain
@@ -186,7 +169,7 @@ public class X509KeyStore {
          *                                  read.
          * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
          */
-        public X509KeyStore load() throws GeneralSecurityException, IOException {
+        public ArKeyStore load() throws GeneralSecurityException, IOException {
             if (keyStore == null && keyStorePath == null) {
                 throw new NullPointerException("Expected keyStore or keyStorePath");
             }
@@ -245,14 +228,13 @@ public class X509KeyStore {
                 x509chain[i] = (X509Certificate) chain[i];
             }
 
-            return new X509KeyStore(x509chain, privateKeyEntry.getPrivateKey());
+            return new ArKeyStore(ArCertificate.from(x509chain), privateKeyEntry.getPrivateKey());
         }
 
         private KeyStoreException certificateNotPermitted(final Certificate certificate) {
             return new KeyStoreException("Only x.509 certificates are " +
-                "permitted in X509KeyStore instances; the following" +
-                "certificate does not comply with that specification: " +
-                certificate);
+                "permitted in ArKeyStore instances; the following " +
+                "certificate is of some other type: " + certificate);
         }
     }
 }

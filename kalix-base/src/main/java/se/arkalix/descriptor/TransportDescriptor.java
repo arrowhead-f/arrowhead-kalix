@@ -3,9 +3,9 @@ package se.arkalix.descriptor;
 import java.util.Objects;
 
 /**
- * Describes an application-level transport protocol.
+ * Names an application-level transport protocol.
  */
-public class TransportDescriptor {
+public final class TransportDescriptor {
     private final String name;
 
     private TransportDescriptor(final String name) {
@@ -13,8 +13,8 @@ public class TransportDescriptor {
     }
 
     /**
-     * Either acquires a cached transport descriptor matching the given name or
-     * creates a new one.
+     * Either acquires a cached transport descriptor matching the given name,
+     * or creates a new descriptor.
      *
      * @param name  Desired transport descriptor name.
      * @return New or existing transport descriptor.

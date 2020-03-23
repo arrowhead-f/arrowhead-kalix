@@ -3,7 +3,6 @@ package se.arkalix.core.plugin.srv;
 import se.arkalix.core.plugin.srv.dto.ServiceRegistrationBuilder;
 import se.arkalix.core.plugin.srv.dto.SystemDefinitionBuilder;
 import se.arkalix.description.ServiceDescription;
-import se.arkalix.description.SystemDescription;
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.ArSystem;
 import se.arkalix.net.http.HttpStatus;
@@ -59,7 +58,7 @@ public class HttpServiceRegistrationPlugin implements Plugin {
                 .hostname(system.localAddress().getHostAddress())
                 .port(system.localPort())
                 .publicKeyBase64(system.isSecure()
-                    ? system.keyStore().publicKeyBase64()
+                    ? system.keyStore().publicKey().toBase64()
                     : null)
                 .build())
             .qualifier(service.qualifier())

@@ -6,11 +6,11 @@ import se.arkalix.description.ServiceDescription;
 import se.arkalix.description.SystemDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.InterfaceDescriptor;
-import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
 import se.arkalix.internal.ArServerRegistry;
 import se.arkalix.internal.net.http.service.HttpServer;
 import se.arkalix.net.http.HttpMethod;
+import se.arkalix.security.access.AccessPolicy;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -33,7 +33,7 @@ public final class HttpService implements ArService {
     private String name;
     private String basePath;
     private List<EncodingDescriptor> encodings;
-    private SecurityDescriptor security;
+    private AccessPolicy accessPolicy;
     private Map<String, String> metadata;
     private int version = 0;
 
@@ -107,21 +107,15 @@ public final class HttpService implements ArService {
     }
 
     /**
-     * Declares what security mode this service is to use. <b>Must be
-     * specified.</b>
-     * <p>
-     * Note that it is typically an error to specify
-     * {@link SecurityDescriptor#NOT_SECURE NOT_SECURE} if the
-     * {@link ArSystem system} that is to run the service is running in secure
-     * mode. The opposite is also the case. If the system is running in
-     * insecure mode, then {@link SecurityDescriptor#NOT_SECURE NOT_SECURE}
-     * should be specified here.
+     * Declares what access policy this service is to use. Unless the service
+     * is provided by a system running in insecure mode, an access policy
+     * <b>must be specified.</b>
      *
-     * @param security Desired security mode.
+     * @param accessPolicy Desired access policy.
      * @return This service.
      */
-    public HttpService security(final SecurityDescriptor security) {
-        this.security = security;
+    public HttpService accessPolicy(final AccessPolicy accessPolicy) {
+        this.accessPolicy = accessPolicy;
         return this;
     }
 
@@ -809,10 +803,10 @@ public final class HttpService implements ArService {
 
     /**
      * @return Currently set security mode.
-     * @see #security(SecurityDescriptor)
+     * @see #accessPolicy(AccessPolicy)
      */
-    public Optional<SecurityDescriptor> security() {
-        return Optional.ofNullable(security);
+    public Optional<AccessPolicy> accessPolicy() {
+        return Optional.ofNullable(accessPolicy);
     }
 
     /**
@@ -837,11 +831,9 @@ public final class HttpService implements ArService {
         final var isSecure = system.isSecure();
         return new ServiceDescription.Builder()
             .name(name)
-            .provider(new SystemDescription(system.name(), system.localSocketAddress(), isSecure
-                ? system.keyStore().publicKey()
-                : null))
+            .provider(new SystemDescription(system.keyStore().certificate(), system.localSocketAddress()))
             .qualifier(basePath)
-            .security(security)
+            .security(accessPolicy.descriptor())
             .metadata(metadata != null ? metadata : Collections.emptyMap())
             .version(version)
             .supportedInterfaces(encodings.stream()

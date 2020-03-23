@@ -4,8 +4,8 @@ import se.arkalix.ArSystem;
 import se.arkalix.internal.net.NettyBootstraps;
 import se.arkalix.internal.net.http.client.FutureHttpClientConnection;
 import se.arkalix.internal.net.http.client.NettyHttpClientConnectionInitializer;
-import se.arkalix.security.X509KeyStore;
-import se.arkalix.security.X509TrustStore;
+import se.arkalix.security.identity.ArKeyStore;
+import se.arkalix.security.identity.ArTrustStore;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.concurrent.FutureScheduler;
 import io.netty.bootstrap.Bootstrap;
@@ -44,7 +44,7 @@ public class HttpClient {
         }
         else {
             final var sslContextBuilder = SslContextBuilder.forClient()
-                .trustManager(builder.trustStore != null ? builder.trustStore.certificates() : null)
+                .trustManager(builder.trustStore != null ? builder.trustStore.toX509CertificateArray() : null)
                 .startTls(false);
 
             if (builder.keyStore != null) {
@@ -160,8 +160,8 @@ public class HttpClient {
      */
     public static class Builder {
         private InetSocketAddress localSocketAddress;
-        private X509KeyStore keyStore;
-        private X509TrustStore trustStore;
+        private ArKeyStore keyStore;
+        private ArTrustStore trustStore;
         private boolean isInsecure = false;
         private FutureScheduler scheduler;
 
@@ -190,7 +190,7 @@ public class HttpClient {
          * @param keyStore Key store to use.
          * @return This builder.
          */
-        public final Builder keyStore(final X509KeyStore keyStore) {
+        public final Builder keyStore(final ArKeyStore keyStore) {
             this.keyStore = keyStore;
             return this;
         }
@@ -205,7 +205,7 @@ public class HttpClient {
          * @param trustStore Trust store to use.
          * @return This builder.
          */
-        public final Builder trustStore(final X509TrustStore trustStore) {
+        public final Builder trustStore(final ArTrustStore trustStore) {
             this.trustStore = trustStore;
             return this;
         }

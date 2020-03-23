@@ -1,7 +1,8 @@
 package se.arkalix.description;
 
+import se.arkalix.security.identity.ArCertificate;
+
 import java.net.InetSocketAddress;
-import java.security.PublicKey;
 import java.util.Objects;
 
 /**
@@ -9,26 +10,39 @@ import java.util.Objects;
  * contacted.
  */
 public class SystemDescription {
+    private final ArCertificate certificate;
     private final String name;
     private final InetSocketAddress remoteSocketAddress;
-    private final PublicKey publicKey;
 
     /**
      * Creates new Arrowhead system description.
      *
+     * @param certificate         System certificate.
+     * @param remoteSocketAddress IP-address/hostname and port through which
+     *                            the system can be contacted.
+     */
+    public SystemDescription(final ArCertificate certificate, final InetSocketAddress remoteSocketAddress) {
+        this.certificate = Objects.requireNonNull(certificate, "Expected certificate");
+        this.remoteSocketAddress = Objects.requireNonNull(remoteSocketAddress, "Expected remoteSocketAddress");
+
+        name = certificate.name();
+    }
+
+    /**
+     * Creates new Arrowhead system description.
+     * <p>
+     * This constructor is meant to be used only if the system invoking it is
+     * running in insecure mode.
+     *
      * @param name                System name.
      * @param remoteSocketAddress IP-address/hostname and port through which
      *                            the system can be contacted.
-     * @param publicKey           System public key.
      */
-    public SystemDescription(
-        final String name,
-        final InetSocketAddress remoteSocketAddress,
-        final PublicKey publicKey)
-    {
+    public SystemDescription(final String name, final InetSocketAddress remoteSocketAddress) {
         this.name = Objects.requireNonNull(name, "Expected name");
         this.remoteSocketAddress = Objects.requireNonNull(remoteSocketAddress, "Expected remoteSocketAddress");
-        this.publicKey = publicKey;
+
+        certificate = null;
     }
 
     /**
@@ -39,24 +53,24 @@ public class SystemDescription {
     }
 
     /**
-     * @return The hostname/port or IP-address/port of the peer.
+     * @return The hostname/port or IP-address/port of the described system.
      */
     public InetSocketAddress remoteSocketAddress() {
         return remoteSocketAddress;
     }
 
     /**
-     * @return System public key.
+     * @return System certificate.
      * @throws UnsupportedOperationException If the system does not have a
      *                                       certificate chain. This will only
      *                                       be the case if the system that
      *                                       retrieved this description runs in
      *                                       the <i>insecure</i> security mode.
      */
-    public PublicKey publicKey() {
-        if (publicKey == null) {
+    public ArCertificate certificate() {
+        if (certificate == null) {
             throw new UnsupportedOperationException("Not in secure mode");
         }
-        return publicKey;
+        return certificate;
     }
 }

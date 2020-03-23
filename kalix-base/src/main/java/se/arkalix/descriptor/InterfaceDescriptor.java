@@ -8,10 +8,12 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
- * Describes an application message protocol, in terms of its transport
- * protocol, security requirements and message payload encoding.
+ * Names a network interface protocol triplet.
+ *
+ * Such a triplet names a transport protocol, indicates whether or not TLS is
+ * required, as well as naming a message payload encoding.
  */
-public class InterfaceDescriptor implements Comparable<InterfaceDescriptor> {
+public final class InterfaceDescriptor implements Comparable<InterfaceDescriptor> {
     private static final Pattern TRIPLET_PATTERN = Pattern.compile("^([0-9A-Z_]+)-(IN)?SECURE-([0-9A-Z_]+)$");
 
     private static final HashMap<TransportDescriptor, List<InterfaceDescriptor>> CACHE;
@@ -56,7 +58,7 @@ public class InterfaceDescriptor implements Comparable<InterfaceDescriptor> {
 
     /**
      * Either acquires a cached interface descriptor matching the given
-     * arguments or creates a new one for them.
+     * arguments, or uses them to create a new descriptor.
      *
      * @param transport Transport descriptor.
      * @param isSecure  Whether transport security is to be used.
