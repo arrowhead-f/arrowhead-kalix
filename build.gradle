@@ -91,6 +91,11 @@ configure([
             if (JavaVersion.current().isJava9Compatible()) {
                 options.addBooleanOption('html5', true)
             }
+            exclude '**/internal/**'
+        }
+
+        sourcesJar {
+            exclude '**/internal/**'
         }
     }
 }
