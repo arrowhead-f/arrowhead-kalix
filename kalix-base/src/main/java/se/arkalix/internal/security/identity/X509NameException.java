@@ -1,4 +1,4 @@
-package se.arkalix.internal.security.identity.x509;
+package se.arkalix.internal.security.identity;
 
 /**
  * Represents the failure to parse an LDAP DN, potentially associated with some

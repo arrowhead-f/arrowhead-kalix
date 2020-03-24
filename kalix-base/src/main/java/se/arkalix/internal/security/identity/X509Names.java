@@ -1,4 +1,4 @@
-package se.arkalix.internal.security.identity.x509;
+package se.arkalix.internal.security.identity;
 
 import se.arkalix.internal.util.charset.Unicode;
 

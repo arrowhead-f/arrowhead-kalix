@@ -13,6 +13,7 @@ import se.arkalix.plugin.Plugin;
 import se.arkalix.util.concurrent.Future;
 
 import java.net.InetSocketAddress;
+import java.util.Base64;
 import java.util.Objects;
 
 /**
@@ -58,7 +59,7 @@ public class HttpServiceRegistrationPlugin implements Plugin {
                 .hostname(system.localAddress().getHostAddress())
                 .port(system.localPort())
                 .publicKeyBase64(system.isSecure()
-                    ? system.keyStore().publicKey().toBase64()
+                    ? Base64.getEncoder().encodeToString(system.keyStore().systemPublicKey().getEncoded())
                     : null)
                 .build())
             .qualifier(service.qualifier())

@@ -4,7 +4,7 @@ import se.arkalix.ArSystem;
 import se.arkalix.internal.net.NettyBootstraps;
 import se.arkalix.internal.net.http.client.FutureHttpClientConnection;
 import se.arkalix.internal.net.http.client.NettyHttpClientConnectionInitializer;
-import se.arkalix.security.identity.ArKeyStore;
+import se.arkalix.security.identity.ArSystemKeyStore;
 import se.arkalix.security.identity.ArTrustStore;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.concurrent.FutureScheduler;
@@ -44,12 +44,12 @@ public class HttpClient {
         }
         else {
             final var sslContextBuilder = SslContextBuilder.forClient()
-                .trustManager(builder.trustStore != null ? builder.trustStore.toX509CertificateArray() : null)
+                .trustManager(builder.trustStore != null ? builder.trustStore.certificates() : null)
                 .startTls(false);
 
             if (builder.keyStore != null) {
                 sslContextBuilder
-                    .keyManager(builder.keyStore.privateKey(), builder.keyStore.certificateChain())
+                    .keyManager(builder.keyStore.privateKey(), builder.keyStore.systemChain())
                     .clientAuth(ClientAuth.REQUIRE);
             }
             sslContext = sslContextBuilder.build();
@@ -160,7 +160,7 @@ public class HttpClient {
      */
     public static class Builder {
         private InetSocketAddress localSocketAddress;
-        private ArKeyStore keyStore;
+        private ArSystemKeyStore keyStore;
         private ArTrustStore trustStore;
         private boolean isInsecure = false;
         private FutureScheduler scheduler;
@@ -190,7 +190,7 @@ public class HttpClient {
          * @param keyStore Key store to use.
          * @return This builder.
          */
-        public final Builder keyStore(final ArKeyStore keyStore) {
+        public final Builder keyStore(final ArSystemKeyStore keyStore) {
             this.keyStore = keyStore;
             return this;
         }

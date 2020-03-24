@@ -3,7 +3,7 @@ package se.arkalix.security;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import se.arkalix.internal.security.identity.x509.X509Names;
+import se.arkalix.internal.security.identity.X509Names;
 
 import java.util.stream.Stream;
 

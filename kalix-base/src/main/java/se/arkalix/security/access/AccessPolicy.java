@@ -1,8 +1,6 @@
 package se.arkalix.security.access;
 
-import se.arkalix.description.ServiceDescription;
-import se.arkalix.description.SystemDescription;
-import se.arkalix.descriptor.AccessDescriptor;
+import se.arkalix.descriptor.SecurityDescriptor;
 
 /**
  * An access control policy.
@@ -17,21 +15,7 @@ import se.arkalix.descriptor.AccessDescriptor;
  */
 public interface AccessPolicy {
     /**
-     * @return Access control descriptor.
+     * @return Security policy descriptor.
      */
-    AccessDescriptor descriptor();
-
-    /**
-     * Determines whether or not the described {@code system} may consume the
-     * described {@code service} using the given access {@code token}, if any.
-     *
-     * @param system  Description of system attempting to consume
-     *                {@code service}.
-     * @param service Description of service that {@code system} attempts to
-     *                consume.
-     * @param token   Access token presented by {@code system}, if any.
-     * @return {@code true} only if {@code system} is permitted to consume
-     * {@code service}.
-     */
-    boolean isAuthorized(SystemDescription system, ServiceDescription service, byte[] token);
+    SecurityDescriptor security();
 }

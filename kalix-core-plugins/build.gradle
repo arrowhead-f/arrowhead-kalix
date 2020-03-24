@@ -3,6 +3,9 @@ plugins {
 }
 
 ext {
+    name = 'Arrowhead Kalix: Core Service Plugins'
+    description = 'Kalix plugins for integration against the Arrowhead Framework core services.'
+
     versionJunitJupiter = '5.6.0'
 }
 
@@ -17,16 +20,5 @@ test {
     useJUnitPlatform()
     testLogging {
         events 'FAILED', 'SKIPPED'
-    }
-}
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            pom {
-                name = 'Arrowhead Kalix: Core Service Plugins'
-                description = 'Kalix plugins for integration against the Arrowhead Framework core services.'
-            }
-        }
     }
 }

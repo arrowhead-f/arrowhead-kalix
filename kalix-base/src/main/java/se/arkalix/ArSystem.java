@@ -5,7 +5,8 @@ import se.arkalix.internal.ArServer;
 import se.arkalix.internal.ArServerRegistry;
 import se.arkalix.internal.plugin.PluginNotifier;
 import se.arkalix.plugin.Plugin;
-import se.arkalix.security.identity.ArKeyStore;
+import se.arkalix.security.identity.ArSystemCertificateChain;
+import se.arkalix.security.identity.ArSystemKeyStore;
 import se.arkalix.security.identity.ArTrustStore;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.concurrent.FutureScheduler;
@@ -26,7 +27,7 @@ public class ArSystem {
     private final String name;
     private final AtomicReference<InetSocketAddress> localSocketAddress = new AtomicReference<>();
     private final boolean isSecure;
-    private final ArKeyStore keyStore;
+    private final ArSystemKeyStore keyStore;
     private final ArTrustStore trustStore;
     private final FutureScheduler scheduler;
     private final FutureSchedulerShutdownListener schedulerShutdownListener;
@@ -49,11 +50,12 @@ public class ArSystem {
             keyStore = builder.keyStore;
             trustStore = builder.trustStore;
 
-            final var name0 = keyStore.certificate().name();
+            final var name0 = keyStore.systemName();
             if (builder.name != null && !Objects.equals(builder.name, name0)) {
                 throw new IllegalArgumentException("Expected name either " +
-                    "not be provided or to match keyStore certificate name; " +
-                    "\"" + builder.name + "\" != \"" + name0 + "\"");
+                    "not be provided or to match keyStore system " +
+                    "certificate name; \"" + builder.name + "\" != \"" +
+                    name0 + "\"");
             }
             name = name0;
         }
@@ -128,7 +130,7 @@ public class ArSystem {
      * @throws UnsupportedOperationException If this system is not running in
      *                                       secure mode.
      */
-    public final ArKeyStore keyStore() {
+    public final ArSystemKeyStore keyStore() {
         if (!isSecure) {
             throw new UnsupportedOperationException("System \"" + name() + "\" not in secure mode");
         }
@@ -263,7 +265,7 @@ public class ArSystem {
     public static class Builder {
         private String name;
         private InetSocketAddress socketAddress;
-        private ArKeyStore keyStore;
+        private ArSystemKeyStore keyStore;
         private ArTrustStore trustStore;
         private boolean isSecure = true;
         private List<Plugin> plugins;
@@ -279,7 +281,7 @@ public class ArSystem {
          * "system1" or not be set at all. Note that the Arrowhead standard
          * demands that the common name is a dot-separated hierarchical name.
          * If not set, then the least significant part of the certificate
-         * provided via {@link #keyStore(ArKeyStore)} is used as name.
+         * provided via {@link #keyStore(ArSystemKeyStore)} is used as name.
          * <p>
          * If not running in secure mode, the name must be specified
          * explicitly. Avoid picking names that contain whitespace or anything
@@ -288,7 +290,7 @@ public class ArSystem {
          *
          * @param name Name of this system.
          * @return This builder.
-         * @see se.arkalix.security.identity.ArCertificate More about Arrowhead certifiate names
+         * @see ArSystemCertificateChain More about Arrowhead certifiate names
          * @see <a href="https://tools.ietf.org/html/rfc1035#section-2.3.1">RFC 1035, Section 2.3.1</a>
          */
         public Builder name(final String name) {
@@ -415,7 +417,7 @@ public class ArSystem {
          * @param keyStore Key store to use.
          * @return This builder.
          */
-        public final Builder keyStore(final ArKeyStore keyStore) {
+        public final Builder keyStore(final ArSystemKeyStore keyStore) {
             this.keyStore = keyStore;
             return this;
         }
@@ -444,7 +446,7 @@ public class ArSystem {
          * most kinds of production scenarios.
          * <p>
          * It is an error to provide a key store or a trust store via
-         * {@link #keyStore(ArKeyStore)} or
+         * {@link #keyStore(ArSystemKeyStore)} or
          * {@link #trustStore(ArTrustStore)} if insecure mode is enabled.
          *
          * @return This builder.

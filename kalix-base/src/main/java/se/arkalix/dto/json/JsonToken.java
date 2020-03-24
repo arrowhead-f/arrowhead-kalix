@@ -46,58 +46,58 @@ public final class JsonToken {
     }
 
     public BigDecimal readBigDecimal(final BinaryReader source) {
-        return new BigDecimal(readRawString(source));
+        return new BigDecimal(readStringRaw(source));
     }
 
     public BigInteger readBigInteger(final BinaryReader source) {
-        return new BigInteger(readRawString(source));
+        return new BigInteger(readStringRaw(source));
     }
 
     public byte readByte(final BinaryReader source) {
-        return Byte.parseByte(requireNotHex(readRawString(source)));
+        return Byte.parseByte(requireNotHex(readStringRaw(source)));
     }
 
     public double readDouble(final BinaryReader source) {
-        return Double.parseDouble(requireNotHex(readRawString(source)));
+        return Double.parseDouble(requireNotHex(readStringRaw(source)));
     }
 
     public Duration readDuration(final BinaryReader source) {
-        return Duration.parse(readRawString(source));
+        return Duration.parse(readStringRaw(source));
     }
 
     public Duration readDurationNumber(final BinaryReader source) {
-        final var number = Double.parseDouble(readRawString(source));
+        final var number = Double.parseDouble(readStringRaw(source));
         return Duration.ofNanos((long) (number * 1e9));
     }
 
     public float readFloat(final BinaryReader source) {
-        return Float.parseFloat(requireNotHex(readRawString(source)));
+        return Float.parseFloat(requireNotHex(readStringRaw(source)));
     }
 
     public int readInteger(final BinaryReader source) {
-        return Integer.parseInt(requireNotHex(readRawString(source)));
+        return Integer.parseInt(requireNotHex(readStringRaw(source)));
     }
 
     public Instant readInstant(final BinaryReader source) {
-        return Instant.parse(readRawString(source));
+        return Instant.parse(readStringRaw(source));
     }
 
     public Instant readInstantNumber(final BinaryReader source) {
-        final var number = Double.parseDouble(readRawString(source));
+        final var number = Double.parseDouble(readStringRaw(source));
         final long integer = (long) number;
         return Instant.ofEpochSecond(integer, (long) ((number - integer) * 1e9));
     }
 
     public long readLong(final BinaryReader source) {
-        return Long.parseLong(requireNotHex(readRawString(source)));
+        return Long.parseLong(requireNotHex(readStringRaw(source)));
     }
 
     public MonthDay readMonthDay(final BinaryReader source) {
-        return MonthDay.parse(readRawString(source));
+        return MonthDay.parse(readStringRaw(source));
     }
 
     public OffsetDateTime readOffsetDateTime(final BinaryReader source) {
-        return OffsetDateTime.parse(readRawString(source));
+        return OffsetDateTime.parse(readStringRaw(source));
     }
 
     public OffsetDateTime readOffsetDateTimeNumber(final BinaryReader source) {
@@ -105,7 +105,7 @@ public final class JsonToken {
     }
 
     public OffsetTime readOffsetTime(final BinaryReader source) {
-        return OffsetTime.parse(readRawString(source));
+        return OffsetTime.parse(readStringRaw(source));
     }
 
     public OffsetTime readOffsetTimeNumber(final BinaryReader source) {
@@ -113,11 +113,11 @@ public final class JsonToken {
     }
 
     public Period readPeriod(final BinaryReader source) {
-        return Period.parse(readRawString(source));
+        return Period.parse(readStringRaw(source));
     }
 
     public short readShort(final BinaryReader source) {
-        return Short.parseShort(requireNotHex(readRawString(source)));
+        return Short.parseShort(requireNotHex(readStringRaw(source)));
     }
 
     public String readString(final BinaryReader source) throws DtoReadException {
@@ -198,17 +198,23 @@ public final class JsonToken {
         throw new DtoReadException(DtoEncoding.JSON, "Bad escape", badEscapeBuilder.toString(), p0);
     }
 
+    public String readStringRaw(final BinaryReader source) {
+        final var buffer = new byte[length()];
+        source.getBytes(begin, buffer);
+        return new String(buffer, StandardCharsets.ISO_8859_1);
+    }
+
     public Year readYear(final BinaryReader source) {
-        return Year.parse(readRawString(source));
+        return Year.parse(readStringRaw(source));
     }
 
     public Year readYearNumber(final BinaryReader source) {
-        final var number = Double.parseDouble(readRawString(source));
+        final var number = Double.parseDouble(readStringRaw(source));
         return Year.of((int) number);
     }
 
     public YearMonth readYearMonth(final BinaryReader source) {
-        return YearMonth.parse(readRawString(source));
+        return YearMonth.parse(readStringRaw(source));
     }
 
     public ZonedDateTime readZonedDateTimeNumber(final BinaryReader source) {
@@ -216,22 +222,16 @@ public final class JsonToken {
     }
 
     public ZoneId readZoneId(final BinaryReader source) {
-        return ZoneId.of(readRawString(source));
+        return ZoneId.of(readStringRaw(source));
     }
 
     public ZoneOffset readZoneOffset(final BinaryReader source) {
-        return ZoneOffset.of(readRawString(source));
+        return ZoneOffset.of(readStringRaw(source));
     }
 
     public ZoneOffset readZoneOffsetNumber(final BinaryReader source) {
-        final var number = Double.parseDouble(readRawString(source));
+        final var number = Double.parseDouble(readStringRaw(source));
         return ZoneOffset.ofTotalSeconds((int) number);
-    }
-
-    private String readRawString(final BinaryReader source) {
-        final var buffer = new byte[length()];
-        source.getBytes(begin, buffer);
-        return new String(buffer, StandardCharsets.ISO_8859_1);
     }
 
     private static String requireNotHex(final String string) {

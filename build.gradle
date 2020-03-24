@@ -10,104 +10,112 @@ allprojects {
     }
 }
 
-subprojects {
-    apply plugin: 'maven-publish'
-    apply plugin: 'signing'
+// Enable publishing tasks if gradle.properties seems to contain relevant variables.
+def enablePublishing = project.hasProperty("arkalixJiraUsername") ||
+        project.hasProperty("arkalixSigningKeyId");
 
-    group = 'se.arkalix'
-    version = '0.1.0'
+if (enablePublishing) {
+    subprojects {
+        apply plugin: 'maven-publish'
+        apply plugin: 'signing'
 
-    tasks.withType(JavaCompile) {
-        sourceCompatibility = '11'
-        targetCompatibility = '11'
-    }
+        group = 'se.arkalix'
+        version = '0.1.0'
 
-    publishing {
-        repositories {
-            maven {
-                credentials {
-                    // The RHS variables are collected from the user gradle.properties file.
-                    username = arkalixJiraUsername
-                    password = arkalixJiraPassword
-                }
-                def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-                def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
-                url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-            }
+        tasks.withType(JavaCompile) {
+            sourceCompatibility = '11'
+            targetCompatibility = '11'
         }
-        publications {
-            mavenJava(MavenPublication) {
-                pom {
-                    url = 'https://arkalix.se'
-                    licenses {
-                        license {
-                            name = 'The Eclipse Public License, Version 2.0'
-                            url = 'https://www.eclipse.org/legal/epl-2.0/'
-                        }
-                    }
-                    developers {
-                        developer {
-                            id = 'emanuelpalm'
-                            name = 'Emanuel Palm'
-                            email = 'emanuel.palm@arkalix.se'
-                        }
-                    }
-                    scm {
-                        connection = 'scm:git:git://github.com/emanuelpalm/arrowhead-kalix.git'
-                        developerConnection = 'scm:git:ssh://github.com/emanuelpalm/arrowhead-kalix.git'
-                        url = 'http://github.com/emanuelpalm/arrowhead-kalix/'
-                    }
-                }
-            }
-        }
-    }
 
-    signing {
-        sign publishing.publications.mavenJava
-    }
-
-    afterEvaluate {
-        java {
-            withJavadocJar()
-            withSourcesJar()
-        }
-        javadoc {
-            if (JavaVersion.current().isJava9Compatible()) {
-                options.addBooleanOption('html5', true)
-            }
-            exclude '**/internal/**'
-        }
-        sourcesJar {
-            exclude '**/internal/**'
-        }
         publishing {
+            repositories {
+                maven {
+                    credentials {
+                        // The RHS variables are collected from the user gradle.properties file.
+                        username = arkalixJiraUsername
+                        password = arkalixJiraPassword
+                    }
+                    def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+                    def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
+                    url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+                }
+            }
             publications {
                 mavenJava(MavenPublication) {
-                    from components.java
+                    pom {
+                        name = ext.name
+                        description = ext.description
+                        url = 'https://arkalix.se'
+                        licenses {
+                            license {
+                                name = 'The Eclipse Public License, Version 2.0'
+                                url = 'https://www.eclipse.org/legal/epl-2.0/'
+                            }
+                        }
+                        developers {
+                            developer {
+                                id = 'emanuelpalm'
+                                name = 'Emanuel Palm'
+                                email = 'emanuel.palm@arkalix.se'
+                            }
+                        }
+                        scm {
+                            connection = 'scm:git:git://github.com/emanuelpalm/arrowhead-kalix.git'
+                            developerConnection = 'scm:git:ssh://github.com/emanuelpalm/arrowhead-kalix.git'
+                            url = 'http://github.com/emanuelpalm/arrowhead-kalix/'
+                        }
+                    }
+                }
+            }
+        }
+
+        signing {
+            sign publishing.publications.mavenJava
+        }
+
+        afterEvaluate {
+            java {
+                withJavadocJar()
+                withSourcesJar()
+            }
+            javadoc {
+                if (JavaVersion.current().isJava9Compatible()) {
+                    options.addBooleanOption('html5', true)
+                }
+                exclude '**/internal/**'
+            }
+            sourcesJar {
+                exclude '**/internal/**'
+            }
+            publishing {
+                publications {
+                    mavenJava(MavenPublication) {
+                        from components.java
+                    }
                 }
             }
         }
     }
-}
 
-gradle.taskGraph.whenReady { taskGraph ->
-    if (taskGraph.allTasks.any { it instanceof Sign }) {
-        def console = System.console()
-        console.printf("\nSignatures required. Using the following details from gradle.properties:\n")
+    gradle.taskGraph.whenReady { taskGraph ->
+        if (taskGraph.allTasks.any { it instanceof Sign }) {
+            def console = System.console()
+            console.printf("\nSignatures required. Using the following details from gradle.properties:\n")
 
-        // The RHS variables are collected from the user gradle.properties file.
-        def keyId = arkalixSigningKeyId
-        def file = arkalixSigningSecretKeyRingFile
-        def password = arkalixSigningPassword
+            // The RHS variables are collected from the user gradle.properties file.
+            def keyId = arkalixSigningKeyId
+            def file = arkalixSigningSecretKeyRingFile
+            def password = arkalixSigningPassword
 
-        console.printf("PGP Key Id: %s\n", keyId)
-        console.printf("PGP Secret Key Ring File: %s\n", file)
-        console.printf("PGP Private Key Password: %s\n\n", password != null ? "***" : "-")
+            console.printf("PGP Key Id: %s\n", keyId)
+            console.printf("PGP Secret Key Ring File: %s\n", file)
+            console.printf("PGP Private Key Password: %s\n\n", password != null ? "***" : "-")
 
-        allprojects {
-            ext."signing.keyId" = keyId
-            ext."signing.secretKeyRingFile" = file
-            ext."signing.password" = password
+            allprojects {
+                ext."signing.keyId" = keyId
+                ext."signing.secretKeyRingFile" = file
+                ext."signing.password" = password
+            }
         }
     }
 }

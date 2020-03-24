@@ -1,6 +1,6 @@
 package se.arkalix.description;
 
-import se.arkalix.security.identity.ArCertificate;
+import se.arkalix.security.identity.ArSystemCertificateChain;
 
 import java.net.InetSocketAddress;
 import java.util.Objects;
@@ -10,22 +10,22 @@ import java.util.Objects;
  * contacted.
  */
 public class SystemDescription {
-    private final ArCertificate certificate;
+    private final ArSystemCertificateChain chain;
     private final String name;
     private final InetSocketAddress remoteSocketAddress;
 
     /**
      * Creates new Arrowhead system description.
      *
-     * @param certificate         System certificate.
+     * @param chain               System certificate chain.
      * @param remoteSocketAddress IP-address/hostname and port through which
      *                            the system can be contacted.
      */
-    public SystemDescription(final ArCertificate certificate, final InetSocketAddress remoteSocketAddress) {
-        this.certificate = Objects.requireNonNull(certificate, "Expected certificate");
+    public SystemDescription(final ArSystemCertificateChain chain, final InetSocketAddress remoteSocketAddress) {
+        this.chain = Objects.requireNonNull(chain, "Expected certificate");
         this.remoteSocketAddress = Objects.requireNonNull(remoteSocketAddress, "Expected remoteSocketAddress");
 
-        name = certificate.name();
+        name = chain.systemName();
     }
 
     /**
@@ -42,7 +42,7 @@ public class SystemDescription {
         this.name = Objects.requireNonNull(name, "Expected name");
         this.remoteSocketAddress = Objects.requireNonNull(remoteSocketAddress, "Expected remoteSocketAddress");
 
-        certificate = null;
+        chain = null;
     }
 
     /**
@@ -67,10 +67,10 @@ public class SystemDescription {
      *                                       retrieved this description runs in
      *                                       the <i>insecure</i> security mode.
      */
-    public ArCertificate certificate() {
-        if (certificate == null) {
+    public ArSystemCertificateChain certificateChain() {
+        if (chain == null) {
             throw new UnsupportedOperationException("Not in secure mode");
         }
-        return certificate;
+        return chain;
     }
 }

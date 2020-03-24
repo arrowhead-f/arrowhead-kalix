@@ -118,7 +118,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         builder
             .addStatement("final var atEnd = reader.atEnd()")
             .addStatement("throw new $1T($2T.JSON, error, atEnd " +
-                    "? \"{\" : token.readString(source), atEnd ? 0 : token.begin())",
+                    "? \"{\" : token.readStringRaw(source), atEnd ? 0 : token.begin())",
                 DtoReadException.class, DtoEncoding.class);
 
         implementation.addMethod(builder.build());

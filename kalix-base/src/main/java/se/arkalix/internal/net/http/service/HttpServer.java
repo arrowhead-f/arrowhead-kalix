@@ -49,8 +49,8 @@ public class HttpServer implements ArServer {
             if (system.isSecure()) {
                 final var keyStore = system.keyStore();
                 sslContext = SslContextBuilder
-                    .forServer(keyStore.privateKey(), keyStore.certificateChain())
-                    .trustManager(system.trustStore().toX509CertificateArray())
+                    .forServer(keyStore.privateKey(), keyStore.systemChain())
+                    .trustManager(system.trustStore().certificates())
                     .clientAuth(ClientAuth.REQUIRE)
                     .startTls(false)
                     .build();

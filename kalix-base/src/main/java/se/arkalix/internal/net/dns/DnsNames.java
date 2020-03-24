@@ -3,6 +3,49 @@ package se.arkalix.internal.net.dns;
 public class DnsNames {
     private DnsNames() {}
 
+    public static String firstLabel(final String name) {
+        var n0 = 0;
+        final var n1 = name.length();
+        char c;
+
+        badEnd:
+        {
+            c = name.charAt(n0++);
+            if (!(c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z')) {
+                throw new IllegalArgumentException("Invalid DNS label start " +
+                    "character '" + c + "'; expected A-Z a-z");
+            }
+            while (n0 < n1) {
+                n0 += 1;
+                if (n0 == n1) {
+                    break;
+                }
+                c = name.charAt(n0);
+
+                if (c == '-') {
+                    var nx = n0 + 1;
+                    if (nx == n1 || nx + 1 == n1 && name.charAt(nx) == '.') {
+                        break badEnd;
+                    }
+                    continue;
+                }
+                else if (c == '.') {
+                    if (n0 + 1 == n1) {
+                        break badEnd;
+                    }
+                    return name.substring(0, n0);
+                }
+                if (!(c >= '0' && c <= '9' || c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z')) {
+                    throw new IllegalArgumentException("Invalid DNS label " +
+                        "character '" + c + "'; expected 0-9 A-Z a-z . -");
+                }
+            }
+            return name;
+        }
+        throw new IllegalArgumentException("Invalid DNS label " +
+            "end character '" + c + "'; expected 0-9 A-Z a-z");
+    }
+
     /**
      * Determines whether or not the given {@code name} is a valid DNS domain
      * name.

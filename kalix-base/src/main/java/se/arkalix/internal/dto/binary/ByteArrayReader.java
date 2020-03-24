@@ -6,15 +6,16 @@ public class ByteArrayReader implements BinaryReader {
     private final byte[] array;
 
     private int offset;
+    private int limit;
 
     public ByteArrayReader(final byte[] array) {
         this.array = array;
         offset = 0;
+        limit = array.length;
     }
 
-    public ByteArrayReader(final byte[] array, int offset) {
-        this.array = array;
-        this.offset = offset;
+    public void readLimit(final int limit) {
+        this.limit = limit;
     }
 
     @Override
@@ -29,12 +30,12 @@ public class ByteArrayReader implements BinaryReader {
 
     @Override
     public int readableBytes() {
-        return array.length - offset;
+        return limit - offset;
     }
 
     @Override
     public void getBytes(final int offset, final byte[] target) {
-        if (offset + target.length > array.length) {
+        if (offset + target.length > limit) {
             throw new IndexOutOfBoundsException("offset + target.length > readableBytes()");
         }
         System.arraycopy(array, offset, target, 0, target.length);
@@ -55,7 +56,7 @@ public class ByteArrayReader implements BinaryReader {
         if (length > target.length) {
             throw new IndexOutOfBoundsException("target.length < length");
         }
-        if (offset + length > array.length) {
+        if (offset + length > limit) {
             throw new IndexOutOfBoundsException("targetOffset + length > readableBytes()");
         }
         System.arraycopy(array, offset, target, targetOffset, length);

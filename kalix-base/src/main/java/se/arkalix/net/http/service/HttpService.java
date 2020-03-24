@@ -831,9 +831,9 @@ public final class HttpService implements ArService {
         final var isSecure = system.isSecure();
         return new ServiceDescription.Builder()
             .name(name)
-            .provider(new SystemDescription(system.keyStore().certificate(), system.localSocketAddress()))
+            .provider(new SystemDescription(system.keyStore(), system.localSocketAddress()))
             .qualifier(basePath)
-            .security(accessPolicy.descriptor())
+            .security(accessPolicy.security())
             .metadata(metadata != null ? metadata : Collections.emptyMap())
             .version(version)
             .supportedInterfaces(encodings.stream()

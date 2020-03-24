@@ -1,8 +1,6 @@
 package se.arkalix.security.access;
 
-import se.arkalix.description.ServiceDescription;
-import se.arkalix.description.SystemDescription;
-import se.arkalix.descriptor.AccessDescriptor;
+import se.arkalix.descriptor.SecurityDescriptor;
 
 /**
  * Access policy that grants unrestricted access to all systems.
@@ -18,27 +16,20 @@ import se.arkalix.descriptor.AccessDescriptor;
  * deployment scenarios. It is, however, the only access policy that can be
  * used by systems running in insecure mode.
  */
-public class AccessUnrestricted implements AccessPolicy {
-    private static final AccessUnrestricted INSTANCE = new AccessUnrestricted();
+public class GrantAccessToEveryone implements AccessPolicy {
+    private static final GrantAccessToEveryone INSTANCE = new GrantAccessToEveryone();
 
-    private AccessUnrestricted() {}
+    private GrantAccessToEveryone() {}
 
     /**
      * @return Class instance.
      */
-    public static AccessUnrestricted instance() {
+    public static GrantAccessToEveryone instance() {
         return INSTANCE;
     }
 
     @Override
-    public AccessDescriptor descriptor() {
-        return AccessDescriptor.UNRESTRICTED;
+    public SecurityDescriptor security() {
+        return SecurityDescriptor.NOT_SECURE;
     }
-
-    @Override
-    public boolean isAuthorized(final SystemDescription system, final ServiceDescription service, final byte[] token) {
-        return true;
-    }
-
-
 }

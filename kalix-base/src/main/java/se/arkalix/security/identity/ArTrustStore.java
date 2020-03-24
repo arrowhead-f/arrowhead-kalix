@@ -16,15 +16,13 @@ import java.util.stream.Stream;
  * operators, clouds, companies and other authorities.
  * <p>
  * Instances of this class are guaranteed to only hold x.509 certificates
- * complying to the Arrowhead certificate {@link ArCertificate naming
+ * complying to the Arrowhead certificate {@link ArSystemCertificateChain naming
  * conventions}.
  *
  * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
  */
 public class ArTrustStore {
-    private final List<ArCertificate> arCertificates;
-
-    private X509Certificate[] x509Certificates = null;
+    private final X509Certificate[] certificates;
 
     /**
      * Creates new x.509 trust store from given array of certificates.
@@ -32,8 +30,8 @@ public class ArTrustStore {
      * @param certificates Trusted certificates.
      * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      */
-    public ArTrustStore(final ArCertificate... certificates) {
-        this.arCertificates = List.of(certificates);
+    public ArTrustStore(final X509Certificate... certificates) {
+        this.certificates = certificates.clone();
     }
 
     /**
@@ -46,46 +44,18 @@ public class ArTrustStore {
      * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      */
     public static ArTrustStore from(final KeyStore keyStore) throws KeyStoreException {
-        final var certificates = new ArrayList<ArCertificate>();
+        final var certificates = new ArrayList<X509Certificate>();
         for (final var alias : Collections.list(keyStore.aliases())) {
-            final var certificateChain = keyStore.getCertificateChain(alias);
-
-            final var x509chain = new X509Certificate[certificateChain.length];
-            var i = 0;
-            for (final var certificate : certificateChain) {
-                if (!(certificate instanceof X509Certificate)) {
-                    throw new KeyStoreException("Only x.509 certificates " +
-                        "are permitted in ArTrustStore instances; the " +
-                        "following certificate is of some other type: " +
-                        certificate);
-                }
-                x509chain[i++] = (X509Certificate) certificate;
+            final var certificate = keyStore.getCertificate(alias);
+            if (!(certificate instanceof X509Certificate)) {
+                throw new KeyStoreException("Only x.509 certificates " +
+                    "are permitted in ArTrustStore instances; the " +
+                    "following certificate is of some other type: " +
+                    certificate);
             }
-
-            certificates.add(ArCertificate.from(x509chain));
+            certificates.add((X509Certificate) certificate);
         }
-        return new ArTrustStore(certificates.toArray(new ArCertificate[0]));
-    }
-
-    private ArTrustStore(final List<ArCertificate> certificates) {
-        this.arCertificates = Collections.unmodifiableList(certificates);
-    }
-
-    /**
-     * Repackages the contents of this trust store into an array of Java 1.2
-     * x.509 certificates.
-     *
-     * @return Array of x.509 certificates, representing the contents of this
-     * trust store.
-     */
-    public X509Certificate[] toX509CertificateArray() {
-        if (x509Certificates == null) {
-            x509Certificates = arCertificates.stream()
-                .flatMap(certificate -> Stream.of(certificate.toX509CertificateChain()))
-                .distinct()
-                .toArray(X509Certificate[]::new);
-        }
-        return x509Certificates.clone();
+        return new ArTrustStore(certificates.toArray(new X509Certificate[0]));
     }
 
     /**
@@ -117,10 +87,9 @@ public class ArTrustStore {
     }
 
     /**
-     * @return Unmodifiable list of trusted Arrowhead certificates.
-     * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
+     * @return Clone of array of trusted x.509 certificates.
      */
-    public List<ArCertificate> certificates() {
-        return arCertificates;
+    public X509Certificate[] certificates() {
+        return certificates.clone();
     }
 }
