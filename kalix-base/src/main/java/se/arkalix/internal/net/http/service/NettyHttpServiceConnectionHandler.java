@@ -3,6 +3,7 @@ package se.arkalix.internal.net.http.service;
 import io.netty.handler.ssl.SslHandler;
 import se.arkalix.description.SystemDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
+import se.arkalix.dto.DtoReadException;
 import se.arkalix.internal.net.http.HttpMediaTypes;
 import se.arkalix.internal.net.http.NettyHttpBodyReceiver;
 import se.arkalix.net.http.HttpStatus;
@@ -20,6 +21,8 @@ import io.netty.handler.timeout.IdleStateEvent;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import java.net.InetSocketAddress;
 import java.util.Optional;
+
+import static io.netty.handler.codec.http.HttpResponseStatus.*;
 
 @Internal
 public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandler<Object> {
@@ -58,7 +61,7 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
         {
             final var optionalService = serviceLookup.getServiceByPath(path);
             if (optionalService.isEmpty()) {
-                sendErrorAndCleanup(ctx, HttpResponseStatus.NOT_FOUND, keepAlive);
+                sendErrorAndCleanup(ctx, NOT_FOUND, keepAlive);
                 return;
             }
             service = optionalService.get();
@@ -66,9 +69,9 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
 
         // Authorize.
         {
-            var authorization = request.headers().get("authorization");
-            if (authorization.regionMatches(true, 0, "bearer ", 0, 7)) {
-                authorization = authorization.substring(7).stripLeading();
+            var token = request.headers().get("authorization");
+            if (token.regionMatches(true, 0, "bearer ", 0, 7)) {
+                token = token.substring(7).stripLeading();
             }
             try {
                 if (consumer == null && sslHandler != null) {
@@ -77,24 +80,24 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
                         (InetSocketAddress) ctx.channel().remoteAddress());
 
                     if (optionalConsumer.isEmpty()) {
-                        sendErrorAndCleanup(ctx, HttpResponseStatus.UNAUTHORIZED, false);
+                        sendErrorAndCleanup(ctx, UNAUTHORIZED, false);
                         return;
                     }
                     consumer = optionalConsumer.get();
                 }
 
-                if (!service.accessPolicy().isAuthorized(consumer, service.description(), authorization)) {
-                    sendErrorAndCleanup(ctx, HttpResponseStatus.UNAUTHORIZED, false);
+                if (!service.accessPolicy().isAuthorized(consumer, service.description(), token)) {
+                    sendErrorAndCleanup(ctx, UNAUTHORIZED, false);
                     return;
                 }
             }
             catch (final AccessTokenException | SSLPeerUnverifiedException exception) {
-                sendErrorAndCleanup(ctx, HttpResponseStatus.UNAUTHORIZED, false);
+                sendErrorAndCleanup(ctx, UNAUTHORIZED, false);
                 return;
             }
             catch (final Exception exception) {
-                exception.printStackTrace(); // TODO: Log properly.
-                sendErrorAndCleanup(ctx, HttpResponseStatus.INTERNAL_SERVER_ERROR, false);
+                ctx.fireExceptionCaught(exception);
+                sendErrorAndCleanup(ctx, INTERNAL_SERVER_ERROR, false);
                 return;
             }
         }
@@ -104,7 +107,7 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
         {
             final var optionalEncoding = determineEncodingFrom(service, request.headers());
             if (optionalEncoding.isEmpty()) {
-                sendErrorAndCleanup(ctx, HttpResponseStatus.UNSUPPORTED_MEDIA_TYPE, keepAlive);
+                sendErrorAndCleanup(ctx, UNSUPPORTED_MEDIA_TYPE, keepAlive);
                 return;
             }
             encoding = optionalEncoding.get();
@@ -112,11 +115,7 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
 
         // Manage `expect: continue` header, if present.
         if (HttpUtil.is100ContinueExpected(request)) {
-            ctx.writeAndFlush(new DefaultFullHttpResponse(
-                request.protocolVersion(),
-                HttpResponseStatus.CONTINUE,
-                Unpooled.EMPTY_BUFFER
-            ));
+            ctx.writeAndFlush(new DefaultFullHttpResponse(request.protocolVersion(), CONTINUE, Unpooled.EMPTY_BUFFER));
         }
 
         // Prepare for receiving HTTP request body and Assemble Kalix request.
@@ -142,7 +141,11 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
                     }
                     return;
                 }
-                sendErrorAndCleanup(ctx, HttpResponseStatus.INTERNAL_SERVER_ERROR, keepAlive);
+                final var fault = result.fault();
+                final var status = (fault instanceof HttpServiceRequestException || fault instanceof DtoReadException)
+                    ? BAD_REQUEST
+                    : INTERNAL_SERVER_ERROR;
+                sendErrorAndCleanup(ctx, status, keepAlive);
                 ctx.fireExceptionCaught(result.fault());
             }
             catch (final Throwable throwable) {
@@ -192,7 +195,6 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
         ctx.flush();
     }
 
-
     // TODO: Bring any response exceptions back to service.
     @Override
     public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
@@ -211,7 +213,7 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
             if (idleStateEvent.state() == IdleState.READER_IDLE) {
                 if (body != null) {
                     body.abort(new HttpServiceRequestException(HttpStatus.REQUEST_TIMEOUT));
-                    sendErrorAndCleanup(ctx, HttpResponseStatus.REQUEST_TIMEOUT, false);
+                    sendErrorAndCleanup(ctx, REQUEST_TIMEOUT, false);
                 }
             }
             ctx.close();
