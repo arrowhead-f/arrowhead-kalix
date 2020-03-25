@@ -1,5 +1,6 @@
 package se.arkalix.net.http.service;
 
+import se.arkalix.description.SystemDescription;
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadable;
 import se.arkalix.net.http.*;
@@ -129,9 +130,9 @@ public interface HttpServiceRequest extends HttpBodyReceiver {
     Map<String, List<String>> queryParameters();
 
     /**
-     * @return Information about the request sender.
+     * @return Information about the Arrowhead system that sent this request.
      */
-    HttpPeer requester();
+    SystemDescription consumer();
 
     /**
      * @return HTTP version used by request.
@@ -207,8 +208,8 @@ public interface HttpServiceRequest extends HttpBodyReceiver {
             }
 
             @Override
-            public HttpPeer requester() {
-                return self.requester();
+            public SystemDescription consumer() {
+                return self.consumer();
             }
 
             @Override

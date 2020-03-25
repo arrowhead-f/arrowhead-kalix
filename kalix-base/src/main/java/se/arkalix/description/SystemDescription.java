@@ -3,7 +3,9 @@ package se.arkalix.description;
 import se.arkalix.security.identity.ArSystemCertificateChain;
 
 import java.net.InetSocketAddress;
+import java.security.cert.Certificate;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Describes an Arrowhead system, especially in terms of how it can be
@@ -43,6 +45,26 @@ public class SystemDescription {
         this.remoteSocketAddress = Objects.requireNonNull(remoteSocketAddress, "Expected remoteSocketAddress");
 
         chain = null;
+    }
+
+    /**
+     * Attempts to create new Arrowhead system description from given
+     * certificate chain and remote socket address.
+     * <p>
+     * An empty result is returned only if any certificate in the given
+     * {@code chain} is of any other type than x.509, or if fewer than 4
+     * certificates are provided.
+     *
+     * @param chain               System certificate chain.
+     * @param remoteSocketAddress IP-address/hostname and port through which
+     *                            the system can be contacted.
+     */
+    public static Optional<SystemDescription> tryFrom(
+        final Certificate[] chain,
+        final InetSocketAddress remoteSocketAddress)
+    {
+        return ArSystemCertificateChain.tryConvert(chain)
+            .map(chain0 -> new SystemDescription(chain0, remoteSocketAddress));
     }
 
     /**

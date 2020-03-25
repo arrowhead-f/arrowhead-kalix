@@ -24,7 +24,7 @@ import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.security.cert.X509Certificate;
+import java.security.cert.Certificate;
 import java.util.LinkedList;
 import java.util.Objects;
 import java.util.Queue;
@@ -36,27 +36,16 @@ import static io.netty.handler.codec.http.HttpHeaderNames.*;
 
 @Internal
 public class NettyHttpClientConnection implements HttpClientConnection {
-    private final X509Certificate[] certificateChain;
+    private final Certificate[] certificateChain;
     private final Channel channel;
     private final Queue<FutureResponse> pendingResponseQueue = new LinkedList<>();
 
     public NettyHttpClientConnection(
         final Channel channel,
-        final X509Certificate[] certificateChain)
+        final Certificate[] certificateChain)
     {
-        this.certificateChain = certificateChain;
-        if (certificateChain != null && certificateChain.length == 0) {
-            throw new IllegalArgumentException("Expected certificateChain.length > 0");
-        }
         this.channel = Objects.requireNonNull(channel, "Expected channel");
-    }
-
-    @Override
-    public X509Certificate[] certificateChain() {
-        if (certificateChain == null) {
-            throw new IllegalStateException("Not in secure mode");
-        }
-        return certificateChain;
+        this.certificateChain = certificateChain;
     }
 
     @Override
@@ -67,6 +56,15 @@ public class NettyHttpClientConnection implements HttpClientConnection {
     @Override
     public InetSocketAddress localSocketAddress() {
         return (InetSocketAddress) channel.localAddress();
+    }
+
+    @Override
+    public Certificate[] certificateChain() {
+        if (certificateChain == null) {
+            throw new UnsupportedOperationException("Connection not secured;" +
+                " no certificates are available");
+        }
+        return certificateChain;
     }
 
     @Override

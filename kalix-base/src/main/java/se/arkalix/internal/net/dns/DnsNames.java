@@ -1,5 +1,8 @@
 package se.arkalix.internal.net.dns;
 
+import se.arkalix.util.annotation.Internal;
+
+@Internal
 public class DnsNames {
     private DnsNames() {}
 
@@ -16,24 +19,18 @@ public class DnsNames {
                     "character '" + c + "'; expected A-Z a-z");
             }
             while (n0 < n1) {
-                n0 += 1;
-                if (n0 == n1) {
-                    break;
-                }
-                c = name.charAt(n0);
-
+                c = name.charAt(n0++);
                 if (c == '-') {
-                    var nx = n0 + 1;
-                    if (nx == n1 || nx + 1 == n1 && name.charAt(nx) == '.') {
+                    if (n0 == n1 || n0 + 1 == n1 && name.charAt(n0) == '.') {
                         break badEnd;
                     }
                     continue;
                 }
                 else if (c == '.') {
-                    if (n0 + 1 == n1) {
+                    if (n0 == n1) {
                         break badEnd;
                     }
-                    return name.substring(0, n0);
+                    return name.substring(0, n0 - 1);
                 }
                 if (!(c >= '0' && c <= '9' || c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z')) {
                     throw new IllegalArgumentException("Invalid DNS label " +
@@ -44,6 +41,31 @@ public class DnsNames {
         }
         throw new IllegalArgumentException("Invalid DNS label " +
             "end character '" + c + "'; expected 0-9 A-Z a-z");
+    }
+
+    public static boolean isLabel(final String label) {
+        var l0 = 0;
+        final var l1 = label.length();
+        char c;
+
+        c = label.charAt(l0++);
+        if (!(c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z')) {
+            return false; // May not start with digit or dash.
+        }
+        while (l0 < l1) {
+            c = label.charAt(l0++);
+            if (c == '-') {
+                if (l0 == l1) {
+                    return false; // May not end with dash.
+                }
+                continue;
+            }
+            if (c >= '0' && c <= '9' || c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z') {
+                continue;
+            }
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -66,37 +88,31 @@ public class DnsNames {
      * name.
      * @see <a href="https://tools.ietf.org/html/rfc1035#section-2.3.1">RFC 1035, Section 2.3.1</a>
      */
-    public static boolean isValid(final String name) {
+    public static boolean isName(final String name) {
+        var n0 = 0;
         final var n1 = name.length();
 
         label:
-        for (var n0 = 0; n0 < n1; ++n0) {
-
-            var c = name.charAt(n0); // Only alpha characters may start a label.
+        while (n0 < n1) {
+            var c = name.charAt(n0++); // Only alpha characters may start a label.
             if (!(c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z')) {
                 return false;
             }
-
-            do {
-                n0 += 1;
-                if (n0 == n1) {
-                    return true;
-                }
-                c = name.charAt(n0);
+            while (n0 < n1) {
+                c = name.charAt(n0++);
 
                 if (c == '-') { // A hyphen must never end a label.
-                    final var nx = n0 + 1;
-                    if (nx == n1) {
+                    if (n0 == n1) {
                         return false;
                     }
-                    c = name.charAt(nx);
+                    c = name.charAt(n0);
                     if (c == '.') {
                         return false;
                     }
                     continue;
                 }
                 else if (c == '.') { // A dot must never end a name.
-                    if (n0 + 1 == n1) {
+                    if (n0 == n1) {
                         return false;
                     }
                     continue label; // End of label, start over.
@@ -104,7 +120,7 @@ public class DnsNames {
                 if (!(c >= '0' && c <= '9' || c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z')) {
                     return false;
                 }
-            } while (n0 < n1);
+            }
         }
         return true;
     }

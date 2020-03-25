@@ -2,11 +2,13 @@ package se.arkalix.internal.net.http.client;
 
 import se.arkalix.net.http.client.HttpClientConnection;
 import se.arkalix.util.Result;
+import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;
 
 import java.util.concurrent.CancellationException;
 import java.util.function.Consumer;
 
+@Internal
 public class FutureHttpClientConnection implements Future<HttpClientConnection> {
     private Consumer<Result<HttpClientConnection>> consumer = null;
     private Result<HttpClientConnection> pendingResult = null;

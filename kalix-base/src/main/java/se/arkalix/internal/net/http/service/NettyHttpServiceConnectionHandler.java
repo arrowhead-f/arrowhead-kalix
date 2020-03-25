@@ -1,11 +1,13 @@
 package se.arkalix.internal.net.http.service;
 
+import io.netty.handler.ssl.SslHandler;
+import se.arkalix.description.SystemDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.internal.net.http.HttpMediaTypes;
 import se.arkalix.internal.net.http.NettyHttpBodyReceiver;
-import se.arkalix.internal.net.http.NettyHttpPeer;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.service.HttpServiceRequestException;
+import se.arkalix.security.access.AccessTokenException;
 import se.arkalix.util.annotation.Internal;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
@@ -15,22 +17,22 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 
-import javax.net.ssl.SSLEngine;
-
+import javax.net.ssl.SSLPeerUnverifiedException;
 import java.net.InetSocketAddress;
 import java.util.Optional;
 
 @Internal
 public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandler<Object> {
     private final HttpServiceLookup serviceLookup;
-    private final SSLEngine sslEngine;
+    private final SslHandler sslHandler;
 
+    private SystemDescription consumer = null;
     private HttpRequest request = null;
     private NettyHttpBodyReceiver body = null;
 
-    public NettyHttpServiceConnectionHandler(final HttpServiceLookup serviceLookup, final SSLEngine sslEngine) {
+    public NettyHttpServiceConnectionHandler(final HttpServiceLookup serviceLookup, final SslHandler sslHandler) {
         this.serviceLookup = serviceLookup;
-        this.sslEngine = sslEngine;
+        this.sslHandler = sslHandler;
     }
 
     @Override
@@ -47,12 +49,11 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
         // TODO: Enable and check size restrictions.
 
         this.request = request;
-
         final var keepAlive = HttpUtil.isKeepAlive(request);
-
         final var queryStringDecoder = new QueryStringDecoder(request.uri());
         final var path = queryStringDecoder.path();
 
+        // Resolve service.
         final HttpServiceInternal service;
         {
             final var optionalService = serviceLookup.getServiceByPath(path);
@@ -63,6 +64,42 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
             service = optionalService.get();
         }
 
+        // Authorize.
+        {
+            var authorization = request.headers().get("authorization");
+            if (authorization.regionMatches(true, 0, "bearer ", 0, 7)) {
+                authorization = authorization.substring(7).stripLeading();
+            }
+            try {
+                if (consumer == null && sslHandler != null) {
+                    final var optionalConsumer = SystemDescription.tryFrom(
+                        sslHandler.engine().getSession().getPeerCertificates(),
+                        (InetSocketAddress) ctx.channel().remoteAddress());
+
+                    if (optionalConsumer.isEmpty()) {
+                        sendErrorAndCleanup(ctx, HttpResponseStatus.UNAUTHORIZED, false);
+                        return;
+                    }
+                    consumer = optionalConsumer.get();
+                }
+
+                if (!service.accessPolicy().isAuthorized(consumer, service.description(), authorization)) {
+                    sendErrorAndCleanup(ctx, HttpResponseStatus.UNAUTHORIZED, false);
+                    return;
+                }
+            }
+            catch (final AccessTokenException | SSLPeerUnverifiedException exception) {
+                sendErrorAndCleanup(ctx, HttpResponseStatus.UNAUTHORIZED, false);
+                return;
+            }
+            catch (final Exception exception) {
+                exception.printStackTrace(); // TODO: Log properly.
+                sendErrorAndCleanup(ctx, HttpResponseStatus.INTERNAL_SERVER_ERROR, false);
+                return;
+            }
+        }
+
+        // Resolve encoding.
         final EncodingDescriptor encoding;
         {
             final var optionalEncoding = determineEncodingFrom(service, request.headers());
@@ -73,6 +110,7 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
             encoding = optionalEncoding.get();
         }
 
+        // Manage `expect: continue` header, if present.
         if (HttpUtil.is100ContinueExpected(request)) {
             ctx.writeAndFlush(new DefaultFullHttpResponse(
                 request.protocolVersion(),
@@ -81,19 +119,19 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
             ));
         }
 
+        // Prepare for receiving HTTP request body and Assemble Kalix request.
         final var serviceRequestBody = new NettyHttpBodyReceiver(ctx.alloc(), request.headers(), encoding);
         final var serviceRequest = new NettyHttpServiceRequest.Builder()
             .body(serviceRequestBody)
             .queryStringDecoder(queryStringDecoder)
             .request(request)
-            .requester(new NettyHttpPeer((InetSocketAddress) ctx.channel().remoteAddress(), sslEngine))
+            .consumer(consumer)
             .build();
-
         final var serviceResponseHeaders = new DefaultHttpHeaders();
         final var serviceResponse = new NettyHttpServiceResponse(request, serviceResponseHeaders, encoding);
-
         this.body = serviceRequestBody;
 
+        // Tell service to handle request and then respond to the connected client.
         service.handle(serviceRequest, serviceResponse).onResult(result -> {
             try {
                 if (result.isSuccess()) {

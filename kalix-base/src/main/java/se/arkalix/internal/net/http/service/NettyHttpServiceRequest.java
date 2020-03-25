@@ -1,12 +1,11 @@
 package se.arkalix.internal.net.http.service;
 
+import se.arkalix.description.SystemDescription;
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadable;
 import se.arkalix.internal.net.http.NettyHttpBodyReceiver;
-import se.arkalix.internal.net.http.NettyHttpPeer;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpMethod;
-import se.arkalix.net.http.HttpPeer;
 import se.arkalix.net.http.HttpVersion;
 import se.arkalix.net.http.service.HttpServiceRequest;
 import se.arkalix.util.annotation.Internal;
@@ -28,7 +27,7 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
     private final NettyHttpBodyReceiver body;
     private final QueryStringDecoder queryStringDecoder;
     private final HttpRequest request;
-    private final NettyHttpPeer requester;
+    private final SystemDescription consumer;
 
     private HttpHeaders headers = null;
     private HttpMethod method = null;
@@ -38,7 +37,7 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
         body = Objects.requireNonNull(builder.body, "Expected body");
         queryStringDecoder = Objects.requireNonNull(builder.queryStringDecoder, "Expected queryStringDecoder");
         request = Objects.requireNonNull(builder.request, "Expected request");
-        requester = Objects.requireNonNull(builder.requester, "Expected requester");
+        consumer = Objects.requireNonNull(builder.consumer, "Expected consumer");
     }
 
     @Override
@@ -103,8 +102,8 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
     }
 
     @Override
-    public HttpPeer requester() {
-        return requester;
+    public SystemDescription consumer() {
+        return consumer;
     }
 
     @Override
@@ -118,7 +117,7 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
     public static class Builder {
         private NettyHttpBodyReceiver body;
         private HttpRequest request;
-        private NettyHttpPeer requester;
+        private SystemDescription consumer;
         private QueryStringDecoder queryStringDecoder;
 
         public Builder body(final NettyHttpBodyReceiver body) {
@@ -136,8 +135,8 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
             return this;
         }
 
-        public Builder requester(final NettyHttpPeer requester) {
-            this.requester = requester;
+        public Builder consumer(final SystemDescription consumer) {
+            this.consumer = consumer;
             return this;
         }
 

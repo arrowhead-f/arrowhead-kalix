@@ -12,7 +12,6 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 
-import java.security.cert.X509Certificate;
 import java.util.Objects;
 
 @Internal
@@ -42,22 +41,7 @@ public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandle
             if (sslHandler != null) {
                 sslHandler.handshakeFuture().addListener(ignored -> {
                     final var chain = sslHandler.engine().getSession().getPeerCertificates();
-                    final var x509chain = new X509Certificate[chain.length];
-                    for (var i = 0; i < chain.length; ++i) {
-                        final var certificate = chain[i];
-                        if (!(certificate instanceof X509Certificate)) {
-                            futureConnection.setResult(Result.failure(new IllegalStateException("" +
-                                "Only x.509 certificates may be used by " +
-                                "remote peers, somehow the peer at " +
-                                ctx.channel().remoteAddress() + " was able " +
-                                "to use some other type: " + certificate)));
-                            futureConnection = null;
-                            ctx.close();
-                            return;
-                        }
-                        x509chain[i] = (X509Certificate) chain[i];
-                    }
-                    connection = new NettyHttpClientConnection(ctx.channel(), x509chain);
+                    connection = new NettyHttpClientConnection(ctx.channel(), chain);
                     futureConnection.setResult(Result.success(connection));
                     futureConnection = null;
                 });

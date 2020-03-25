@@ -1,6 +1,12 @@
 package se.arkalix.security.access;
 
-import se.arkalix.descriptor.SecurityDescriptor;
+import se.arkalix.description.ServiceDescription;
+import se.arkalix.description.SystemDescription;
+import se.arkalix.descriptor.AccessDescriptor;
+
+import java.security.PublicKey;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * An access control policy.
@@ -15,7 +21,110 @@ import se.arkalix.descriptor.SecurityDescriptor;
  */
 public interface AccessPolicy {
     /**
-     * @return Security policy descriptor.
+     * @return Access policy descriptor.
      */
-    SecurityDescriptor security();
+    AccessDescriptor descriptor();
+
+    /**
+     * Determines whether or not the described {@code system} may consume the
+     * described {@code service} using the given access {@code token}, if any.
+     *
+     * @param consumer Description of system attempting to consume the
+     *                 {@code service} in question.
+     * @param service  Description of service that the {@code consumer}
+     *                 attempts to consume.
+     * @param token    Access token presented by the {@code consumer}, if any.
+     * @return {@code true} only if {@code consumer} is permitted to consume
+     * {@code service}.
+     */
+    boolean isAuthorized(SystemDescription consumer, ServiceDescription service, String token)
+        throws AccessTokenException;
+
+    /**
+     * @return Access policy granting access to consumers originating from the
+     * same cloud as the provider of the service being consumed.
+     */
+    static AccessPolicy cloud() {
+        return AccessByCertificate.INSTANCE;
+    }
+
+    /**
+     * Creates new access policy only granting access to consumers originating
+     * from the same cloud as the provider of the service being consumed, as
+     * well as being named in the white-list.
+     * <p>
+     * Note that the white-listed names are not full names. Only the system
+     * name parts, as described
+     * {@link se.arkalix.security.identity.ArSystemCertificateChain here}.
+     *
+     * @param whitelist Names of systems to be allowed access.
+     * @return Created access policy.
+     */
+    static AccessPolicy cloudWhitelist(final String... whitelist) {
+        return cloudWhitelist(List.of(whitelist));
+    }
+
+    /**
+     * Creates new access policy only granting access to consumers originating
+     * from the same cloud as the provider of the service being consumed, as
+     * well as being named in the white-list.
+     * <p>
+     * Note that the white-listed names are not full names. Only the system
+     * name parts, as described
+     * {@link se.arkalix.security.identity.ArSystemCertificateChain here}.
+     * <p>
+     * Also note that access policy instances of this type can be shared by
+     * multiple services.
+     *
+     * @param whitelist Collection of names of systems to be allowed access.
+     * @return Created access policy.
+     */
+    static AccessPolicy cloudWhitelist(final Collection<String> whitelist) {
+        return new AccessByCertificate(whitelist);
+    }
+
+    /**
+     * Creates new access policy granting access to consumers with certificate
+     * chains sharing the same
+     * {@link se.arkalix.security.identity.ArSystemCertificateChain master}
+     * certificate as the provider of the service being consumed, as well as
+     * being able to present a token from an authorization system that must be
+     * resolved at some later point.
+     * <p>
+     * Authorization system resolution could be performed, for example, by a
+     * {@link se.arkalix.plugin.Plugin plugin}.
+     * <p>
+     * Note that access policy instances of this type can be shared by multiple
+     * services.
+     *
+     * @return New token access policy.
+     */
+    static AccessPolicy token() {
+        return new AccessByToken();
+    }
+
+    /**
+     * Creates new access policy granting access to consumers with certificate
+     * chains sharing the same
+     * {@link se.arkalix.security.identity.ArSystemCertificateChain master}
+     * certificate as the provider of the service being consumed, as well as
+     * being able to present a token from the authorization system represented
+     * by the given public key.
+     * <p>
+     * Note that access policy instances of this type can be shared by multiple
+     * services.
+     *
+     * @return New token access policy.
+     */
+    static AccessPolicy token(final PublicKey authorizationKey) {
+        return new AccessByToken(authorizationKey);
+    }
+
+    /**
+     * @return Access policy granting unrestricted access. Use of this access
+     * policy is only allowed for systems running in insecure mode.
+     */
+    static AccessPolicy unrestricted() {
+        return AccessUnrestricted.INSTANCE;
+    }
 }

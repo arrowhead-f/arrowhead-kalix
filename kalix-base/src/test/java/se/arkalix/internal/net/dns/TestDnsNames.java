@@ -1,17 +1,93 @@
 package se.arkalix.internal.net.dns;
 
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class TestDnsNames {
     @ParameterizedTest
+    @MethodSource("validDnsLabelsAndFirstLabels")
+    void shouldHaveValidFirstLabel(final String expected, final String name) {
+        assertEquals(expected, DnsNames.firstLabel(name));
+    }
+
+    static Stream<Arguments> validDnsLabelsAndFirstLabels() {
+        return Stream.of(
+            arguments("x", "x"),
+            arguments("x", "x.y"),
+            arguments("x0", "x0.1invalid"),
+            arguments("x-0", "x-0"),
+            arguments("x--y", "x--y.-invalid-"),
+            arguments("x---0", "x---0.y.z")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidDnsFirstLabels")
+    void shouldHaveInvalidFirstLabel(final String name) {
+        assertFalse(DnsNames.isLabel(name));
+    }
+
+    static Stream<String> invalidDnsFirstLabels() {
+        return Stream.of(
+            "1",
+            ".",
+            "-",
+            "x-",
+            "-x",
+            "-x-",
+            "1.y",
+            ".y",
+            "-.y",
+            "x-.y",
+            "-x.y",
+            "-x-.y"
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("validDnsLabels")
+    void shouldBeValidLabel(final String name) {
+        assertTrue(DnsNames.isLabel(name));
+    }
+
+    static Stream<String> validDnsLabels() {
+        return Stream.of(
+            "x",
+            "x0",
+            "x-0",
+            "x--y",
+            "x---0"
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidDnsLabels")
+    void shouldBeInvalidLabel(final String name) {
+        assertFalse(DnsNames.isLabel(name));
+    }
+
+    static Stream<String> invalidDnsLabels() {
+        return Stream.of(
+            "x.y",
+            "1",
+            ".",
+            "-",
+            "x-",
+            "-x",
+            "-x-"
+        );
+    }
+
+    @ParameterizedTest
     @MethodSource("validDnsNames")
-    void shouldBeValid(final String name) {
-        assertTrue(DnsNames.isValid(name));
+    void shouldBeValidName(final String name) {
+        assertTrue(DnsNames.isName(name));
     }
 
     static Stream<String> validDnsNames() {
@@ -31,8 +107,8 @@ public class TestDnsNames {
 
     @ParameterizedTest
     @MethodSource("invalidDnsNames")
-    void shouldBeInvalid(final String name) {
-        assertFalse(DnsNames.isValid(name));
+    void shouldBeInvalidName(final String name) {
+        assertFalse(DnsNames.isName(name));
     }
 
     static Stream<String> invalidDnsNames() {

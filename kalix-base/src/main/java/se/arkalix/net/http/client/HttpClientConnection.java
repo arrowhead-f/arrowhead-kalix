@@ -1,15 +1,17 @@
 package se.arkalix.net.http.client;
 
-import se.arkalix.net.http.HttpPeer;
+import se.arkalix.description.SystemDescription;
 import se.arkalix.util.concurrent.Future;
 
 import java.net.InetSocketAddress;
+import java.security.cert.Certificate;
+import java.util.Optional;
 
 /**
  * Connection useful for sending HTTP requests to a single remote socket
  * address.
  */
-public interface HttpClientConnection extends HttpPeer {
+public interface HttpClientConnection {
     /**
      * @return Address of host reachable via this connection.
      */
@@ -19,6 +21,33 @@ public interface HttpClientConnection extends HttpPeer {
      * @return Local network interface bound to this connection.
      */
     InetSocketAddress localSocketAddress();
+
+    /**
+     * @return Certificate chain associated with host reachable via this
+     * connection.
+     * @throws UnsupportedOperationException If the client is not running in
+     *                                       secure mode.
+     */
+    Certificate[] certificateChain();
+
+    /**
+     * @return Description of host reachable via this connection as an
+     * Arrowhead system.
+     * @throws UnsupportedOperationException If the client is not running in
+     *                                       secure mode.
+     * @throws IllegalStateException         If the certificate chain of the
+     *                                       remote host is not superficially
+     *                                       Arrowhead compliant.
+     */
+    default SystemDescription describe() {
+        try {
+            return SystemDescription.tryFrom(certificateChain(), remoteSocketAddress())
+                .orElseThrow(() -> new IllegalStateException("Bad certificate chain"));
+        }
+        catch (final IllegalArgumentException exception) {
+            throw new IllegalStateException("Bad certificate chain", exception);
+        }
+    }
 
     /**
      * @return {@code true} only if this connection can be used to send

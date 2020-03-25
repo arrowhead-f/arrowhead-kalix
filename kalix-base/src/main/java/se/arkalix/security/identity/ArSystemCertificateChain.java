@@ -4,9 +4,11 @@ import se.arkalix.internal.net.dns.DnsNames;
 import se.arkalix.internal.security.identity.X509Names;
 
 import java.security.PublicKey;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * An x.509 certificate chain associated with an Arrowhead system.
@@ -96,6 +98,40 @@ public class ArSystemCertificateChain {
         this.chain = chain;
     }
 
+    /**
+     * Attempts to create new x.509 certificate chain, representing a single
+     * Arrowhead system, from given {@code chain}.
+     * <p>
+     * An empty result is returned only if any certificate in the given
+     * {@code chain} is of any other type than x.509, or if fewer than 4
+     * certificates are provided.
+     *
+     * @param chain Certificate chain. The certificate at index 0 must belong
+     *              to an Arrowhead system, and the other indexes must refer to
+     *              its issuers, from lowest level up to the root. More
+     *              precisely, the certificate at index 1 must be a cloud
+     *              certificate, the one at index 2 must be a company
+     *              certificate and, finally, the one at index 3 a master
+     *              certificate.
+     */
+    public static Optional<ArSystemCertificateChain> tryConvert(final Certificate[] chain) {
+        Objects.requireNonNull(chain, "Expected chain");
+        if (chain.length < 4) {
+            return Optional.empty();
+        }
+
+        final var x509chain = new X509Certificate[chain.length];
+        for (var i = 0; i < chain.length; ++i) {
+            final var certificate = chain[i];
+            if (!(certificate instanceof X509Certificate)) {
+                return Optional.empty();
+            }
+            x509chain[i] = (X509Certificate) chain[i];
+        }
+
+        return Optional.of(new ArSystemCertificateChain(x509chain));
+    }
+
     private IllegalArgumentException commonNameNotDnsName(final String cn, final String type) {
         return new IllegalArgumentException("Certificate CN \"" + cn +
             "\" is not a valid DNS domain name; the certificate is " +
@@ -136,7 +172,7 @@ public class ArSystemCertificateChain {
         if (systemCommonName == null) {
             final var dn = system().getSubjectX500Principal().getName();
             systemCommonName = X509Names.commonNameOf(dn)
-                .orElseThrow(() -> new IllegalArgumentException("No CN in " +
+                .orElseThrow(() -> new IllegalStateException("No CN in " +
                     "system certificate"));
         }
         return systemCommonName;
@@ -182,7 +218,7 @@ public class ArSystemCertificateChain {
         if (cloudCommonName == null) {
             final var dn = cloud().getSubjectX500Principal().getName();
             cloudCommonName = X509Names.commonNameOf(dn)
-                .orElseThrow(() -> new IllegalArgumentException("No CN in " +
+                .orElseThrow(() -> new IllegalStateException("No CN in " +
                     "cloud certificate"));
         }
         return cloudCommonName;
@@ -228,7 +264,7 @@ public class ArSystemCertificateChain {
         if (companyCommonName == null) {
             final var dn = company().getSubjectX500Principal().getName();
             companyCommonName = X509Names.commonNameOf(dn)
-                .orElseThrow(() -> new IllegalArgumentException("No CN in " +
+                .orElseThrow(() -> new IllegalStateException("No CN in " +
                     "company certificate"));
         }
         return companyCommonName;
@@ -274,7 +310,7 @@ public class ArSystemCertificateChain {
         if (masterCommonName == null) {
             final var dn = master().getSubjectX500Principal().getName();
             masterCommonName = X509Names.commonNameOf(dn)
-                .orElseThrow(() -> new IllegalArgumentException("No CN in " +
+                .orElseThrow(() -> new IllegalStateException("No CN in " +
                     "master certificate"));
         }
         return masterCommonName;
@@ -305,12 +341,12 @@ public class ArSystemCertificateChain {
         }
 
         final var syn = systemCommonName();
-        if (!DnsNames.isValid(syn)) {
+        if (!DnsNames.isName(syn)) {
             throw commonNameNotDnsName(syn, "system");
         }
 
         final var cln = cloudCommonName();
-        if (!DnsNames.isValid(cln)) {
+        if (!DnsNames.isName(cln)) {
             throw commonNameNotDnsName(cln, "cloud");
         }
         if (!syn.endsWith(cln) || syn.charAt(systemName().length()) != '.') {
@@ -318,7 +354,7 @@ public class ArSystemCertificateChain {
         }
 
         final var con = companyCommonName();
-        if (!DnsNames.isValid(con)) {
+        if (!DnsNames.isName(con)) {
             throw commonNameNotDnsName(con, "company");
         }
         if (!cln.endsWith(con) || cln.charAt(companyName().length()) != '.') {
@@ -326,7 +362,7 @@ public class ArSystemCertificateChain {
         }
 
         final var man = masterCommonName();
-        if (!DnsNames.isValid(man)) {
+        if (!DnsNames.isName(man)) {
             throw commonNameNotDnsName(man, "master");
         }
         if (!con.endsWith(man) || con.charAt(cloudName().length()) != '.') {

@@ -1,19 +1,13 @@
 package se.arkalix.net.http.service;
 
 import se.arkalix.ArService;
-import se.arkalix.ArSystem;
-import se.arkalix.description.ServiceDescription;
-import se.arkalix.description.SystemDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.descriptor.InterfaceDescriptor;
-import se.arkalix.descriptor.TransportDescriptor;
 import se.arkalix.internal.ArServerRegistry;
 import se.arkalix.internal.net.http.service.HttpServer;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.security.access.AccessPolicy;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * A concrete Arrowhead service, exposing its functions as HTTP endpoints.
@@ -113,6 +107,9 @@ public final class HttpService implements ArService {
      *
      * @param accessPolicy Desired access policy.
      * @return This service.
+     * @see AccessPolicy#cloud() Same-cloud access
+     * @see AccessPolicy#cloudWhitelist(String...) same-cloud/whitelist access
+     * @see AccessPolicy#token() token access
      */
     public HttpService accessPolicy(final AccessPolicy accessPolicy) {
         this.accessPolicy = accessPolicy;
@@ -739,14 +736,6 @@ public final class HttpService implements ArService {
     }
 
     /**
-     * @return Currently set base path, if any.
-     * @see #basePath(String)
-     */
-    public Optional<String> basePath() {
-        return Optional.ofNullable(basePath);
-    }
-
-    /**
      * @return Unmodifiable list of all currently set
      * {@link HttpCatcher catchers}.
      * @see #catcher(HttpCatcher)
@@ -756,17 +745,59 @@ public final class HttpService implements ArService {
     }
 
     /**
-     * @return Unmodifiable list of currently set encodings, if any.
+     * {@inheritDoc}
+     * @see #name(String)
+     */
+    @Override
+    public String name() {
+        return name != null ? name : "";
+    }
+
+    /**
+     * @return Currently set base path, or an empty string if none has been
+     * set.
+     * @see #basePath(String)
+     */
+    public String basePath() {
+        return basePath != null ? name : "";
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see #basePath(String)
+     */
+    @Override
+    public String qualifier() {
+        return basePath();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * @see #encodings(EncodingDescriptor...)
      */
+    @Override
     public List<EncodingDescriptor> encodings() {
         return Collections.unmodifiableList(encodings);
     }
 
     /**
-     * @return Unmodifiable map of currently set service metadata.
+     * {@inheritDoc}
+     *
+     * @see #accessPolicy(AccessPolicy)
+     */
+    @Override
+    public AccessPolicy accessPolicy() {
+        return accessPolicy != null ? accessPolicy : AccessPolicy.unrestricted();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * @see #metadata(Map)
      */
+    @Override
     public Map<String, String> metadata() {
         return metadata != null
             ? Collections.unmodifiableMap(metadata)
@@ -785,11 +816,11 @@ public final class HttpService implements ArService {
     }
 
     /**
-     * @return Currently set service name, if any.
-     * @see #name(String)
+     * @return Currently set service version.
+     * @see #version(int)
      */
-    public Optional<String> name() {
-        return Optional.ofNullable(name);
+    public int version() {
+        return version;
     }
 
     /**
@@ -802,43 +833,11 @@ public final class HttpService implements ArService {
     }
 
     /**
-     * @return Currently set security mode.
-     * @see #accessPolicy(AccessPolicy)
-     */
-    public Optional<AccessPolicy> accessPolicy() {
-        return Optional.ofNullable(accessPolicy);
-    }
-
-    /**
      * @return Unmodifiable list of all currently set
      * {@link HttpValidator validators}.
      * @see #validator(HttpValidator)
      */
     public List<HttpValidator> validators() {
         return Collections.unmodifiableList(validators);
-    }
-
-    /**
-     * @return Currently set service version.
-     * @see #version(int)
-     */
-    public int version() {
-        return version;
-    }
-
-    @Override
-    public ServiceDescription describeAsProvidedBy(final ArSystem system) {
-        final var isSecure = system.isSecure();
-        return new ServiceDescription.Builder()
-            .name(name)
-            .provider(new SystemDescription(system.keyStore(), system.localSocketAddress()))
-            .qualifier(basePath)
-            .security(accessPolicy.security())
-            .metadata(metadata != null ? metadata : Collections.emptyMap())
-            .version(version)
-            .supportedInterfaces(encodings.stream()
-                .map(encoding -> InterfaceDescriptor.getOrCreate(TransportDescriptor.HTTP, isSecure, encoding))
-                .collect(Collectors.toList()))
-            .build();
     }
 }

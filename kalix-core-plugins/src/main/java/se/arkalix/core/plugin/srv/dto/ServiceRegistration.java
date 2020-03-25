@@ -1,7 +1,7 @@
 package se.arkalix.core.plugin.srv.dto;
 
+import se.arkalix.descriptor.AccessDescriptor;
 import se.arkalix.descriptor.InterfaceDescriptor;
-import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.dto.DtoWritableAs;
 import se.arkalix.dto.json.JsonName;
 
@@ -41,7 +41,7 @@ public interface ServiceRegistration {
      * The security mode of the service.
      */
     @JsonName("secure")
-    Optional<SecurityDescriptor> security();
+    Optional<AccessDescriptor> security();
 
     /**
      * Arbitrary metadata to associate with registered service.

@@ -4,6 +4,7 @@ import se.arkalix.ArService;
 import se.arkalix.ArServiceHandle;
 import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
+import se.arkalix.descriptor.AccessDescriptor;
 import se.arkalix.internal.ArServer;
 import se.arkalix.internal.net.NettyBootstraps;
 import se.arkalix.internal.plugin.PluginNotifier;
@@ -88,6 +89,21 @@ public class HttpServer implements ArServer {
 
         if (!(service instanceof HttpService)) {
             throw new IllegalArgumentException("Expected service to be HttpService");
+        }
+
+        if (service.accessPolicy().descriptor() == AccessDescriptor.NOT_SECURE) {
+            if (system.isSecure()) {
+                throw new IllegalStateException("System \"" + system.name() +
+                    "\" is running in secure mode; services with the " +
+                    "\"NOT_SECURE\" access policy are not permitted");
+            }
+        }
+        else {
+            if (!system.isSecure()) {
+                throw new IllegalStateException("System \"" + system.name() +
+                    "\" is running in insecure mode; services with other " +
+                    "access policies than \"NOT_SECURE\" are not permitted");
+            }
         }
 
         if (isShuttingDown.get()) {
