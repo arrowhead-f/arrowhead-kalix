@@ -3,10 +3,6 @@ plugins {
 }
 
 ext {
-    name = 'Arrowhead Kalix: Base Library'
-    description = 'Basic abstractions and utilities for creating ' +
-            'and interacting with Arrowhead Framework systems.'
-
     versionJunitJupiter = '5.6.0'
     versionNetty = '4.1.45.Final'
     versionJose4j = '0.7.0'
@@ -23,5 +19,17 @@ test {
     useJUnitPlatform()
     testLogging {
         events 'FAILED', 'SKIPPED'
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            pom {
+                name = 'Arrowhead Kalix: Base Library'
+                description = 'Basic abstractions and utilities for creating ' +
+                        'and interacting with Arrowhead Framework systems.'
+            }
+        }
     }
 }

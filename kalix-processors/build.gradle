@@ -3,13 +3,21 @@ plugins {
 }
 
 ext {
-    name = 'Arrowhead Kalix: Annotation Processors'
-    description = 'Kalix annotation processors.'
-
     versionJavaPoet = '1.12.1'
 }
 
 dependencies {
     implementation project(':kalix-base')
     implementation "com.squareup:javapoet:$versionJavaPoet"
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            pom {
+                name = 'Arrowhead Kalix: Annotation Processors'
+                description = 'Kalix annotation processors.'
+            }
+        }
+    }
 }
