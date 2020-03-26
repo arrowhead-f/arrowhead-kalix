@@ -5,7 +5,6 @@ import se.arkalix.dto.DtoWriter;
 import se.arkalix.dto.DtoWriteException;
 import se.arkalix.internal.dto.binary.ByteBufWriter;
 import se.arkalix.internal.net.http.HttpMediaTypes;
-import se.arkalix.internal.util.concurrent.NettyFutures;
 import se.arkalix.net.http.HttpVersion;
 import se.arkalix.net.http.client.HttpClientConnection;
 import se.arkalix.net.http.client.HttpClientRequest;
@@ -31,8 +30,9 @@ import java.util.Queue;
 import java.util.concurrent.CancellationException;
 import java.util.function.Consumer;
 
-import static se.arkalix.internal.net.http.NettyHttpAdapters.adapt;
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
+import static se.arkalix.internal.net.http.NettyHttpConverters.convert;
+import static se.arkalix.internal.util.concurrent.NettyFutures.adapt;
 
 @Internal
 public class NettyHttpClientConnection implements HttpClientConnection {
@@ -103,7 +103,7 @@ public class NettyHttpClientConnection implements HttpClientConnection {
     private void writeRequestToChannel(final HttpClientRequest request, final boolean keepAlive) throws DtoWriteException, IOException {
         final var body = request.body().orElse(null);
         final var headers = request.headers().unwrap();
-        final var method = adapt(request.method().orElseThrow(() -> new IllegalArgumentException("Expected method")));
+        final var method = convert(request.method().orElseThrow(() -> new IllegalArgumentException("Expected method")));
 
         final var queryStringEncoder = new QueryStringEncoder(request.uri()
             .orElseThrow(() -> new IllegalArgumentException("Expected uri")));
@@ -116,7 +116,7 @@ public class NettyHttpClientConnection implements HttpClientConnection {
         }
 
         final var uri = queryStringEncoder.toString();
-        final var version = adapt(request.version().orElse(HttpVersion.HTTP_11));
+        final var version = convert(request.version().orElse(HttpVersion.HTTP_11));
 
         headers.set(HOST, remoteSocketAddress().getHostString());
         HttpUtil.setKeepAlive(headers, version, keepAlive);
@@ -171,7 +171,7 @@ public class NettyHttpClientConnection implements HttpClientConnection {
 
     @Override
     public Future<?> close() {
-        return NettyFutures.adapt(channel.close());
+        return adapt(channel.close());
     }
 
     public boolean onResponseResult(final Result<HttpClientResponse> result) {

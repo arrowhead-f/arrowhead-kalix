@@ -66,8 +66,13 @@ public class DtoProcessor extends AbstractProcessor {
             messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage(), e.offendingElement());
         }
         catch (final IOException exception) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "@Readable/@Writable " +
-                "class could not be generated; reason: " + exception);
+            messager.printMessage(Diagnostic.Kind.ERROR, "" +
+                "@DtoReadableAs/@DtoWritableAs class could not be generated; " +
+                "reason: " + exception);
+        }
+        catch (final Throwable throwable) {
+            throwable.printStackTrace();
+            throw throwable;
         }
         return true;
     }
@@ -79,8 +84,8 @@ public class DtoProcessor extends AbstractProcessor {
                 .forEach(element -> {
                     if (element.getKind() != ElementKind.INTERFACE) {
                         messager.printMessage(Diagnostic.Kind.ERROR, "Only " +
-                            "interfaces may be annotated with @Readable " +
-                            "and/or @Writable", element);
+                            "interfaces may be annotated with @DtoReadableAs " +
+                            "and/or @DtoWritableAs", element);
                         return;
                     }
                     final var typeElement = (TypeElement) element;

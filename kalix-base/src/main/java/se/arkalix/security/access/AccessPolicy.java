@@ -2,7 +2,7 @@ package se.arkalix.security.access;
 
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.description.SystemDescription;
-import se.arkalix.descriptor.AccessDescriptor;
+import se.arkalix.descriptor.SecurityDescriptor;
 
 import java.security.PublicKey;
 import java.util.Collection;
@@ -23,7 +23,7 @@ public interface AccessPolicy {
     /**
      * @return Access policy descriptor.
      */
-    AccessDescriptor descriptor();
+    SecurityDescriptor descriptor();
 
     /**
      * Determines whether or not the described {@code system} may consume the

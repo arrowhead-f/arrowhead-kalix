@@ -4,6 +4,7 @@ import se.arkalix.description.SystemDescription;
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadable;
 import se.arkalix.internal.net.http.NettyHttpBodyReceiver;
+import se.arkalix.internal.net.http.NettyHttpConverters;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.net.http.HttpVersion;
@@ -20,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static se.arkalix.internal.net.http.NettyHttpAdapters.adapt;
+import static se.arkalix.internal.net.http.NettyHttpConverters.convert;
 
 @Internal
 public class NettyHttpServiceRequest implements HttpServiceRequest {
@@ -81,7 +82,7 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
     @Override
     public HttpMethod method() {
         if (method == null) {
-            method = adapt(request.method());
+            method = NettyHttpConverters.convert(request.method());
         }
         return method;
     }
@@ -109,7 +110,7 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
     @Override
     public HttpVersion version() {
         if (version == null) {
-            version = adapt(request.protocolVersion());
+            version = NettyHttpConverters.convert(request.protocolVersion());
         }
         return version;
     }

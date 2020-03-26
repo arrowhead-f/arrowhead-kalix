@@ -2,7 +2,7 @@ package se.arkalix.security.access;
 
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.description.SystemDescription;
-import se.arkalix.descriptor.AccessDescriptor;
+import se.arkalix.descriptor.SecurityDescriptor;
 
 import java.util.Objects;
 
@@ -20,8 +20,8 @@ public class AccessUnrestricted implements AccessPolicy {
     static AccessUnrestricted INSTANCE = new AccessUnrestricted();
 
     @Override
-    public AccessDescriptor descriptor() {
-        return AccessDescriptor.NOT_SECURE;
+    public SecurityDescriptor descriptor() {
+        return SecurityDescriptor.NOT_SECURE;
     }
 
     @Override

@@ -768,7 +768,7 @@ public final class HttpService implements ArService {
      * @see #basePath(String)
      */
     @Override
-    public String qualifier() {
+    public String uri() {
         return basePath();
     }
 

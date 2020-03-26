@@ -13,8 +13,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * An Arrowhead Framework (AHF) service that can be provided by an
- * {@link ArSystem}.
+ * An Arrowhead Framework service that can be provided by an {@link ArSystem}.
  */
 public interface ArService {
     /**
@@ -23,9 +22,9 @@ public interface ArService {
     String name();
 
     /**
-     * @return Service qualifier.
+     * @return Service URI.
      */
-    String qualifier();
+    String uri();
 
     /**
      * @return Unmodifiable list of encodings.
@@ -69,11 +68,11 @@ public interface ArService {
         return new ServiceDescription.Builder()
             .name(name())
             .provider(new SystemDescription(system.keyStore(), system.localSocketAddress()))
-            .qualifier(qualifier())
+            .uri(uri())
             .security(accessPolicy().descriptor())
             .metadata(metadata())
             .version(version())
-            .supportedInterfaces(encodings().stream()
+            .interfaces(encodings().stream()
                 .map(encoding -> InterfaceDescriptor.getOrCreate(TransportDescriptor.HTTP, isSecure, encoding))
                 .collect(Collectors.toList()))
             .build();

@@ -184,7 +184,7 @@ public class ArSystemCertificateChain {
      */
     public String systemName() {
         if (systemName == null) {
-            systemName = DnsNames.firstLabel(systemCommonName());
+            systemName = DnsNames.firstLabelOf(systemCommonName());
         }
         return systemName;
     }
@@ -230,7 +230,7 @@ public class ArSystemCertificateChain {
      */
     public String cloudName() {
         if (cloudName == null) {
-            cloudName = DnsNames.firstLabel(cloudCommonName());
+            cloudName = DnsNames.firstLabelOf(cloudCommonName());
         }
         return cloudName;
     }
@@ -276,7 +276,7 @@ public class ArSystemCertificateChain {
      */
     public String companyName() {
         if (companyName == null) {
-            companyName = DnsNames.firstLabel(companyCommonName());
+            companyName = DnsNames.firstLabelOf(companyCommonName());
         }
         return companyName;
     }

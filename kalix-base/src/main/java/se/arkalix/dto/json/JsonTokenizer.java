@@ -8,23 +8,23 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 @SuppressWarnings("unused")
-public final class JsonReader {
+public final class JsonTokenizer {
     private final BinaryReader source;
     private final ArrayList<JsonToken> tokens;
 
     private int p0;
     private DtoReadException error = null;
 
-    private JsonReader(final BinaryReader source) {
+    private JsonTokenizer(final BinaryReader source) {
         this.source = source;
         this.tokens = new ArrayList<>(source.readableBytes() / 16);
         this.p0 = source.readOffset();
     }
 
-    public static JsonTokenReader tokenize(final BinaryReader source) throws DtoReadException {
-        final var tokenizer = new JsonReader(source);
+    public static JsonTokenBuffer tokenize(final BinaryReader source) throws DtoReadException {
+        final var tokenizer = new JsonTokenizer(source);
         if (tokenizer.tokenizeRoot()) {
-            return new JsonTokenReader(tokenizer.tokens, source);
+            return new JsonTokenBuffer(tokenizer.tokens, source);
         }
         throw tokenizer.error;
     }

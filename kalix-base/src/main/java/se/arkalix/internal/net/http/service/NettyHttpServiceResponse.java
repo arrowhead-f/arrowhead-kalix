@@ -25,7 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Optional;
 
-import static se.arkalix.internal.net.http.NettyHttpAdapters.adapt;
+import static se.arkalix.internal.net.http.NettyHttpConverters.convert;
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
 
 @Internal
@@ -53,7 +53,7 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
     public ChannelFuture write(final Channel channel)
         throws DtoWriteException, IOException
     {
-        final var nettyStatus = adapt(status);
+        final var nettyStatus = convert(status);
         final var nettyVersion = request.protocolVersion();
 
         final ByteBuf content;
@@ -180,7 +180,7 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
     @Override
     public HttpVersion version() {
         if (version == null) {
-            version = adapt(request.protocolVersion());
+            version = convert(request.protocolVersion());
         }
         return version;
     }

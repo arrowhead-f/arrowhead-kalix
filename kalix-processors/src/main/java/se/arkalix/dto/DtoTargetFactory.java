@@ -21,18 +21,18 @@ public class DtoTargetFactory {
     public DtoTarget createFromInterface(final TypeElement interfaceElement) throws DtoException {
         if (interfaceElement.getKind() != ElementKind.INTERFACE) {
             throw new DtoException(interfaceElement, "Only interfaces may " +
-                "be annotated with @Readable and/or @Writable");
+                "be annotated with @DtoReadableAs and/or @DtoWritableAs");
         }
         if (interfaceElement.getTypeParameters().size() != 0) {
-            throw new DtoException(interfaceElement, "@Readable/@Writable " +
+            throw new DtoException(interfaceElement, "@DtoReadableAs/@DtoWritableAs " +
                 "interfaces may not have type parameters");
         }
         if (interfaceElement.getInterfaces().size() != 0) {
-            throw new DtoException(interfaceElement, "@Readable/@Writable " +
+            throw new DtoException(interfaceElement, "@DtoReadableAs/@DtoWritableAs " +
                 "interfaces may not extend other interfaces");
         }
         if (interfaceElement.getSimpleName().toString().endsWith(DtoTarget.DATA_SUFFIX)) {
-            throw new DtoException(interfaceElement, "@Readable/@Writable " +
+            throw new DtoException(interfaceElement, "@DtoReadableAs/@DtoWritableAs " +
                 "interfaces may not have names ending with \"" +
                 DtoTarget.DATA_SUFFIX + "\"");
         }
@@ -43,9 +43,9 @@ public class DtoTargetFactory {
         final var writableEncodings = writable != null ? writable.value() : new DtoEncoding[0];
 
         if (readableEncodings.length == 0 && writableEncodings.length == 0) {
-            throw new DtoException(interfaceElement, "@Readable/@Writable " +
+            throw new DtoException(interfaceElement, "@DtoReadableAs/@DtoWritableAs " +
                 "interfaces must have at least one readable or writable " +
-                "encodings, specified as @Readable/@Writable annotation " +
+                "encodings, specified as @DtoReadableAs/@DtoWritableAs annotation " +
                 "arguments");
         }
 

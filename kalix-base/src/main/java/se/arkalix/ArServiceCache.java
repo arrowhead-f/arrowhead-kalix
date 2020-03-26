@@ -104,12 +104,12 @@ public class ArServiceCache {
             if (d != 0) {
                 return d;
             }
-            d = a.qualifier().compareTo(b.qualifier());
+            d = a.uri().compareTo(b.uri());
             if (d != 0) {
                 return d;
             }
-            final var aInterfaces = a.supportedInterfaces();
-            final var bInterfaces = b.supportedInterfaces();
+            final var aInterfaces = a.interfaces();
+            final var bInterfaces = b.interfaces();
             if (aInterfaces.size() == 1 && bInterfaces.size() == 1) {
                 return aInterfaces.get(0).compareTo(bInterfaces.get(0));
             }

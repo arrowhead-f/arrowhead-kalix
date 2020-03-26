@@ -32,7 +32,7 @@ public interface HttpBodySender<Self> {
      * <p>
      * The provided writable data transfer object is scheduled for encoding and
      * transmission to the receiver of the body. Please refer to the Javadoc
-     * for the {@code @Writable} annotation for more information about writable
+     * for the {@code @DtoWritableAs} annotation for more information about writable
      * data transfer objects.
      *
      * @param encoding Encoding to use when encoding {@code data}.
@@ -40,7 +40,7 @@ public interface HttpBodySender<Self> {
      * @return This.
      * @throws NullPointerException If {@code encoding} or {@code body} is
      *                              {@code null}.
-     * @see DtoWritableAs @Writable
+     * @see DtoWritableAs @DtoWritableAs
      */
     Self body(final DtoEncoding encoding, final DtoWritable data);
 

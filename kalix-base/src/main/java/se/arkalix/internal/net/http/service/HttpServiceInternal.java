@@ -22,7 +22,7 @@ public class HttpServiceInternal {
         accessPolicy = Objects.requireNonNull(service.accessPolicy(), "Expected accessPolicy");
         description = service.describeAsIfProvidedBy(system);
 
-        final var basePath = description.qualifier();
+        final var basePath = description.uri();
         if (!HttpPaths.isValidPathWithoutPercentEncodings(basePath)) {
             throw new IllegalArgumentException("HttpService basePath \"" +
                 basePath + "\" must start with a forward slash (/) and then " +
@@ -59,7 +59,7 @@ public class HttpServiceInternal {
      * service.
      */
     public String basePath() {
-        return description.qualifier();
+        return description.uri();
     }
 
     /**

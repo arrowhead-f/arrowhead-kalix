@@ -1,6 +1,6 @@
 package se.arkalix.description;
 
-import se.arkalix.descriptor.AccessDescriptor;
+import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.internal.net.dns.DnsNames;
 
@@ -15,11 +15,11 @@ import java.util.Objects;
 public class ServiceDescription {
     private final String name;
     private final SystemDescription provider;
-    private final String qualifier;
-    private final AccessDescriptor security;
+    private final String uri;
+    private final SecurityDescriptor security;
     private final Map<String, String> metadata;
     private final int version;
-    private final List<InterfaceDescriptor> supportedInterfaces;
+    private final List<InterfaceDescriptor> interfaces;
 
     private ServiceDescription(final Builder builder) {
         name = Objects.requireNonNull(builder.name, "Expected name");
@@ -30,8 +30,8 @@ public class ServiceDescription {
                 "a dash, and must not end with a dash");
         }
         provider = Objects.requireNonNull(builder.provider, "Expected provider");
-        qualifier = Objects.requireNonNull(builder.qualifier, "Expected qualifier");
-        if (qualifier.isBlank()) {
+        uri = Objects.requireNonNull(builder.uri, "Expected uri");
+        if (uri.isBlank()) {
             throw new IllegalArgumentException("Blank or null qualifiers " +
                 "are not permitted");
         }
@@ -40,9 +40,9 @@ public class ServiceDescription {
             ? Collections.emptyMap()
             : Collections.unmodifiableMap(builder.metadata);
         version = builder.version;
-        supportedInterfaces = Collections.unmodifiableList(
-            Objects.requireNonNull(builder.supportedInterfaces, "Expected supportedInterfaces"));
-        if (supportedInterfaces.size() == 0) {
+        interfaces = Collections.unmodifiableList(
+            Objects.requireNonNull(builder.interfaces, "Expected interfaces"));
+        if (interfaces.size() == 0) {
             throw new IllegalArgumentException("At least one supported interface must be specified");
         }
     }
@@ -71,15 +71,15 @@ public class ServiceDescription {
      *
      * @return Service qualifier.
      */
-    public String qualifier() {
-        return qualifier;
+    public String uri() {
+        return uri;
     }
 
     /**
      * @return Security schema used to authenticate and authorize service
      * users.
      */
-    public AccessDescriptor security() {
+    public SecurityDescriptor security() {
         return security;
     }
 
@@ -102,8 +102,8 @@ public class ServiceDescription {
      * @return Interface triplets supported by the described service. The
      * returned list should be unmodifiable.
      */
-    public List<InterfaceDescriptor> supportedInterfaces() {
-        return supportedInterfaces;
+    public List<InterfaceDescriptor> interfaces() {
+        return interfaces;
     }
 
     /**
@@ -112,9 +112,9 @@ public class ServiceDescription {
     public static class Builder {
         private String name;
         private SystemDescription provider;
-        private List<InterfaceDescriptor> supportedInterfaces;
-        private String qualifier;
-        private AccessDescriptor security;
+        private List<InterfaceDescriptor> interfaces;
+        private String uri;
+        private SecurityDescriptor security;
         private Map<String, String> metadata;
         private int version;
 
@@ -142,13 +142,13 @@ public class ServiceDescription {
         }
 
         /**
-         * Sets service qualifier. <b>Must be specified.</b>
+         * Sets service URI. <b>Must be specified.</b>
          *
-         * @return Service qualifier.
-         * @see ServiceDescription#qualifier()
+         * @return This builder.
+         * @see ServiceDescription#uri()
          */
-        public Builder qualifier(final String qualifier) {
-            this.qualifier = qualifier;
+        public Builder uri(final String uri) {
+            this.uri = uri;
             return this;
         }
 
@@ -158,7 +158,7 @@ public class ServiceDescription {
          * @param security Security descriptor.
          * @return This builder.
          */
-        public Builder security(final AccessDescriptor security) {
+        public Builder security(final SecurityDescriptor security) {
             this.security = security;
             return this;
         }
@@ -192,8 +192,8 @@ public class ServiceDescription {
          * @param supportedInterfaces Interface triplets.
          * @return This builder.
          */
-        public Builder supportedInterfaces(final List<InterfaceDescriptor> supportedInterfaces) {
-            this.supportedInterfaces = supportedInterfaces;
+        public Builder interfaces(final List<InterfaceDescriptor> supportedInterfaces) {
+            this.interfaces = supportedInterfaces;
             return this;
         }
 

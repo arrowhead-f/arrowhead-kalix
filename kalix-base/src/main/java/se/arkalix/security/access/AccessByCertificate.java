@@ -2,7 +2,7 @@ package se.arkalix.security.access;
 
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.description.SystemDescription;
-import se.arkalix.descriptor.AccessDescriptor;
+import se.arkalix.descriptor.SecurityDescriptor;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -40,8 +40,8 @@ public class AccessByCertificate implements AccessPolicy {
     }
 
     @Override
-    public AccessDescriptor descriptor() {
-        return AccessDescriptor.CERTIFICATE;
+    public SecurityDescriptor descriptor() {
+        return SecurityDescriptor.CERTIFICATE;
     }
 
     @Override

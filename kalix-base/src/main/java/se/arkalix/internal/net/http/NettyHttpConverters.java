@@ -11,14 +11,14 @@ import io.netty.handler.codec.http.HttpResponseStatus;
  * representations.
  */
 @Internal
-public class NettyHttpAdapters {
-    private NettyHttpAdapters() {}
+public class NettyHttpConverters {
+    private NettyHttpConverters() {}
 
     /**
      * @param version Netty HTTP version.
      * @return Kalix HTTP version.
      */
-    public static HttpVersion adapt(final io.netty.handler.codec.http.HttpVersion version) {
+    public static HttpVersion convert(final io.netty.handler.codec.http.HttpVersion version) {
         if (version == io.netty.handler.codec.http.HttpVersion.HTTP_1_1) {
             return HttpVersion.HTTP_11;
         }
@@ -32,7 +32,7 @@ public class NettyHttpAdapters {
      * @param version Kalix HTTP version.
      * @return Netty HTTP version.
      */
-    public static io.netty.handler.codec.http.HttpVersion adapt(final HttpVersion version) {
+    public static io.netty.handler.codec.http.HttpVersion convert(final HttpVersion version) {
         if (version == HttpVersion.HTTP_11) {
             return io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
         }
@@ -46,7 +46,7 @@ public class NettyHttpAdapters {
      * @param method Netty HTTP method.
      * @return Kalix HTTP method.
      */
-    public static HttpMethod adapt(final io.netty.handler.codec.http.HttpMethod method) {
+    public static HttpMethod convert(final io.netty.handler.codec.http.HttpMethod method) {
         if (method == io.netty.handler.codec.http.HttpMethod.GET) {
             return HttpMethod.GET;
         }
@@ -66,7 +66,7 @@ public class NettyHttpAdapters {
      * @param method Netty HTTP method.
      * @return Kalix HTTP method.
      */
-    public static io.netty.handler.codec.http.HttpMethod adapt(final HttpMethod method) {
+    public static io.netty.handler.codec.http.HttpMethod convert(final HttpMethod method) {
         if (method == HttpMethod.GET) {
             return io.netty.handler.codec.http.HttpMethod.GET;
         }
@@ -86,7 +86,7 @@ public class NettyHttpAdapters {
      * @param status Kalix HTTP status.
      * @return Netty HTTP status.
      */
-    public static HttpResponseStatus adapt(final HttpStatus status) {
+    public static HttpResponseStatus convert(final HttpStatus status) {
         return HttpResponseStatus.valueOf(status.code());
     }
 
@@ -94,7 +94,7 @@ public class NettyHttpAdapters {
      * @param status Netty HTTP status.
      * @return Kalix HTTP status.
      */
-    public static HttpStatus adapt(final HttpResponseStatus status) {
+    public static HttpStatus convert(final HttpResponseStatus status) {
         return HttpStatus.valueOf(status.code());
     }
 }

@@ -13,7 +13,7 @@ public class TestDnsNames {
     @ParameterizedTest
     @MethodSource("validDnsLabelsAndFirstLabels")
     void shouldHaveValidFirstLabel(final String expected, final String name) {
-        assertEquals(expected, DnsNames.firstLabel(name));
+        assertEquals(expected, DnsNames.firstLabelOf(name));
     }
 
     static Stream<Arguments> validDnsLabelsAndFirstLabels() {

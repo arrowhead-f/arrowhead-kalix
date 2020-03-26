@@ -2,7 +2,7 @@ package se.arkalix.security.access;
 
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.description.SystemDescription;
-import se.arkalix.descriptor.AccessDescriptor;
+import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.internal.security.access.AccessToken;
 import se.arkalix.security.identity.ArSystemKeyStore;
 
@@ -74,8 +74,8 @@ public class AccessByToken implements AccessPolicy {
     }
 
     @Override
-    public AccessDescriptor descriptor() {
-        return AccessDescriptor.TOKEN;
+    public SecurityDescriptor descriptor() {
+        return SecurityDescriptor.TOKEN;
     }
 
     @Override
@@ -106,6 +106,6 @@ public class AccessByToken implements AccessPolicy {
         final var cn = consumer.certificateChain().systemCommonName();
         return cn.startsWith(cid) && cn.charAt(cid.length()) == '.' &&
             Objects.equals(token0.sid(), service.name()) &&
-            service.supportedInterfaces().contains(token0.iid());
+            service.interfaces().contains(token0.iid());
     }
 }

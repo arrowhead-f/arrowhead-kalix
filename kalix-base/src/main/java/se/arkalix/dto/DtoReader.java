@@ -26,7 +26,7 @@ public class DtoReader {
      * @throws UnsupportedOperationException If the DTO interface type of
      *                                       {@code t} does not include the
      *                                       given {@link DtoEncoding} as
-     *                                       argument to its {@code @Readable}
+     *                                       argument to its {@code @DtoReadableAs}
      *                                       annotation.
      * @throws DtoReadException                 If reading from {@code source}
      *                                       fails.
@@ -82,7 +82,7 @@ public class DtoReader {
         return new UnsupportedOperationException("The interface type from " +
             "which the \"" + class_ + "\" DTO was generated does not " +
             "include DataEncoding." + encoding + " as argument to its " +
-            "@Readable annotation; no corresponding decoding routine has, " +
+            "@DtoReadableAs annotation; no corresponding decoding routine has, " +
             "consequently, been generated for the class");
     }
 }

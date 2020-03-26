@@ -20,14 +20,14 @@ public interface HttpServiceResponse extends HttpBodySender<HttpServiceResponse>
      * The provided writable data transfer object is scheduled for encoding,
      * using the encoding chosen automatically for this response, and
      * transmission to the receiver of the body. Please refer to the Javadoc
-     * for the {@code @Writable} annotation for more information about writable
+     * for the {@code @DtoWritableAs} annotation for more information about writable
      * data transfer objects.
      *
      * @param data Data transfer object to send to receiver of the body.
      * @return This.
      * @throws NullPointerException If {@code encoding} or {@code body} is
      *                              {@code null}.
-     * @see DtoWritableAs @Writable
+     * @see DtoWritableAs @DtoWritableAs
      */
     HttpServiceResponse body(final DtoWritable data);
 

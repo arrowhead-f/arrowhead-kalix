@@ -20,7 +20,7 @@ public class DtoWriter {
      * @throws UnsupportedOperationException If the DTO interface type of
      *                                       {@code t} does not include the
      *                                       given {@link DtoEncoding} as
-     *                                       argument to its {@code @Writable}
+     *                                       argument to its {@code @DtoWritableAs}
      *                                       annotation.
      * @throws DtoWriteException                If writing to {@code target} fails.
      */
@@ -42,7 +42,7 @@ public class DtoWriter {
         return new UnsupportedOperationException("The interface type from " +
             "which the \"" + object.getClass() + "\" DTO was generated does " +
             "not include DataEncoding." + encoding + " as argument to its " +
-            "@Writable annotation; no corresponding encoding routine has, " +
+            "@DtoWritableAs annotation; no corresponding encoding routine has, " +
             "consequently, been generated for the class");
     }
 }

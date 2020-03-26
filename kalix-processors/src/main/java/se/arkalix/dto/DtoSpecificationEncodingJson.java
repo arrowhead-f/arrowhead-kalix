@@ -44,16 +44,16 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             .returns(dataTypeName)
             .addParameter(BinaryReader.class, "source", Modifier.FINAL)
             .addException(DtoReadException.class)
-            .addStatement("return readJson($T.tokenize(source))", JsonReader.class)
+            .addStatement("return readJson($T.tokenize(source))", JsonTokenizer.class)
             .build());
 
         final var builder = MethodSpec.methodBuilder("readJson")
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
             .returns(dataTypeName)
-            .addParameter(JsonTokenReader.class, "reader", Modifier.FINAL)
+            .addParameter(JsonTokenBuffer.class, "buffer", Modifier.FINAL)
             .addException(DtoReadException.class)
-            .addStatement("final var source = reader.source()")
-            .addStatement("var token = reader.next()")
+            .addStatement("final var source = buffer.source()")
+            .addStatement("var token = buffer.next()")
             .addStatement("var error = \"\"");
 
         var hasEnum = target.properties().stream().anyMatch(property -> property.descriptor() == DtoDescriptor.ENUM);
@@ -75,7 +75,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             .endControlFlow()
             .addStatement("final var builder = new $N()", builderName)
             .beginControlFlow("for (var n = token.nChildren(); n-- != 0; )")
-            .beginControlFlow("switch (reader.next().readString(source))");
+            .beginControlFlow("switch (buffer.next().readString(source))");
 
         for (final var property : target.properties()) {
             try {
@@ -116,7 +116,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         }
 
         builder
-            .addStatement("final var atEnd = reader.atEnd()")
+            .addStatement("final var atEnd = buffer.atEnd()")
             .addStatement("throw new $1T($2T.JSON, error, atEnd " +
                     "? \"{\" : token.readStringRaw(source), atEnd ? 0 : token.begin())",
                 DtoReadException.class, DtoEncoding.class);
@@ -250,7 +250,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         final var elementTypeName = element.inputTypeName();
 
         builder
-            .addStatement("token = reader.next()")
+            .addStatement("token = buffer.next()")
             .beginControlFlow("if (token.type() != $T.ARRAY)", JsonType.class)
             .addStatement("error = \"Expected array\"")
             .addStatement("break error")
@@ -287,7 +287,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
     private void readBoolean(final Expander assignment, final MethodSpec.Builder builder) {
         builder
             .addStatement("boolean value$L", level)
-            .beginControlFlow("switch (reader.next().type())")
+            .beginControlFlow("switch (buffer.next().type())")
             .addStatement("case TRUE: value$L = true; break", level)
             .addStatement("case FALSE: value$L = false; break", level)
             .beginControlFlow("default:")
@@ -300,7 +300,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
 
     private void readEnum(final DtoType type, final Expander assignment, final MethodSpec.Builder builder) {
         builder
-            .addStatement("token = reader.next()")
+            .addStatement("token = buffer.next()")
             .beginControlFlow("if (token.type() != $T.STRING)", JsonType.class)
             .addStatement("error = \"Expected number\"")
             .addStatement("break error")
@@ -311,9 +311,9 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
     private void readInterface(final DtoInterface type, final Expander assignment, final MethodSpec.Builder builder) {
         if (!type.isReadable(DtoEncoding.JSON)) {
             throw new IllegalStateException(type.simpleName() + " is not annotated with " +
-                "@Readable, or lacks DataEncoding.JSON as annotation argument");
+                "@DtoReadableAs, or lacks DataEncoding.JSON as annotation argument");
         }
-        builder.addStatement(assignment.expand("$T.readJson(reader)"), type.inputTypeName());
+        builder.addStatement(assignment.expand("$T.readJson(buffer)"), type.inputTypeName());
     }
 
     private void readMap(final DtoMap type, final Expander assignment, final MethodSpec.Builder builder) {
@@ -321,7 +321,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         final var value = type.value();
 
         builder
-            .addStatement("token = reader.next()")
+            .addStatement("token = buffer.next()")
             .beginControlFlow("if (token.type() != $T.OBJECT)", JsonType.class)
             .addStatement("error = \"Expected array\"")
             .addStatement("break error")
@@ -330,7 +330,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             .addStatement("final var entries$1L = new $2T<$3T, $4T>(n$1L)",
                 level, HashMap.class, key.inputTypeName(), value.inputTypeName())
             .beginControlFlow("while (n$L-- != 0)", level)
-            .addStatement("final var key$L = reader.next().readString(source)", level);
+            .addStatement("final var key$L = buffer.next().readString(source)", level);
 
         final var leader = "final var value" + level + " = ";
         level += 1;
@@ -345,7 +345,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
 
     private void readNumber(final String type, final Expander assignment, final MethodSpec.Builder builder) {
         builder
-            .addStatement("token = reader.next()")
+            .addStatement("token = buffer.next()")
             .beginControlFlow("if (token.type() != $T.NUMBER)", JsonType.class)
             .addStatement("error = \"Expected number\"")
             .addStatement("break error")
@@ -355,7 +355,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
 
     private void readString(final Expander assignment, final MethodSpec.Builder builder) {
         builder
-            .addStatement("token = reader.next()")
+            .addStatement("token = buffer.next()")
             .beginControlFlow("if (token.type() != $T.STRING)", JsonType.class)
             .addStatement("error = \"Expected string\"")
             .addStatement("break error")
@@ -368,7 +368,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         final boolean asNumber, final Expander assignment,
         final MethodSpec.Builder builder)
     {
-        builder.addStatement("token = reader.next()");
+        builder.addStatement("token = buffer.next()");
         if (asNumber) {
             builder
                 .addStatement("$T value$L", class_, level)
@@ -424,7 +424,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
 
                 writeValue(property.type(), property.name(), builder);
 
-                if (isOptional) {
+                if (p0 != 0 && isOptional) {
                     writeCache.addWriteIfNotEmpty(builder);
                     builder.endControlFlow();
                 }
@@ -539,7 +539,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
     private void writeInterface(final DtoInterface type, final String name, final MethodSpec.Builder builder) {
         if (!type.isWritable(DtoEncoding.JSON)) {
             throw new IllegalStateException(type.simpleName() + " is not " +
-                "annotated with @Writable, or lacks DataEncoding.JSON as " +
+                "annotated with @DtoWritableAs, or lacks DataEncoding.JSON as " +
                 "annotation argument");
         }
         writeCache.addWriteIfNotEmpty(builder);
@@ -592,6 +592,6 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         return new IllegalStateException("The char and Character types " +
             "cannot be represented as JSON; either change the type or " +
             "remove DataEncoding.JSON from the array of encodings " +
-            "provided to the @Readable/@Writable annotation(s)");
+            "provided to the @DtoReadableAs/@DtoWritableAs annotation(s)");
     }
 }

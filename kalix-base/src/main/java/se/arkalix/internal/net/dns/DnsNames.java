@@ -2,11 +2,27 @@ package se.arkalix.internal.net.dns;
 
 import se.arkalix.util.annotation.Internal;
 
+/**
+ * Utilities for working with DNS domain names.
+ *
+ * @see <a href="https://tools.ietf.org/html/rfc1035">RFC 1035</a>
+ */
 @Internal
 public class DnsNames {
     private DnsNames() {}
 
-    public static String firstLabel(final String name) {
+    /**
+     * Extracts first DNS domain name label from given DNS domain {@code name}.
+     *
+     * @param name Name to get first label from.
+     * @return {@code true} only if {@code name} is a valid RFC 1035 domain
+     * name label.
+     * @throws IllegalArgumentException If the first available label is not
+     *                                  valid as defined by RFC 1035, Section
+     *                                  2.3.1.
+     * @see <a href="https://tools.ietf.org/html/rfc1035#section-2.3.1">RFC 1035, Section 2.3.1</a>
+     */
+    public static String firstLabelOf(final String name) {
         var n0 = 0;
         final var n1 = name.length();
         char c;
@@ -43,6 +59,24 @@ public class DnsNames {
             "end character '" + c + "'; expected 0-9 A-Z a-z");
     }
 
+    /**
+     * Determines whether or not the given {@code label} is a valid DNS domain
+     * name label.
+     * <p>
+     * More formally, for {@code true} to be returned, {@code label} must
+     * satisfy the following ABNF grammar:
+     * <pre>
+     * &lt;label&gt;       ::= &lt;letter&gt; [ [ &lt;ldh-str&gt; ] &lt;let-dig&gt; ]
+     * &lt;ldh-str&gt;     ::= &lt;let-dig-hyp&gt; | &lt;let-dig-hyp&gt; &lt;ldh-str&gt;
+     * &lt;let-dig-hyp&gt; ::= &lt;let-dig&gt; | "-"
+     * &lt;let-dig&gt;     ::= &lt;letter&gt; | &lt;digit&gt;
+     * </pre>
+     *
+     * @param label Label to test.
+     * @return {@code true} only if {@code name} is a valid RFC 1035 domain
+     * name label.
+     * @see <a href="https://tools.ietf.org/html/rfc1035#section-2.3.1">RFC 1035, Section 2.3.1</a>
+     */
     public static boolean isLabel(final String label) {
         var l0 = 0;
         final var l1 = label.length();

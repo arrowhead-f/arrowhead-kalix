@@ -15,7 +15,7 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Objects;
 
-import static se.arkalix.internal.net.http.NettyHttpAdapters.adapt;
+import static se.arkalix.internal.net.http.NettyHttpConverters.convert;
 
 @Internal
 public class NettyHttpClientResponse implements HttpClientResponse {
@@ -67,7 +67,7 @@ public class NettyHttpClientResponse implements HttpClientResponse {
     @Override
     public HttpStatus status() {
         if (status == null) {
-            status = adapt(response.status());
+            status = convert(response.status());
         }
         return status;
     }
@@ -75,7 +75,7 @@ public class NettyHttpClientResponse implements HttpClientResponse {
     @Override
     public HttpVersion version() {
         if (version == null) {
-            version = adapt(response.protocolVersion());
+            version = convert(response.protocolVersion());
         }
         return version;
     }

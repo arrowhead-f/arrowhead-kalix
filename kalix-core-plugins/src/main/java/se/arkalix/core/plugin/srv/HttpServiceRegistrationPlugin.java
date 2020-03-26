@@ -62,11 +62,11 @@ public class HttpServiceRegistrationPlugin implements Plugin {
                     ? Base64.getEncoder().encodeToString(system.keyStore().systemPublicKey().getEncoded())
                     : null)
                 .build())
-            .qualifier(service.qualifier())
+            .uri(service.uri())
             .security(service.security())
             .metadata(service.metadata())
             .version(service.version())
-            .supportedInterfaces(service.supportedInterfaces())
+            .interfaces(service.interfaces())
             .build();
 
         return serviceRegistry.register(registration)

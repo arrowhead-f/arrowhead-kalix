@@ -107,11 +107,11 @@ public class DtoPropertyFactory {
             method.getTypeParameters().size() != 0
         )
         {
-            throw new DtoException(method, "@Readable/@Writable interface " +
-                "methods must either be static, provide a default " +
+            throw new DtoException(method, "@DtoReadableAs/@DtoWritableAs " +
+                "interface methods must either be static, provide a default " +
                 "implementation, or be simple getters, which means that " +
-                "they have a non-void return type, takes no arguments and " +
-                "does not require any type parameters");
+                "they have a non-void return type, take no arguments and " +
+                "do not have any type parameters");
         }
 
         final var builder = new DtoProperty.Builder()
@@ -137,14 +137,20 @@ public class DtoPropertyFactory {
         if (typeUtils.isAssignable(typeUtils.erasure(type), optionalType)) {
             final var declaredType = (DeclaredType) type;
             final var argumentType = declaredType.getTypeArguments().get(0);
+            final var dtoType = resolveDtoType(method, argumentType);
+            if (dtoType.descriptor().isCollection()) {
+                throw new DtoException(method, "As all collection can be " +
+                    "empty, it makes little sense to make them optional; " +
+                    "replace " + type + " with " + argumentType);
+            }
             return builder
-                .type(resolveType(method, argumentType))
+                .type(dtoType)
                 .isOptional(true)
                 .build();
         }
 
         return builder
-            .type(resolveType(method, type))
+            .type(resolveDtoType(method, type))
             .isOptional(false)
             .build();
     }
@@ -158,7 +164,7 @@ public class DtoPropertyFactory {
         return encodingNames;
     }
 
-    private DtoType resolveType(final ExecutableElement method, final TypeMirror type) throws DtoException {
+    private DtoType resolveDtoType(final ExecutableElement method, final TypeMirror type) throws DtoException {
         if (type.getKind().isPrimitive()) {
             return toElementType(type, DtoDescriptor.valueOf(type.getKind()));
         }
@@ -292,7 +298,7 @@ public class DtoPropertyFactory {
 
     private DtoSequence toArrayType(final ExecutableElement method, final TypeMirror type) throws DtoException {
         final var arrayType = (ArrayType) type;
-        final var element = resolveType(method, arrayType.getComponentType());
+        final var element = resolveDtoType(method, arrayType.getComponentType());
         return DtoSequence.newArray(arrayType, element);
     }
 
@@ -306,17 +312,18 @@ public class DtoPropertyFactory {
         if (readable == null && writable == null) {
             if (element.getSimpleName().toString().endsWith(DtoTarget.DATA_SUFFIX)) {
                 throw new DtoException(method, "Generated DTO classes may " +
-                    "not be used in interfaces annotated with @Readable or " +
-                    "@Writable; rather use the interface types from which " +
-                    "those DTO classes were generated");
+                    "not be used in interfaces annotated with @DtoReadableAs " +
+                    "or @DtoWritableAs; rather use the interface types from " +
+                    "which those DTO classes were generated");
             }
             throw new DtoException(method, "Getter return type must be a " +
                 "primitive, a boxed primitive, a String, an array (T[]), " +
                 "a List<T>, a Map<K, V>, an enum, an enum-like class, which " +
                 "overrides toString() and has a public static " +
-                "valueOf(String) method, or be annotated with @Readable " +
-                "and/or @Writable; if an array, list or map, their " +
-                "parameters must conform to the same requirements");
+                "valueOf(String) method, be a type annotated with " +
+                "@DtoReadableAs and/or @DtoWritableAs, or an Optional<T>; " +
+                "if an array, list, map or optional, their parameters must " +
+                "conform to the same requirements");
         }
 
         final var readableEncodings = readable != null ? readable.value() : new DtoEncoding[0];
@@ -327,19 +334,19 @@ public class DtoPropertyFactory {
 
     private DtoSequence toListType(final ExecutableElement method, final TypeMirror type) throws DtoException {
         final var declaredType = (DeclaredType) type;
-        final var element = resolveType(method, declaredType.getTypeArguments().get(0));
+        final var element = resolveDtoType(method, declaredType.getTypeArguments().get(0));
         return DtoSequence.newList(declaredType, element);
     }
 
     private DtoMap toMapType(final ExecutableElement method, final TypeMirror type) throws DtoException {
         final var declaredType = (DeclaredType) type;
         final var typeArguments = declaredType.getTypeArguments();
-        final var key = resolveType(method, typeArguments.get(0));
+        final var key = resolveDtoType(method, typeArguments.get(0));
         if (key.descriptor().isCollection() || key.descriptor() == DtoDescriptor.INTERFACE) {
             throw new DtoException(method, "Only boxed primitives, enums, " +
                 "enum-likes and strings may be used as Map keys");
         }
-        final var value = resolveType(method, typeArguments.get(1));
+        final var value = resolveDtoType(method, typeArguments.get(1));
         return new DtoMap(declaredType, key, value);
     }
 

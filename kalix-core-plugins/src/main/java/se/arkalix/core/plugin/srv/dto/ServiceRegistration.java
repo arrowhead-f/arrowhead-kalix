@@ -1,6 +1,6 @@
 package se.arkalix.core.plugin.srv.dto;
 
-import se.arkalix.descriptor.AccessDescriptor;
+import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.dto.DtoWritableAs;
 import se.arkalix.dto.json.JsonName;
@@ -29,19 +29,21 @@ public interface ServiceRegistration {
     SystemDefinition provider();
 
     /**
-     * Service qualifier.
+     * Qualifier that distinguishes this service from other such provided by
+     * the same system. How it is used depends on the application-level
+     * transport protocol employed by the service.
      * <p>
-     * If the application-level transport protocol is HTTP, then the qualifier
-     * is a URL base path, such as "/base-path".
+     * For example, if this service uses HTTP, then the qualifier is a URL base
+     * path, such as {@code "/base/path"}.
      */
     @JsonName("serviceUri")
-    String qualifier();
+    String uri();
 
     /**
-     * The security mode of the service.
+     * The access policy employed by the service.
      */
     @JsonName("secure")
-    Optional<AccessDescriptor> security();
+    Optional<SecurityDescriptor> security();
 
     /**
      * Arbitrary metadata to associate with registered service.
@@ -59,6 +61,5 @@ public interface ServiceRegistration {
      * If the service is provided securely over HTTP and supports JSON and XML,
      * then its two triplets would be "HTTP-SECURE-JSON" and "HTTP-SECURE-XML".
      */
-    @JsonName("interfaces")
-    List<InterfaceDescriptor> supportedInterfaces();
+    List<InterfaceDescriptor> interfaces();
 }

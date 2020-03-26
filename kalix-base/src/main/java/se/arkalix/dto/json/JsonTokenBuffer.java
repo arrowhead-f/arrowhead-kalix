@@ -4,12 +4,12 @@ import se.arkalix.dto.binary.BinaryReader;
 
 import java.util.List;
 
-public class JsonTokenReader {
+public class JsonTokenBuffer {
     private final List<JsonToken> tokens;
     private final BinaryReader source;
     private int offset;
 
-    JsonTokenReader(final List<JsonToken> tokens, final BinaryReader source) {
+    JsonTokenBuffer(final List<JsonToken> tokens, final BinaryReader source) {
         this.tokens = tokens;
         this.source = source;
 
