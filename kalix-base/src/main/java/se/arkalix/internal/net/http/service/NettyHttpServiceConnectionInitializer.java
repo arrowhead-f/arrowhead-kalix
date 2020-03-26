@@ -1,5 +1,7 @@
 package se.arkalix.internal.net.http.service;
 
+import io.netty.handler.codec.http.HttpContentCompressor;
+import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.ssl.SslHandler;
 import se.arkalix.util.annotation.Internal;
 import io.netty.channel.ChannelInitializer;
@@ -42,7 +44,9 @@ public class NettyHttpServiceConnectionInitializer extends ChannelInitializer<So
         pipeline
             //.addLast(new LoggingHandler(LogLevel.INFO))
             .addLast(new IdleStateHandler(30, 90, 0, TimeUnit.SECONDS)) // TODO: Make configurable.
+            .addLast(new HttpContentDecompressor())
             .addLast(new HttpServerCodec()) // TODO: Make message size restrictions configurable.
+            .addLast(new HttpContentCompressor())
             .addLast(new NettyHttpServiceConnectionHandler(serviceLookup, sslHandler));
     }
 }

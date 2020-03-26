@@ -63,11 +63,11 @@ public interface ArService {
      * @param system The system owning this service.
      * @return New description.
      */
-    default ServiceDescription describeAsIfProvidedBy(ArSystem system) {
+    default ServiceDescription describeAsIfProvidedBy(final ArSystem system) {
         final var isSecure = system.isSecure();
         return new ServiceDescription.Builder()
             .name(name())
-            .provider(new SystemDescription(system.keyStore(), system.localSocketAddress()))
+            .provider(system.description())
             .uri(uri())
             .security(accessPolicy().descriptor())
             .metadata(metadata())

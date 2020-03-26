@@ -23,7 +23,7 @@ public class ServiceDescription {
 
     private ServiceDescription(final Builder builder) {
         name = Objects.requireNonNull(builder.name, "Expected name");
-        if (DnsNames.isLabel(name)) {
+        if (!DnsNames.isLabel(name)) {
             throw new IllegalArgumentException("Name \"" + name + "\" is " +
                 "not a valid DNS label; such a label may only contain the " +
                 "characters `0-9 A-Z a-z -`, must not start with a digit or " +

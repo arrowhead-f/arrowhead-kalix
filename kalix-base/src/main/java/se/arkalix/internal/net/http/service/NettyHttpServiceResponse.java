@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Optional;
 
 import static se.arkalix.internal.net.http.NettyHttpConverters.convert;
@@ -45,14 +46,18 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
         final io.netty.handler.codec.http.HttpHeaders headers,
         final EncodingDescriptor encoding)
     {
-        this.encoding = encoding;
-        this.nettyHeaders = headers;
-        this.request = request;
+        this.encoding = Objects.requireNonNull(encoding, "Expected encoding");
+        this.nettyHeaders = Objects.requireNonNull(headers, "Expected headers");
+        this.request = Objects.requireNonNull(request, "Expected request");
     }
 
     public ChannelFuture write(final Channel channel)
         throws DtoWriteException, IOException
     {
+        if (status == null) {
+            throw new IllegalStateException("No HTTP status specified");
+        }
+
         final var nettyStatus = convert(status);
         final var nettyVersion = request.protocolVersion();
 
@@ -65,7 +70,7 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
         }
         else if (body instanceof DtoWritable) {
             if (dtoEncoding == null) {
-                dtoEncoding = encoding.asDtoEncoding().orElseThrow(() -> new UnsupportedOperationException("" +
+                dtoEncoding = encoding.asDtoEncoding().orElseThrow(() -> new IllegalStateException("" +
                     "There is no DTO support for the \"" + encoding +
                     "\" encoding; response body cannot be encoded"));
             }

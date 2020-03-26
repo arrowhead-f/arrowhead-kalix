@@ -30,9 +30,6 @@ public class AccessUnrestricted implements AccessPolicy {
         final ServiceDescription service,
         final String token)
     {
-        Objects.requireNonNull(consumer, "Expected consumer");
-        Objects.requireNonNull(service, "Expected service");
-
         return true;
     }
 }

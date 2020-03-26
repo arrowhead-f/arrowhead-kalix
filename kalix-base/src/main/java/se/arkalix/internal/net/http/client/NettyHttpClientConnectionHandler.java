@@ -13,6 +13,7 @@ import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 
 import java.util.Objects;
+import java.util.concurrent.Executors;
 
 @Internal
 public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandler<HttpObject> {

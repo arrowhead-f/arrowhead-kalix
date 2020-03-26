@@ -1,6 +1,7 @@
 package se.arkalix;
 
 import se.arkalix.description.ServiceDescription;
+import se.arkalix.description.SystemDescription;
 import se.arkalix.internal.ArServer;
 import se.arkalix.internal.ArServerRegistry;
 import se.arkalix.internal.plugin.PluginNotifier;
@@ -36,6 +37,8 @@ public class ArSystem {
     private final Set<ArServer> servers = Collections.synchronizedSet(new HashSet<>());
     private final ArServiceCache serviceCache = new ArServiceCache();
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
+
+    private SystemDescription description = null;
 
     private ArSystem(final Builder builder) {
         localSocketAddress.setPlain(Objects.requireNonNullElseGet(builder.socketAddress, () ->
@@ -154,6 +157,15 @@ public class ArSystem {
      */
     public FutureScheduler scheduler() {
         return scheduler;
+    }
+
+    public synchronized SystemDescription description() {
+        if (description == null) {
+            description = isSecure
+                ? new SystemDescription(keyStore, localSocketAddress.get())
+                : new SystemDescription(name, localSocketAddress.get());
+        }
+        return description;
     }
 
     /**

@@ -345,4 +345,9 @@ public class HttpPattern implements Comparable<HttpPattern> {
         // Longer paths before shorter paths.
         return other.pattern.length() - pattern.length();
     }
+
+    @Override
+    public String toString() {
+        return text();
+    }
 }

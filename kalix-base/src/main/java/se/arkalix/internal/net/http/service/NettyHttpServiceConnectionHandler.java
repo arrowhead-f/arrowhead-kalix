@@ -23,6 +23,7 @@ import java.net.InetSocketAddress;
 import java.util.Optional;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
+import static se.arkalix.util.concurrent.Future.done;
 
 @Internal
 public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandler<Object> {
@@ -70,7 +71,7 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
         // Authorize.
         {
             var token = request.headers().get("authorization");
-            if (token.regionMatches(true, 0, "bearer ", 0, 7)) {
+            if (token != null && token.regionMatches(true, 0, "bearer ", 0, 7)) {
                 token = token.substring(7).stripLeading();
             }
             try {
@@ -131,27 +132,24 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
         this.body = serviceRequestBody;
 
         // Tell service to handle request and then respond to the connected client.
-        service.handle(serviceRequest, serviceResponse).onResult(result -> {
-            try {
-                if (result.isSuccess()) {
-                    HttpUtil.setKeepAlive(serviceResponseHeaders, request.protocolVersion(), keepAlive);
-                    final var channelFuture = serviceResponse.write(ctx.channel());
-                    if (!keepAlive) {
-                        channelFuture.addListener(ChannelFutureListener.CLOSE);
-                    }
-                    return;
+        service.handle(serviceRequest, serviceResponse)
+            .map(ignored -> {
+                HttpUtil.setKeepAlive(serviceResponseHeaders, request.protocolVersion(), keepAlive);
+                final var channelFuture = serviceResponse.write(ctx.channel());
+                if (!keepAlive) {
+                    channelFuture.addListener(ChannelFutureListener.CLOSE);
                 }
-                final var fault = result.fault();
+                return done();
+            })
+            .onFailure(fault -> {
                 final var status = (fault instanceof HttpServiceRequestException || fault instanceof DtoReadException)
                     ? BAD_REQUEST
                     : INTERNAL_SERVER_ERROR;
                 sendErrorAndCleanup(ctx, status, keepAlive);
-                ctx.fireExceptionCaught(result.fault());
-            }
-            catch (final Throwable throwable) {
-                ctx.fireExceptionCaught(throwable);
-            }
-        });
+                if (status == INTERNAL_SERVER_ERROR) {
+                    ctx.fireExceptionCaught(fault); // TODO: Log properly.
+                }
+            });
     }
 
     /**
@@ -187,6 +185,7 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
         body.append(content);
         if (content instanceof LastHttpContent) {
             body.finish((LastHttpContent) content);
+            body = null;
         }
     }
 
@@ -200,10 +199,12 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
     public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
         if (body != null) {
             body.abort(cause);
+            body = null;
         }
         else {
-            ctx.fireExceptionCaught(cause);
+            ctx.fireExceptionCaught(cause); // TODO: Log properly.
         }
+        sendErrorAndCleanup(ctx, INTERNAL_SERVER_ERROR, false);
     }
 
     @Override
@@ -213,6 +214,7 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
             if (idleStateEvent.state() == IdleState.READER_IDLE) {
                 if (body != null) {
                     body.abort(new HttpServiceRequestException(HttpStatus.REQUEST_TIMEOUT));
+                    body = null;
                     sendErrorAndCleanup(ctx, REQUEST_TIMEOUT, false);
                 }
             }

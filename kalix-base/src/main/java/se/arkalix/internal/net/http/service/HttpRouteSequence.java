@@ -1,10 +1,12 @@
 package se.arkalix.internal.net.http.service;
 
 import se.arkalix.net.http.service.*;
+import se.arkalix.util.Result;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 /**
  * A sequence of {@link HttpValidator}s, a {@link HttpRoute} and
@@ -55,9 +57,26 @@ public class HttpRouteSequence {
                 if (isHandled) {
                     return Future.success(true);
                 }
+                final var response = task.response();
                 return route
-                    .handle(task.request().cloneAndSet(pathParameters), task.response())
-                    .map(ignored -> true);
+                    .handle(task.request().cloneAndSet(pathParameters), response)
+                    .mapResult(ignored -> {
+                        if (response.status().isEmpty()) {
+                            return Result.failure(new IllegalStateException("" +
+                                "HTTP route " +
+                                route.method()
+                                    .map(Object::toString)
+                                    .orElse("<?>") +
+                                ' ' +
+                                task.basePath() +
+                                route.pattern()
+                                    .map(Object::toString)
+                                    .orElse("") +
+                                " never set a status code; a status " +
+                                " must be set"));
+                        }
+                        return Result.success(true);
+                    });
             })
             .flatMapCatch(Throwable.class, throwable -> tryCatchers(throwable, task, 0));
     }

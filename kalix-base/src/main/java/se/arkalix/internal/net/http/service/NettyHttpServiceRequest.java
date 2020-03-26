@@ -38,7 +38,7 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
         body = Objects.requireNonNull(builder.body, "Expected body");
         queryStringDecoder = Objects.requireNonNull(builder.queryStringDecoder, "Expected queryStringDecoder");
         request = Objects.requireNonNull(builder.request, "Expected request");
-        consumer = Objects.requireNonNull(builder.consumer, "Expected consumer");
+        consumer = builder.consumer;
     }
 
     @Override
@@ -104,6 +104,10 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
 
     @Override
     public SystemDescription consumer() {
+        if (consumer == null) {
+            throw new IllegalStateException("Not in secure mode; consumer " +
+                "information unavailable");
+        }
         return consumer;
     }
 

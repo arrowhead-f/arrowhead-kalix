@@ -759,7 +759,7 @@ public final class HttpService implements ArService {
      * @see #basePath(String)
      */
     public String basePath() {
-        return basePath != null ? name : "";
+        return basePath != null ? basePath : "";
     }
 
     /**

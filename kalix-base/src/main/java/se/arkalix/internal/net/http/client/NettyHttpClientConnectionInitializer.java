@@ -39,7 +39,9 @@ public class NettyHttpClientConnectionInitializer extends ChannelInitializer<Soc
         pipeline
             //.addLast(new LoggingHandler(LogLevel.INFO))
             .addLast(new IdleStateHandler(30, 120, 0, TimeUnit.SECONDS)) // TODO: Make configurable.
+            .addLast(new HttpContentDecompressor())
             .addLast(new HttpClientCodec()) // TODO: Make message size restrictions configurable.
+            .addLast(new HttpContentCompressor())
             .addLast(new NettyHttpClientConnectionHandler(futureConnection, sslHandler));
     }
 }
