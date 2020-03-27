@@ -1,6 +1,8 @@
 package se.arkalix.internal.net.http.service;
 
 import io.netty.handler.ssl.SslHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import se.arkalix.description.SystemDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.dto.DtoReadException;
@@ -27,11 +29,15 @@ import static se.arkalix.util.concurrent.Future.done;
 
 @Internal
 public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandler<Object> {
+    private static final Logger logger = LoggerFactory.getLogger(NettyHttpServiceConnectionHandler.class);
+
     private final HttpServiceLookup serviceLookup;
     private final SslHandler sslHandler;
 
-    private SystemDescription consumer = null;
     private HttpRequest request = null;
+    private boolean keepAlive = false;
+    private HttpServiceInternal service = null;
+    private SystemDescription consumer = null;
     private NettyHttpBodyReceiver body = null;
 
     public NettyHttpServiceConnectionHandler(final HttpServiceLookup serviceLookup, final SslHandler sslHandler) {
@@ -53,73 +59,27 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
         // TODO: Enable and check size restrictions.
 
         this.request = request;
-        final var keepAlive = HttpUtil.isKeepAlive(request);
+        keepAlive = HttpUtil.isKeepAlive(request);
+
         final var queryStringDecoder = new QueryStringDecoder(request.uri());
         final var path = queryStringDecoder.path();
 
-        // Resolve service.
-        final HttpServiceInternal service;
-        {
-            final var optionalService = serviceLookup.getServiceByPath(path);
-            if (optionalService.isEmpty()) {
-                sendErrorAndCleanup(ctx, NOT_FOUND, keepAlive);
-                return;
-            }
-            service = optionalService.get();
+        service = resolveService(ctx, path);
+        if (service == null) {
+            return;
+        }
+        if (!authorize(ctx, request)) {
+            return;
+        }
+        final var encoding = resolveEncoding(ctx);
+        if (encoding == null) {
+            return;
         }
 
-        // Authorize.
-        {
-            var token = request.headers().get("authorization");
-            if (token != null && token.regionMatches(true, 0, "bearer ", 0, 7)) {
-                token = token.substring(7).stripLeading();
-            }
-            try {
-                if (consumer == null && sslHandler != null) {
-                    final var optionalConsumer = SystemDescription.tryFrom(
-                        sslHandler.engine().getSession().getPeerCertificates(),
-                        (InetSocketAddress) ctx.channel().remoteAddress());
-
-                    if (optionalConsumer.isEmpty()) {
-                        sendErrorAndCleanup(ctx, UNAUTHORIZED, false);
-                        return;
-                    }
-                    consumer = optionalConsumer.get();
-                }
-
-                if (!service.accessPolicy().isAuthorized(consumer, service.description(), token)) {
-                    sendErrorAndCleanup(ctx, UNAUTHORIZED, false);
-                    return;
-                }
-            }
-            catch (final AccessTokenException | SSLPeerUnverifiedException exception) {
-                sendErrorAndCleanup(ctx, UNAUTHORIZED, false);
-                return;
-            }
-            catch (final Exception exception) {
-                ctx.fireExceptionCaught(exception);
-                sendErrorAndCleanup(ctx, INTERNAL_SERVER_ERROR, false);
-                return;
-            }
-        }
-
-        // Resolve encoding.
-        final EncodingDescriptor encoding;
-        {
-            final var optionalEncoding = determineEncodingFrom(service, request.headers());
-            if (optionalEncoding.isEmpty()) {
-                sendErrorAndCleanup(ctx, UNSUPPORTED_MEDIA_TYPE, keepAlive);
-                return;
-            }
-            encoding = optionalEncoding.get();
-        }
-
-        // Manage `expect: continue` header, if present.
         if (HttpUtil.is100ContinueExpected(request)) {
             ctx.writeAndFlush(new DefaultFullHttpResponse(request.protocolVersion(), CONTINUE, Unpooled.EMPTY_BUFFER));
         }
 
-        // Prepare for receiving HTTP request body and Assemble Kalix request.
         final var serviceRequestBody = new NettyHttpBodyReceiver(ctx.alloc(), request.headers(), encoding);
         final var serviceRequest = new NettyHttpServiceRequest.Builder()
             .body(serviceRequestBody)
@@ -131,8 +91,8 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
         final var serviceResponse = new NettyHttpServiceResponse(request, serviceResponseHeaders, encoding);
         this.body = serviceRequestBody;
 
-        // Tell service to handle request and then respond to the connected client.
-        service.handle(serviceRequest, serviceResponse)
+        service
+            .handle(serviceRequest, serviceResponse)
             .map(ignored -> {
                 HttpUtil.setKeepAlive(serviceResponseHeaders, request.protocolVersion(), keepAlive);
                 final var channelFuture = serviceResponse.write(ctx.channel());
@@ -142,14 +102,57 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
                 return done();
             })
             .onFailure(fault -> {
-                final var status = (fault instanceof HttpServiceRequestException || fault instanceof DtoReadException)
-                    ? BAD_REQUEST
-                    : INTERNAL_SERVER_ERROR;
-                sendErrorAndCleanup(ctx, status, keepAlive);
-                if (status == INTERNAL_SERVER_ERROR) {
-                    ctx.fireExceptionCaught(fault); // TODO: Log properly.
+                if (fault instanceof HttpServiceRequestException || fault instanceof DtoReadException) {
+                    sendEmptyResponseAndCleanup(ctx, BAD_REQUEST, false);
+                }
+                else {
+                    logAndSendInternalServerError(ctx, "handling", fault);
                 }
             });
+    }
+
+    private HttpServiceInternal resolveService(final ChannelHandlerContext ctx, final String path) {
+        final var optionalService = serviceLookup.getServiceByPath(path);
+        if (optionalService.isEmpty()) {
+            sendEmptyResponseAndCleanup(ctx, NOT_FOUND);
+            return null;
+        }
+        return optionalService.get();
+    }
+
+    private boolean authorize(final ChannelHandlerContext ctx, final HttpRequest request) {
+        var token = request.headers().get("authorization");
+        if (token != null && token.regionMatches(true, 0, "bearer ", 0, 7)) {
+            token = token.substring(7).stripLeading();
+        }
+        try {
+            if (consumer == null && sslHandler != null) {
+                final var optionalConsumer = SystemDescription.tryFrom(
+                    sslHandler.engine().getSession().getPeerCertificates(),
+                    (InetSocketAddress) ctx.channel().remoteAddress());
+
+                if (optionalConsumer.isEmpty()) {
+                    sendEmptyResponseAndCleanup(ctx, UNAUTHORIZED);
+                    return false;
+                }
+                consumer = optionalConsumer.get();
+            }
+
+            if (!service.accessPolicy().isAuthorized(consumer, service.description(), token)) {
+                sendEmptyResponseAndCleanup(ctx, UNAUTHORIZED);
+                return false;
+            }
+
+            return true;
+        }
+        catch (final AccessTokenException | SSLPeerUnverifiedException exception) {
+            sendEmptyResponseAndCleanup(ctx, UNAUTHORIZED);
+            return false;
+        }
+        catch (final Exception exception) {
+            logAndSendInternalServerError(ctx, "authorizing", exception);
+            return false;
+        }
     }
 
     /**
@@ -161,21 +164,30 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
      * instead. If neither field is specified, the configured default encoding
      * is assumed to be adequate. No other content-negotiation is possible.
      */
-    private Optional<EncodingDescriptor> determineEncodingFrom(
-        final HttpServiceInternal service,
-        final HttpHeaders headers)
-    {
+    private EncodingDescriptor resolveEncoding(final ChannelHandlerContext ctx) {
+        final var headers = request.headers();
+        final var encodings = service.encodings();
+
+        var encoding = Optional.<EncodingDescriptor>empty();
+
         final var contentType = headers.get("content-type");
         if (contentType != null) {
-            return HttpMediaTypes.findEncodingCompatibleWithContentType(service.encodings(), contentType);
+            encoding = HttpMediaTypes.findEncodingCompatibleWithContentType(encodings, contentType);
         }
-
-        final var acceptHeaders = headers.getAll("accept");
-        if (acceptHeaders != null && acceptHeaders.size() > 0) {
-            return HttpMediaTypes.findEncodingCompatibleWithAcceptHeaders(service.encodings(), acceptHeaders);
+        else {
+            final var acceptHeaders = headers.getAll("accept");
+            if (acceptHeaders != null && acceptHeaders.size() > 0) {
+                encoding = HttpMediaTypes.findEncodingCompatibleWithAcceptHeaders(encodings, acceptHeaders);
+            }
+            else {
+                return service.defaultEncoding();
+            }
         }
-
-        return Optional.of(service.defaultEncoding());
+        if (encoding.isPresent()) {
+            return encoding.get();
+        }
+        sendEmptyResponseAndCleanup(ctx, UNSUPPORTED_MEDIA_TYPE);
+        return null;
     }
 
     private void readContent(final HttpContent content) {
@@ -194,12 +206,10 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
         ctx.flush();
     }
 
-    // TODO: Bring any response exceptions back to service.
     @Override
     public void exceptionCaught(final ChannelHandlerContext ctx, Throwable cause) {
         try {
-            if (body != null) {
-                body.abort(cause);
+            if (body != null && body.tryAbort(cause)) {
                 body = null;
             }
         }
@@ -208,8 +218,7 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
             cause = throwable;
         }
         finally {
-            ctx.fireExceptionCaught(cause); // TODO: Log properly.
-            sendErrorAndCleanup(ctx, INTERNAL_SERVER_ERROR, false);
+            logAndSendInternalServerError(ctx, "handling", cause);
         }
     }
 
@@ -219,27 +228,79 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
             final var idleStateEvent = (IdleStateEvent) evt;
             if (idleStateEvent.state() == IdleState.READER_IDLE) {
                 if (body != null) {
-                    body.abort(new HttpServiceRequestException(HttpStatus.REQUEST_TIMEOUT));
-                    body = null;
-                    sendErrorAndCleanup(ctx, REQUEST_TIMEOUT, false);
+                    final var exception = new HttpServiceRequestException(HttpStatus.REQUEST_TIMEOUT);
+                    if (body.tryAbort(exception)) {
+                        body = null;
+                        sendEmptyResponseAndCleanup(ctx, REQUEST_TIMEOUT, false);
+                    }
                 }
             }
             ctx.close();
         }
     }
 
-    private void sendErrorAndCleanup(
+    private void logAndSendInternalServerError(
+        final ChannelHandlerContext ctx,
+        final String activity,
+        final Throwable throwable)
+    {
+        if (logger.isErrorEnabled()) {
+            final var builder = new StringBuilder();
+            builder
+                .append("An unexpected exception was caught while ")
+                .append(activity);
+
+            if (request != null) {
+                builder
+                    .append(" the request ")
+                    .append(request.method())
+                    .append(' ')
+                    .append(request.uri());
+            }
+            else {
+                builder.append(" a request");
+            }
+
+            if (service != null) {
+                builder
+                    .append(" routed to the \"")
+                    .append(service.name())
+                    .append("\" service");
+            }
+            else {
+                builder.append(" before it could be routed to a service");
+            }
+
+            builder.append("; the request was received from ");
+
+            if (consumer != null) {
+                builder
+                    .append("the system \"")
+                    .append(consumer.name())
+                    .append("\" at ");
+            }
+            builder.append(ctx.channel().remoteAddress());
+
+            logger.error(builder.toString(), throwable);
+        }
+        sendEmptyResponseAndCleanup(ctx, INTERNAL_SERVER_ERROR, false);
+    }
+
+    private void sendEmptyResponseAndCleanup(final ChannelHandlerContext ctx, final HttpResponseStatus status) {
+        sendEmptyResponseAndCleanup(ctx, status, keepAlive);
+    }
+
+    private void sendEmptyResponseAndCleanup(
         final ChannelHandlerContext ctx,
         final HttpResponseStatus status,
         final boolean keepAlive)
     {
-        final HttpHeaders headers;
+        final HttpHeaders headers = new DefaultHttpHeaders(false)
+            .add("content-length", "0");
+
         final var version = request != null
             ? request.protocolVersion()
             : HttpVersion.HTTP_1_1;
-
-        headers = new DefaultHttpHeaders(false)
-            .add("content-length", "0");
 
         if (keepAlive) {
             HttpUtil.setKeepAlive(headers, version, true);

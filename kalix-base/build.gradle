@@ -12,7 +12,7 @@ ext {
 dependencies {
     implementation "io.netty:netty-all:$versionNetty"
     implementation "org.bitbucket.b_c:jose4j:$versionJose4j"
-    implementation "org.slf4j:slf4j-api:$versionSlf4j"
+    api "org.slf4j:slf4j-api:$versionSlf4j"
 
     testImplementation "org.junit.jupiter:junit-jupiter:$versionJunitJupiter"
 }

@@ -1,5 +1,7 @@
 package se.arkalix.core.plugin.srv;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import se.arkalix.core.plugin.srv.dto.ServiceRegistrationBuilder;
 import se.arkalix.core.plugin.srv.dto.SystemDefinitionBuilder;
 import se.arkalix.description.ServiceDescription;
@@ -27,6 +29,8 @@ import java.util.Objects;
  * unregister those services from one particular HTTP service registry.
  */
 public class HttpServiceRegistrationPlugin implements Plugin {
+    private static final Logger logger = LoggerFactory.getLogger(HttpServiceRegistrationPlugin.class);
+
     private final String basePath;
     private final DtoEncoding encoding;
     private final InetSocketAddress remoteSocketAddress;
@@ -85,8 +89,9 @@ public class HttpServiceRegistrationPlugin implements Plugin {
         final var system = plug.system();
         serviceRegistry.unregister(service.name(), system.name(), system.localSocketAddress())
             .onFailure(fault -> {
-                System.err.println("Failed to unregister service \"" + service.name() + "\"; cause:");
-                fault.printStackTrace(); // TODO: Log properly.
+                if (logger.isErrorEnabled()) {
+                    logger.error("Failed to unregister service \\\"\" + service.name() + \"", fault);
+                }
             });
     }
 

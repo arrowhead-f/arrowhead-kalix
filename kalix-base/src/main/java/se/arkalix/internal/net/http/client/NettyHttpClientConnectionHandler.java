@@ -13,7 +13,6 @@ import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 
 import java.util.Objects;
-import java.util.concurrent.Executors;
 
 @Internal
 public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandler<HttpObject> {
@@ -71,6 +70,7 @@ public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandle
         ctx.flush();
         if (body != null) {
             body.finish();
+            body = null;
         }
     }
 
@@ -92,19 +92,19 @@ public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandle
         body.append(content);
         if (content instanceof LastHttpContent) {
             body.finish((LastHttpContent) content);
+            body = null;
         }
     }
-
-    // TODO: Bring any response exceptions back to client.
 
     @Override
     public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
         if (futureConnection != null) {
             futureConnection.setResult(Result.failure(cause));
+            futureConnection = null;
             return;
         }
-        if (body != null) {
-            body.abort(cause);
+        if (body != null && body.tryAbort(cause)) {
+            body = null;
             return;
         }
         if (connection.onResponseResult(Result.failure(cause))) {
@@ -124,7 +124,8 @@ public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandle
                 else {
                     final var exception = new HttpClientResponseException("Incoming response body timed out");
                     if (body != null) {
-                        body.abort(exception);
+                        body.tryAbort(exception);
+                        body = null;
                     }
                     else {
                         connection.onResponseResult(Result.failure(exception));

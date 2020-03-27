@@ -56,20 +56,15 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
         this.encoding = encoding;
     }
 
-    public void abort(final Throwable throwable) {
+    public boolean tryAbort(final Throwable throwable) {
         Objects.requireNonNull(throwable, "Expected throwable");
-        if (isAborted) {
-            throw new IllegalStateException("Already aborted", throwable);
-        }
-        if (isFinished) {
-            throw new IllegalStateException("Cannot abort; body finished", throwable);
-        }
-        if (!isBodyRequested) {
-            throw new RuntimeException(throwable);
+        if (isAborted || isFinished || !isBodyRequested) {
+            return false;
         }
         isAborted = true;
 
         body.abort(throwable);
+        return true;
     }
 
     public void append(final HttpContent content) {

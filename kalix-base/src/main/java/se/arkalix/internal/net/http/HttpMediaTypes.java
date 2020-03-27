@@ -59,7 +59,7 @@ public class HttpMediaTypes {
             throw new IllegalArgumentException("Expected encodings.size() > 0");
         }
         if (contentType == null || contentType.length() == 0) {
-            return Optional.of(encodings.get(0));
+            return Optional.empty();
         }
 
         int c0 = 0, c1;
@@ -156,7 +156,7 @@ public class HttpMediaTypes {
             throw new IllegalArgumentException("Expected encodings.size() > 0");
         }
         if (acceptHeaders == null || acceptHeaders.size() == 0) {
-            return Optional.of(encodings.get(0));
+            return Optional.empty();
         }
 
         for (final var acceptHeader : acceptHeaders) {
