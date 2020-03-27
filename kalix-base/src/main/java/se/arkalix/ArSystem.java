@@ -1,5 +1,7 @@
 package se.arkalix;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.description.SystemDescription;
 import se.arkalix.internal.ArServer;
@@ -25,6 +27,8 @@ import java.util.stream.Stream;
  * An Arrowhead Framework (AHF) system.
  */
 public class ArSystem {
+    private static final Logger logger = LoggerFactory.getLogger(ArSystem.class);
+
     private final String name;
     private final AtomicReference<InetSocketAddress> localSocketAddress = new AtomicReference<>();
     private final boolean isSecure;
@@ -83,7 +87,11 @@ public class ArSystem {
             : FutureScheduler.getDefault();
 
         schedulerShutdownListener = (scheduler, timeout) -> shutdown()
-            .onFailure(Throwable::printStackTrace); // TODO: Log properly.
+            .onFailure(fault -> {
+                if (logger.isErrorEnabled()) {
+                    logger.error("Shutdown of \"" + name + "\" failed", fault);
+                }
+            });
 
         scheduler.addShutdownListener(schedulerShutdownListener);
 

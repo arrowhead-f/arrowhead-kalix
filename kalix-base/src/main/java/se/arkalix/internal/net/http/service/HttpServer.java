@@ -1,5 +1,6 @@
 package se.arkalix.internal.net.http.service;
 
+import io.netty.handler.logging.LogLevel;
 import se.arkalix.ArService;
 import se.arkalix.ArServiceHandle;
 import se.arkalix.ArSystem;
@@ -59,7 +60,7 @@ public class HttpServer implements ArServer {
 
             final var bootstrap = NettyBootstraps
                 .createServerBootstrapUsing(system.scheduler())
-                .handler(new LoggingHandler()) // TODO: Better logging/error handling
+                .handler(new LoggingHandler())
                 .childHandler(new NettyHttpServiceConnectionInitializer(server::getServiceByPath, sslContext));
 
             return adapt(bootstrap.bind(system.localAddress(), system.localPort()))
