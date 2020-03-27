@@ -12,7 +12,7 @@ import se.arkalix.util.concurrent.Future;
  * system life-cycle events. Plugins could, for example, be designed to react
  * to services being added to a system by adding authentication mechanisms, or
  * to bring up services in response to file system events, among many other
- * possible examples. More then anything else, they provide a convenient means
+ * possible examples. More than anything else, they provide a convenient means
  * of packaging and reusing complex behaviors that are frequently useful
  * together.
  */

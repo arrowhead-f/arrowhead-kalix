@@ -196,15 +196,21 @@ public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandl
 
     // TODO: Bring any response exceptions back to service.
     @Override
-    public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
-        if (body != null) {
-            body.abort(cause);
-            body = null;
+    public void exceptionCaught(final ChannelHandlerContext ctx, Throwable cause) {
+        try {
+            if (body != null) {
+                body.abort(cause);
+                body = null;
+            }
         }
-        else {
+        catch (final Throwable throwable) {
+            throwable.addSuppressed(cause);
+            cause = throwable;
+        }
+        finally {
             ctx.fireExceptionCaught(cause); // TODO: Log properly.
+            sendErrorAndCleanup(ctx, INTERNAL_SERVER_ERROR, false);
         }
-        sendErrorAndCleanup(ctx, INTERNAL_SERVER_ERROR, false);
     }
 
     @Override

@@ -241,8 +241,8 @@ public class ArSystem {
     /**
      * Initiates system shutdown, causing all of its services to be dismissed.
      * <p>
-     * System shutdown is irreversible, meaning it the system cannot be used to
-     * provide any more services.
+     * System shutdown is irreversible, meaning that the system cannot be used
+     * to provide more services after this method has been invoked.
      * <p>
      * System shutdown can also be initiated by shutting down the
      * {@link FutureScheduler scheduler} used by this system.
