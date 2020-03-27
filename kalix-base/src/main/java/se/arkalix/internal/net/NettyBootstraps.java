@@ -1,7 +1,7 @@
 package se.arkalix.internal.net;
 
 import se.arkalix.util.annotation.Internal;
-import se.arkalix.util.concurrent.FutureScheduler;
+import se.arkalix.internal.util.concurrent.NettyScheduler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.epoll.EpollEventLoopGroup;
@@ -20,7 +20,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 public class NettyBootstraps {
     private NettyBootstraps() {}
 
-    public static Bootstrap createBootstrapUsing(final FutureScheduler scheduler) {
+    public static Bootstrap createBootstrapUsing(final NettyScheduler scheduler) {
         final var eventLoopGroup = scheduler.eventLoopGroup();
         final Class<? extends SocketChannel> socketChannelClass;
         if (eventLoopGroup instanceof EpollEventLoopGroup) {
@@ -41,7 +41,7 @@ public class NettyBootstraps {
             .channel(socketChannelClass);
     }
 
-    public static ServerBootstrap createServerBootstrapUsing(final FutureScheduler scheduler) {
+    public static ServerBootstrap createServerBootstrapUsing(final NettyScheduler scheduler) {
         final var eventLoopGroup = scheduler.eventLoopGroup();
         final Class<? extends ServerSocketChannel> socketChannelClass;
         if (eventLoopGroup instanceof EpollEventLoopGroup) {

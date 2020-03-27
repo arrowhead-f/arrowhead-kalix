@@ -7,7 +7,7 @@ import se.arkalix.internal.net.http.client.NettyHttpClientConnectionInitializer;
 import se.arkalix.security.identity.ArSystemKeyStore;
 import se.arkalix.security.identity.ArTrustStore;
 import se.arkalix.util.concurrent.Future;
-import se.arkalix.util.concurrent.FutureScheduler;
+import se.arkalix.internal.util.concurrent.NettyScheduler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContext;
@@ -31,12 +31,12 @@ public class HttpClient {
 
     private final Bootstrap bootstrap;
     private final InetSocketAddress localSocketAddress;
+    private final NettyScheduler scheduler;
     private final SslContext sslContext;
 
     private HttpClient(final Builder builder) throws SSLException {
-        bootstrap = NettyBootstraps.createBootstrapUsing(builder.scheduler != null
-            ? builder.scheduler
-            : FutureScheduler.getDefault());
+        scheduler = NettyScheduler.acquire();
+        bootstrap = NettyBootstraps.createBootstrapUsing(scheduler);
         localSocketAddress = builder.localSocketAddress;
 
         if (builder.isInsecure) {
@@ -87,7 +87,6 @@ public class HttpClient {
 
         client = builder
             .localSocketAddress(new InetSocketAddress(system.localAddress(), 0))
-            .scheduler(system.scheduler())
             .build();
 
         cache.put(system, client);
@@ -156,6 +155,15 @@ public class HttpClient {
     }
 
     /**
+     * Shuts down HTTP client.
+     *
+     * @return Future completed when shutdown finishes.
+     */
+    public Future<?> shutdown() {
+        return scheduler.release();
+    }
+
+    /**
      * Builder useful for creating {@link HttpClient} instances.
      */
     public static class Builder {
@@ -163,7 +171,6 @@ public class HttpClient {
         private ArSystemKeyStore keyStore;
         private ArTrustStore trustStore;
         private boolean isInsecure = false;
-        private FutureScheduler scheduler;
 
         /**
          * Ensures that the identified local network interface is used by
@@ -221,26 +228,6 @@ public class HttpClient {
          */
         public final Builder insecure() {
             this.isInsecure = true;
-            return this;
-        }
-
-        /**
-         * Sets scheduler to be used by created HTTP clients.
-         * <p>
-         * If a non-null scheduler is explicitly provided via this method, it
-         * becomes the responsibility of the caller to ensure that the
-         * scheduler is shut down when no longer in use.
-         * <p>
-         * If no scheduler is explicitly specified, the one returned by
-         * {@link FutureScheduler#getDefault()} is used instead. This means
-         * that if several factories are created without schedulers being
-         * explicitly set, the factories will all share the same schedulers.
-         *
-         * @param scheduler Asynchronous task scheduler.
-         * @return This builder.
-         */
-        public final Builder scheduler(final FutureScheduler scheduler) {
-            this.scheduler = scheduler;
             return this;
         }
 

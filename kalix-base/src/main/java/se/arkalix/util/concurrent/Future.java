@@ -1,10 +1,15 @@
 package se.arkalix.util.concurrent;
 
+import io.netty.channel.EventLoop;
+import se.arkalix.internal.util.concurrent.CachedThreadScheduler;
+import se.arkalix.internal.util.concurrent.NettyScheduler;
 import se.arkalix.util.Result;
 import se.arkalix.util.function.ThrowingFunction;
 
 import java.util.*;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /**
@@ -843,6 +848,110 @@ public interface Future<V> {
             @Override
             public void cancel(final boolean mayInterruptIfRunning) {
                 source.cancel(mayInterruptIfRunning);
+            }
+        };
+    }
+
+    /**
+     * Returns new {@code Future} that is completed after the value of this
+     * {@code Future} has become available and could be transformed into a
+     * value of type {@code U} by {@code mapper}, on a separate thread.
+     * <p>
+     * In other words, this method performs exactly the same computation as the
+     * {@link #map(ThrowingFunction) map} method, <i>but performs its execution
+     * on a separate thread</i>. When computation finishes, the result is
+     * returned to the original thread and the returned future is completed.
+     * <p>
+     * This method exists primarily as a means of helping prevent blocking
+     * calls from stalling threads in the default Kalix scheduler, which has
+     * only a fixed number of threads. It should be used for long-running
+     * computations, blocking I/O and other similar kinds of use cases.
+     * <p>
+     * Any exception thrown by {@code mapper} leads to the returned
+     * {@code Future} being failed with the same exception.
+     *
+     * @param <U>    The type of the value returned from the mapping function.
+     * @param mapper The mapping function to apply to the value of this
+     *               {@code Future}, if it becomes available.
+     * @return A {@code Future} that may eventually hold the result of applying
+     * a mapping function to the value of this {@code Future}, if it completes
+     * successfully.
+     * @throws NullPointerException If {@code mapper} is {@code null}.
+     */
+    default <U> Future<U> forkJoin(final ThrowingFunction<V, U> mapper) {
+        Objects.requireNonNull(mapper, "Expected mapper");
+
+        NettyScheduler scheduler = null;
+        EventLoop loop;
+        loop:
+        try {
+            scheduler = NettyScheduler.acquire();
+            final var first = scheduler.eventLoopGroup().next();
+            loop = first;
+            // TODO: Custom threads with eventLoop references? Should speed this up.
+            do {
+                if (loop.inEventLoop()) {
+                    break loop;
+                }
+                loop = loop.next();
+            } while (loop != first);
+            throw new IllegalStateException("Current thread not associated " +
+                "with the default scheduler; cannot join fork without " +
+                "blocking");
+        }
+        finally {
+            if (scheduler != null) {
+                scheduler.release();
+            }
+        }
+
+        final var eventLoop = loop;
+        final var source = this;
+        return new Future<>() {
+            private AtomicReference<Consumer<Boolean>> cancelTarget = new AtomicReference<>(source::cancel);
+
+            @Override
+            public void onResult(final Consumer<Result<U>> consumer) {
+                source.onResult(result0 -> {
+                    if (cancelTarget.get() == null) {
+                        return;
+                    }
+                    if (result0.isSuccess()) {
+                        final var future1 = CachedThreadScheduler.executorService.submit(() -> {
+                            if (cancelTarget.get() == null) {
+                                return;
+                            }
+                            Result<U> result1;
+                            try {
+                                result1 = Result.success(mapper.apply(result0.value()));
+                            }
+                            catch (final Throwable throwable) {
+                                result1 = Result.failure(throwable);
+                            }
+                            final var result2 = result1;
+                            try {
+                                eventLoop.execute(() -> consumer.accept(result2));
+                            }
+                            catch (final RejectedExecutionException throwable) {
+                                if (!eventLoop.isShuttingDown()) {
+                                    throwable.printStackTrace(); // TODO: Log properly.
+                                }
+                            }
+                        });
+                        cancelTarget.set(future1::cancel);
+                    }
+                    else {
+                        consumer.accept(Result.failure(result0.fault()));
+                    }
+                });
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                final var cancelTarget0 = cancelTarget.getAndSet(null);
+                if (cancelTarget0 != null) {
+                    cancelTarget0.accept(mayInterruptIfRunning);
+                }
             }
         };
     }

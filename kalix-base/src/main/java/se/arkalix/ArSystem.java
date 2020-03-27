@@ -12,8 +12,8 @@ import se.arkalix.security.identity.ArSystemCertificateChain;
 import se.arkalix.security.identity.ArSystemKeyStore;
 import se.arkalix.security.identity.ArTrustStore;
 import se.arkalix.util.concurrent.Future;
-import se.arkalix.util.concurrent.FutureScheduler;
-import se.arkalix.util.concurrent.FutureSchedulerShutdownListener;
+import se.arkalix.internal.util.concurrent.NettyScheduler;
+import se.arkalix.internal.util.concurrent.NettySchedulerShutdownListener;
 import se.arkalix.util.concurrent.Futures;
 
 import java.net.InetAddress;
@@ -34,8 +34,8 @@ public class ArSystem {
     private final boolean isSecure;
     private final ArSystemKeyStore keyStore;
     private final ArTrustStore trustStore;
-    private final FutureScheduler scheduler;
-    private final FutureSchedulerShutdownListener schedulerShutdownListener;
+    private final NettyScheduler scheduler;
+    private final NettySchedulerShutdownListener schedulerShutdownListener;
     private final PluginNotifier pluginNotifier;
 
     private final Set<ArServer> servers = Collections.synchronizedSet(new HashSet<>());
@@ -82,17 +82,13 @@ public class ArSystem {
             name = builder.name;
         }
 
-        scheduler = builder.scheduler != null
-            ? builder.scheduler
-            : FutureScheduler.getDefault();
-
-        schedulerShutdownListener = (scheduler, timeout) -> shutdown()
+        scheduler = NettyScheduler.acquire();
+        schedulerShutdownListener = (scheduler) -> shutdown()
             .onFailure(fault -> {
                 if (logger.isErrorEnabled()) {
                     logger.error("Shutdown of \"" + name + "\" failed", fault);
                 }
             });
-
         scheduler.addShutdownListener(schedulerShutdownListener);
 
         pluginNotifier = new PluginNotifier(this, builder.plugins != null
@@ -161,12 +157,8 @@ public class ArSystem {
     }
 
     /**
-     * @return Scheduler being used to handle asynchronous task execution.
+     * @return Description of this system.
      */
-    public FutureScheduler scheduler() {
-        return scheduler;
-    }
-
     public synchronized SystemDescription description() {
         if (description == null) {
             description = isSecure
@@ -253,7 +245,7 @@ public class ArSystem {
      * to provide more services after this method has been invoked.
      * <p>
      * System shutdown can also be initiated by shutting down the
-     * {@link FutureScheduler scheduler} used by this system.
+     * {@link NettyScheduler scheduler} used by this system.
      *
      * @return Future completed when shutdown is finished.
      */
@@ -289,7 +281,6 @@ public class ArSystem {
         private ArTrustStore trustStore;
         private boolean isSecure = true;
         private List<Plugin> plugins;
-        private FutureScheduler scheduler;
 
         /**
          * Sets system name.
@@ -502,26 +493,6 @@ public class ArSystem {
          */
         public Builder plugins(final List<Plugin> plugins) {
             this.plugins = plugins;
-            return this;
-        }
-
-        /**
-         * Sets scheduler to be used by the created system.
-         * <p>
-         * If a non-null scheduler is explicitly provided via this method, it
-         * becomes the responsibility of the caller to ensure that the
-         * scheduler is shut down when no longer in use.
-         * <p>
-         * If no scheduler is explicitly specified, the one returned by
-         * {@link FutureScheduler#getDefault()} is used instead. This means
-         * that if several systems are created without schedulers being
-         * explicitly set, the systems will all share the same scheduler.
-         *
-         * @param scheduler Asynchronous task scheduler.
-         * @return This builder.
-         */
-        public Builder scheduler(final FutureScheduler scheduler) {
-            this.scheduler = scheduler;
             return this;
         }
 
