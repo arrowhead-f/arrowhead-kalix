@@ -1,9 +1,9 @@
 package se.arkalix.util.concurrent;
 
-import io.netty.channel.EventLoop;
-import se.arkalix.internal.util.concurrent.CachedThreadScheduler;
-import se.arkalix.internal.util.concurrent.NettyScheduler;
+import org.slf4j.LoggerFactory;
+import se.arkalix.internal.util.concurrent.NettyThread;
 import se.arkalix.util.Result;
+import se.arkalix.util.annotation.ThreadSafe;
 import se.arkalix.util.function.ThrowingFunction;
 
 import java.util.*;
@@ -853,19 +853,111 @@ public interface Future<V> {
     }
 
     /**
+     * Returns new {@code Future} that is completed successfully only if this
+     * {@code Future} completes successfully and its result can be provided to
+     * the given {@code consumer} function <i>on a separate thread</i>.
+     * <p>
+     * This method exists primarily as a means of helping prevent blocking
+     * calls from stalling threads in the {@link Schedulers#fixed() default
+     * fixed scheduler}, which has only a fixed number of threads. It should be
+     * used for long-running computations, blocking I/O, blocking database
+     * operations and other related kinds of use cases, but only when the
+     * result of the blocking operation will not be needed on the original
+     * thread from which it was forked. In that case, rather use the
+     * {@link #forkJoin(ThrowingFunction) forkJoin} method.
+     * <p>
+     * It is the responsibility of the caller not to make any calls or execute
+     * any operations that may lead to race conditions. Note that only those
+     * Kalix library methods that are explicitly designated as thread-safe,
+     * using the {@link ThreadSafe @ThreadSafe} annotation, can be safely
+     * called without explicit synchronization when accessed by multiple
+     * threads.
+     * <p>
+     * Any exception thrown by {@code consumer} has no impact on the returned
+     * {@code Future}, but will be logged.
+     *
+     * @param consumer Function to invoke with successful result of this
+     *                 {@code Future}, if it ever becomes available.
+     * @return A {@code Future} that will be completed either with the fault of
+     * this {@code Future} or with {@code null} if the given {@code consumer}
+     * function could be executed on a separate thread.
+     */
+    default Future<?> fork(final Consumer<V> consumer) {
+        Objects.requireNonNull(consumer, "Expected consumer");
+        final var source = this;
+        return new Future<>() {
+            @Override
+            public void onResult(final Consumer<Result<Object>> consumer0) {
+                source.onResult(result0 -> {
+                    Result<Object> result1;
+                    success:
+                    {
+                        Throwable cause;
+                        if (result0.isSuccess()) {
+                            try {
+                                Schedulers.dynamic().execute(() -> {
+                                    try {
+                                        consumer.accept(result0.value());
+                                    }
+                                    catch (final Throwable throwable) {
+                                        LoggerFactory.getLogger(Future.class)
+                                            .error("Unexpected fork consumer exception caught", throwable);
+                                    }
+                                });
+                                result1 = Result.done();
+                                break success;
+                            }
+                            catch (final Throwable throwable) {
+                                cause = throwable;
+                            }
+                        }
+                        else {
+                            cause = result0.fault();
+                        }
+                        result1 = Result.failure(cause);
+                    }
+                    consumer0.accept(result1);
+                });
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                source.cancel(mayInterruptIfRunning);
+            }
+        };
+    }
+
+    /**
      * Returns new {@code Future} that is completed after the value of this
      * {@code Future} has become available and could be transformed into a
-     * value of type {@code U} by {@code mapper}, on a separate thread.
+     * value of type {@code U} by {@code mapper} on a separate thread.
      * <p>
-     * In other words, this method performs exactly the same computation as the
+     * In other words, this method performs exactly the same operation as the
      * {@link #map(ThrowingFunction) map} method, <i>but performs its execution
      * on a separate thread</i>. When computation finishes, the result is
      * returned to the original thread and the returned future is completed.
+     * If, however, the thread completing this {@code Future} is <i>not</i>
+     * owned by the {@link Schedulers#fixed() default fixed scheduler},
+     * <i>this method will invariably fail</i>. This as the current thread is
+     * then not associated with a scheduler that can be accessed to schedule
+     * the joining of the fork.
+     * <p>
+     * Unless otherwise noted, all Kalix methods returning {@code Futures} will
+     * always use the default fixed scheduler, which means that this method is
+     * then safe to use.
      * <p>
      * This method exists primarily as a means of helping prevent blocking
-     * calls from stalling threads in the default Kalix scheduler, which has
-     * only a fixed number of threads. It should be used for long-running
-     * computations, blocking I/O and other similar kinds of use cases.
+     * calls from stalling threads in the {@link Schedulers#fixed() default
+     * fixed scheduler}, which has only a fixed number of threads. It should be
+     * used for long-running computations, blocking I/O, blocking database
+     * operations and other related kinds of use cases.
+     * <p>
+     * It is the responsibility of the caller not to make any calls or execute
+     * any operations that may lead to race conditions. Note that only those
+     * Kalix library methods that are explicitly designated as thread-safe,
+     * using the {@link ThreadSafe @ThreadSafe} annotation, can be safely
+     * called without explicit synchronization when accessed by multiple
+     * threads.
      * <p>
      * Any exception thrown by {@code mapper} leads to the returned
      * {@code Future} being failed with the same exception.
@@ -880,35 +972,9 @@ public interface Future<V> {
      */
     default <U> Future<U> forkJoin(final ThrowingFunction<V, U> mapper) {
         Objects.requireNonNull(mapper, "Expected mapper");
-
-        NettyScheduler scheduler = null;
-        EventLoop loop;
-        loop:
-        try {
-            scheduler = NettyScheduler.acquire();
-            final var first = scheduler.eventLoopGroup().next();
-            loop = first;
-            // TODO: Custom threads with eventLoop references? Should speed this up.
-            do {
-                if (loop.inEventLoop()) {
-                    break loop;
-                }
-                loop = loop.next();
-            } while (loop != first);
-            throw new IllegalStateException("Current thread not associated " +
-                "with the default scheduler; cannot join fork without " +
-                "blocking");
-        }
-        finally {
-            if (scheduler != null) {
-                scheduler.release();
-            }
-        }
-
-        final var eventLoop = loop;
         final var source = this;
         return new Future<>() {
-            private AtomicReference<Consumer<Boolean>> cancelTarget = new AtomicReference<>(source::cancel);
+            private AtomicReference<Future<?>> cancelTarget = new AtomicReference<>(source);
 
             @Override
             public void onResult(final Consumer<Result<U>> consumer) {
@@ -916,8 +982,32 @@ public interface Future<V> {
                     if (cancelTarget.get() == null) {
                         return;
                     }
-                    if (result0.isSuccess()) {
-                        final var future1 = CachedThreadScheduler.executorService.submit(() -> {
+                    Throwable fault1;
+                    fault:
+                    {
+                        if (result0.isFailure()) {
+                            fault1 = result0.fault();
+                            break fault;
+                        }
+
+                        final var thread = Thread.currentThread();
+                        if (!(thread instanceof NettyThread)) {
+                            fault1 = new IllegalStateException("Result not " +
+                                "provided by default fixed scheduler thread; " +
+                                "joining fork would not be possible");
+                            break fault;
+                        }
+
+                        final var eventLoop = ((NettyThread) thread).eventLoop();
+                        if (eventLoop == null || !eventLoop.inEventLoop()) {
+                            fault1 = new IllegalStateException("Current " +
+                                "thread not associated with a task queue; " +
+                                "joining fork would not be possible");
+                            break fault;
+                        }
+
+                        final var scheduler = Schedulers.dynamic();
+                        final var future1 = scheduler.submit(() -> {
                             if (cancelTarget.get() == null) {
                                 return;
                             }
@@ -932,17 +1022,18 @@ public interface Future<V> {
                             try {
                                 eventLoop.execute(() -> consumer.accept(result2));
                             }
-                            catch (final RejectedExecutionException throwable) {
-                                if (!eventLoop.isShuttingDown()) {
-                                    throwable.printStackTrace(); // TODO: Log properly.
+                            catch (final Throwable throwable) {
+                                if (throwable instanceof RejectedExecutionException && eventLoop.isShuttingDown()) {
+                                    return;
                                 }
+                                LoggerFactory.getLogger(Future.class)
+                                    .error("Failed to join fork", throwable);
                             }
                         });
-                        cancelTarget.set(future1::cancel);
+                        cancelTarget.set(future1);
+                        return;
                     }
-                    else {
-                        consumer.accept(Result.failure(result0.fault()));
-                    }
+                    consumer.accept(Result.failure(fault1));
                 });
             }
 
@@ -950,7 +1041,7 @@ public interface Future<V> {
             public void cancel(final boolean mayInterruptIfRunning) {
                 final var cancelTarget0 = cancelTarget.getAndSet(null);
                 if (cancelTarget0 != null) {
-                    cancelTarget0.accept(mayInterruptIfRunning);
+                    cancelTarget0.cancel(mayInterruptIfRunning);
                 }
             }
         };
@@ -961,8 +1052,10 @@ public interface Future<V> {
      *
      * @return Cached {@code Future}.
      */
-    static Future<?> done() {
-        return FutureSuccess.NULL;
+    @SuppressWarnings("unchecked")
+    @ThreadSafe
+    static <V> Future<V> done() {
+        return (Future<V>) FutureSuccess.NULL;
     }
 
     /**
@@ -972,6 +1065,7 @@ public interface Future<V> {
      * @param <V>   Type of value.
      * @return New {@code Future}.
      */
+    @ThreadSafe
     static <V> Future<V> success(final V value) {
         return new FutureSuccess<>(value);
     }
@@ -983,6 +1077,7 @@ public interface Future<V> {
      * @param <V>   Type of value that would have been wrapped if successful.
      * @return New {@code Future}.
      */
+    @ThreadSafe
     static <V> Future<V> failure(final Throwable fault) {
         return new FutureFailure<>(fault);
     }
@@ -995,6 +1090,7 @@ public interface Future<V> {
      *               successful.
      * @return New {@code Future}.
      */
+    @ThreadSafe
     static <V> Future<V> of(final Result<V> result) {
         return new FutureResult<>(result);
     }

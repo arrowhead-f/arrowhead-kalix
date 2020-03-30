@@ -1,17 +1,18 @@
 package se.arkalix.internal.net.http.service;
 
-import io.netty.handler.logging.LogLevel;
+import io.netty.bootstrap.ServerBootstrap;
 import se.arkalix.ArService;
 import se.arkalix.ArServiceHandle;
 import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.internal.ArServer;
-import se.arkalix.internal.net.NettyBootstraps;
 import se.arkalix.internal.plugin.PluginNotifier;
+import se.arkalix.internal.util.concurrent.NettyScheduler;
 import se.arkalix.net.http.service.HttpService;
 import se.arkalix.util.Result;
 import se.arkalix.util.annotation.Internal;
+import se.arkalix.util.concurrent.Schedulers;
 import se.arkalix.util.concurrent.Future;
 import io.netty.channel.Channel;
 import io.netty.handler.logging.LoggingHandler;
@@ -58,8 +59,10 @@ public class HttpServer implements ArServer {
                     .build();
             }
 
-            final var bootstrap = NettyBootstraps
-                .createServerBootstrapUsing(system.scheduler())
+            final var scheduler = (NettyScheduler) Schedulers.fixed();
+            final var bootstrap = new ServerBootstrap()
+                .group(scheduler.eventLoopGroup())
+                .channel(scheduler.serverSocketChannelClass())
                 .handler(new LoggingHandler())
                 .childHandler(new NettyHttpServiceConnectionInitializer(server::getServiceByPath, sslContext));
 

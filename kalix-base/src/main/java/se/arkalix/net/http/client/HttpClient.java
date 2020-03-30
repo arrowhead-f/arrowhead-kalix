@@ -1,11 +1,11 @@
 package se.arkalix.net.http.client;
 
 import se.arkalix.ArSystem;
-import se.arkalix.internal.net.NettyBootstraps;
 import se.arkalix.internal.net.http.client.FutureHttpClientConnection;
 import se.arkalix.internal.net.http.client.NettyHttpClientConnectionInitializer;
 import se.arkalix.security.identity.ArSystemKeyStore;
 import se.arkalix.security.identity.ArTrustStore;
+import se.arkalix.util.concurrent.Schedulers;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.internal.util.concurrent.NettyScheduler;
 import io.netty.bootstrap.Bootstrap;
@@ -31,12 +31,13 @@ public class HttpClient {
 
     private final Bootstrap bootstrap;
     private final InetSocketAddress localSocketAddress;
-    private final NettyScheduler scheduler;
     private final SslContext sslContext;
 
     private HttpClient(final Builder builder) throws SSLException {
-        scheduler = NettyScheduler.acquire();
-        bootstrap = NettyBootstraps.createBootstrapUsing(scheduler);
+        final var scheduler = (NettyScheduler) Schedulers.fixed();
+        bootstrap = new Bootstrap()
+            .group(scheduler.eventLoopGroup())
+            .channel(scheduler.socketChannelClass());
         localSocketAddress = builder.localSocketAddress;
 
         if (builder.isInsecure) {
@@ -152,15 +153,6 @@ public class HttpClient {
         Objects.requireNonNull(request, "Expected request");
         return connect(remoteSocketAddress)
             .flatMap(connection -> connection.sendAndClose(request));
-    }
-
-    /**
-     * Shuts down HTTP client.
-     *
-     * @return Future completed when shutdown finishes.
-     */
-    public Future<?> shutdown() {
-        return scheduler.release();
     }
 
     /**

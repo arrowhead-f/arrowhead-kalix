@@ -22,6 +22,8 @@ import java.util.function.Function;
  * @param <V> Type of value provided by {@code Result} if successful.
  */
 public class Result<V> {
+    private static final Result<?> DONE = new Result<>(true, null, null);
+
     private final boolean isSuccess;
     private final V value;
     private final Throwable throwable;
@@ -60,8 +62,9 @@ public class Result<V> {
      *
      * @return New {@code Result}.
      */
-    public static Result<?> done() {
-        return success(null);
+    @SuppressWarnings("unchecked")
+    public static <V> Result<V> done() {
+        return (Result<V>) DONE;
     }
 
     /**

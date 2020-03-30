@@ -4,17 +4,17 @@ package se.arkalix.util.function;
  * A function, converting an input value into an output value. May throw
  * any {@link Exception} while being executed.
  *
- * @param <V> Type of value to be provided to function.
+ * @param <T> Type of value to be provided to function.
  * @param <U> Type of value returned from function.
  */
 @FunctionalInterface
-public interface ThrowingFunction<V, U> {
+public interface ThrowingFunction<T, U> {
     /**
      * Executes this function.
      *
-     * @param v Input value.
+     * @param t Input value.
      * @return Output value.
      * @throws Exception Any kind of exception.
      */
-    U apply(V v) throws Throwable;
+    U apply(T t) throws Throwable;
 }

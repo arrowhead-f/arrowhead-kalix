@@ -11,10 +11,12 @@ import se.arkalix.plugin.Plugin;
 import se.arkalix.security.identity.ArSystemCertificateChain;
 import se.arkalix.security.identity.ArSystemKeyStore;
 import se.arkalix.security.identity.ArTrustStore;
+import se.arkalix.util.annotation.ThreadSafe;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.internal.util.concurrent.NettyScheduler;
-import se.arkalix.internal.util.concurrent.NettySchedulerShutdownListener;
+import se.arkalix.util.concurrent.SchedulerShutdownListener;
 import se.arkalix.util.concurrent.Futures;
+import se.arkalix.util.concurrent.Schedulers;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -35,7 +37,7 @@ public class ArSystem {
     private final ArSystemKeyStore keyStore;
     private final ArTrustStore trustStore;
     private final NettyScheduler scheduler;
-    private final NettySchedulerShutdownListener schedulerShutdownListener;
+    private final SchedulerShutdownListener schedulerShutdownListener;
     private final PluginNotifier pluginNotifier;
 
     private final Set<ArServer> servers = Collections.synchronizedSet(new HashSet<>());
@@ -82,7 +84,7 @@ public class ArSystem {
             name = builder.name;
         }
 
-        scheduler = NettyScheduler.acquire();
+        scheduler = (NettyScheduler) Schedulers.fixed();
         schedulerShutdownListener = (scheduler) -> shutdown()
             .onFailure(fault -> {
                 if (logger.isErrorEnabled()) {
@@ -99,6 +101,7 @@ public class ArSystem {
     /**
      * @return Human and machine-readable name of this system.
      */
+    @ThreadSafe
     public String name() {
         return name;
     }
@@ -106,6 +109,7 @@ public class ArSystem {
     /**
      * @return Address and port number of locally bound network interface.
      */
+    @ThreadSafe
     public InetSocketAddress localSocketAddress() {
         return localSocketAddress.get();
     }
@@ -113,6 +117,7 @@ public class ArSystem {
     /**
      * @return Local network interface address.
      */
+    @ThreadSafe
     public InetAddress localAddress() {
         return localSocketAddress().getAddress();
     }
@@ -120,6 +125,7 @@ public class ArSystem {
     /**
      * @return Port through which this system exposes its provided services.
      */
+    @ThreadSafe
     public int localPort() {
         return localSocketAddress().getPort();
     }
@@ -128,6 +134,7 @@ public class ArSystem {
      * @return {@code true} if and only if this system is configured to run
      * in secure mode.
      */
+    @ThreadSafe
     public final boolean isSecure() {
         return isSecure;
     }
@@ -137,6 +144,7 @@ public class ArSystem {
      * @throws UnsupportedOperationException If this system is not running in
      *                                       secure mode.
      */
+    @ThreadSafe
     public final ArSystemKeyStore keyStore() {
         if (!isSecure) {
             throw new UnsupportedOperationException("System \"" + name() + "\" not in secure mode");
@@ -149,6 +157,7 @@ public class ArSystem {
      * @throws UnsupportedOperationException If this system is not running in
      *                                       secure mode.
      */
+    @ThreadSafe
     public final ArTrustStore trustStore() {
         if (!isSecure) {
             throw new UnsupportedOperationException("System \"" + name() + "\" not in secure mode");
@@ -159,6 +168,7 @@ public class ArSystem {
     /**
      * @return Description of this system.
      */
+    @ThreadSafe
     public synchronized SystemDescription description() {
         if (description == null) {
             description = isSecure
@@ -179,6 +189,7 @@ public class ArSystem {
      * @return Service description cache containing services that this system
      * may have considered to consume.
      */
+    @ThreadSafe
     public ArServiceCache consumedServices() {
         return serviceCache;
     }
@@ -187,6 +198,7 @@ public class ArSystem {
      * @return Stream of descriptions of all services currently provided by
      * this system.
      */
+    @ThreadSafe
     public Stream<ServiceDescription> providedServices() {
         return servers.stream()
             .flatMap(server -> server.providedServices()
@@ -205,6 +217,7 @@ public class ArSystem {
      * provided.
      * @throws NullPointerException If {@code service} is {@code null}.
      */
+    @ThreadSafe
     public Future<ArServiceHandle> provide(final ArService service) {
         Objects.requireNonNull(service, "Expected service");
 
@@ -249,6 +262,7 @@ public class ArSystem {
      *
      * @return Future completed when shutdown is finished.
      */
+    @ThreadSafe
     public Future<?> shutdown() {
         if (isShuttingDown.getAndSet(true)) {
             return Future.done();
@@ -266,6 +280,7 @@ public class ArSystem {
      * @return {@code true} only if this system is currently in the process of,
      * or already has, shut down.
      */
+    @ThreadSafe
     public boolean isShuttingDown() {
         return isShuttingDown.get() || scheduler.isShuttingDown();
     }

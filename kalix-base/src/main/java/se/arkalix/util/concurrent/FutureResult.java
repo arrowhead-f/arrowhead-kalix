@@ -6,9 +6,20 @@ import se.arkalix.util.function.ThrowingFunction;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-public class FutureResult<V> implements Future<V> {
+/**
+ * A {@code Future} that always completes with a predetermined result.
+ *
+ * @param <V> Type of value that is included if the result is successful.
+ */
+class FutureResult<V> implements Future<V> {
     private final Result<V> result;
 
+    /**
+     * Creates new {@link Future} that always completes with the given
+     * {@code result}.
+     *
+     * @param result Result to include in {@code Future}.
+     */
     public FutureResult(final Result<V> result) {
         this.result = result;
     }

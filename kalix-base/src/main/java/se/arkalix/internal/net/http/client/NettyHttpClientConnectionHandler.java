@@ -1,12 +1,12 @@
 package se.arkalix.internal.net.http.client;
 
 import se.arkalix.internal.net.http.NettyHttpBodyReceiver;
+import se.arkalix.internal.net.NettySimpleChannelInboundHandler;
 import se.arkalix.net.http.client.HttpClientConnectionException;
 import se.arkalix.net.http.client.HttpClientResponseException;
 import se.arkalix.util.Result;
 import se.arkalix.util.annotation.Internal;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleState;
@@ -15,7 +15,7 @@ import io.netty.handler.timeout.IdleStateEvent;
 import java.util.Objects;
 
 @Internal
-public class NettyHttpClientConnectionHandler extends SimpleChannelInboundHandler<HttpObject> {
+public class NettyHttpClientConnectionHandler extends NettySimpleChannelInboundHandler<HttpObject> {
     private final SslHandler sslHandler;
 
     private FutureHttpClientConnection futureConnection;

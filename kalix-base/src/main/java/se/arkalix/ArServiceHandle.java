@@ -1,6 +1,7 @@
 package se.arkalix;
 
 import se.arkalix.description.ServiceDescription;
+import se.arkalix.util.annotation.ThreadSafe;
 
 /**
  * Represents an Arrowhead Framework (AHF) service that is already provided by
@@ -13,6 +14,7 @@ public interface ArServiceHandle {
     /**
      * @return Description of AHF service.
      */
+    @ThreadSafe
     ServiceDescription description();
 
     /**
@@ -21,6 +23,7 @@ public interface ArServiceHandle {
      * <p>
      * Calling this method more than once has no effect.
      */
+    @ThreadSafe
     void dismiss();
 
     /**
@@ -28,5 +31,6 @@ public interface ArServiceHandle {
      * a call to {@link #dismiss()} or by its {@link ArSystem} being shut
      * down.
      */
+    @ThreadSafe
     boolean isDismissed();
 }

@@ -2,6 +2,7 @@ package se.arkalix;
 
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.InterfaceDescriptor;
+import se.arkalix.util.annotation.ThreadSafe;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -20,6 +21,7 @@ public class ArServiceCache {
      * @param name Name to search for.
      * @return Stream of matching service descriptions.
      */
+    @ThreadSafe
     public Stream<ServiceDescription> getByName(final String name) {
         return services.stream().filter(service -> service.name().equals(name));
     }
@@ -32,6 +34,7 @@ public class ArServiceCache {
      * @param interfaces Interfaces to search for.
      * @return Stream of matching service descriptions.
      */
+    @ThreadSafe
     public Stream<ServiceDescription> getByNameAndInterfaces(
         final String name,
         final InterfaceDescriptor... interfaces)
@@ -47,6 +50,7 @@ public class ArServiceCache {
      * @param interfaces Interfaces to search for.
      * @return Stream of matching service descriptions.
      */
+    @ThreadSafe
     public Stream<ServiceDescription> getByNameAndInterfaces(
         final String name,
         final List<InterfaceDescriptor> interfaces)
@@ -60,6 +64,7 @@ public class ArServiceCache {
      *
      * @return Stream of all services in cache.
      */
+    @ThreadSafe
     public Stream<ServiceDescription> getAll() {
         return services.stream();
     }
@@ -69,6 +74,7 @@ public class ArServiceCache {
      *
      * @param services Services to update.
      */
+    @ThreadSafe
     public void update(final ServiceDescription... services) {
         update(Stream.of(services));
     }
@@ -78,6 +84,7 @@ public class ArServiceCache {
      *
      * @param services Services to update.
      */
+    @ThreadSafe
     public void update(final Collection<ServiceDescription> services) {
         update(services.stream());
     }
@@ -87,6 +94,7 @@ public class ArServiceCache {
      *
      * @param services Services to update.
      */
+    @ThreadSafe
     public void update(Stream<ServiceDescription> services) {
         services.forEach(service -> {
             if (!this.services.add(service)) {

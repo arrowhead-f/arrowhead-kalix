@@ -17,10 +17,6 @@ public class NettyFutures {
         return new ChannelFutureAdapter(channelFuture);
     }
 
-    public static <V> Future<V> adapt(final io.netty.util.concurrent.Future<V> future) {
-        return new FutureAdapter<>(future);
-    }
-
     private static class ChannelFutureAdapter implements Future<Channel> {
         private final io.netty.channel.ChannelFuture future;
         private GenericFutureListener<io.netty.channel.ChannelFuture> listener = null;
@@ -36,35 +32,6 @@ public class NettyFutures {
             }
             future.addListener(listener = future -> consumer.accept(future.isSuccess()
                 ? Result.success(future.channel())
-                : Result.failure(future.cause())));
-        }
-
-        @Override
-        public void cancel(final boolean mayInterruptIfRunning) {
-            if (future.isCancellable()) {
-                future.cancel(mayInterruptIfRunning);
-            }
-            if (listener != null) {
-                future.removeListener(listener);
-            }
-        }
-    }
-
-    private static class FutureAdapter<V> implements Future<V> {
-        private final io.netty.util.concurrent.Future<V> future;
-        private GenericFutureListener<io.netty.util.concurrent.Future<V>> listener = null;
-
-        private FutureAdapter(final io.netty.util.concurrent.Future<V> future) {
-            this.future = future;
-        }
-
-        @Override
-        public void onResult(final Consumer<Result<V>> consumer) {
-            if (listener != null) {
-                future.removeListener(listener);
-            }
-            future.addListener(listener = future -> consumer.accept(future.isSuccess()
-                ? Result.success(future.get())
                 : Result.failure(future.cause())));
         }
 

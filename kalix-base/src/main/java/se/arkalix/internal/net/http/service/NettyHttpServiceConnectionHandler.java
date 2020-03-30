@@ -8,6 +8,7 @@ import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.dto.DtoReadException;
 import se.arkalix.internal.net.http.HttpMediaTypes;
 import se.arkalix.internal.net.http.NettyHttpBodyReceiver;
+import se.arkalix.internal.net.NettySimpleChannelInboundHandler;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.service.HttpServiceRequestException;
 import se.arkalix.security.access.AccessTokenException;
@@ -15,7 +16,6 @@ import se.arkalix.util.annotation.Internal;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
@@ -28,7 +28,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static se.arkalix.util.concurrent.Future.done;
 
 @Internal
-public class NettyHttpServiceConnectionHandler extends SimpleChannelInboundHandler<Object> {
+public class NettyHttpServiceConnectionHandler extends NettySimpleChannelInboundHandler<Object> {
     private static final Logger logger = LoggerFactory.getLogger(NettyHttpServiceConnectionHandler.class);
 
     private final HttpServiceLookup serviceLookup;
