@@ -3,8 +3,8 @@ package se.arkalix.net.http.client;
 import se.arkalix.ArSystem;
 import se.arkalix.internal.net.http.client.FutureHttpClientConnection;
 import se.arkalix.internal.net.http.client.NettyHttpClientConnectionInitializer;
-import se.arkalix.security.identity.ArSystemKeyStore;
-import se.arkalix.security.identity.ArTrustStore;
+import se.arkalix.security.identity.OwnedIdentity;
+import se.arkalix.security.identity.TrustStore;
 import se.arkalix.util.concurrent.Schedulers;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.internal.util.concurrent.NettyScheduler;
@@ -48,9 +48,9 @@ public class HttpClient {
                 .trustManager(builder.trustStore != null ? builder.trustStore.certificates() : null)
                 .startTls(false);
 
-            if (builder.keyStore != null) {
+            if (builder.identity != null) {
                 sslContextBuilder
-                    .keyManager(builder.keyStore.privateKey(), builder.keyStore.systemChain())
+                    .keyManager(builder.identity.privateKey(), builder.identity.chain())
                     .clientAuth(ClientAuth.REQUIRE);
             }
             sslContext = sslContextBuilder.build();
@@ -61,7 +61,7 @@ public class HttpClient {
      * Creates new or gets a cached {@code HttpClient} that takes its
      * configuration details from the given Arrowhead {@code system}.
      * <p>
-     * The return HTTP client will use the same key store, trust store,
+     * The return HTTP client will use the same owned identity, trust store,
      * security mode, local network interface and scheduler as the given
      * system.
      *
@@ -79,7 +79,7 @@ public class HttpClient {
         final var builder = new Builder();
         if (system.isSecure()) {
             builder
-                .keyStore(system.keyStore())
+                .identity(system.identity())
                 .trustStore(system.trustStore());
         }
         else {
@@ -160,8 +160,8 @@ public class HttpClient {
      */
     public static class Builder {
         private InetSocketAddress localSocketAddress;
-        private ArSystemKeyStore keyStore;
-        private ArTrustStore trustStore;
+        private OwnedIdentity identity;
+        private TrustStore trustStore;
         private boolean isInsecure = false;
 
         /**
@@ -178,19 +178,19 @@ public class HttpClient {
         }
 
         /**
-         * Sets key store to use for representing created HTTP clients.
+         * Sets owned identity to use for representing created HTTP clients.
          * <p>
-         * If insecure mode is not enabled and no key store is provided, client
+         * If insecure mode is not enabled and no identity is provided, client
          * authentication is disabled for created HTTP clients, making them
          * unsuitable for communicating with Arrowhead systems. The clients
          * may, however, be used for communicating with arbitrary HTTP servers
          * that do not require client authentication.
          *
-         * @param keyStore Key store to use.
+         * @param identity Owned identity to use.
          * @return This builder.
          */
-        public final Builder keyStore(final ArSystemKeyStore keyStore) {
-            this.keyStore = keyStore;
+        public final Builder identity(final OwnedIdentity identity) {
+            this.identity = identity;
             return this;
         }
 
@@ -204,7 +204,7 @@ public class HttpClient {
          * @param trustStore Trust store to use.
          * @return This builder.
          */
-        public final Builder trustStore(final ArTrustStore trustStore) {
+        public final Builder trustStore(final TrustStore trustStore) {
             this.trustStore = trustStore;
             return this;
         }

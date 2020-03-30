@@ -2,6 +2,9 @@ package se.arkalix.internal.net.dns;
 
 import se.arkalix.util.annotation.Internal;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Utilities for working with DNS domain names.
  *
@@ -31,8 +34,7 @@ public class DnsNames {
         {
             c = name.charAt(n0++);
             if (!(c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z')) {
-                throw new IllegalArgumentException("Invalid DNS label start " +
-                    "character '" + c + "'; expected A-Z a-z");
+                throw invalidLabelStartException(c);
             }
             while (n0 < n1) {
                 c = name.charAt(n0++);
@@ -49,13 +51,26 @@ public class DnsNames {
                     return name.substring(0, n0 - 1);
                 }
                 if (!(c >= '0' && c <= '9' || c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z')) {
-                    throw new IllegalArgumentException("Invalid DNS label " +
-                        "character '" + c + "'; expected 0-9 A-Z a-z . -");
+                    throw invalidLabelCharException(c);
                 }
             }
             return name;
         }
-        throw new IllegalArgumentException("Invalid DNS label " +
+        throw invalidLabelEndException(c);
+    }
+
+    private static RuntimeException invalidLabelStartException(final char c) {
+        return new IllegalArgumentException("Invalid DNS label start " +
+            "character '" + c + "'; expected A-Z a-z");
+    }
+
+    private static RuntimeException invalidLabelCharException(final char c) {
+        return new IllegalArgumentException("Invalid DNS label " +
+            "character '" + c + "'; expected 0-9 A-Z a-z . -");
+    }
+
+    private static RuntimeException invalidLabelEndException(final char c) {
+        return new IllegalArgumentException("Invalid DNS label " +
             "end character '" + c + "'; expected 0-9 A-Z a-z");
     }
 
@@ -158,4 +173,71 @@ public class DnsNames {
         }
         return true;
     }
+
+    /**
+     * Verifies and splits given DNS {@code name} into no more than
+     * {@code limit} parts. Each part will contain exactly one DNS name label,
+     * except for the last, which will contain all remaining labels.
+     *
+     * @param name  Name to split.
+     * @param limit Maximum number of parts to return.
+     * @return Split name.
+     * @throws IllegalArgumentException If given {@code name} is not a valid
+     *                                  DNS name.
+     * @see #isName(String)
+     * @see <a href="https://tools.ietf.org/html/rfc1035#section-2.3.1">RFC 1035, Section 2.3.1</a>
+     */
+    public static List<String> splitName(final String name, final int limit) {
+        final var parts = new ArrayList<String>(limit);
+
+        var n0 = 0;
+        var n1 = 0;
+        final var n2 = name.length();
+
+        label:
+        for (var l = limit; --l != 0 && n1 < n2; ) {
+            var c = name.charAt(n1++); // Only alpha characters may start a label.
+            if (!(c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z')) {
+                throw invalidLabelStartException(c);
+            }
+            while (n1 < n2) {
+                c = name.charAt(n1++);
+
+                if (c == '-') { // A hyphen must never end a label.
+                    if (n1 == n2) {
+                        throw invalidLabelEndException('-');
+                    }
+                    c = name.charAt(n1);
+                    if (c == '.') {
+                        throw invalidLabelEndException('-');
+                    }
+                    continue;
+                }
+                else if (c == '.') { // A dot must never end a name.
+                    if (n1 == n2) {
+                        throw new IllegalArgumentException("Invalid DNS name " +
+                            "end character '.'; expected 0-9 A-Z a-z");
+                    }
+                    parts.add(name.substring(n0, n1));
+                    n0 = n1;
+                    continue label; // End of label, start over.
+                }
+                if (!(c >= '0' && c <= '9' || c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z')) {
+                    throw invalidLabelCharException('c');
+                }
+            }
+        }
+
+        if (n0 < n2) {
+            final var tail = name.substring(n0, n2);
+            if (!isName(tail)) {
+                throw new IllegalArgumentException("Invalid DNS name " +
+                    "\"" + name + "\"");
+            }
+            parts.add(tail);
+        }
+
+        return parts;
+    }
+
 }

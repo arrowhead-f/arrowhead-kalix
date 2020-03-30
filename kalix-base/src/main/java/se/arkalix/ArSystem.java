@@ -8,9 +8,9 @@ import se.arkalix.internal.ArServer;
 import se.arkalix.internal.ArServerRegistry;
 import se.arkalix.internal.plugin.PluginNotifier;
 import se.arkalix.plugin.Plugin;
-import se.arkalix.security.identity.ArSystemCertificateChain;
-import se.arkalix.security.identity.ArSystemKeyStore;
-import se.arkalix.security.identity.ArTrustStore;
+import se.arkalix.security.identity.SystemIdentity;
+import se.arkalix.security.identity.OwnedIdentity;
+import se.arkalix.security.identity.TrustStore;
 import se.arkalix.util.annotation.ThreadSafe;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.internal.util.concurrent.NettyScheduler;
@@ -34,8 +34,8 @@ public class ArSystem {
     private final String name;
     private final AtomicReference<InetSocketAddress> localSocketAddress = new AtomicReference<>();
     private final boolean isSecure;
-    private final ArSystemKeyStore keyStore;
-    private final ArTrustStore trustStore;
+    private final OwnedIdentity identity;
+    private final TrustStore trustStore;
     private final NettyScheduler scheduler;
     private final SchedulerShutdownListener schedulerShutdownListener;
     private final PluginNotifier pluginNotifier;
@@ -52,17 +52,17 @@ public class ArSystem {
 
         if (builder.isSecure) {
             isSecure = true;
-            if (builder.keyStore == null || builder.trustStore == null) {
-                throw new IllegalArgumentException("Expected keyStore and " +
+            if (builder.identity == null || builder.trustStore == null) {
+                throw new IllegalArgumentException("Expected identity and " +
                     "trustStore; required in secure mode");
             }
-            keyStore = builder.keyStore;
+            identity = builder.identity;
             trustStore = builder.trustStore;
 
-            final var name0 = keyStore.systemName();
+            final var name0 = identity.systemName();
             if (builder.name != null && !Objects.equals(builder.name, name0)) {
                 throw new IllegalArgumentException("Expected name either " +
-                    "not be provided or to match keyStore system " +
+                    "not be provided or to match identity system " +
                     "certificate name; \"" + builder.name + "\" != \"" +
                     name0 + "\"");
             }
@@ -70,11 +70,11 @@ public class ArSystem {
         }
         else {
             isSecure = false;
-            if (builder.keyStore != null || builder.trustStore != null) {
-                throw new IllegalArgumentException("Unexpected keyStore or " +
+            if (builder.identity != null || builder.trustStore != null) {
+                throw new IllegalArgumentException("Unexpected identity or " +
                     "trustStore; not permitted in insecure mode");
             }
-            keyStore = null;
+            identity = null;
             trustStore = null;
 
             if (builder.name == null || builder.name.length() == 0) {
@@ -140,27 +140,29 @@ public class ArSystem {
     }
 
     /**
-     * @return Key store, which represents the identity of this system.
-     * @throws UnsupportedOperationException If this system is not running in
-     *                                       secure mode.
+     * @return The cryptographic identity of this system.
+     * @throws IllegalStateException If this system is not running in secure
+     *                               mode.
      */
     @ThreadSafe
-    public final ArSystemKeyStore keyStore() {
+    public final OwnedIdentity identity() {
         if (!isSecure) {
-            throw new UnsupportedOperationException("System \"" + name() + "\" not in secure mode");
+            throw new IllegalStateException("System \"" + name() + "\" not " +
+                "in secure mode");
         }
-        return keyStore;
+        return identity;
     }
 
     /**
      * @return Trust store, which contains certificates trusted by this system.
-     * @throws UnsupportedOperationException If this system is not running in
-     *                                       secure mode.
+     * @throws IllegalStateException If this system is not running in secure
+     *                               mode.
      */
     @ThreadSafe
-    public final ArTrustStore trustStore() {
+    public final TrustStore trustStore() {
         if (!isSecure) {
-            throw new UnsupportedOperationException("System \"" + name() + "\" not in secure mode");
+            throw new IllegalStateException("System \"" + name() + "\" not " +
+                "in secure mode");
         }
         return trustStore;
     }
@@ -172,7 +174,7 @@ public class ArSystem {
     public synchronized SystemDescription description() {
         if (description == null) {
             description = isSecure
-                ? new SystemDescription(keyStore, localSocketAddress.get())
+                ? new SystemDescription(identity, localSocketAddress.get())
                 : new SystemDescription(name, localSocketAddress.get());
         }
         return description;
@@ -292,8 +294,8 @@ public class ArSystem {
     public static class Builder {
         private String name;
         private InetSocketAddress socketAddress;
-        private ArSystemKeyStore keyStore;
-        private ArTrustStore trustStore;
+        private OwnedIdentity identity;
+        private TrustStore trustStore;
         private boolean isSecure = true;
         private List<Plugin> plugins;
 
@@ -307,7 +309,7 @@ public class ArSystem {
          * "system1" or not be set at all. Note that the Arrowhead standard
          * demands that the common name is a dot-separated hierarchical name.
          * If not set, then the least significant part of the certificate
-         * provided via {@link #keyStore(ArSystemKeyStore)} is used as name.
+         * provided via {@link #identity(OwnedIdentity)} is used as name.
          * <p>
          * If not running in secure mode, the name must be specified
          * explicitly. Avoid picking names that contain whitespace or anything
@@ -316,7 +318,7 @@ public class ArSystem {
          *
          * @param name Name of this system.
          * @return This builder.
-         * @see ArSystemCertificateChain More about Arrowhead certifiate names
+         * @see SystemIdentity More about Arrowhead certifiate names
          * @see <a href="https://tools.ietf.org/html/rfc1035#section-2.3.1">RFC 1035, Section 2.3.1</a>
          */
         public Builder name(final String name) {
@@ -433,18 +435,18 @@ public class ArSystem {
         }
 
         /**
-         * Sets key store to use for representing the created system and its
-         * services.
+         * Sets owned identity to use for representing the created system and
+         * its services.
          * <p>
-         * An {@link ArSystem} either must have or must not have a
-         * key store, depending on whether it is running in secure mode or not,
+         * An {@link ArSystem} either must have or must not have an owned
+         * identity, depending on whether it is running in secure mode or not,
          * respectively.
          *
-         * @param keyStore Key store to use.
+         * @param identity Owned identity to use.
          * @return This builder.
          */
-        public final Builder keyStore(final ArSystemKeyStore keyStore) {
-            this.keyStore = keyStore;
+        public final Builder identity(final OwnedIdentity identity) {
+            this.identity = identity;
             return this;
         }
 
@@ -459,7 +461,7 @@ public class ArSystem {
          * @param trustStore Trust store to use.
          * @return This builder.
          */
-        public final Builder trustStore(final ArTrustStore trustStore) {
+        public final Builder trustStore(final TrustStore trustStore) {
             this.trustStore = trustStore;
             return this;
         }
@@ -471,9 +473,9 @@ public class ArSystem {
          * connections between systems. Usage of this mode is not advised for
          * most kinds of production scenarios.
          * <p>
-         * It is an error to provide a key store or a trust store via
-         * {@link #keyStore(ArSystemKeyStore)} or
-         * {@link #trustStore(ArTrustStore)} if insecure mode is enabled.
+         * It is an error to provide an owned identity or a trust store via
+         * {@link #identity(OwnedIdentity)} or
+         * {@link #trustStore(TrustStore)} if insecure mode is enabled.
          *
          * @return This builder.
          */

@@ -1,5 +1,7 @@
 package se.arkalix.descriptor;
 
+import se.arkalix.security.identity.SystemIdentity;
+
 import java.util.Objects;
 
 /**
@@ -29,7 +31,7 @@ public final class SecurityDescriptor {
      * <p>
      * A consuming system is trusted only if it can (1) present a certificate
      * issued by the same cloud certificate as a provider, as well as (2) the
-     * {@link se.arkalix.security.identity.ArSystemCertificateChain system
+     * {@link SystemIdentity system
      * name} of that certificate is white-listed by the service.
      */
     public static final SecurityDescriptor CERTIFICATE = new SecurityDescriptor("CERTIFICATE");
@@ -48,7 +50,7 @@ public final class SecurityDescriptor {
      * <p>
      * A consuming system is trusted only if it can (1) present a certificate
      * issued by the same
-     * {@link se.arkalix.security.identity.ArSystemCertificateChain master}
+     * {@link SystemIdentity master}
      * certificate as a provider, as well as (2) present a token originating
      * from a designated authorization system.
      */

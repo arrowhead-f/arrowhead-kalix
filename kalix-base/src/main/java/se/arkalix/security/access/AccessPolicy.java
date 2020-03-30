@@ -3,6 +3,7 @@ package se.arkalix.security.access;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.description.SystemDescription;
 import se.arkalix.descriptor.SecurityDescriptor;
+import se.arkalix.security.identity.SystemIdentity;
 
 import java.security.PublicKey;
 import java.util.Collection;
@@ -55,7 +56,7 @@ public interface AccessPolicy {
      * <p>
      * Note that the white-listed names are not full names. Only the system
      * name parts, as described
-     * {@link se.arkalix.security.identity.ArSystemCertificateChain here}.
+     * {@link SystemIdentity here}.
      *
      * @param whitelist Names of systems to be allowed access.
      * @return Created access policy.
@@ -71,7 +72,7 @@ public interface AccessPolicy {
      * <p>
      * Note that the white-listed names are not full names. Only the system
      * name parts, as described
-     * {@link se.arkalix.security.identity.ArSystemCertificateChain here}.
+     * {@link SystemIdentity here}.
      * <p>
      * Also note that access policy instances of this type can be shared by
      * multiple services.
@@ -86,7 +87,7 @@ public interface AccessPolicy {
     /**
      * Creates new access policy granting access to consumers with certificate
      * chains sharing the same
-     * {@link se.arkalix.security.identity.ArSystemCertificateChain master}
+     * {@link SystemIdentity master}
      * certificate as the provider of the service being consumed, as well as
      * being able to present a token from an authorization system that must be
      * resolved at some later point.
@@ -106,7 +107,7 @@ public interface AccessPolicy {
     /**
      * Creates new access policy granting access to consumers with certificate
      * chains sharing the same
-     * {@link se.arkalix.security.identity.ArSystemCertificateChain master}
+     * {@link SystemIdentity master}
      * certificate as the provider of the service being consumed, as well as
      * being able to present a token from the authorization system represented
      * by the given public key.

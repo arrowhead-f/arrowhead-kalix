@@ -4,7 +4,7 @@ import se.arkalix.description.ServiceDescription;
 import se.arkalix.description.SystemDescription;
 import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.internal.security.access.AccessToken;
-import se.arkalix.security.identity.ArSystemKeyStore;
+import se.arkalix.security.identity.OwnedIdentity;
 
 import java.security.PublicKey;
 import java.util.Objects;
@@ -13,11 +13,9 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Token access policy.
  * <p>
- * A consuming system is trusted only if it can (1) present a certificate
- * issued by the same
- * {@link se.arkalix.security.identity.ArSystemCertificateChain master}
- * certificate as a provider, as well as (2) present a token originating
- * from a designated authorization system.
+ * A consuming system is trusted only if it can (1) present a certificate with
+ * at least one trusted issuer, as well as (2) present a token originating from
+ * a designated authorization system.
  * <p>
  * The designated authorization system is identified by a {@link PublicKey},
  * which can either be specified directly or be resolved at a later time.
@@ -94,16 +92,16 @@ public class AccessByToken implements AccessPolicy {
             throw new IllegalStateException("Cannot verify token; no authorization key is available");
         }
 
-        final var systemCertificateChain = service.provider().certificateChain();
-        if (!(systemCertificateChain instanceof ArSystemKeyStore)) {
+        final var systemCertificateChain = service.provider().identity();
+        if (!(systemCertificateChain instanceof OwnedIdentity)) {
             throw new IllegalStateException("Cannot verify token; no system private key is available");
         }
-        final var receiverKey = ((ArSystemKeyStore) systemCertificateChain).privateKey();
+        final var receiverKey = ((OwnedIdentity) systemCertificateChain).privateKey();
 
         final var token0 = AccessToken.read(token, receiverKey, senderKey);
 
         final var cid = token0.cid();
-        final var cn = consumer.certificateChain().systemCommonName();
+        final var cn = consumer.identity().commonName();
         return cn.startsWith(cid) && cn.charAt(cid.length()) == '.' &&
             Objects.equals(token0.sid(), service.name()) &&
             service.interfaces().contains(token0.iid());

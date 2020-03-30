@@ -14,12 +14,12 @@ import java.util.Collections;
  * operators, clouds, companies and other authorities.
  * <p>
  * Instances of this class are guaranteed to only hold x.509 certificates
- * complying to the Arrowhead certificate {@link ArSystemCertificateChain naming
+ * complying to the Arrowhead certificate {@link SystemIdentity naming
  * conventions}.
  *
  * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
  */
-public class ArTrustStore {
+public class TrustStore {
     private final X509Certificate[] certificates;
 
     /**
@@ -28,7 +28,7 @@ public class ArTrustStore {
      * @param certificates Trusted certificates.
      * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      */
-    public ArTrustStore(final X509Certificate... certificates) {
+    public TrustStore(final X509Certificate... certificates) {
         this.certificates = certificates.clone();
     }
 
@@ -41,7 +41,7 @@ public class ArTrustStore {
      * @throws KeyStoreException If {@code keyStore} has not been initialized.
      * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      */
-    public static ArTrustStore from(final KeyStore keyStore) throws KeyStoreException {
+    public static TrustStore from(final KeyStore keyStore) throws KeyStoreException {
         final var certificates = new ArrayList<X509Certificate>();
         for (final var alias : Collections.list(keyStore.aliases())) {
             final var certificate = keyStore.getCertificate(alias);
@@ -53,12 +53,12 @@ public class ArTrustStore {
             }
             certificates.add((X509Certificate) certificate);
         }
-        return new ArTrustStore(certificates.toArray(new X509Certificate[0]));
+        return new TrustStore(certificates.toArray(new X509Certificate[0]));
     }
 
     /**
      * Reads JVM-compatible key store from specified path and collects all
-     * contained certificates into a created {@link ArTrustStore}.
+     * contained certificates into a created {@link TrustStore}.
      * <p>
      * As of Java 11, only the PKCS#12 key store format is mandatory to
      * support for Java implementations.
@@ -74,7 +74,7 @@ public class ArTrustStore {
      * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      * @see <a href="https://tools.ietf.org/html/rfc7292">RFC 7292</a>
      */
-    public static ArTrustStore read(final Path path, final char[] password)
+    public static TrustStore read(final Path path, final char[] password)
         throws GeneralSecurityException, IOException
     {
         final var file = path.toFile();

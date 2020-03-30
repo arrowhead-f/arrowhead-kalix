@@ -1,6 +1,6 @@
 package se.arkalix.description;
 
-import se.arkalix.security.identity.ArSystemCertificateChain;
+import se.arkalix.security.identity.SystemIdentity;
 
 import java.net.InetSocketAddress;
 import java.security.cert.Certificate;
@@ -12,22 +12,24 @@ import java.util.Optional;
  * contacted.
  */
 public class SystemDescription {
-    private final ArSystemCertificateChain chain;
+    private final SystemIdentity identity;
     private final String name;
     private final InetSocketAddress remoteSocketAddress;
 
     /**
      * Creates new Arrowhead system description.
      *
-     * @param chain               System certificate chain.
+     * @param identity            System certificate chain.
      * @param remoteSocketAddress IP-address/hostname and port through which
      *                            the system can be contacted.
+     * @throws NullPointerException If {@code identity} or {@code
+     *                              remoteSocketAddress} is {@code null}.
      */
-    public SystemDescription(final ArSystemCertificateChain chain, final InetSocketAddress remoteSocketAddress) {
-        this.chain = Objects.requireNonNull(chain, "Expected certificate");
+    public SystemDescription(final SystemIdentity identity, final InetSocketAddress remoteSocketAddress) {
+        this.identity = Objects.requireNonNull(identity, "Expected certificate");
         this.remoteSocketAddress = Objects.requireNonNull(remoteSocketAddress, "Expected remoteSocketAddress");
 
-        name = chain.systemName();
+        name = identity.systemName();
     }
 
     /**
@@ -39,32 +41,34 @@ public class SystemDescription {
      * @param name                System name.
      * @param remoteSocketAddress IP-address/hostname and port through which
      *                            the system can be contacted.
+     * @throws NullPointerException If {@code name} or {@code
+     *                              remoteSocketAddress} is {@code null}.
      */
     public SystemDescription(final String name, final InetSocketAddress remoteSocketAddress) {
         this.name = Objects.requireNonNull(name, "Expected name");
         this.remoteSocketAddress = Objects.requireNonNull(remoteSocketAddress, "Expected remoteSocketAddress");
 
-        chain = null;
+        identity = null;
     }
 
     /**
-     * Attempts to create new Arrowhead system description from given
-     * certificate chain and remote socket address.
-     * <p>
-     * An empty result is returned only if any certificate in the given
-     * {@code chain} is of any other type than x.509, or if fewer than 4
-     * certificates are provided.
+     * Tries to create new Arrowhead system description from given certificate
+     * {@code chain} and {@code remoteSocketAddress}.
      *
      * @param chain               System certificate chain.
      * @param remoteSocketAddress IP-address/hostname and port through which
      *                            the system can be contacted.
+     * @return System description, if all criteria are satisfied.
      */
     public static Optional<SystemDescription> tryFrom(
         final Certificate[] chain,
         final InetSocketAddress remoteSocketAddress)
     {
-        return ArSystemCertificateChain.tryConvert(chain)
-            .map(chain0 -> new SystemDescription(chain0, remoteSocketAddress));
+        if (remoteSocketAddress == null) {
+            return Optional.empty();
+        }
+        return SystemIdentity.tryFrom(chain)
+            .map(identity -> new SystemDescription(identity, remoteSocketAddress));
     }
 
     /**
@@ -82,17 +86,16 @@ public class SystemDescription {
     }
 
     /**
-     * @return System certificate.
-     * @throws UnsupportedOperationException If the system does not have a
-     *                                       certificate chain. This will only
-     *                                       be the case if the system that
-     *                                       retrieved this description runs in
-     *                                       the <i>insecure</i> security mode.
+     * @return System identity.
+     * @throws IllegalStateException If the system does not have an identity.
+     *                               This will only be the case if the system
+     *                               that retrieved this description runs in
+     *                               the <i>insecure</i> security mode.
      */
-    public ArSystemCertificateChain certificateChain() {
-        if (chain == null) {
-            throw new UnsupportedOperationException("Not in secure mode");
+    public SystemIdentity identity() {
+        if (identity == null) {
+            throw new IllegalStateException("Not in secure mode");
         }
-        return chain;
+        return identity;
     }
 }

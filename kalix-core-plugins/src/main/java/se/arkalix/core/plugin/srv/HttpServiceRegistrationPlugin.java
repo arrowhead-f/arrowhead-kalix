@@ -63,7 +63,7 @@ public class HttpServiceRegistrationPlugin implements Plugin {
                 .hostname(system.localAddress().getHostAddress())
                 .port(system.localPort())
                 .publicKeyBase64(system.isSecure()
-                    ? Base64.getEncoder().encodeToString(system.keyStore().systemPublicKey().getEncoded())
+                    ? Base64.getEncoder().encodeToString(system.identity().publicKey().getEncoded())
                     : null)
                 .build())
             .uri(service.uri())
