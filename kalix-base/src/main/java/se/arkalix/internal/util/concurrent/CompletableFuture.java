@@ -9,18 +9,18 @@ import java.util.function.Consumer;
 
 @Internal
 class CompletableFuture<V> implements Future<V> {
-    private AtomicReference<Consumer<Boolean>> cancelTarget = new AtomicReference<>(null);
+    private AtomicReference<Consumer<Boolean>> cancelFunction = new AtomicReference<>(null);
     private AtomicReference<Consumer<Result<V>>> consumer = new AtomicReference<>(null);
 
     public void complete(final Result<V> result) {
-        final var consumer = this.consumer.get();
+        final var consumer = this.consumer.getAndSet(null);
         if (consumer != null) {
             consumer.accept(result);
         }
     }
 
     public void setCancelFunction(final Consumer<Boolean> cancelFunction) {
-        this.cancelTarget.set(cancelFunction);
+        this.cancelFunction.set(cancelFunction);
     }
 
     @Override
@@ -30,10 +30,10 @@ class CompletableFuture<V> implements Future<V> {
 
     @Override
     public void cancel(final boolean mayInterruptIfRunning) {
-        final var cancelTarget = this.cancelTarget.getAndSet(null);
-        if (cancelTarget != null) {
-            cancelTarget.accept(mayInterruptIfRunning);
+        final var cancelFunction = this.cancelFunction.getAndSet(null);
+        if (cancelFunction != null) {
+            cancelFunction.accept(mayInterruptIfRunning);
         }
-        consumer.set(null);
+        consumer.set(null); // Best-effort attempt to prevent completion.
     }
 }
