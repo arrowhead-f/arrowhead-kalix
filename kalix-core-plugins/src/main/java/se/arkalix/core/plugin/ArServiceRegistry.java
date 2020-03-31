@@ -1,6 +1,8 @@
-package se.arkalix.core.plugin.srv;
+package se.arkalix.core.plugin;
 
-import se.arkalix.core.plugin.srv.dto.ServiceRegistrationDto;
+import se.arkalix.core.plugin.dto.ServiceQueryDto;
+import se.arkalix.core.plugin.dto.ServiceQueryResultDto;
+import se.arkalix.core.plugin.dto.ServiceRegistrationDto;
 import se.arkalix.util.concurrent.Future;
 
 import java.net.InetSocketAddress;
@@ -10,7 +12,16 @@ import java.net.InetSocketAddress;
  */
 public interface ArServiceRegistry {
     /**
-     * Makes an attempt to register a service with the registry.
+     * Queries registry for certain service definitions.
+     *
+     * @param query Description of what service definitions are desired.
+     * @return Future completed with the results of the query, if no errors
+     * occurred.
+     */
+    Future<ServiceQueryResultDto> query(ServiceQueryDto query);
+
+    /**
+     * Registers a service with the registry.
      *
      * @param registration Description of service.
      * @return Future completed when the registration attempt is known to have
@@ -19,8 +30,7 @@ public interface ArServiceRegistry {
     Future<?> register(ServiceRegistrationDto registration);
 
     /**
-     * Makes an attempt to unregister a service that is currently registered
-     * with the registry.
+     * Unregister a service that is currently registered with the registry.
      *
      * @param serviceName         Name of service in existing entry.
      * @param systemName          Name of system in existing entry.

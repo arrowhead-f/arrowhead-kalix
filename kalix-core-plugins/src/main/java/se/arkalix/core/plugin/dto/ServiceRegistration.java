@@ -1,4 +1,4 @@
-package se.arkalix.core.plugin.srv.dto;
+package se.arkalix.core.plugin.dto;
 
 import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.descriptor.InterfaceDescriptor;

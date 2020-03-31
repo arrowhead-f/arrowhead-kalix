@@ -41,7 +41,7 @@ public class ArSystem {
     private final PluginNotifier pluginNotifier;
 
     private final Set<ArServer> servers = Collections.synchronizedSet(new HashSet<>());
-    private final ArServiceCache serviceCache = new ArServiceCache();
+    private final ArServiceCache consumedServices = new ArServiceCache();
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 
     private SystemDescription description = null;
@@ -61,10 +61,10 @@ public class ArSystem {
 
             final var name0 = identity.name();
             if (builder.name != null && !Objects.equals(builder.name, name0)) {
-                throw new IllegalArgumentException("Expected name either " +
-                    "not be provided or to match identity system " +
-                    "certificate name; \"" + builder.name + "\" != \"" +
-                    name0 + "\"");
+                throw new IllegalArgumentException("Expected name to either " +
+                    "not be provided or to match the system certificate " +
+                    "name of the provided identity; \"" + builder.name +
+                    "\" != \"" + name0 + "\"");
             }
             name = name0;
         }
@@ -193,7 +193,7 @@ public class ArSystem {
      */
     @ThreadSafe
     public ArServiceCache consumedServices() {
-        return serviceCache;
+        return consumedServices;
     }
 
     /**
@@ -258,9 +258,6 @@ public class ArSystem {
      * <p>
      * System shutdown is irreversible, meaning that the system cannot be used
      * to provide more services after this method has been invoked.
-     * <p>
-     * System shutdown can also be initiated by shutting down the
-     * {@link NettyScheduler scheduler} used by this system.
      *
      * @return Future completed when shutdown is finished.
      */

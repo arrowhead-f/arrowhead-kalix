@@ -1,5 +1,6 @@
-package se.arkalix.core.plugin.srv.dto;
+package se.arkalix.core.plugin.dto;
 
+import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoWritableAs;
 import se.arkalix.dto.json.JsonName;
 
@@ -10,6 +11,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 /**
  * A description of a system, as it appears in a {@link ServiceRegistration}.
  */
+@DtoReadableAs(JSON)
 @DtoWritableAs(JSON)
 public interface SystemDefinition {
     /**

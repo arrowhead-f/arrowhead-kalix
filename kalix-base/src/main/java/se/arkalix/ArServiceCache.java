@@ -2,6 +2,7 @@ package se.arkalix;
 
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.InterfaceDescriptor;
+import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.util.annotation.ThreadSafe;
 
 import java.util.*;
@@ -9,7 +10,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Stream;
 
 /**
- * A local service registry, maintaining descriptions of known remote services.
+ * A service cache, maintaining descriptions of known remote services.
  */
 public class ArServiceCache {
     private final ConcurrentSkipListSet<ServiceDescription> services =
@@ -56,7 +57,47 @@ public class ArServiceCache {
         final List<InterfaceDescriptor> interfaces)
     {
         return services.stream().filter(service -> service.name().equals(name) &&
-            interfaces.stream().anyMatch(interfaces::contains));
+            service.interfaces().stream().anyMatch(interfaces::contains));
+    }
+
+    /**
+     * Gets stream of all services in cache matching given {@code name} and
+     * {@code security} and supporting at least one of the specified
+     * {@code interfaces}.
+     *
+     * @param name       Name to search for.
+     * @param security   Required security mode/access policy.
+     * @param interfaces Interfaces to search for.
+     * @return Stream of matching service descriptions.
+     */
+    @ThreadSafe
+    public Stream<ServiceDescription> getByNameSecurityAndInterfaces(
+        final String name,
+        final SecurityDescriptor security,
+        final List<InterfaceDescriptor> interfaces)
+    {
+        return services.stream().filter(service -> service.name().equals(name) &&
+            Objects.equals(service.security(), security) &&
+            service.interfaces().stream().anyMatch(interfaces::contains));
+    }
+
+    /**
+     * Gets stream of all services in cache matching given {@code name} and
+     * {@code security} and supporting at least one of the specified
+     * {@code interfaces}.
+     *
+     * @param name       Name to search for.
+     * @param security   Required security mode/access policy.
+     * @param interfaces Interfaces to search for.
+     * @return Stream of matching service descriptions.
+     */
+    @ThreadSafe
+    public Stream<ServiceDescription> getByNameSecurityAndInterfaces(
+        final String name,
+        final SecurityDescriptor security,
+        final InterfaceDescriptor... interfaces)
+    {
+        return getByNameSecurityAndInterfaces(name, security, List.of(interfaces));
     }
 
     /**

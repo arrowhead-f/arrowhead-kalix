@@ -1,6 +1,9 @@
-package se.arkalix.core.plugin.srv;
+package se.arkalix.core.plugin.net.http;
 
-import se.arkalix.core.plugin.srv.dto.ServiceRegistrationDto;
+import se.arkalix.core.plugin.ArServiceRegistry;
+import se.arkalix.core.plugin.dto.ServiceQueryDto;
+import se.arkalix.core.plugin.dto.ServiceQueryResultDto;
+import se.arkalix.core.plugin.dto.ServiceRegistrationDto;
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.net.http.client.HttpClient;
@@ -19,6 +22,7 @@ public class HttpServiceRegistry implements ArServiceRegistry {
     private final DtoEncoding encoding;
     private final InetSocketAddress remoteSocketAddress;
 
+    private final String uriQuery;
     private final String uriRegister;
     private final String uriUnregister;
 
@@ -28,8 +32,30 @@ public class HttpServiceRegistry implements ArServiceRegistry {
         remoteSocketAddress = Objects.requireNonNull(builder.remoteSocketAddress, "Expected remoteSocketAddress");
 
         final var basePath = Objects.requireNonNullElse(builder.basePath, "/serviceregistry");
+        uriQuery = basePath + "/query";
         uriRegister = basePath + "/register";
         uriUnregister = basePath + "/unregister";
+    }
+
+    @Override
+    public Future<ServiceQueryResultDto> query(final ServiceQueryDto query) {
+        return client
+            .send(remoteSocketAddress, new HttpClientRequest()
+                .method(HttpMethod.POST)
+                .uri(uriQuery)
+                .body(encoding, query))
+            .flatMap(response -> {
+                final var status = response.status();
+                if (status.isSuccess()) {
+                    return Future.done();
+                }
+                if (status.isClientError() && response.headers().getAsInteger("content-length").orElse(0) > 0) {
+                    return response.bodyAsString()
+                        .mapThrow(HttpClientResponseException::new);
+                }
+                return Future.failure(response.reject("Failed to query " +
+                    "service registry for \"" + query.name() + "\""));
+            });
     }
 
     @Override

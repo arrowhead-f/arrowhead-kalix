@@ -1,9 +1,9 @@
-package se.arkalix.core.plugin.srv;
+package se.arkalix.core.plugin.net.http;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.arkalix.core.plugin.srv.dto.ServiceRegistrationBuilder;
-import se.arkalix.core.plugin.srv.dto.SystemDefinitionBuilder;
+import se.arkalix.core.plugin.dto.ServiceRegistrationBuilder;
+import se.arkalix.core.plugin.dto.SystemDefinitionBuilder;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.ArSystem;
@@ -23,10 +23,10 @@ import java.util.Objects;
  * with a specific HTTP service registry.
  * <p>
  * The plugin must be instantiated and then provided to one or more
- * {@link ArSystem systems} before they provide any
- * services. When those systems are assigned services to provide, or have their
- * services dismissed, this plugin will automatically attempt to register or
- * unregister those services from one particular HTTP service registry.
+ * {@link ArSystem systems} before they provide any services. When those
+ * systems are assigned services to provide, or have their services dismissed,
+ * this plugin will automatically attempt to register or unregister those
+ * services from one particular HTTP service registry.
  */
 public class HttpServiceRegistrationPlugin implements Plugin {
     private static final Logger logger = LoggerFactory.getLogger(HttpServiceRegistrationPlugin.class);
