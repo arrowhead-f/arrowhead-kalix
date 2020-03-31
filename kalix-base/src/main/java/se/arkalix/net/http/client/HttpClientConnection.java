@@ -25,19 +25,16 @@ public interface HttpClientConnection {
     /**
      * @return Certificate chain associated with host reachable via this
      * connection.
-     * @throws UnsupportedOperationException If the client is not running in
-     *                                       secure mode.
+     * @throws IllegalStateException If the client is not running in secure
+     *                               mode.
      */
     Certificate[] certificateChain();
 
     /**
      * @return Description of host reachable via this connection as an
-     * Arrowhead system.
-     * @throws UnsupportedOperationException If the client is not running in
-     *                                       secure mode.
-     * @throws IllegalStateException         If the certificate chain of the
-     *                                       remote host is not superficially
-     *                                       Arrowhead compliant.
+     * Arrowhead system, or nothing if the client is not running in secure
+     * mode or if the certificate chain of the remote host is not superficially
+     * Arrowhead compliant.
      */
     default SystemDescription describe() {
         try {

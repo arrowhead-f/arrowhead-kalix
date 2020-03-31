@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 @Internal
-class CompletableFuture<V> implements Future<V> {
+class FutureCompletion<V> implements Future<V> {
     private AtomicReference<Consumer<Boolean>> cancelFunction = new AtomicReference<>(null);
     private AtomicReference<Consumer<Result<V>>> consumer = new AtomicReference<>(null);
 

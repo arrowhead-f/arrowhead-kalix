@@ -59,7 +59,7 @@ public class ArSystem {
             identity = builder.identity;
             trustStore = builder.trustStore;
 
-            final var name0 = identity.systemName();
+            final var name0 = identity.name();
             if (builder.name != null && !Objects.equals(builder.name, name0)) {
                 throw new IllegalArgumentException("Expected name either " +
                     "not be provided or to match identity system " +

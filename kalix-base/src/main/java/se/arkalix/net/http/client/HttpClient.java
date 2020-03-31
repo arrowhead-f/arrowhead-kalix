@@ -5,6 +5,7 @@ import se.arkalix.internal.net.http.client.FutureHttpClientConnection;
 import se.arkalix.internal.net.http.client.NettyHttpClientConnectionInitializer;
 import se.arkalix.security.identity.OwnedIdentity;
 import se.arkalix.security.identity.TrustStore;
+import se.arkalix.util.annotation.ThreadSafe;
 import se.arkalix.util.concurrent.Schedulers;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.internal.util.concurrent.NettyScheduler;
@@ -27,7 +28,10 @@ import static se.arkalix.internal.util.concurrent.NettyFutures.adapt;
  * be sent.
  */
 public class HttpClient {
-    private static final Map<ArSystem, HttpClient> cache = Collections.synchronizedMap(new WeakHashMap<>());
+    private static final Map<ArSystem, HttpClient> cache = new WeakHashMap<>();
+
+    private static HttpClient http = null;
+    private static HttpClient https = null;
 
     private final Bootstrap bootstrap;
     private final InetSocketAddress localSocketAddress;
@@ -61,16 +65,18 @@ public class HttpClient {
      * Creates new or gets a cached {@code HttpClient} that takes its
      * configuration details from the given Arrowhead {@code system}.
      * <p>
-     * The return HTTP client will use the same owned identity, trust store,
+     * The returned HTTP client will use the same owned identity, trust store,
      * security mode, local network interface and scheduler as the given
-     * system.
+     * system, which makes it suitable for communicating with other systems
+     * within the same local cloud.
      *
      * @param system Arrowhead system from which to extract configuration.
      * @return Created or cached client.
      * @throws SSLException If creating SSL/TLS context from given Arrowhead
      *                      system fails.
      */
-    public static HttpClient from(final ArSystem system) throws SSLException {
+    @ThreadSafe
+    public synchronized static HttpClient from(final ArSystem system) throws SSLException {
         var client = cache.get(system);
         if (client != null) {
             return client;
@@ -92,6 +98,56 @@ public class HttpClient {
 
         cache.put(system, client);
         return client;
+    }
+
+    /**
+     * Creates new or gets a cached {@code HttpClient} with a default
+     * configuration making it suitable for communicating with regular HTTP
+     * servers without encryption.
+     * <p>
+     * The returned client is intended primarily for communicating with legacy
+     * systems that are known to be trusted and where encryption is infeasible
+     * to add. Its use is not advised for most kinds of production scenarios.
+     *
+     * @return New or cached HTTP client.
+     */
+    @ThreadSafe
+    public synchronized static HttpClient http() {
+        if (http == null) {
+            try {
+                http = new Builder()
+                    .insecure()
+                    .build();
+            }
+            catch (final SSLException exception) {
+                throw new RuntimeException(exception);
+            }
+        }
+        return http;
+    }
+
+    /**
+     * Creates new or gets a cached {@code HttpClient} with a default
+     * configuration making it suitable for communicating with regular HTTPS
+     * servers.
+     * <p>
+     * The client will rely on the default trust manager that comes with the
+     * system Java installation, if any, which tends to be useful for
+     * interacting with just about any Internet HTTPS server.
+     * <p>
+     * The returned client is intended primarily for communicating with legacy
+     * systems and/or traditional HTTPS servers. If wanting to communicate with
+     * other Arrowhead systems, please prefer use of the
+     * {@link #from(ArSystem)} method for creating HTTP clients.
+     *
+     * @return New or cached HTTPS client.
+     */
+    @ThreadSafe
+    public synchronized static HttpClient https() throws SSLException {
+        if (https == null) {
+            https = new Builder().build();
+        }
+        return https;
     }
 
     /**
@@ -199,7 +255,9 @@ public class HttpClient {
          * be communicated with by created HTTP clients.
          * <p>
          * If insecure mode is not enabled and no trust store is provided, the
-         * default system trust store is used instead.
+         * default system trust store is used instead. This is typically
+         * suitable if wanting to communicate with regular HTTP servers over
+         * HTTPS.
          *
          * @param trustStore Trust store to use.
          * @return This builder.

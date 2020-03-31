@@ -53,18 +53,7 @@ public class AccessByCertificate implements AccessPolicy {
         Objects.requireNonNull(consumer, "Expected consumer");
         Objects.requireNonNull(service, "Expected service");
 
-        final var consumerCloud = consumer.identity().issuer();
-        if (consumerCloud.isEmpty()) {
-            return false;
-        }
-
-        final var providerCloud = service.provider().identity().issuer();
-        if (providerCloud.isEmpty()) {
-            throw new IllegalStateException("Providing system identity not " +
-                "issued by a cloud certificate");
-        }
-
-        return Objects.equals(consumerCloud.get(), providerCloud.get()) &&
+        return Objects.equals(consumer.identity().cloud(), service.provider().identity().cloud()) &&
             (whitelist == null || whitelist.contains(consumer.name()));
     }
 }

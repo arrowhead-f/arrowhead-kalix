@@ -61,7 +61,7 @@ public class NettyHttpClientConnection implements HttpClientConnection {
     @Override
     public Certificate[] certificateChain() {
         if (certificateChain == null) {
-            throw new UnsupportedOperationException("Connection not secured;" +
+            throw new IllegalStateException("Connection not secured;" +
                 " no certificates are available");
         }
         return certificateChain;

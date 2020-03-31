@@ -84,7 +84,7 @@ public class SystemIdentity extends TrustedIdentity {
      *
      * @param chain x.509 certificate chain belonging to an Arrowhead system.
      * @throws NullPointerException     If {@code chain} is {@code null}.
-     * @throws IllegalArgumentException If {@code chain.length == 0}, if
+     * @throws IllegalArgumentException If {@code chain.length < 2}, if
      *                                  {@code chain} contains any other type
      *                                  of certificate than
      *                                  {@link X509Certificate}, or if the
@@ -118,7 +118,7 @@ public class SystemIdentity extends TrustedIdentity {
      *
      * @param chain x.509 certificate chain belonging to an Arrowhead system.
      * @throws NullPointerException     If {@code chain} is {@code null}.
-     * @throws IllegalArgumentException If {@code chain.length == 0} or if the
+     * @throws IllegalArgumentException If {@code chain.length < 2} or if the
      *                                  subject common name of the certificate
      *                                  at index 0 is not a valid Arrowhead
      *                                  system certificate name.
@@ -182,6 +182,11 @@ public class SystemIdentity extends TrustedIdentity {
         companyName = identity.companyName;
         masterName = identity.masterName;
         isVerified = identity.isVerified;
+    }
+
+    @Override
+    protected int minimumChainLength() {
+        return 2;
     }
 
     /**
@@ -252,15 +257,23 @@ public class SystemIdentity extends TrustedIdentity {
     }
 
     /**
-     * @return System certificate name.
+     * @return System name.
      * @see SystemIdentity See class description for more details.
      */
-    public String systemName() {
+    public String name() {
         return systemName;
     }
 
     /**
-     * @return Cloud certificate name.
+     * @return Cloud identity.
+     */
+    public TrustedIdentity cloud() {
+        return issuer().orElseThrow(() -> new IllegalStateException("No " +
+            "cloud certificate available; this should be impossible"));
+    }
+
+    /**
+     * @return Cloud name.
      * @see SystemIdentity See class description for more details.
      */
     public String cloudName() {
@@ -268,7 +281,7 @@ public class SystemIdentity extends TrustedIdentity {
     }
 
     /**
-     * @return Company certificate name.
+     * @return Company name.
      * @see SystemIdentity See class description for more details.
      */
     public String companyName() {
@@ -276,7 +289,7 @@ public class SystemIdentity extends TrustedIdentity {
     }
 
     /**
-     * @return Master certificate name. Always identical to full master CN.
+     * @return Master name. Always identical to full master CN.
      * @see SystemIdentity See class description for more details.
      */
     public String masterName() {

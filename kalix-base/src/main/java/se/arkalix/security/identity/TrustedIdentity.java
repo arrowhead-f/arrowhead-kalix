@@ -48,8 +48,9 @@ public class TrustedIdentity {
      */
     public TrustedIdentity(final Certificate[] chain) {
         Objects.requireNonNull(chain, "Expected chain");
-        if (chain.length == 0) {
-            throw new IllegalArgumentException("Expected chain.length > 0");
+        final var minimumChainLength = minimumChainLength();
+        if (chain.length < minimumChainLength) {
+            throw new IllegalArgumentException("Expected chain.length >= " + minimumChainLength);
         }
 
         this.chain = new X509Certificate[chain.length];
@@ -86,8 +87,9 @@ public class TrustedIdentity {
      */
     public TrustedIdentity(final X509Certificate[] chain) {
         this.chain = Objects.requireNonNull(chain, "Expected chain");
-        if (chain.length == 0) {
-            throw new IllegalArgumentException("Expected chain.length > 0");
+        final var minimumChainLength = minimumChainLength();
+        if (chain.length < minimumChainLength) {
+            throw new IllegalArgumentException("Expected chain.length >= " + minimumChainLength);
         }
         chainOffset = 0;
     }
@@ -95,6 +97,10 @@ public class TrustedIdentity {
     protected TrustedIdentity(final X509Certificate[] chain, final int chainOffset) {
         this.chain = chain;
         this.chainOffset = chainOffset;
+    }
+
+    protected int minimumChainLength() {
+        return 1;
     }
 
     /**

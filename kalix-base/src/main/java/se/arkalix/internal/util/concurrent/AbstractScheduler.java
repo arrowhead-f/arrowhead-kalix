@@ -22,7 +22,7 @@ abstract class AbstractScheduler implements Scheduler {
     @Override
     public Future<?> submit(final Runnable task) {
         try {
-            final var adapter = new CompletableFuture<>();
+            final var adapter = new FutureCompletion<>();
             final var future = executor().submit(() -> {
                 Result<Object> result;
                 try {
@@ -45,7 +45,7 @@ abstract class AbstractScheduler implements Scheduler {
     @Override
     public <V> Future<V> submit(final Callable<V> task) {
         try {
-            final var adapter = new CompletableFuture<V>();
+            final var adapter = new FutureCompletion<V>();
             final var future = executor().submit(() -> {
                 Result<V> result;
                 try {
@@ -67,7 +67,7 @@ abstract class AbstractScheduler implements Scheduler {
     @Override
     public <V> Future<V> submit(final Runnable task, final V result) {
         try {
-            final var adapter = new CompletableFuture<V>();
+            final var adapter = new FutureCompletion<V>();
             final var future = executor().submit(() -> {
                 Result<V> result0;
                 try {
@@ -90,7 +90,7 @@ abstract class AbstractScheduler implements Scheduler {
     @Override
     public Future<?> schedule(final Duration delay, final Runnable command) {
         try {
-            final var adapter = new CompletableFuture<>();
+            final var adapter = new FutureCompletion<>();
             final var future = executor().schedule(() -> {
                 Result<Object> result0;
                 try {
@@ -113,7 +113,7 @@ abstract class AbstractScheduler implements Scheduler {
     @Override
     public <V> Future<V> schedule(final Duration delay, final Callable<V> callable) {
         try {
-            final var adapter = new CompletableFuture<V>();
+            final var adapter = new FutureCompletion<V>();
             final var future = executor().schedule(() -> {
                 Result<V> result0;
                 try {
@@ -135,7 +135,7 @@ abstract class AbstractScheduler implements Scheduler {
     @Override
     public Future<?> scheduleAtFixedRate(final Duration initialDelay, final Duration rate, final Runnable command) {
         try {
-            final var adapter = new CompletableFuture<>();
+            final var adapter = new FutureCompletion<>();
             final var future = executor().scheduleAtFixedRate(() -> {
                 try {
                     command.run();
@@ -156,7 +156,7 @@ abstract class AbstractScheduler implements Scheduler {
     @Override
     public Future<?> scheduleWithFixedDelay(final Duration initalDelay, final Duration delay, final Runnable command) {
         try {
-            final var adapter = new CompletableFuture<>();
+            final var adapter = new FutureCompletion<>();
             final var future = executor().scheduleWithFixedDelay(() -> {
                 try {
                     command.run();

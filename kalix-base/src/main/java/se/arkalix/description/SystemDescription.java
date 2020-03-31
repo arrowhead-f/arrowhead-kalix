@@ -29,7 +29,7 @@ public class SystemDescription {
         this.identity = Objects.requireNonNull(identity, "Expected certificate");
         this.remoteSocketAddress = Objects.requireNonNull(remoteSocketAddress, "Expected remoteSocketAddress");
 
-        name = identity.systemName();
+        name = identity.name();
     }
 
     /**

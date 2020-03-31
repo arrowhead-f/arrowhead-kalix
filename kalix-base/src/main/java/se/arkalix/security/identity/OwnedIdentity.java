@@ -3,6 +3,7 @@ package se.arkalix.security.identity;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -41,7 +42,7 @@ public class OwnedIdentity extends SystemIdentity {
      *                                  system certificate name.
      * @see SystemIdentity Class description for details on valid names.
      */
-    public OwnedIdentity(final Certificate[] chain, final PrivateKey privateKey) throws SystemIdentityException {
+    public OwnedIdentity(final Certificate[] chain, final PrivateKey privateKey) {
         super(chain);
         this.privateKey = Objects.requireNonNull(privateKey, "Expected privateKey");
         verify();
@@ -112,11 +113,7 @@ public class OwnedIdentity extends SystemIdentity {
     }
 
     private void verify() {
-        final var cloud = issuer().orElseThrow(() ->
-            new IllegalArgumentException("Missing cloud certificate; " +
-                "each system certificate must be issued by a cloud " +
-                "certificate, or the system in question will not be able " +
-                "to interact with any other systems"));
+        final var cloud = cloud();
 
         final String cln;
         try {
@@ -128,7 +125,7 @@ public class OwnedIdentity extends SystemIdentity {
         }
 
         final var syn = commonName();
-        final var off = systemName().length() + 1;
+        final var off = name().length() + 1;
         final var len = Math.min(syn.length() - off, cln.length());
         if (!syn.regionMatches(off, cln, 0, len)) {
             throw new IllegalArgumentException("Cloud certificate common name " +
