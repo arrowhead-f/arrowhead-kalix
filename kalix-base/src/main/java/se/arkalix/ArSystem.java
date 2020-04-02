@@ -7,15 +7,16 @@ import se.arkalix.description.SystemDescription;
 import se.arkalix.internal.ArServer;
 import se.arkalix.internal.ArServerRegistry;
 import se.arkalix.internal.plugin.PluginNotifier;
+import se.arkalix.internal.util.concurrent.NettyScheduler;
 import se.arkalix.plugin.Plugin;
-import se.arkalix.security.identity.SystemIdentity;
+import se.arkalix.query.ServiceQuery;
 import se.arkalix.security.identity.OwnedIdentity;
+import se.arkalix.security.identity.SystemIdentity;
 import se.arkalix.security.identity.TrustStore;
 import se.arkalix.util.annotation.ThreadSafe;
 import se.arkalix.util.concurrent.Future;
-import se.arkalix.internal.util.concurrent.NettyScheduler;
-import se.arkalix.util.concurrent.SchedulerShutdownListener;
 import se.arkalix.util.concurrent.Futures;
+import se.arkalix.util.concurrent.SchedulerShutdownListener;
 import se.arkalix.util.concurrent.Schedulers;
 
 import java.net.InetAddress;
@@ -41,7 +42,6 @@ public class ArSystem {
     private final PluginNotifier pluginNotifier;
 
     private final Set<ArServer> servers = Collections.synchronizedSet(new HashSet<>());
-    private final ArServiceCache consumedServices = new ArServiceCache();
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 
     private SystemDescription description = null;
@@ -181,19 +181,18 @@ public class ArSystem {
     }
 
     /**
-     * Cache of, potentially or previously, consumed services.
+     * Creates new query useful for resolving services, provided by other
+     * Arrowhead systems, with the given {@code serviceName}.
      * <p>
-     * Searches made in this cache will never trigger any lookup in a remote
-     * service registry. The cache is strictly local. It might, however, be
-     * updated by any {@link se.arkalix.plugin.Plugin plugins} used by
-     * this {@link ArSystem system}.
+     * Resolution will always complete with an empty result unless a {@link
+     * Plugin} has been provided at {@link Builder#plugins(Collection) system
+     * creation} that is able to perform service lookup.
      *
-     * @return Service description cache containing services that this system
-     * may have considered to consume.
+     * @return Service query builder.
      */
     @ThreadSafe
-    public ArServiceCache consumedServices() {
-        return consumedServices;
+    public ServiceQuery consume(final String serviceName) {
+        return new ServiceQuery(serviceName, isSecure, pluginNotifier::onServiceQueried);
     }
 
     /**
@@ -238,7 +237,7 @@ public class ArSystem {
                 "No Arrowhead server exists for services of type \"" +
                 service.getClass() + "\""));
 
-        return serverConstructor.construct(this, pluginNotifier)
+        return serverConstructor.create(this, pluginNotifier)
             .flatMap(server -> {
                 if (isShuttingDown.get()) {
                     return server.close().fail(cannotProvideServiceShuttingDownException());
@@ -294,7 +293,7 @@ public class ArSystem {
         private OwnedIdentity identity;
         private TrustStore trustStore;
         private boolean isSecure = true;
-        private List<Plugin> plugins;
+        private Collection<Plugin> plugins;
 
         /**
          * Sets system name.
@@ -492,7 +491,7 @@ public class ArSystem {
          * @return This builder.
          */
         public Builder plugins(final Plugin... plugins) {
-            return plugins(Arrays.asList(plugins));
+            return plugins(List.of(plugins));
         }
 
         /**
@@ -505,7 +504,7 @@ public class ArSystem {
          * @param plugins Desired system plugins.
          * @return This builder.
          */
-        public Builder plugins(final List<Plugin> plugins) {
+        public Builder plugins(final Collection<Plugin> plugins) {
             this.plugins = plugins;
             return this;
         }

@@ -1,9 +1,15 @@
 package se.arkalix.plugin;
 
 import se.arkalix.ArService;
+import se.arkalix.query.ServiceQuery;
 import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.util.concurrent.Future;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * An {@link ArSystem} plugin.
@@ -16,6 +22,7 @@ import se.arkalix.util.concurrent.Future;
  * of packaging and reusing complex behaviors that are frequently useful
  * together.
  */
+@SuppressWarnings({"unused", "RedundantThrows"})
 public interface Plugin {
     /**
      * Called to notify the plugin that it now is attached to an
@@ -75,7 +82,7 @@ public interface Plugin {
      * provided will be provided by the attached system in question.
      * <p>
      * If this method throws an exception the returned {@code Future} is failed
-     * with the same exception.
+     * with the same exception. The plugin is not detached.
      *
      * @param plug    Plug, representing this plugin's connection to a system.
      * @param service A description of the service being added.
@@ -100,7 +107,7 @@ public interface Plugin {
      * provided, given that the application is not shutdown abnormally.
      * <p>
      * If this method throws an exception the returned {@code Future} is failed
-     * with the same exception.
+     * with the same exception. The plugin is not detached.
      *
      * @param plug    Plug, representing this plugin's connection to a system.
      * @param service A description of the service being added.
@@ -125,4 +132,28 @@ public interface Plugin {
      * @param service A description of the service being removed.
      */
     default void onServiceDismissed(final Plug plug, final ServiceDescription service) throws Exception {}
+
+    /**
+     * Called to notify the plugin that an attached {@link ArSystem} desires to
+     * resolve the service described by the provided {@code query}.
+     * <p>
+     * If this method throws an exception the returned {@code Future} is failed
+     * with the same exception. The plugin is not detached.
+     *
+     * @param plug  Plug, representing this plugin's connection to a system.
+     * @param query An incomplete description of the service being queried.
+     * @return {@code Future} that must be completed with an {@link Optional}
+     * of exactly one {@link ServiceDescription}. If the given {@code query}
+     * matches more than one service description, the plugin must choose which
+     * of them to return. If the query matches no service descriptions at all,
+     * the returned {@code Future} must be completed successfully with an empty
+     * {@link Optional}. If the returned {@code Future} is completed with a
+     * fault, service resolution will stop and no more plugins will be asked to
+     * process the query.
+     */
+    default Future<Collection<ServiceDescription>> onServiceQueried(final Plug plug, final ServiceQuery query)
+        throws Exception
+    {
+        return Future.success(Collections.emptyList());
+    }
 }

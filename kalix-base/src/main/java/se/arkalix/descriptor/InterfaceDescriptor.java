@@ -18,27 +18,6 @@ public final class InterfaceDescriptor implements Comparable<InterfaceDescriptor
 
     private static final HashMap<TransportDescriptor, List<InterfaceDescriptor>> CACHE;
 
-    static {
-        CACHE = new HashMap<>();
-        try {
-            for (final var field : InterfaceDescriptor.class.getFields()) {
-                if (Modifier.isStatic(field.getModifiers()) && field.getType() == TransportDescriptor.class) {
-                    final var descriptor = (InterfaceDescriptor) field.get(null);
-                    CACHE.compute(descriptor.transport, (key, value) -> {
-                        if (value == null) {
-                            value = new ArrayList<>();
-                        }
-                        value.add(descriptor);
-                        return value;
-                    });
-                }
-            }
-        }
-        catch (final Exception exception) {
-            throw new RuntimeException("Interface cache initialization failed", exception);
-        }
-    }
-
     private final TransportDescriptor transport;
     private final boolean isSecure;
     private final EncodingDescriptor encoding;
@@ -364,5 +343,26 @@ public final class InterfaceDescriptor implements Comparable<InterfaceDescriptor
     @Override
     public int compareTo(final InterfaceDescriptor other) {
         return text.compareTo(other.text);
+    }
+
+    static {
+        CACHE = new HashMap<>();
+        try {
+            for (final var field : InterfaceDescriptor.class.getFields()) {
+                if (Modifier.isStatic(field.getModifiers()) && field.getType() == TransportDescriptor.class) {
+                    final var descriptor = (InterfaceDescriptor) field.get(null);
+                    CACHE.compute(descriptor.transport, (key, value) -> {
+                        if (value == null) {
+                            value = new ArrayList<>();
+                        }
+                        value.add(descriptor);
+                        return value;
+                    });
+                }
+            }
+        }
+        catch (final Exception exception) {
+            throw new RuntimeException("Interface cache initialization failed", exception);
+        }
     }
 }

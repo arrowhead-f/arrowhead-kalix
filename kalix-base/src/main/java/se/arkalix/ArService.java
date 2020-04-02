@@ -1,7 +1,6 @@
 package se.arkalix;
 
 import se.arkalix.description.ServiceDescription;
-import se.arkalix.description.SystemDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
@@ -27,14 +26,20 @@ public interface ArService {
     String uri();
 
     /**
-     * @return Unmodifiable list of encodings.
+     * @return Application-level transport protocol through which service is
+     * made available to other systems.
      */
-    List<EncodingDescriptor> encodings();
+    TransportDescriptor transport();
 
     /**
      * @return Service access policy.
      */
     AccessPolicy accessPolicy();
+
+    /**
+     * @return Unmodifiable list of encodings the service can read and write.
+     */
+    List<EncodingDescriptor> encodings();
 
     /**
      * @return Unmodifiable map of service metadata.
@@ -73,8 +78,9 @@ public interface ArService {
             .metadata(metadata())
             .version(version())
             .interfaces(encodings().stream()
-                .map(encoding -> InterfaceDescriptor.getOrCreate(TransportDescriptor.HTTP, isSecure, encoding))
-                .collect(Collectors.toList()))
+                .map(encoding -> InterfaceDescriptor.getOrCreate(transport(), isSecure, encoding))
+                .collect(Collectors.toUnmodifiableList()))
             .build();
     }
+
 }

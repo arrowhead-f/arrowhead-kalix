@@ -2,13 +2,16 @@ package se.arkalix.descriptor;
 
 import se.arkalix.dto.DtoEncoding;
 
-import java.util.Objects;
-import java.util.Optional;
+import java.lang.reflect.Modifier;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Names a type of message payload encoding.
  */
 public final class EncodingDescriptor {
+    private static final Set<EncodingDescriptor> DTO_ENCODINGS;
+
     private final String name;
     private final DtoEncoding dtoEncoding;
 
@@ -18,13 +21,24 @@ public final class EncodingDescriptor {
     }
 
     /**
+     * Gets a set of all encodings for which Kalix DTO support exists. Such
+     * encodings can be read and written automatically by the Kalix library.
+     *
+     * @return Set of all encodings with DTO support.
+     * @see se.arkalix.dto
+     */
+    public static Set<EncodingDescriptor> dtoEncodings() {
+        return DTO_ENCODINGS;
+    }
+
+    /**
      * Either acquires a cached encoding descriptor matching the given name, or
      * creates a new descriptor.
      *
      * @param name Desired encoding descriptor name.
      * @return New or existing encoding descriptor.
      */
-    public EncodingDescriptor getOrCreate(final String name) {
+    public static EncodingDescriptor getOrCreate(final String name) {
         return valueOf(name);
     }
 
@@ -43,6 +57,14 @@ public final class EncodingDescriptor {
      */
     public Optional<DtoEncoding> asDtoEncoding() {
         return Optional.ofNullable(dtoEncoding);
+    }
+
+    /**
+     * @return {@code true} only if DTO support is available for this encoding.
+     * @see se.arkalix.dto
+     */
+    public boolean isDtoEncoding() {
+        return dtoEncoding != null;
     }
 
     /**
@@ -107,5 +129,23 @@ public final class EncodingDescriptor {
     @Override
     public String toString() {
         return name;
+    }
+
+    static {
+        try {
+            final var dtoEncodings = new ArrayList<EncodingDescriptor>();
+            for (final var field : EncodingDescriptor.class.getFields()) {
+                if (Modifier.isStatic(field.getModifiers()) && field.getType() == EncodingDescriptor.class) {
+                    final var descriptor = (EncodingDescriptor) field.get(null);
+                    if (descriptor.isDtoEncoding()) {
+                        dtoEncodings.add(descriptor);
+                    }
+                }
+            }
+            DTO_ENCODINGS = dtoEncodings.stream().collect(Collectors.toUnmodifiableSet());
+        }
+        catch (final Exception exception) {
+            throw new RuntimeException("DTO encoding set initialization failed", exception);
+        }
     }
 }

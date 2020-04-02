@@ -5,7 +5,6 @@ import se.arkalix.core.plugin.dto.ServiceQueryDto;
 import se.arkalix.core.plugin.dto.ServiceQueryResultDto;
 import se.arkalix.core.plugin.dto.ServiceRegistrationDto;
 import se.arkalix.dto.DtoEncoding;
-import se.arkalix.net.http.HttpMethod;
 import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.client.HttpClientRequest;
 import se.arkalix.net.http.client.HttpClientResponseException;
@@ -14,10 +13,49 @@ import se.arkalix.util.concurrent.Future;
 import java.net.InetSocketAddress;
 import java.util.Objects;
 
+import static se.arkalix.net.http.HttpMethod.*;
+
 /**
  * A remote {@link ArServiceRegistry} that is communicated with via HTTP.
  */
 public class HttpServiceRegistry implements ArServiceRegistry {
+   /* static {
+        ArConsumer.Registry.set(HttpServiceRegistry.class, new Factory() {
+            @Override
+            public ServiceQuery createQuery(final ArSystem system, final ArServiceResolver resolver) {
+                return new ServiceQuery("servicediscovery", system.isSecure(), resolver)
+                    .encodings(EncodingDescriptor.dtoEncodings())
+                    .transports(HTTP);
+            }
+
+            @Override
+            public ArConsumer createInstance(
+                final ArSystem system,
+                final ServiceDescription description) throws Exception
+            {
+                final var encoding = description.interfaces().stream()
+                    .filter(i -> i.transport() == HTTP && i.encoding().isDtoEncoding())
+                    .findFirst()
+                    .flatMap(triplet -> triplet.encoding().asDtoEncoding())
+                    .orElseThrow(() -> {
+                        final var encodings = EncodingDescriptor.dtoEncodings();
+                        return new IllegalStateException("When creating " +
+                            "service query the following encodings were " +
+                            "stated as supported: " + encodings + ", but " +
+                            "none of them are in the provided service " +
+                            "description; cannot create HttpServiceRegistry");
+                    });
+
+                return new Builder()
+                    .basePath(description.uri())
+                    .client(HttpClient.from(system))
+                    .encoding(encoding)
+                    .remoteSocketAddress(description.provider().remoteSocketAddress())
+                    .build();
+            }
+        });
+    }*/
+
     private final HttpClient client;
     private final DtoEncoding encoding;
     private final InetSocketAddress remoteSocketAddress;
@@ -41,7 +79,7 @@ public class HttpServiceRegistry implements ArServiceRegistry {
     public Future<ServiceQueryResultDto> query(final ServiceQueryDto query) {
         return client
             .send(remoteSocketAddress, new HttpClientRequest()
-                .method(HttpMethod.POST)
+                .method(POST)
                 .uri(uriQuery)
                 .body(encoding, query))
             .flatMap(response -> {
@@ -62,7 +100,7 @@ public class HttpServiceRegistry implements ArServiceRegistry {
     public Future<?> register(final ServiceRegistrationDto registration) {
         return client
             .send(remoteSocketAddress, new HttpClientRequest()
-                .method(HttpMethod.POST)
+                .method(POST)
                 .uri(uriRegister)
                 .body(encoding, registration))
             .flatMap(response -> {
@@ -86,7 +124,7 @@ public class HttpServiceRegistry implements ArServiceRegistry {
     {
         return client
             .send(remoteSocketAddress, new HttpClientRequest()
-                .method(HttpMethod.DELETE)
+                .method(DELETE)
                 .uri(uriUnregister)
                 .queryParameter("service_definition", serviceName)
                 .queryParameter("system_name", systemName)

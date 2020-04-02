@@ -29,6 +29,7 @@ import static se.arkalix.internal.util.concurrent.NettyFutures.adapt;
  * Allows for the creation of TCP connections through which HTTP messages can
  * be sent.
  */
+@SuppressWarnings("unused")
 public class HttpClient {
     private static final Map<ArSystem, HttpClient> cache = new WeakHashMap<>();
 
@@ -71,6 +72,9 @@ public class HttpClient {
      * security mode, local network interface and scheduler as the given
      * system, which makes it suitable for communicating with other systems
      * within the same local cloud.
+     * <p>
+     * If wanting to communicate with other Arrowhead systems without
+     * creating an {@link ArSystem} instance, use the {@link Builder} instead.
      *
      * @param system Arrowhead system from which to extract configuration.
      * @return Created or cached client.
@@ -110,6 +114,8 @@ public class HttpClient {
      * The returned client is intended primarily for communicating with legacy
      * systems that are known to be trusted and where encryption is infeasible
      * to add. Its use is not advised for most kinds of production scenarios.
+     * If wanting to communicate with other Arrowhead systems, please prefer
+     * use of the {@link #from(ArSystem)} method for creating HTTP clients.
      *
      * @return New or cached HTTP client.
      */
@@ -299,6 +305,7 @@ public class HttpClient {
     /**
      * Builder useful for creating {@link HttpClient} instances.
      */
+    @SuppressWarnings("UnusedReturnValue")
     public static class Builder {
         private InetSocketAddress localSocketAddress;
         private OwnedIdentity identity;

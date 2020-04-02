@@ -4,15 +4,12 @@ import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.internal.net.dns.DnsNames;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Describes an Arrowhead Framework service.
  */
-public class ServiceDescription {
+public class ServiceDescription implements Comparable<ServiceDescription> {
     private final String name;
     private final SystemDescription provider;
     private final String uri;
@@ -104,6 +101,36 @@ public class ServiceDescription {
      */
     public List<InterfaceDescriptor> interfaces() {
         return interfaces;
+    }
+
+    @Override
+    public int compareTo(final ServiceDescription other) {
+        int d;
+        d = name().compareTo(other.name());
+        if (d != 0) {
+            return d;
+        }
+        d = uri().compareTo(other.uri());
+        if (d != 0) {
+            return d;
+        }
+        final var aInterfaces = interfaces();
+        final var bInterfaces = other.interfaces();
+        if (aInterfaces.size() == 1 && bInterfaces.size() == 1) {
+            return aInterfaces.get(0).compareTo(bInterfaces.get(0));
+        }
+        final var aInterfaceArray = aInterfaces.toArray(new InterfaceDescriptor[0]);
+        final var bInterfaceArray = bInterfaces.toArray(new InterfaceDescriptor[0]);
+        Arrays.sort(aInterfaceArray);
+        Arrays.sort(bInterfaceArray);
+        final var i1 = Math.min(aInterfaceArray.length, bInterfaceArray.length);
+        for (var i0 = 0; i0 < i1; ++i0) {
+            d = aInterfaceArray[i0].compareTo(bInterfaceArray[i0]);
+            if (d != 0) {
+                return d;
+            }
+        }
+        return aInterfaceArray.length - bInterfaceArray.length;
     }
 
     /**

@@ -1,8 +1,8 @@
 package se.arkalix.internal.net.http.service;
 
 import io.netty.bootstrap.ServerBootstrap;
-import se.arkalix.ArService;
 import se.arkalix.ArServiceHandle;
+import se.arkalix.ArService;
 import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.SecurityDescriptor;
