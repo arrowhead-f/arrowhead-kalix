@@ -81,8 +81,16 @@ public class SystemDescription {
     /**
      * @return The hostname/port or IP-address/port of the described system.
      */
-    public InetSocketAddress remoteSocketAddress() {
+    public InetSocketAddress socketAddress() {
         return remoteSocketAddress;
+    }
+
+    /**
+     * @return {@code true} only if the described service is known to be
+     * running in secure mode.
+     */
+    public boolean isSecure() {
+        return identity != null;
     }
 
     /**

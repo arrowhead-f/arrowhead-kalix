@@ -1,14 +1,14 @@
 package se.arkalix.plugin;
 
 import se.arkalix.ArService;
-import se.arkalix.query.ServiceQuery;
 import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
+import se.arkalix.query.ServiceQuery;
+import se.arkalix.util.annotation.ThreadSafe;
 import se.arkalix.util.concurrent.Future;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -92,6 +92,7 @@ public interface Plugin {
      * provided and the fault is relayed to the caller trying to cause the
      * service to be provided.
      */
+    @ThreadSafe
     default Future<?> onServicePrepared(final Plug plug, final ArService service) throws Exception {
         return Future.done();
     }
@@ -117,6 +118,7 @@ public interface Plugin {
      * and the fault is relayed to the caller trying to cause the service to be
      * provided.
      */
+    @ThreadSafe
     default Future<?> onServiceProvided(final Plug plug, final ServiceDescription service) throws Exception {
         return Future.done();
     }
@@ -131,6 +133,7 @@ public interface Plugin {
      * @param plug    Plug, representing this plugin's connection to a system.
      * @param service A description of the service being removed.
      */
+    @ThreadSafe
     default void onServiceDismissed(final Plug plug, final ServiceDescription service) throws Exception {}
 
     /**
@@ -151,6 +154,7 @@ public interface Plugin {
      * fault, service resolution will stop and no more plugins will be asked to
      * process the query.
      */
+    @ThreadSafe
     default Future<Collection<ServiceDescription>> onServiceQueried(final Plug plug, final ServiceQuery query)
         throws Exception
     {

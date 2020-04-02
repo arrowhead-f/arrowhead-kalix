@@ -853,6 +853,21 @@ public interface Future<V> {
     }
 
     /**
+     * Converts this {@code Future} into a {@link FutureAnnouncement}, which
+     * allows its result to be received by any number of subscribers.
+     * <p>
+     * As noted {@link #onResult(Consumer) here}, a {@code Future} should only
+     * ever present its result to a single receiver. This method allows for
+     * that scope be widened to zero or more receivers.
+     *
+     * @return {@code FutureAnnouncement} advertising the result of this
+     * {@code Future} to any number of subscribers.
+     */
+    default FutureAnnouncement<V> toAnnouncement() {
+        return new FutureAnnouncement<>(this);
+    }
+
+    /**
      * Returns new {@code Future} that is completed successfully only if this
      * {@code Future} completes successfully and its result can be provided to
      * the given {@code consumer} function <i>on a separate thread</i>.

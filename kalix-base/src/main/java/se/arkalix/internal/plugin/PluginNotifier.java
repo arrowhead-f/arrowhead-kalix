@@ -37,11 +37,6 @@ public class PluginNotifier {
                 public ArSystem system() {
                     return system;
                 }
-
-                @Override
-                public boolean isSystemShuttingDown() {
-                    return system.isShuttingDown();
-                }
             },
             plugin -> plugin)
         );

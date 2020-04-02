@@ -262,7 +262,7 @@ public class HttpClient {
                 "service does not support HTTP" + (clientIsSecure ? "S" : "")));
         }
 
-        return connect(remoteService.provider().remoteSocketAddress(), localSocketAddress);
+        return connect(remoteService.provider().socketAddress(), localSocketAddress);
     }
 
     /**

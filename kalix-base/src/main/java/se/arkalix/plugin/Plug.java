@@ -25,5 +25,7 @@ public interface Plug {
      * @return {@code true} only if the {@link ArSystem} this plug is
      * attached to is about to shut down irreversibly.
      */
-    boolean isSystemShuttingDown();
+    default boolean isSystemShuttingDown() {
+        return system().isShuttingDown();
+    }
 }
