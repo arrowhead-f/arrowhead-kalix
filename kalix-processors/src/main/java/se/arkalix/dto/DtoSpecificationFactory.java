@@ -9,6 +9,8 @@ import se.arkalix.dto.util.Expander;
 import javax.lang.model.element.Modifier;
 import java.util.*;
 
+import static se.arkalix.dto.types.DtoDescriptor.LIST;
+
 public class DtoSpecificationFactory {
     private final DtoSpecificationEncoding[] specificationEncodings;
 
@@ -52,31 +54,28 @@ public class DtoSpecificationFactory {
                 ? (expression) -> "return Optional.ofNullable(" + expression + ")"
                 : (expression) -> "return " + expression;
 
-            switch (property.descriptor()) {
+            switch (descriptor) {
             case ARRAY:
                 getter.addStatement(output.expand("$N.clone()"), name);
                 break;
 
             case LIST:
-                if (((DtoCollection) property.type()).containsInterfaceType()) {
-                    getter.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)
-                        .addMember("value", "\"unchecked\"").build());
-                    getter.addStatement(output.expand("(List) $N"), name);
-                }
-                else {
-                    getter.addStatement(output.expand("$N"), name);
-
-                }
-                break;
-
             case MAP:
                 if (((DtoCollection) property.type()).containsInterfaceType()) {
                     getter.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)
                         .addMember("value", "\"unchecked\"").build());
-                    getter.addStatement(output.expand("(Map) $N"), name);
+                    getter.addStatement(output.expand("($N) $N"), descriptor == LIST ? "List" : "Map", name);
+
+                    implementation.addMethod(MethodSpec.methodBuilder(name + "Dto")
+                        .addModifiers(Modifier.PUBLIC)
+                        .addJavadoc("@see #$N()", name)
+                        .returns(inputTypeName)
+                        .addStatement("return $N", name)
+                        .build());
                 }
                 else {
                     getter.addStatement(output.expand("$N"), name);
+
                 }
                 break;
 
@@ -105,7 +104,7 @@ public class DtoSpecificationFactory {
 
             builder.addMethod(fieldSetter.build());
 
-            if (descriptor == DtoDescriptor.LIST) {
+            if (descriptor == LIST) {
                 final var element = ((DtoSequence) property.type()).element();
                 if (!element.descriptor().isCollection()) {
                     final var elementTypeName = element.inputTypeName();
