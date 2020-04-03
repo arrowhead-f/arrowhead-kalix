@@ -4,6 +4,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -126,6 +127,25 @@ public class TestDnsNames {
             "x-",
             "x-.y",
             "x.y-"
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("dnsNamesAndSplits")
+    void shouldSplitNamesCorrectly(final String name, final int limit, final List<String> expected) {
+        final var parts = DnsNames.splitName(name, limit);
+        assertEquals(expected, parts);
+    }
+
+    static Stream<Arguments> dnsNamesAndSplits() {
+        return Stream.of(
+            arguments("x", 1, List.of("x")),
+            arguments("x.y", 1, List.of("x.y")),
+            arguments("x.y", 2, List.of("x", "y")),
+            arguments("x.y", 3, List.of("x", "y")),
+            arguments("test.arkalix.se", 2, List.of("test", "arkalix.se")),
+            arguments("system-94.cloud-14.company-x.arrowhead.eu", 4,
+                List.of("system-94", "cloud-14", "company-x", "arrowhead.eu"))
         );
     }
 }

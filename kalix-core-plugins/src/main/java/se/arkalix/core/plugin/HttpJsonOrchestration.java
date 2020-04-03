@@ -13,6 +13,10 @@ import java.util.Objects;
 import static se.arkalix.dto.DtoEncoding.JSON;
 import static se.arkalix.net.http.HttpMethod.POST;
 
+/**
+ * A remote {@link ArOrchestration} service that is communicated with via
+ * HTTP/JSON in either secure or insecure mode.
+ */
 public class HttpJsonOrchestration implements ArOrchestration {
     private final HttpClient client;
     private final InetSocketAddress remoteSocketAddress;

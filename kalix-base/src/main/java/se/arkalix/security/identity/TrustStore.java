@@ -85,6 +85,30 @@ public class TrustStore {
     }
 
     /**
+     * Reads JVM-compatible key store from specified path and collects all
+     * contained certificates into a created {@link TrustStore}.
+     * <p>
+     * As of Java 11, only the PKCS#12 key store format is mandatory to
+     * support for Java implementations.
+     *
+     * @param path     Filesystem path to key store to load.
+     * @param password Key store password, or {@code null} if not required.
+     * @return New x.509 trust store.
+     * @throws GeneralSecurityException If the key store contains data or
+     *                                  details that cannot be interpreted
+     *                                  or supported properly.
+     * @throws IOException              If the key store at the specified
+     *                                  {@code path} could not be read.
+     * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
+     * @see <a href="https://tools.ietf.org/html/rfc7292">RFC 7292</a>
+     */
+    public static TrustStore read(final String path, final char[] password)
+        throws GeneralSecurityException, IOException
+    {
+        return read(Path.of(path), password);
+    }
+
+    /**
      * @return Clone of array of trusted x.509 certificates.
      */
     public X509Certificate[] certificates() {

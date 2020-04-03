@@ -16,8 +16,8 @@ import static se.arkalix.net.http.HttpMethod.DELETE;
 import static se.arkalix.net.http.HttpMethod.POST;
 
 /**
- * A remote {@link ArServiceDiscovery} that is communicated with via HTTP/JSON
- * in either secure or insecure mode.
+ * A remote {@link ArServiceDiscovery} service that is communicated with via
+ * HTTP/JSON in either secure or insecure mode.
  */
 public class HttpJsonServiceDiscovery implements ArServiceDiscovery {
     private final HttpClient client;
@@ -47,7 +47,7 @@ public class HttpJsonServiceDiscovery implements ArServiceDiscovery {
             .flatMap(response -> {
                 final var status = response.status();
                 if (status.isSuccess()) {
-                    return Future.done();
+                    return response.bodyAs(JSON, ServiceQueryResultDto.class);
                 }
                 if (status.isClientError() && response.headers().getAsInteger("content-length").orElse(0) > 0) {
                     return response.bodyAsString() // TODO: Parse error message and present better string.

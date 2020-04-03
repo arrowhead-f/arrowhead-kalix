@@ -90,6 +90,11 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         }
 
         builder
+            .beginControlFlow("default:")
+            .addStatement("buffer.skip()")
+            .endControlFlow("break");
+
+        builder
             .endControlFlow()
             .endControlFlow()
             .addStatement("return builder.build()")
@@ -413,12 +418,22 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         final var p1 = properties.size();
         for (var p0 = 0; p0 < p1; ++p0) {
             final var property = properties.get(p0);
+            final var descriptor = property.descriptor();
+            final var isCollection = descriptor.isCollection();
             final var isOptional = property.isOptional();
+            final var name = property.name();
             try {
+                if (isCollection) {
+                    writeCache.addWriteIfNotEmpty(builder);
+                    builder.beginControlFlow("if ($N.$N != 0)", name, descriptor == DtoDescriptor.ARRAY
+                        ? "length"
+                        : "size()");
+                }
+
                 if (p0 != 0) {
                     if (isOptional) {
                         writeCache.addWriteIfNotEmpty(builder);
-                        builder.beginControlFlow("if ($N != null)", property.name());
+                        builder.beginControlFlow("if ($N != null)", name);
                     }
                     writeCache.append(',');
                 }
@@ -428,9 +443,14 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
                     .append(property.nameFor(DtoEncoding.JSON))
                     .append("\":");
 
-                writeValue(property.type(), property.name(), builder);
+                writeValue(property.type(), name, builder);
 
                 if (p0 != 0 && isOptional) {
+                    writeCache.addWriteIfNotEmpty(builder);
+                    builder.endControlFlow();
+                }
+
+                if (isCollection) {
                     writeCache.addWriteIfNotEmpty(builder);
                     builder.endControlFlow();
                 }

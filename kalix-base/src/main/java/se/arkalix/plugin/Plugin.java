@@ -1,5 +1,6 @@
 package se.arkalix.plugin;
 
+import org.slf4j.LoggerFactory;
 import se.arkalix.ArService;
 import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
@@ -36,7 +37,13 @@ public interface Plugin {
      *
      * @param plug Plug, representing the plugin's connection to the system.
      */
-    default void onAttach(final Plug plug) throws Exception {}
+    default void onAttach(final Plug plug) throws Exception {
+        final var class_ = this.getClass();
+        final var logger = LoggerFactory.getLogger(class_);
+        if (logger.isDebugEnabled()) {
+            logger.debug("\"{}\" plugin attached to \"{}\"", class_, plug.system().name());
+        }
+    }
 
     /**
      * Called to notify the plugin that it now is detached from its
@@ -54,7 +61,13 @@ public interface Plugin {
      *
      * @param plug Plug, representing this plugin's connection to a system.
      */
-    default void onDetach(final Plug plug) throws Exception {}
+    default void onDetach(final Plug plug) throws Exception {
+        final var class_ = this.getClass();
+        final var logger = LoggerFactory.getLogger(class_);
+        if (logger.isDebugEnabled()) {
+            logger.debug("\"{}\" plugin detached from \"{}\"", class_, plug.system().name());
+        }
+    }
 
     /**
      * Called to notify the plugin that it was forcibly detached due to
@@ -66,7 +79,13 @@ public interface Plugin {
      * @param plug  Plug, representing this plugin's connection to a system.
      * @param cause The exception causing the plugin to be detached.
      */
-    default void onDetach(final Plug plug, final Throwable cause) throws Exception {}
+    default void onDetach(final Plug plug, final Throwable cause) throws Exception {
+        final var class_ = this.getClass();
+        final var logger = LoggerFactory.getLogger(class_);
+        if (logger.isErrorEnabled()) {
+            logger.error("\"" + class_ + "\" plugin detached forcibly from \"" + plug.system().name() + "\"", cause);
+        }
+    }
 
     /**
      * Called to notify the plugin that a new service is prepared for being

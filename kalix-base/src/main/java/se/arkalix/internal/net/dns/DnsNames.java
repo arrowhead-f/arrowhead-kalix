@@ -218,12 +218,12 @@ public class DnsNames {
                         throw new IllegalArgumentException("Invalid DNS name " +
                             "end character '.'; expected 0-9 A-Z a-z");
                     }
-                    parts.add(name.substring(n0, n1));
+                    parts.add(name.substring(n0, n1 - 1));
                     n0 = n1;
                     continue label; // End of label, start over.
                 }
                 if (!(c >= '0' && c <= '9' || c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z')) {
-                    throw invalidLabelCharException('c');
+                    throw invalidLabelCharException(c);
                 }
             }
         }

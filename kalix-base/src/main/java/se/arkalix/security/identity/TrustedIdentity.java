@@ -128,7 +128,7 @@ public class TrustedIdentity {
      * @return x.509 certificate of trusted identity.
      */
     public X509Certificate certificate() {
-        return chain[0];
+        return chain[chainOffset];
     }
 
     /**

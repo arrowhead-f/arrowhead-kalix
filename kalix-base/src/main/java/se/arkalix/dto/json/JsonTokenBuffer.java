@@ -24,6 +24,25 @@ public class JsonTokenBuffer {
         return tokens.get(offset++);
     }
 
+    public void skip() {
+        var token = next();
+        if (token.nChildren == 0) {
+            return;
+        }
+        if (token.type == JsonType.ARRAY) {
+            for (var n = token.nChildren; n-- != 0;) {
+                skip();
+            }
+            return;
+        }
+        if (token.type == JsonType.OBJECT) {
+            for (var n = token.nChildren; n-- != 0;) {
+                offset += 1; // Skip key.
+                skip();
+            }
+        }
+    }
+
     public BinaryReader source() {
         return source;
     }

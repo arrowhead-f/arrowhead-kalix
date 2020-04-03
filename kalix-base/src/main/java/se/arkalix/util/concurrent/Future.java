@@ -807,7 +807,9 @@ public interface Future<V> {
                     if (result.isSuccess()) {
                         consumer.accept(Result.success(value));
                     }
-                    consumer.accept(Result.failure(result.fault()));
+                    else {
+                        consumer.accept(Result.failure(result.fault()));
+                    }
                 });
             }
 

@@ -111,7 +111,7 @@ public class HttpServer implements ArServer {
         }
 
         if (isShuttingDown.get()) {
-            return Future.failure(cannotProvideServiceShuttingDownException());
+            return Future.failure(cannotProvideServiceShuttingDownException(null));
         }
 
         return pluginNotifier.onServicePrepared(service).flatMapResult(result0 -> {
@@ -131,7 +131,7 @@ public class HttpServer implements ArServer {
 
             if (isShuttingDown.get()) {
                 services.remove(basePath);
-                return Future.failure(cannotProvideServiceShuttingDownException());
+                return Future.failure(cannotProvideServiceShuttingDownException(null));
             }
 
             final var handle = new ServiceHandle(httpService, basePath);
@@ -143,13 +143,13 @@ public class HttpServer implements ArServer {
                         return Result.success(handle);
                     }
                     handle.dismiss();
-                    return Result.failure(cannotProvideServiceShuttingDownException());
+                    return Result.failure(cannotProvideServiceShuttingDownException(result1.fault()));
                 });
         });
     }
 
-    private Throwable cannotProvideServiceShuttingDownException() {
-        return new IllegalStateException("Cannot provide service; server is shutting down");
+    private Throwable cannotProvideServiceShuttingDownException(final Throwable cause) {
+        return new IllegalStateException("Cannot provide service; server is shutting down", cause);
     }
 
     @Override
@@ -169,7 +169,7 @@ public class HttpServer implements ArServer {
 
     @Override
     public Future<?> close() {
-        if (isShuttingDown.get()) {
+        if (isShuttingDown.getAndSet(true)) {
             return Future.done();
         }
         for (final var handle : handles) {
@@ -195,7 +195,7 @@ public class HttpServer implements ArServer {
 
         @Override
         public void dismiss() {
-            if (isDismissed.compareAndSet(false, true)) {
+            if (!isDismissed.getAndSet(true)) {
                 pluginNotifier.onServiceDismissed(description());
                 services.remove(basePath);
             }

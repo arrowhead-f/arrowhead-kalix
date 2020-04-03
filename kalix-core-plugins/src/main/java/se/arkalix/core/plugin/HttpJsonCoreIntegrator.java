@@ -3,10 +3,12 @@ package se.arkalix.core.plugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.ArService;
+import se.arkalix.core.plugin.dto.ErrorDto;
 import se.arkalix.core.plugin.dto.ServiceQueryBuilder;
 import se.arkalix.core.plugin.dto.ServiceRegistrationBuilder;
 import se.arkalix.core.plugin.dto.SystemDetailsBuilder;
 import se.arkalix.description.ServiceDescription;
+import se.arkalix.internal.security.identity.X509Keys;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.client.HttpClientResponseRejectedException;
@@ -25,6 +27,8 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Objects;
+
+import static se.arkalix.dto.DtoEncoding.JSON;
 
 /**
  * HTTP/JSON core integration plug-in.
@@ -106,6 +110,25 @@ public class HttpJsonCoreIntegrator implements Plugin {
             .client(client)
             .remoteSocketAddress(serviceRegistrySocketAddress)
             .build();
+
+        if (logger.isInfoEnabled()) {
+            logger.info("HTTP/JSON core integrator attached to \"{}\"", plug.system().name());
+        }
+    }
+
+    @Override
+    public void onDetach(final Plug plug) {
+        if (logger.isInfoEnabled()) {
+            logger.info("HTTP/JSON core integrator detached from \"{}\"", plug.system().name());
+        }
+    }
+
+    @Override
+    public void onDetach(final Plug plug, final Throwable cause) {
+        if (logger.isErrorEnabled()) {
+            logger.error("HTTP/JSON core integrator forcibly detached " +
+                "from \"" + plug.system().name() + "\"", cause);
+        }
     }
 
     @Override
@@ -127,6 +150,9 @@ public class HttpJsonCoreIntegrator implements Plugin {
     }
 
     private FutureAnnouncement<PublicKey> requestAuthorizationKey() {
+        if (logger.isInfoEnabled()) {
+            logger.info("HTTP/JSON core integrator requesting authorization key ...");
+        }
         return serviceRegistry.query(new ServiceQueryBuilder()
             .name("auth-public-key")
             .build())
@@ -146,6 +172,7 @@ public class HttpJsonCoreIntegrator implements Plugin {
                         final var key = service.provider().publicKeyBase64();
                         if (key.isPresent()) {
                             publicKeyBase64 = key.get();
+                            break;
                         }
                     }
                     if (publicKeyBase64 == null) {
@@ -158,19 +185,39 @@ public class HttpJsonCoreIntegrator implements Plugin {
                     }
 
                     final var publicKeyDer = Base64.getDecoder().decode(publicKeyBase64);
+                    final var algorithm = X509Keys.identifyPublicKeyAlgorithm(publicKeyDer);
+                    if (algorithm.isEmpty()) {
+                        return Result.failure(new ArCoreIntegrationException("" +
+                            "The \"auth-public-key\" service provider public " +
+                            "key seems to use an unsupported key algorithm; " +
+                            "token authorization not possible"));
+                    }
                     final var keySpec = new X509EncodedKeySpec(publicKeyDer);
-                    final var keyFactory = KeyFactory.getInstance(keySpec.getAlgorithm());
+                    final var keyFactory = KeyFactory.getInstance(algorithm.get());
                     final var publicKey = keyFactory.generatePublic(keySpec);
+
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Authorization key retrieved: {}", publicKeyBase64);
+                    }
 
                     return Result.success(publicKey);
                 }
                 return Result.failure(result.fault());
+            })
+            .mapFault(Throwable.class, fault -> {
+                if (logger.isWarnEnabled()) {
+                    logger.warn("Failed to retrieve authorization key", fault);
+                }
+                return fault;
             })
             .toAnnouncement();
     }
 
     @Override
     public Future<?> onServiceProvided(final Plug plug, final ServiceDescription service) {
+        if (logger.isInfoEnabled()) {
+            logger.info("System \"{}\" is now registering \"{}\" ...", plug.system().name(), service.name());
+        }
         final var provider = service.provider();
         final var providerSocketAddress = provider.socketAddress();
         final var registration = new ServiceRegistrationBuilder()
@@ -191,23 +238,47 @@ public class HttpJsonCoreIntegrator implements Plugin {
             .build();
 
         return serviceRegistry.register(registration)
+            .pass(null)
             .flatMapCatch(HttpClientResponseRejectedException.class, fault -> {
-                // If registration fails with 400 BAD REQUEST, try to unregister it and then try again.
-                // TODO: Parse error message and try again only if the service is already registered.
                 if (fault.status() == HttpStatus.BAD_REQUEST) {
-                    return serviceRegistry.unregister(
-                        service.name(),
-                        provider.name(),
-                        providerSocketAddress.getHostString(),
-                        providerSocketAddress.getPort())
-                        .flatMap(ignored -> serviceRegistry.register(registration).pass(null));
+                    return fault.unwrap()
+                        .bodyAs(JSON, ErrorDto.class)
+                        .flatMap(error -> {
+                            if (!"INVALID_PARAMETER".equals(error.type())) {
+                                return Future.done();
+                            }
+                            return serviceRegistry.unregister(
+                                service.name(),
+                                provider.name(),
+                                providerSocketAddress.getHostString(),
+                                providerSocketAddress.getPort())
+                                .flatMap(ignored -> serviceRegistry.register(registration).pass(null));
+                        });
                 }
                 return Future.failure(fault);
+            })
+            .mapResult(result -> {
+                if (result.isSuccess()) {
+                    if (logger.isInfoEnabled()) {
+                        logger.info("System \"{}\" has registered \"{}\"", plug.system().name(), service.name());
+                    }
+                }
+                else {
+                    if (logger.isErrorEnabled()) {
+                        logger.error("System \"" + plug.system().name() +
+                            "\" failed to register \"" + service.name() +
+                            "\"", result.fault());
+                    }
+                }
+                return result;
             });
     }
 
     @Override
     public void onServiceDismissed(final Plug plug, final ServiceDescription service) {
+        if (logger.isInfoEnabled()) {
+            logger.info("System \"{}\" is now unregistering \"{}\" ...", plug.system().name(), service.name());
+        }
         final var provider = service.provider();
         final var providerSocketAddress = provider.socketAddress();
         serviceRegistry.unregister(
@@ -215,9 +286,16 @@ public class HttpJsonCoreIntegrator implements Plugin {
             provider.name(),
             providerSocketAddress.getHostString(),
             providerSocketAddress.getPort())
-            .onFailure(fault -> {
-                if (logger.isWarnEnabled()) {
-                    logger.warn("Failed to unregister service \\\"\" + service.name() + \"", fault);
+            .onResult(result -> {
+                if (result.isSuccess()) {
+                    if (logger.isInfoEnabled()) {
+                        logger.info("System \"{}\" has unregistered \"{}\"", plug.system().name(), service.name());
+                    }
+                }
+                else {
+                    if (logger.isWarnEnabled()) {
+                        logger.warn("Failed to unregister service \"" + service.name() + "\"", result.fault());
+                    }
                 }
             });
     }
