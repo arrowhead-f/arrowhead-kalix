@@ -9,11 +9,12 @@ import java.util.Optional;
 import static se.arkalix.dto.DtoEncoding.JSON;
 
 /**
- * A description of a system, as it appears in a {@link ServiceRegistration}.
+ * Details about an Arrowhead system, as they appear in various core service
+ * messages.
  */
 @DtoReadableAs(JSON)
 @DtoWritableAs(JSON)
-public interface SystemDefinition {
+public interface SystemDetails {
     /**
      * Name of system.
      */

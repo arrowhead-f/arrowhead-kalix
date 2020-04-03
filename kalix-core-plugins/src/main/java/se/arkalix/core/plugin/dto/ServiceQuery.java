@@ -6,6 +6,7 @@ import se.arkalix.dto.DtoWritableAs;
 import se.arkalix.dto.json.JsonName;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static se.arkalix.dto.DtoEncoding.JSON;
@@ -32,6 +33,12 @@ public interface ServiceQuery {
      */
     @JsonName("securityRequirements")
     List<SecurityDescriptor> securityModes();
+
+    /**
+     * Required metadata pairs.
+     */
+    @JsonName("metadataRequirements")
+    Map<String, String> metadata();
 
     /**
      * Desired exact service version.

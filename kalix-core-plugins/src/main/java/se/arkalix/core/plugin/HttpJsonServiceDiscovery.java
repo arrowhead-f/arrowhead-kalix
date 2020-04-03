@@ -16,10 +16,10 @@ import static se.arkalix.net.http.HttpMethod.DELETE;
 import static se.arkalix.net.http.HttpMethod.POST;
 
 /**
- * A remote {@link ArServiceRegistry} that is communicated with via HTTP/JSON
+ * A remote {@link ArServiceDiscovery} that is communicated with via HTTP/JSON
  * in either secure or insecure mode.
  */
-public class HttpJsonServiceRegistry implements ArServiceRegistry {
+public class HttpJsonServiceDiscovery implements ArServiceDiscovery {
     private final HttpClient client;
     private final InetSocketAddress remoteSocketAddress;
 
@@ -27,7 +27,7 @@ public class HttpJsonServiceRegistry implements ArServiceRegistry {
     private final String uriRegister;
     private final String uriUnregister;
 
-    private HttpJsonServiceRegistry(final Builder builder) {
+    private HttpJsonServiceDiscovery(final Builder builder) {
         client = Objects.requireNonNull(builder.client, "Expected client");
         remoteSocketAddress = Objects.requireNonNull(builder.remoteSocketAddress, "Expected remoteSocketAddress");
 
@@ -107,7 +107,7 @@ public class HttpJsonServiceRegistry implements ArServiceRegistry {
     }
 
     /**
-     * Builder useful for constructing {@link HttpJsonServiceRegistry} instances.
+     * Builder useful for constructing {@link HttpJsonServiceDiscovery} instances.
      */
     public static class Builder {
         private String basePath;
@@ -115,7 +115,7 @@ public class HttpJsonServiceRegistry implements ArServiceRegistry {
         private InetSocketAddress remoteSocketAddress;
 
         /**
-         * Service registry base path.
+         * Service discovery base path.
          * <p>
          * Defaults to "/serviceregistry".
          *
@@ -150,12 +150,12 @@ public class HttpJsonServiceRegistry implements ArServiceRegistry {
         }
 
         /**
-         * Finishes construction of {@link HttpJsonServiceRegistry}.
+         * Finishes construction of {@link HttpJsonServiceDiscovery}.
          *
-         * @return New HTTP service registry object.
+         * @return New HTTP/JSON service discovery object.
          */
-        public HttpJsonServiceRegistry build() {
-            return new HttpJsonServiceRegistry(this);
+        public HttpJsonServiceDiscovery build() {
+            return new HttpJsonServiceDiscovery(this);
         }
     }
 }

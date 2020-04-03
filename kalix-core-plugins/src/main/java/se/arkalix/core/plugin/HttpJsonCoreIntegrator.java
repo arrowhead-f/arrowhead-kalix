@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import se.arkalix.ArService;
 import se.arkalix.core.plugin.dto.ServiceQueryBuilder;
 import se.arkalix.core.plugin.dto.ServiceRegistrationBuilder;
-import se.arkalix.core.plugin.dto.SystemDefinitionBuilder;
+import se.arkalix.core.plugin.dto.SystemDetailsBuilder;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.client.HttpClient;
@@ -45,7 +45,7 @@ public class HttpJsonCoreIntegrator implements Plugin {
     private final InetSocketAddress serviceRegistrySocketAddress;
 
     private HttpClient client = null;
-    private HttpJsonServiceRegistry serviceRegistry = null;
+    private HttpJsonServiceDiscovery serviceRegistry = null;
     private FutureAnnouncement<PublicKey> authorizationKeyAnnouncement = null;
 
     private HttpJsonCoreIntegrator(
@@ -101,7 +101,7 @@ public class HttpJsonCoreIntegrator implements Plugin {
     public void onAttach(final Plug plug) throws Exception {
         client = HttpClient.from(plug.system());
 
-        serviceRegistry = new HttpJsonServiceRegistry.Builder()
+        serviceRegistry = new HttpJsonServiceDiscovery.Builder()
             .basePath(serviceRegistryBasePath)
             .client(client)
             .remoteSocketAddress(serviceRegistrySocketAddress)
@@ -175,7 +175,7 @@ public class HttpJsonCoreIntegrator implements Plugin {
         final var providerSocketAddress = provider.socketAddress();
         final var registration = new ServiceRegistrationBuilder()
             .name(service.name())
-            .provider(new SystemDefinitionBuilder()
+            .provider(new SystemDetailsBuilder()
                 .name(provider.name())
                 .hostname(providerSocketAddress.getHostString())
                 .port(providerSocketAddress.getPort())

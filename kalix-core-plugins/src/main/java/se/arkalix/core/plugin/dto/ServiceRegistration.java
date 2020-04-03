@@ -26,7 +26,7 @@ public interface ServiceRegistration {
      * The system providing the service.
      */
     @JsonName("providerSystem")
-    SystemDefinition provider();
+    SystemDetails provider();
 
     /**
      * Qualifier that distinguishes this service from other such provided by

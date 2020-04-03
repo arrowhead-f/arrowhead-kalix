@@ -6,9 +6,9 @@ import se.arkalix.core.plugin.dto.ServiceRegistrationDto;
 import se.arkalix.util.concurrent.Future;
 
 /**
- * Represents an Arrowhead service registry.
+ * Represents an Arrowhead service discovery service.
  */
-public interface ArServiceRegistry {
+public interface ArServiceDiscovery {
     /**
      * Queries registry for certain service definitions.
      *

@@ -337,8 +337,14 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         readValue(value, x -> leader + x, builder);
         level -= 1;
 
+        if (key.descriptor() == DtoDescriptor.ENUM) {
+            builder.addStatement("entries$1L.put($2T.valueOf(key$1L), value$1L)", level, key.inputTypeName());
+        }
+        else {
+            builder.addStatement("entries$1L.put(key$1L, value$1L)", level);
+        }
+
         builder
-            .addStatement("entries$1L.put(key$1L, value$1L)", level)
             .endControlFlow()
             .addStatement(assignment.expand("entries$L"), level);
     }

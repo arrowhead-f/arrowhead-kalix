@@ -258,8 +258,10 @@ public class DtoPropertyFactory {
             return false;
         }
 
-        var hasValueOf = false;
+        var hasEquals = false;
+        var hasHashCode = false;
         var hasToString = false;
+        var hasValueOf = false;
 
         final var typeElement = (TypeElement) element;
         for (final var enclosed : typeElement.getEnclosedElements()) {
@@ -268,6 +270,39 @@ public class DtoPropertyFactory {
             }
             final var executable = (ExecutableElement) enclosed;
             final var name = executable.getSimpleName().toString();
+            if (!hasEquals && Objects.equals(name, "equals")) {
+                final var modifiers = executable.getModifiers();
+                if (modifiers.size() != 1 || !modifiers.contains(Modifier.PUBLIC)) {
+                    continue;
+                }
+                final var parameters = executable.getParameters();
+                if (parameters.size() != 1 || parameters.get(0).getSimpleName().contentEquals("Object")) {
+                    continue;
+                }
+                hasEquals = true;
+            }
+            if (!hasHashCode && Objects.equals(name, "hashCode")) {
+                final var modifiers = executable.getModifiers();
+                if (modifiers.size() != 1 || !modifiers.contains(Modifier.PUBLIC)) {
+                    continue;
+                }
+                final var parameters = executable.getParameters();
+                if (parameters.size() != 0) {
+                    continue;
+                }
+                hasHashCode = true;
+            }
+            if (!hasToString && Objects.equals(name, "toString")) {
+                final var modifiers = executable.getModifiers();
+                if (modifiers.size() != 1 || !modifiers.contains(Modifier.PUBLIC)) {
+                    continue;
+                }
+                final var parameters = executable.getParameters();
+                if (parameters.size() != 0) {
+                    continue;
+                }
+                hasToString = true;
+            }
             if (!hasValueOf && Objects.equals(name, "valueOf")) {
                 if (!executable.getModifiers().containsAll(publicStaticModifiers)) {
                     continue;
@@ -281,19 +316,8 @@ public class DtoPropertyFactory {
                 }
                 hasValueOf = true;
             }
-            if (!hasToString && Objects.equals(name, "toString")) {
-                final var modifiers = executable.getModifiers();
-                if (modifiers.size() != 1 || !modifiers.contains(Modifier.PUBLIC)) {
-                    continue;
-                }
-                final var parameters = executable.getParameters();
-                if (parameters.size() != 0) {
-                    continue;
-                }
-                hasToString = true;
-            }
         }
-        return hasValueOf && hasToString;
+        return hasEquals && hasHashCode && hasToString && hasValueOf;
     }
 
     private DtoSequence toArrayType(final ExecutableElement method, final TypeMirror type) throws DtoException {
@@ -316,14 +340,15 @@ public class DtoPropertyFactory {
                     "or @DtoWritableAs; rather use the interface types from " +
                     "which those DTO classes were generated");
             }
-            throw new DtoException(method, "Getter return type must be a " +
-                "primitive, a boxed primitive, a String, an array (T[]), " +
-                "a List<T>, a Map<K, V>, an enum, an enum-like class, which " +
-                "overrides toString() and has a public static " +
-                "valueOf(String) method, be a type annotated with " +
-                "@DtoReadableAs and/or @DtoWritableAs, or an Optional<T>; " +
-                "if an array, list, map or optional, their parameters must " +
-                "conform to the same requirements");
+            throw new DtoException(method, "Getter return type must be (1) " +
+                "a primitive, (2) a boxed primitive, (3) a String, (4) an " +
+                "array (T[]), (5) a List<T>, (6) a Map<K, V>, (7) an enum, " +
+                "(8) an enum-like class, which overrides equals(), " +
+                "hashCode() and toString(), as well as having a public " +
+                "static valueOf(String) method, (9) an interface " +
+                "annotated with @DtoReadableAs and/or @DtoWritableAs, or " +
+                "(10) an Optional<T>; if an array, list, map or optional, " +
+                "its parameter(s) must conform to the same requirements");
         }
 
         final var readableEncodings = readable != null ? readable.value() : new DtoEncoding[0];

@@ -14,7 +14,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
  * A service definition, as it appears in a {@link ServiceQueryResult}.
  */
 @DtoReadableAs(JSON)
-public interface ServiceDefinition {
+public interface ServiceDetails {
     /**
      * Service name.
      */
@@ -24,7 +24,7 @@ public interface ServiceDefinition {
     /**
      * Service provider.
      */
-    SystemDefinition provider();
+    SystemDetails provider();
 
     /**
      * Service qualifier, or URI.

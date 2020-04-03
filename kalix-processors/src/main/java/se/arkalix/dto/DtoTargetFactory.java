@@ -10,11 +10,15 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class DtoTargetFactory {
+    private final Elements elementUtils;
     private final DtoPropertyFactory propertyFactory;
 
     public DtoTargetFactory(final Elements elementUtils, final Types typeUtils) {
+        this.elementUtils = elementUtils;
+
         propertyFactory = new DtoPropertyFactory(elementUtils, typeUtils);
     }
 
@@ -27,10 +31,6 @@ public class DtoTargetFactory {
             throw new DtoException(interfaceElement, "@DtoReadableAs/@DtoWritableAs " +
                 "interfaces may not have type parameters");
         }
-        if (interfaceElement.getInterfaces().size() != 0) {
-            throw new DtoException(interfaceElement, "@DtoReadableAs/@DtoWritableAs " +
-                "interfaces may not extend other interfaces");
-        }
         if (interfaceElement.getSimpleName().toString().endsWith(DtoTarget.DATA_SUFFIX)) {
             throw new DtoException(interfaceElement, "@DtoReadableAs/@DtoWritableAs " +
                 "interfaces may not have names ending with \"" +
@@ -41,6 +41,8 @@ public class DtoTargetFactory {
         final var writable = interfaceElement.getAnnotation(DtoWritableAs.class);
         final var readableEncodings = readable != null ? readable.value() : new DtoEncoding[0];
         final var writableEncodings = writable != null ? writable.value() : new DtoEncoding[0];
+        Arrays.sort(readableEncodings);
+        Arrays.sort(writableEncodings);
 
         if (readableEncodings.length == 0 && writableEncodings.length == 0) {
             throw new DtoException(interfaceElement, "@DtoReadableAs/@DtoWritableAs " +
@@ -53,9 +55,10 @@ public class DtoTargetFactory {
         final var interfaceType = new DtoInterface(declaredType, readableEncodings, writableEncodings);
 
         final var properties = new ArrayList<DtoProperty>();
-        for (final var element : interfaceElement.getEnclosedElements()) {
+        for (final var element : elementUtils.getAllMembers(interfaceElement)) {
             if (element.getEnclosingElement().getKind() != ElementKind.INTERFACE ||
-                element.getKind() != ElementKind.METHOD) {
+                element.getKind() != ElementKind.METHOD)
+            {
                 continue;
             }
             final var modifiers = element.getModifiers();

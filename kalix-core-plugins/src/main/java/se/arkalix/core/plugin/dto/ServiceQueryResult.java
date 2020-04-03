@@ -16,5 +16,5 @@ public interface ServiceQueryResult {
      * Definitions of services matching original {@link ServiceQuery}.
      */
     @JsonName("serviceQueryData")
-    List<ServiceDefinition> services();
+    List<ServiceDetails> services();
 }
