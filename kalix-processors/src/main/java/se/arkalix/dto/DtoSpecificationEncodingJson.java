@@ -424,7 +424,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
 
                 writeValue(property.type(), property.name(), builder);
 
-                if (isOptional) {
+                if (p0 != 0 && isOptional) {
                     writeCache.addWriteIfNotEmpty(builder);
                     builder.endControlFlow();
                 }
