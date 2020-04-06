@@ -1,5 +1,8 @@
 package se.arkalix.query;
 
+import se.arkalix.ArConsumer;
+import se.arkalix.ArConsumerFactory;
+import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
@@ -10,8 +13,8 @@ import se.arkalix.util.function.ThrowingFunction;
 import java.util.*;
 
 public class ServiceQuery {
+    private final ArSystem consumer;
     private final String name;
-    private final boolean isSecure;
     private final ThrowingFunction<ServiceQuery, Future<Set<ServiceDescription>>> resolver;
 
     private Collection<EncodingDescriptor> encodings;
@@ -22,13 +25,13 @@ public class ServiceQuery {
     private Integer versionMin;
 
     public ServiceQuery(
-        final String name,
-        final boolean isSecure,
+        final ArSystem consumer,
+        final String serviceName,
         final ThrowingFunction<ServiceQuery, Future<Set<ServiceDescription>>> resolver)
     {
-        this.name = name;
-        this.isSecure = isSecure;
-        this.resolver = resolver;
+        this.consumer = Objects.requireNonNull(consumer, "Expected consumer");
+        this.name = Objects.requireNonNull(serviceName, "Expected serviceName");
+        this.resolver = Objects.requireNonNull(resolver, "Expected resolver");
     }
 
     public String name() {
@@ -36,7 +39,7 @@ public class ServiceQuery {
     }
 
     public boolean isSecure() {
-        return isSecure;
+        return consumer.isSecure();
     }
 
     public Collection<TransportDescriptor> transports() {
@@ -101,6 +104,46 @@ public class ServiceQuery {
     public ServiceQuery versionMin(final Integer versionMin) {
         this.versionMin = versionMin;
         return this;
+    }
+
+    public <C extends ArConsumer> Future<C> using(final ArConsumerFactory<C> factory) {
+        Collection<TransportDescriptor> currentTransports = Collections.emptyList();
+        if (transports == null) {
+            transports = factory.supportedTransports();
+        }
+        else {
+            currentTransports = transports;
+            transports.retainAll(factory.supportedTransports());
+        }
+        if (transports.isEmpty()) {
+            return Future.failure(new IllegalStateException("The provided " +
+                "consumer factory \"" + factory + "\" only supports the " +
+                "following application-level transport protocols: " +
+                factory.supportedTransports() + ", while this query was " +
+                "already configured to require that any out of " +
+                currentTransports + " be supported; no factory-" +
+                "supported transports are present in the existing " +
+                "collection; cannot create consumer"));
+        }
+
+        Collection<EncodingDescriptor> currentEncodings = Collections.emptyList();
+        if (encodings == null) {
+            encodings = factory.supportedEncodings();
+        }
+        else {
+            encodings.retainAll(factory.supportedEncodings());
+        }
+        if (encodings.isEmpty()) {
+            return Future.failure(new IllegalStateException("The provided " +
+                "consumer factory \"" + factory + "\" only supports the " +
+                "following encodings: " + factory.supportedEncodings() + ", " +
+                "while this query was already configured to require that " +
+                "any out of " + currentEncodings + " be supported; no " +
+                "factory-supported encodings are present in the existing " +
+                "collection; cannot create consumer"));
+        }
+
+        return resolveOne().map(service -> factory.create(consumer, service, encodings));
     }
 
     public Future<Set<ServiceDescription>> resolveAll() {

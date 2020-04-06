@@ -8,6 +8,7 @@ import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.net.http.HttpVersion;
 import se.arkalix.net.http.client.HttpClientRequest;
+import se.arkalix.util.annotation.Internal;
 
 import java.net.URI;
 import java.nio.file.Path;
@@ -84,16 +85,6 @@ public class HttpConsumerRequest implements HttpBodySender<HttpConsumerRequest> 
      */
     public Optional<DtoEncoding> encoding() {
         return request.encoding();
-    }
-
-    void encodingIfUnset(final Supplier<DtoEncoding> encoding) {
-        if (encoding().isPresent()) {
-            return;
-        }
-        final var body = request.body().orElse(null);
-        if (body instanceof DtoWritable) {
-            request.body(encoding.get(), (DtoWritable) body);
-        }
     }
 
     /**
@@ -234,5 +225,16 @@ public class HttpConsumerRequest implements HttpBodySender<HttpConsumerRequest> 
      */
     public HttpClientRequest asClientRequest() {
         return request;
+    }
+
+    @Internal
+    void setEncodingIfRequired(final Supplier<DtoEncoding> encoding) {
+        if (encoding().isPresent()) {
+            return;
+        }
+        final var body = request.body().orElse(null);
+        if (body instanceof DtoWritable) {
+            request.body(encoding.get(), (DtoWritable) body);
+        }
     }
 }

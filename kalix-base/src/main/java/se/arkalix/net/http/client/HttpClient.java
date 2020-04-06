@@ -23,10 +23,9 @@ import java.util.WeakHashMap;
 import static se.arkalix.internal.util.concurrent.NettyFutures.adapt;
 
 /**
- * Allows for the creation of TCP connections through which HTTP messages can
- * be sent.
+ * Client useful for sending HTTP messages via TCP connections to arbitrary
+ * remote hosts.
  */
-@SuppressWarnings("unused")
 public class HttpClient {
     private static final Map<ArSystem, HttpClient> cache = new WeakHashMap<>();
 
@@ -66,9 +65,14 @@ public class HttpClient {
      * configuration details from the given Arrowhead {@code system}.
      * <p>
      * The returned HTTP client will use the same owned identity, trust store,
-     * security mode, local network interface and scheduler as the given
-     * system, which makes it suitable for communicating with other systems
-     * within the same local cloud.
+     * security mode and local network interface as the given system, which
+     * makes it suitable for communicating with other systems within the same
+     * local cloud. However, for most intents and purposes it is preferable to
+     * use the {@link se.arkalix.net.http.consumer.HttpConsumer HttpConsumer}
+     * class for consuming system services, as it takes care of keeping track
+     * of IP addresses, authorization tokens and other relevant details. Such
+     * an instance can with advantage be constructed from the successful result
+     * of the {@link ArSystem#consume(String)} method.
      * <p>
      * If wanting to communicate with other Arrowhead systems without
      * creating an {@link ArSystem} instance, use the {@link Builder} instead.
@@ -153,6 +157,13 @@ public class HttpClient {
             https = new Builder().build();
         }
         return https;
+    }
+
+    /**
+     * @return {@code true} only if this client is configured to use HTTPS.
+     */
+    public boolean isSecure() {
+        return sslContext != null;
     }
 
     /**

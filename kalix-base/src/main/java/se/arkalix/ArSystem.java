@@ -192,7 +192,7 @@ public class ArSystem {
      */
     @ThreadSafe
     public ServiceQuery consume(final String serviceName) {
-        return new ServiceQuery(serviceName, isSecure, pluginNotifier::onServiceQueried);
+        return new ServiceQuery(this, serviceName, pluginNotifier::onServiceQueried);
     }
 
     /**
