@@ -6,7 +6,9 @@ import se.arkalix.util.Result;
 import se.arkalix.util.annotation.ThreadSafe;
 import se.arkalix.util.function.ThrowingFunction;
 
-import java.util.*;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -867,6 +869,88 @@ public interface Future<V> {
      */
     default FutureAnnouncement<V> toAnnouncement() {
         return new FutureAnnouncement<>(this);
+    }
+
+    /**
+     * Delays the result of this {@code Future} from the time it becomes
+     * available.
+     *
+     * @param duration Duration to delay the completion of this {@code Future}
+     *                 with.
+     * @return New {@code Future} that eventually completes with the result of
+     * this {@code Future}.
+     */
+    default Future<V> delay(final Duration duration) {
+        Objects.requireNonNull(duration, "Expected duration");
+        final var source = this;
+        return new Future<>() {
+            private Future<?> cancelTarget = source;
+
+            @Override
+            public void onResult(final Consumer<Result<V>> consumer) {
+                source.onResult(result -> {
+                    if (cancelTarget != null) {
+                        cancelTarget = Schedulers.fixed()
+                            .schedule(duration, () -> consumer.accept(result));
+                    }
+                });
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                if (cancelTarget != null) {
+                    cancelTarget.cancel(mayInterruptIfRunning);
+                    cancelTarget = null;
+                }
+            }
+        };
+    }
+
+    /**
+     * Creates new {@code Future} that delays its completion until right after
+     * the given {@code baseline}.
+     * <p>
+     * In other words, if this {@code Future} completes after the {@code
+     * baseline}, its result is passed on immediately by the returned {@code
+     * Future}. If, on the other hand, this {@code Future} completes before the
+     * {@code baseline}, the returned {@code Future} is scheduled for
+     * completion at some point right after that {@code baseline}.
+     *
+     * @param baseline Instant to delay result until, unless the result becomes
+     *                 available after that instant.
+     * @return New {@code Future} that eventually completes with the result of
+     * this {@code Future}.
+     */
+    default Future<V> delayUntil(final Instant baseline) {
+        Objects.requireNonNull(baseline, "Expected baseline");
+        final var source = this;
+        return new Future<>() {
+            private Future<?> cancelTarget = source;
+
+            @Override
+            public void onResult(final Consumer<Result<V>> consumer) {
+                source.onResult(result -> {
+                    if (cancelTarget != null) {
+                        final var duration = Duration.between(baseline, Instant.now());
+                        if (duration.isNegative() || duration.isZero()) {
+                            consumer.accept(result);
+                        }
+                        else {
+                            cancelTarget = Schedulers.fixed()
+                                .schedule(duration, () -> consumer.accept(result));
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                if (cancelTarget != null) {
+                    cancelTarget.cancel(mayInterruptIfRunning);
+                    cancelTarget = null;
+                }
+            }
+        };
     }
 
     /**

@@ -1,8 +1,11 @@
 package se.arkalix.internal.security.identity;
 
+import se.arkalix.util.annotation.Internal;
+
 import java.util.Arrays;
 import java.util.Optional;
 
+@Internal
 public class X509Keys {
     private X509Keys() {}
 
@@ -22,14 +25,13 @@ public class X509Keys {
         (byte) 0x2A, (byte) 0x86, (byte) 0x48, (byte) 0xCE, (byte) 0x3E,
         (byte) 0x02, (byte) 0x01};
 
-
     private static final int TAG_OID = 0x06;
     private static final int TAG_SEQUENCE = 0x30;
 
     /**
      * Takes a DER-encoded public key, formatted as specified by RFC 5280,
      * Section 4.1.2.7, resolves its AlgorithmIdentifier OID and maps it to one
-     * of the following {@link java.security.KeyFactory} algorithms:
+     * of the following {@link java.security.KeyFactory} algorithm names:
      * <ul>
      *     <li>"EC"</li>
      *     <li>"DSA"</li>

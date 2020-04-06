@@ -3,6 +3,8 @@ package se.arkalix.util.concurrent;
 import se.arkalix.util.Result;
 import se.arkalix.util.function.ThrowingFunction;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -282,5 +284,55 @@ class FutureResult<V> implements Future<V> {
             throwable.addSuppressed(result.fault());
         }
         return Future.failure(throwable);
+    }
+
+    @Override
+    public Future<V> delay(final Duration duration) {
+        Objects.requireNonNull(duration, "Expected duration");
+        return new Future<>() {
+            private Future<?> cancelTarget = null;
+
+            @Override
+            public void onResult(final Consumer<Result<V>> consumer) {
+                cancelTarget = Schedulers.fixed()
+                    .schedule(duration, () -> consumer.accept(result));
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                if (cancelTarget != null) {
+                    cancelTarget.cancel(mayInterruptIfRunning);
+                    cancelTarget = null;
+                }
+            }
+        };
+    }
+
+    @Override
+    public Future<V> delayUntil(final Instant baseline) {
+        Objects.requireNonNull(baseline, "Expected baseline");
+        return new Future<>() {
+            private Future<?> cancelTarget = null;
+
+            @Override
+            public void onResult(final Consumer<Result<V>> consumer) {
+                final var duration = Duration.between(baseline, Instant.now());
+                if (duration.isNegative() || duration.isZero()) {
+                    consumer.accept(result);
+                }
+                else {
+                    cancelTarget = Schedulers.fixed()
+                        .schedule(duration, () -> consumer.accept(result));
+                }
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                if (cancelTarget != null) {
+                    cancelTarget.cancel(mayInterruptIfRunning);
+                    cancelTarget = null;
+                }
+            }
+        };
     }
 }
