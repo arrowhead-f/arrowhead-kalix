@@ -137,7 +137,7 @@ public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
      */
     public Optional<String> queryParameter(final String name) {
         final var values = queryParameters.get(name);
-        return Optional.ofNullable(values.size() > 0 ? values.get(0) : null);
+        return Optional.ofNullable(values != null && values.size() > 0 ? values.get(0) : null);
     }
 
     /**

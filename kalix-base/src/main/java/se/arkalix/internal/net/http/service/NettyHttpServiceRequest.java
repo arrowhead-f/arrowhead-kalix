@@ -16,10 +16,7 @@ import se.arkalix.util.concurrent.FutureProgress;
 
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Internal
 public class NettyHttpServiceRequest implements HttpServiceRequest {
@@ -30,6 +27,7 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
 
     private HttpHeaders headers = null;
     private HttpMethod method = null;
+    private Map<String, List<String>> queryParameters = null;
     private HttpVersion version = null;
 
     private NettyHttpServiceRequest(final Builder builder) {
@@ -97,7 +95,10 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
 
     @Override
     public Map<String, List<String>> queryParameters() {
-        return Collections.unmodifiableMap(queryStringDecoder.parameters());
+        if (queryParameters == null) {
+            queryParameters = Collections.unmodifiableMap(queryStringDecoder.parameters());
+        }
+        return queryParameters;
     }
 
     @Override

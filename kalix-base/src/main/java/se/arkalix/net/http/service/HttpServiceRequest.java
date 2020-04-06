@@ -107,7 +107,7 @@ public interface HttpServiceRequest extends HttpBodyReceiver {
      */
     default Optional<String> queryParameter(final CharSequence name) {
         final var values = queryParameters().get(name.toString());
-        return Optional.ofNullable(values.size() > 0 ? values.get(0) : null);
+        return Optional.ofNullable(values != null && values.size() > 0 ? values.get(0) : null);
     }
 
     /**
