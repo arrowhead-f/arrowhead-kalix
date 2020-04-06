@@ -73,6 +73,11 @@ public class NettyHttpClientConnection implements HttpClientConnection {
     }
 
     @Override
+    public boolean isSecure() {
+        return certificateChain != null;
+    }
+
+    @Override
     public Future<HttpClientResponse> send(final HttpClientRequest request) {
         return send(request, true);
     }

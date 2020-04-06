@@ -1,5 +1,7 @@
 package se.arkalix.internal.net.http.service;
 
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.QueryStringDecoder;
 import se.arkalix.description.SystemDescription;
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadable;
@@ -11,8 +13,6 @@ import se.arkalix.net.http.HttpVersion;
 import se.arkalix.net.http.service.HttpServiceRequest;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.FutureProgress;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.QueryStringDecoder;
 
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -20,8 +20,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import static se.arkalix.internal.net.http.NettyHttpConverters.convert;
 
 @Internal
 public class NettyHttpServiceRequest implements HttpServiceRequest {

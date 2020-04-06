@@ -5,6 +5,7 @@ import se.arkalix.dto.binary.BinaryReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -26,16 +27,23 @@ public class DtoReader {
      * @throws UnsupportedOperationException If the DTO interface type of
      *                                       {@code t} does not include the
      *                                       given {@link DtoEncoding} as
-     *                                       argument to its {@code @DtoReadableAs}
-     *                                       annotation.
-     * @throws DtoReadException                 If reading from {@code source}
+     *                                       argument to its
+     *                                       {@code @DtoReadableAs} annotation.
+     * @throws DtoReadException              If reading from {@code source}
      *                                       fails.
+     * @throws NullPointerException          If {@code class_}, {@code
+     *                                       encoding} or {@code source} is
+     *                                       {@code null}.
      */
     public static <T extends DtoReadable> T read(
         final Class<T> class_,
         final DtoEncoding encoding,
         final BinaryReader source) throws DtoReadException
     {
+        Objects.requireNonNull(class_, "Expected class_");
+        Objects.requireNonNull(encoding, "Expected encoding");
+        Objects.requireNonNull(source, "Expected source");
+
         if (encoding == DtoEncoding.JSON) {
             return readJson(class_, encoding, source);
         }

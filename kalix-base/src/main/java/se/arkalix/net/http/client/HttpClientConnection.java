@@ -1,11 +1,9 @@
 package se.arkalix.net.http.client;
 
-import se.arkalix.description.SystemDescription;
 import se.arkalix.util.concurrent.Future;
 
 import java.net.InetSocketAddress;
 import java.security.cert.Certificate;
-import java.util.Optional;
 
 /**
  * Connection useful for sending HTTP requests to a single remote socket
@@ -25,32 +23,20 @@ public interface HttpClientConnection {
     /**
      * @return Certificate chain associated with host reachable via this
      * connection.
-     * @throws IllegalStateException If the client is not running in secure
-     *                               mode.
+     * @throws IllegalStateException If the connection is not secure.
      */
     Certificate[] certificateChain();
-
-    /**
-     * @return Description of host reachable via this connection as an
-     * Arrowhead system, or nothing if the client is not running in secure
-     * mode or if the certificate chain of the remote host is not superficially
-     * Arrowhead compliant.
-     */
-    default SystemDescription describe() {
-        try {
-            return SystemDescription.tryFrom(certificateChain(), remoteSocketAddress())
-                .orElseThrow(() -> new IllegalStateException("Bad certificate chain"));
-        }
-        catch (final IllegalArgumentException exception) {
-            throw new IllegalStateException("Bad certificate chain", exception);
-        }
-    }
 
     /**
      * @return {@code true} only if this connection can be used to send
      * requests to its remote peer.
      */
     boolean isLive();
+
+    /**
+     * @return {@code true} only if this is an HTTPS connection.
+     */
+    boolean isSecure();
 
     /**
      * Sends given {@code request} to HTTP service represented by this
@@ -73,8 +59,7 @@ public interface HttpClientConnection {
     Future<HttpClientResponse> sendAndClose(final HttpClientRequest request);
 
     /**
-     * Attempts to close the client, destroying any connection with its remote
-     * host.
+     * Attempts to close the connection.
      *
      * @return Future completed when closing is done. Can be safely ignored.
      */

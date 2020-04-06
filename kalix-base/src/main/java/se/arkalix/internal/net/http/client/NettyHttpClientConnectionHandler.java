@@ -77,12 +77,12 @@ public class NettyHttpClientConnectionHandler extends NettySimpleChannelInboundH
     private void handleResponseHead(final ChannelHandlerContext ctx, final HttpResponse response) {
         // TODO: Enable and check size restrictions.
 
-        final var serviceResponseBody = new NettyHttpBodyReceiver(ctx.alloc(), response.headers());
-        final var serviceResponse = new NettyHttpClientResponse(serviceResponseBody, response);
+        final var clientResponseBody = new NettyHttpBodyReceiver(ctx.alloc(), response.headers());
+        final var clientResponse = new NettyHttpClientResponse(clientResponseBody, response);
 
-        this.body = serviceResponseBody;
+        this.body = clientResponseBody;
 
-        connection.onResponseResult(Result.success(serviceResponse));
+        connection.onResponseResult(Result.success(clientResponse));
     }
 
     private void handleResponseContent(final HttpContent content) {

@@ -1,21 +1,18 @@
 package se.arkalix.net.http.client;
 
-import se.arkalix.ArSystem;
-import se.arkalix.description.ServiceDescription;
-import se.arkalix.descriptor.SecurityDescriptor;
-import se.arkalix.descriptor.TransportDescriptor;
-import se.arkalix.internal.net.http.client.FutureHttpClientConnection;
-import se.arkalix.internal.net.http.client.NettyHttpClientConnectionInitializer;
-import se.arkalix.security.identity.OwnedIdentity;
-import se.arkalix.security.identity.TrustStore;
-import se.arkalix.util.annotation.ThreadSafe;
-import se.arkalix.util.concurrent.Schedulers;
-import se.arkalix.util.concurrent.Future;
-import se.arkalix.internal.util.concurrent.NettyScheduler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
+import se.arkalix.ArSystem;
+import se.arkalix.internal.net.http.client.FutureHttpClientConnection;
+import se.arkalix.internal.net.http.client.NettyHttpClientConnectionInitializer;
+import se.arkalix.internal.util.concurrent.NettyScheduler;
+import se.arkalix.security.identity.OwnedIdentity;
+import se.arkalix.security.identity.TrustStore;
+import se.arkalix.util.annotation.ThreadSafe;
+import se.arkalix.util.concurrent.Future;
+import se.arkalix.util.concurrent.Schedulers;
 
 import javax.net.ssl.SSLException;
 import java.net.InetSocketAddress;
@@ -173,23 +170,6 @@ public class HttpClient {
     }
 
     /**
-     * Creates new {@code HttpClientConnection} for consuming the described
-     * {@code remoteService}.
-     * <p>
-     * The returned future is completed with an {@link IllegalStateException}
-     * if the details of the described {@code remoteService} do not match this
-     * client.
-     *
-     * @param remoteService Remote service to consume.
-     * @return Future completed with a new client if and when a TCP connection
-     * has been established to the remote socket address of the system
-     * providing the {@code remoteService}.
-     */
-    public Future<HttpClientConnection> connect(final ServiceDescription remoteService) {
-        return connect(remoteService, null);
-    }
-
-    /**
      * Creates new {@code HttpClientConnection} for communicating with remote
      * host reachable via provided Internet socket address.
      *
@@ -217,55 +197,6 @@ public class HttpClient {
     }
 
     /**
-     * Creates new {@code HttpClientConnection} for consuming the described
-     * {@code remoteService} via the specified {@code localSocketAddress}.
-     * <p>
-     * The returned future is completed with an {@link IllegalStateException}
-     * if the details of the described {@code remoteService} do not match this
-     * client.
-     *
-     * @param remoteService      Remote service to consume.
-     * @param localSocketAddress Socket address of local network interface to
-     *                           use when communicating with the service
-     *                           provider.
-     * @return Future completed with a new client if and when a TCP connection
-     * has been established to the remote socket address of the system
-     * providing the {@code remoteService}.
-     */
-    public Future<HttpClientConnection> connect(
-        final ServiceDescription remoteService,
-        final InetSocketAddress localSocketAddress)
-    {
-        Objects.requireNonNull(remoteService, "Expected remoteService");
-
-        final var remoteIsSecure = remoteService.security() != SecurityDescriptor.NOT_SECURE;
-        final var clientIsSecure = sslContext != null;
-
-        if (!remoteIsSecure && clientIsSecure) {
-            return Future.failure(new IllegalStateException("Cannot create " +
-                "secure HTTP connection to \"" + remoteService.name() + "\"" +
-                "; the service is running in insecure mode"));
-        }
-        if (remoteIsSecure && !clientIsSecure) {
-            return Future.failure(new IllegalStateException("Cannot create " +
-                "insecure HTTP connection to \"" + remoteService.name() + "\"" +
-                "; the service is running in secure mode"));
-        }
-
-        final var isHttpSupported = remoteService.interfaces()
-            .stream().anyMatch(triplet -> triplet.isSecure() == clientIsSecure &&
-                triplet.transport() == TransportDescriptor.HTTP);
-
-        if (!isHttpSupported) {
-            return Future.failure(new IllegalStateException("Cannot create " +
-                "HTTP connection to \"" + remoteService.name() + "\"; the " +
-                "service does not support HTTP" + (clientIsSecure ? "S" : "")));
-        }
-
-        return connect(remoteService.provider().socketAddress(), localSocketAddress);
-    }
-
-    /**
      * Connects to remote host at {@code remoteSocketAddress}, sends
      * {@code request}, closes connection and then completes the returned
      * {@code Future} with the result.
@@ -282,23 +213,6 @@ public class HttpClient {
     {
         Objects.requireNonNull(request, "Expected request");
         return connect(remoteSocketAddress)
-            .flatMap(connection -> connection.sendAndClose(request));
-    }
-
-    /**
-     * Connects to the system providing the described {@code remoteService},
-     * sends {@code request}, closes connection and then completes the returned
-     * {@code Future} with the result.
-     *
-     * @param remoteService Service to consume.
-     * @param request       Request to send.
-     * @return Future completed with the request response or an error.
-     * @throws NullPointerException If {@code remoteService} or {@code request}
-     *                              is {@code null}.
-     */
-    public Future<HttpClientResponse> send(final ServiceDescription remoteService, final HttpClientRequest request) {
-        Objects.requireNonNull(request, "Expected request");
-        return connect(remoteService)
             .flatMap(connection -> connection.sendAndClose(request));
     }
 

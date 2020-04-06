@@ -1,66 +1,80 @@
-package se.arkalix.net.http.client;
+package se.arkalix.net.http.consumer;
 
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoWritable;
+import se.arkalix.dto.DtoWritableAs;
 import se.arkalix.net.http.HttpBodySender;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.net.http.HttpVersion;
+import se.arkalix.net.http.client.HttpClientRequest;
 
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Supplier;
 
 /**
- * An outgoing HTTP request.
+ * An outgoing HTTP request, to be sent to a consumed service.
  */
-public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
-    private final HttpHeaders headers = new HttpHeaders();
-    private final Map<String, List<String>> queryParameters = new HashMap<>();
-
-    private Object body = null;
-    private DtoEncoding encoding = null;
-    private HttpMethod method = null;
-    private String uri = null;
-    private HttpVersion version = null;
+public class HttpConsumerRequest implements HttpBodySender<HttpConsumerRequest> {
+    private final HttpClientRequest request = new HttpClientRequest();
 
     @Override
     public Optional<Object> body() {
-        return Optional.ofNullable(body);
+        return request.body();
     }
 
     @Override
-    public HttpClientRequest body(final byte[] byteArray) {
-        encoding = null;
-        body = byteArray;
+    public HttpConsumerRequest body(final byte[] byteArray) {
+        request.body(byteArray);
+        return this;
+    }
+
+    /**
+     * Sets outgoing HTTP body, replacing any previously set such.
+     * <p>
+     * The provided writable data transfer object is scheduled for encoding and
+     * transmission to the receiver of the body. Please refer to the Javadoc
+     * for the {@code @DtoWritableAs} annotation for more information about
+     * writable data transfer objects.
+     * <p>
+     * This particular method differs from {@link
+     * #body(DtoEncoding, DtoWritable)} in that the {@link DtoEncoding} is
+     * selected automatically from those supported by both the
+     * {@link HttpConsumer} sending the request and the service it is used to
+     * consume.
+     *
+     * @param data Data transfer object to send to consumed service.
+     * @return This.
+     * @throws NullPointerException If {@code body} is {@code null}.
+     * @see DtoWritableAs @DtoWritableAs
+     */
+    public HttpConsumerRequest body(final DtoWritable data) {
+        return body(null, data);
+    }
+
+    @Override
+    public HttpConsumerRequest body(final DtoEncoding encoding, final DtoWritable data) {
+        request.body(encoding, data);
         return this;
     }
 
     @Override
-    public HttpClientRequest body(final DtoEncoding encoding, final DtoWritable data) {
-        this.encoding = encoding;
-        body = data;
+    public HttpConsumerRequest body(final Path path) {
+        request.body(path);
         return this;
     }
 
     @Override
-    public HttpClientRequest body(final Path path) {
-        encoding = null;
-        body = path;
+    public HttpConsumerRequest body(final String string) {
+        request.body(string);
         return this;
     }
 
     @Override
-    public HttpClientRequest body(final String string) {
-        encoding = null;
-        body = string;
-        return this;
-    }
-
-    @Override
-    public HttpClientRequest clearBody() {
-        encoding = null;
-        body = null;
+    public HttpConsumerRequest clearBody() {
+        request.clearBody();
         return this;
     }
 
@@ -69,7 +83,17 @@ public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
      * {@link #body(DtoEncoding, DtoWritable)}, if any.
      */
     public Optional<DtoEncoding> encoding() {
-        return Optional.ofNullable(encoding);
+        return request.encoding();
+    }
+
+    void encodingIfUnset(final Supplier<DtoEncoding> encoding) {
+        if (encoding().isPresent()) {
+            return;
+        }
+        final var body = request.body().orElse(null);
+        if (body instanceof DtoWritable) {
+            request.body(encoding.get(), (DtoWritable) body);
+        }
     }
 
     /**
@@ -79,7 +103,7 @@ public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
      * @return Header value, or {@code null}.
      */
     public Optional<String> header(final CharSequence name) {
-        return headers.get(name);
+        return request.header(name);
     }
 
     /**
@@ -89,8 +113,8 @@ public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
      * @param value Desired header value.
      * @return This request.
      */
-    public HttpClientRequest header(final CharSequence name, final CharSequence value) {
-        headers.set(name, value);
+    public HttpConsumerRequest header(final CharSequence name, final CharSequence value) {
+        request.header(name, value);
         return this;
     }
 
@@ -101,21 +125,21 @@ public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
      * @return Header values. May be an empty list.
      */
     public List<String> headers(final CharSequence name) {
-        return headers.getAll(name);
+        return request.headers(name);
     }
 
     /**
      * @return <i>Modifiable</i> map of all request headers.
      */
     public HttpHeaders headers() {
-        return headers;
+        return request.headers();
     }
 
     /**
      * @return Currently set HTTP method, if any.
      */
     public Optional<HttpMethod> method() {
-        return Optional.ofNullable(method);
+        return request.method();
     }
 
     /**
@@ -124,8 +148,8 @@ public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
      * @param method Desired method.
      * @return This request.
      */
-    public HttpClientRequest method(final HttpMethod method) {
-        this.method = method;
+    public HttpConsumerRequest method(final HttpMethod method) {
+        request.method(method);
         return this;
     }
 
@@ -136,8 +160,7 @@ public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
      * @return Query parameter value, if a corresponding parameter name exists.
      */
     public Optional<String> queryParameter(final String name) {
-        final var values = queryParameters.get(name);
-        return Optional.ofNullable(values.size() > 0 ? values.get(0) : null);
+        return request.queryParameter(name);
     }
 
     /**
@@ -148,10 +171,8 @@ public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
      * @param value Desired parameter value.
      * @return Query parameter value, if a corresponding parameter name exists.
      */
-    public HttpClientRequest queryParameter(final String name, final CharSequence value) {
-        final var list = new ArrayList<String>(1);
-        list.add(value.toString());
-        queryParameters.put(name, list);
+    public HttpConsumerRequest queryParameter(final String name, final CharSequence value) {
+        request.queryParameter(name, value);
         return this;
     }
 
@@ -159,14 +180,14 @@ public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
      * @return Modifiable map of query parameters.
      */
     public Map<String, List<String>> queryParameters() {
-        return queryParameters;
+        return request.queryParameters();
     }
 
     /**
      * @return Currently set request URI, if any.
      */
     public Optional<String> uri() {
-        return Optional.ofNullable(uri);
+        return request.uri();
     }
 
     /**
@@ -175,8 +196,8 @@ public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
      * @param uri Desired URI.
      * @return This request.
      */
-    public HttpClientRequest uri(final String uri) {
-        this.uri = uri;
+    public HttpConsumerRequest uri(final String uri) {
+        request.uri(uri);
         return this;
     }
 
@@ -186,7 +207,7 @@ public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
      * @param uri Desired URI.
      * @return This request.
      */
-    public HttpClientRequest uri(final URI uri) {
+    public HttpConsumerRequest uri(final URI uri) {
         return uri(uri.toString());
     }
 
@@ -194,7 +215,7 @@ public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
      * @return Currently set HTTP version, if any.
      */
     public Optional<HttpVersion> version() {
-        return Optional.ofNullable(version);
+        return request.version();
     }
 
     /**
@@ -203,8 +224,15 @@ public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
      * @param version Desired HTTP version.
      * @return This request.
      */
-    public HttpClientRequest version(final HttpVersion version) {
-        this.version = version;
+    public HttpConsumerRequest version(final HttpVersion version) {
+        request.version(version);
         return this;
+    }
+
+    /**
+     * @return This request as an {@link HttpClientRequest}.
+     */
+    public HttpClientRequest asClientRequest() {
+        return request;
     }
 }

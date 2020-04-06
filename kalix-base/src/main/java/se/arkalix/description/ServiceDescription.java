@@ -5,6 +5,7 @@ import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.internal.net.dns.DnsNames;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Describes an Arrowhead Framework service.
@@ -16,7 +17,7 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
     private final SecurityDescriptor security;
     private final Map<String, String> metadata;
     private final int version;
-    private final List<InterfaceDescriptor> interfaces;
+    private final Map<InterfaceDescriptor, String> interfaceTokens;
 
     private ServiceDescription(final Builder builder) {
         name = Objects.requireNonNull(builder.name, "Expected name");
@@ -37,9 +38,9 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
             ? Collections.emptyMap()
             : Collections.unmodifiableMap(builder.metadata);
         version = builder.version;
-        interfaces = Collections.unmodifiableList(
-            Objects.requireNonNull(builder.interfaces, "Expected interfaces"));
-        if (interfaces.size() == 0) {
+        interfaceTokens = Collections.unmodifiableMap(
+            Objects.requireNonNull(builder.interfaceTokens, "Expected interfaceTokens"));
+        if (interfaceTokens.size() == 0) {
             throw new IllegalArgumentException("At least one supported interface must be specified");
         }
     }
@@ -97,10 +98,19 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
 
     /**
      * @return Interface triplets supported by the described service. The
-     * returned list should be unmodifiable.
+     * returned list is unmodifiable.
      */
-    public List<InterfaceDescriptor> interfaces() {
-        return interfaces;
+    public Set<InterfaceDescriptor> interfaces() {
+        return interfaceTokens.keySet();
+    }
+
+    /**
+     * @return Interface triplets supported by the described service. Each
+     * triplet is either associated with an authorization token or an empty
+     * string. The returned map is unmodifiable.
+     */
+    public Map<InterfaceDescriptor, String> interfaceTokens() {
+        return interfaceTokens;
     }
 
     @Override
@@ -117,7 +127,7 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
         final var aInterfaces = interfaces();
         final var bInterfaces = other.interfaces();
         if (aInterfaces.size() == 1 && bInterfaces.size() == 1) {
-            return aInterfaces.get(0).compareTo(bInterfaces.get(0));
+            return aInterfaces.iterator().next().compareTo(bInterfaces.iterator().next());
         }
         final var aInterfaceArray = aInterfaces.toArray(new InterfaceDescriptor[0]);
         final var bInterfaceArray = bInterfaces.toArray(new InterfaceDescriptor[0]);
@@ -139,7 +149,7 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
     public static class Builder {
         private String name;
         private SystemDescription provider;
-        private List<InterfaceDescriptor> interfaces;
+        private Map<InterfaceDescriptor, String> interfaceTokens;
         private String uri;
         private SecurityDescriptor security;
         private Map<String, String> metadata;
@@ -214,13 +224,32 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
 
         /**
          * Sets interface triplets supported by service. <b>At least one must
-         * be specified.</b>
+         * be specified, either using this method or {@link
+         * #interfaceTokens(Map)}.</b>
          *
-         * @param supportedInterfaces Interface triplets.
+         * @param interfaces Interface triplets.
          * @return This builder.
          */
-        public Builder interfaces(final List<InterfaceDescriptor> supportedInterfaces) {
-            this.interfaces = supportedInterfaces;
+        public Builder interfaces(final Collection<InterfaceDescriptor> interfaces) {
+            this.interfaceTokens = interfaces.stream()
+                .collect(Collectors.toMap(descriptor -> descriptor, ignored -> ""));
+            return this;
+        }
+
+        /**
+         * Sets interface triplets supported by service, where each triplet is
+         * assigned an authorization token. <b>At least one must be specified,
+         * either using this method or {@link #interfaces(Collection)}.</b>
+         * <p>
+         * If any interface is not associated with a token, but it still is
+         * relevant to include it in the map, use an empty string as token.
+         *
+         * @param interfaceTokens Interface triplets mapped to authorization
+         *                        tokens.
+         * @return This builder.
+         */
+        public Builder interfaceTokens(final Map<InterfaceDescriptor, String> interfaceTokens) {
+            this.interfaceTokens = interfaceTokens;
             return this;
         }
 

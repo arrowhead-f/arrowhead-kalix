@@ -24,6 +24,7 @@ import java.net.InetSocketAddress;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Objects;
@@ -234,7 +235,7 @@ public class HttpJsonCoreIntegrator implements Plugin {
             .security(service.security())
             .metadata(service.metadata())
             .version(service.version())
-            .interfaces(service.interfaces())
+            .interfaces(new ArrayList<>(service.interfaces()))
             .build();
 
         return serviceRegistry.register(registration)
