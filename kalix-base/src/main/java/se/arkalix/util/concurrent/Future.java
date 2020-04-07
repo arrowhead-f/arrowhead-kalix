@@ -4,6 +4,7 @@ import org.slf4j.LoggerFactory;
 import se.arkalix.internal.util.concurrent.NettyThread;
 import se.arkalix.util.Result;
 import se.arkalix.util.annotation.ThreadSafe;
+import se.arkalix.util.function.ThrowingConsumer;
 import se.arkalix.util.function.ThrowingFunction;
 
 import java.time.Duration;
@@ -35,6 +36,7 @@ import java.util.function.Consumer;
  *
  * @param <V> Type of value that can be retrieved if the operation succeeds.
  */
+@SuppressWarnings("unused")
 public interface Future<V> {
     /**
      * Sets function to receive result of this {@code Future}, when and if it
@@ -115,6 +117,152 @@ public interface Future<V> {
                 consumer.accept(result.fault());
             }
         });
+    }
+
+    /**
+     * Sets function to receive result of this {@code Future} only if its
+     * operation succeeds. Successful or not, the result is also passed on to
+     * the returned {@code Future}.
+     * <p>
+     * This method is primarily useful for triggering different kinds of side
+     * effects that become relevant only if an operation succeeds, such as
+     * logging or sending messages.
+     * <p>
+     * Any exception thrown by {@code consumer} leads to the returned
+     * {@code Future} being failed with the same exception.
+     *
+     * @param consumer Function invoked if this {@code Future} completes
+     *                 successfully.
+     * @return New {@code Future} completed with the result of this {@code
+     * Future}.
+     * @throws NullPointerException If {@code consumer} is {@code null}.
+     */
+    default Future<V> ifSuccess(final ThrowingConsumer<? super V> consumer) {
+        Objects.requireNonNull(consumer, "Expected consumer");
+        final var source = this;
+        return new Future<>() {
+            @Override
+            public void onResult(final Consumer<Result<V>> consumer0) {
+                source.onResult(result0 -> {
+                    Result<V> result1;
+                    try {
+                        if (result0.isSuccess()) {
+                            consumer.accept(result0.value());
+                        }
+                        result1 = result0;
+                    }
+                    catch (final Throwable throwable) {
+                        result1 = Result.failure(throwable);
+                    }
+                    consumer0.accept(result1);
+                });
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                source.cancel(mayInterruptIfRunning);
+            }
+        };
+    }
+
+    /**
+     * Sets function to receive result of this {@code Future} only if its
+     * operation fails. Successful or not, the result is also passed on to
+     * the returned {@code Future}.
+     * <p>
+     * This method is primarily useful for triggering different kinds of side
+     * effects that become relevant only if an operation fails, such as logging
+     * or sending messages.
+     * <p>
+     * Any exception thrown by {@code consumer} leads to the returned
+     * {@code Future} being failed with the same exception. The exception that
+     * caused the {@code consumer} function to be called is added as a
+     * suppressed exception to the new exception thrown by the {@code consumer}
+     * function.
+     *
+     * @param consumer Function invoked if this {@code Future} completes with
+     *                 an fault.
+     * @return New {@code Future} completed with the result of this {@code
+     * Future}.
+     * @throws NullPointerException If {@code consumer} is {@code null}.
+     */
+    default <T extends Throwable> Future<V> ifFailure(final Class<T> class_, final ThrowingConsumer<T> consumer) {
+        Objects.requireNonNull(consumer, "Expected consumer");
+        final var source = this;
+        return new Future<>() {
+            @Override
+            public void onResult(final Consumer<Result<V>> consumer0) {
+                source.onResult(result0 -> {
+                    Result<V> result1;
+                    try {
+                        if (result0.isFailure()) {
+                            final var fault = result0.fault();
+                            if (class_.isAssignableFrom(fault.getClass())) {
+                                consumer.accept(class_.cast(result0.fault()));
+                            }
+                        }
+                        result1 = result0;
+                    }
+                    catch (final Throwable throwable) {
+                        throwable.addSuppressed(result0.fault());
+                        result1 = Result.failure(throwable);
+                    }
+                    consumer0.accept(result1);
+                });
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                source.cancel(mayInterruptIfRunning);
+            }
+        };
+    }
+
+    /**
+     * Sets function to receive result of this {@code Future}, no matter if it
+     * succeeds or not. The result is also passed on to the returned
+     * {@code Future}.
+     * <p>
+     * This method is primarily useful for triggering different kinds of side
+     * effects, such as logging or sending messages.
+     * <p>
+     * Any exception thrown by {@code consumer} leads to the returned
+     * {@code Future} being failed with the same exception. If the result of
+     * this {@code Future} is a fault, that fault is added as a suppressed
+     * exception to the new exception thrown by the {@code consumer} function.
+     *
+     * @param consumer Function invoked with the result of this {@code Future}.
+     * @return New {@code Future} completed with the result of this {@code
+     * Future}.
+     * @throws NullPointerException If {@code consumer} is {@code null}.
+     */
+    default Future<V> always(final ThrowingConsumer<Result<? super V>> consumer) {
+        Objects.requireNonNull(consumer, "Expected consumer");
+        final var source = this;
+        return new Future<>() {
+            @Override
+            public void onResult(final Consumer<Result<V>> consumer0) {
+                source.onResult(result0 -> {
+                    Result<V> result1;
+                    try {
+                        consumer.accept(result0);
+                        result1 = result0;
+                    }
+                    catch (final Throwable throwable) {
+                        if (result0.isFailure()) {
+                            throwable.addSuppressed(result0.fault());
+                        }
+                        result1 = Result.failure(throwable);
+                    }
+                    consumer0.accept(result1);
+                });
+            }
+
+            @Override
+            public void cancel(final boolean mayInterruptIfRunning) {
+                source.cancel(mayInterruptIfRunning);
+            }
+        };
     }
 
     /**
@@ -1039,9 +1187,9 @@ public interface Future<V> {
      * returned to the original thread and the returned future is completed.
      * If, however, the thread completing this {@code Future} is <i>not</i>
      * owned by the {@link Schedulers#fixed() default fixed scheduler},
-     * <i>this method will invariably fail</i>. This as the current thread is
-     * then not associated with a scheduler that can be accessed to schedule
-     * the joining of the fork.
+     * <i>this method will fail</i>. This as the current thread is then not
+     * associated with a scheduler that can be accessed to schedule the joining
+     * of the fork without blocking.
      * <p>
      * Unless otherwise noted, all Kalix methods returning {@code Futures} will
      * always use the default fixed scheduler, which means that this method is

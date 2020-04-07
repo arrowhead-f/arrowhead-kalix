@@ -1,6 +1,7 @@
 package se.arkalix.util.concurrent;
 
 import se.arkalix.util.Result;
+import se.arkalix.util.function.ThrowingConsumer;
 import se.arkalix.util.function.ThrowingFunction;
 
 import java.time.Duration;
@@ -48,6 +49,36 @@ class FutureSuccess<V> implements FutureProgress<V> {
     public FutureProgress<V> addProgressListener(final Listener listener) {
         Objects.requireNonNull(listener, "Expected listener");
         // Does nothing.
+        return this;
+    }
+
+    @Override
+    public Future<V> ifSuccess(final ThrowingConsumer<? super V> consumer) {
+        Objects.requireNonNull(consumer, "Expected consumer");
+        try {
+            consumer.accept(value);
+        }
+        catch (final Throwable throwable) {
+            return Future.failure(throwable);
+        }
+        return this;
+    }
+
+    @Override
+    public <T extends Throwable> Future<V> ifFailure(final Class<T> class_, final ThrowingConsumer<T> consumer) {
+        Objects.requireNonNull(consumer, "Expected consumer");
+        return this;
+    }
+
+    @Override
+    public Future<V> always(final ThrowingConsumer<Result<? super V>> consumer) {
+        Objects.requireNonNull(consumer, "Expected consumer");
+        try {
+            consumer.accept(Result.success(value));
+        }
+        catch (final Throwable throwable) {
+            return Future.failure(throwable);
+        }
         return this;
     }
 

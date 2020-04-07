@@ -12,9 +12,17 @@ import java.util.Collections;
 
 import static se.arkalix.descriptor.TransportDescriptor.HTTP;
 
+/**
+ * Class used for creating {@link HttpConsumer} instances.
+ * <p>
+ * This class is primarily useful as input to the {@link
+ * se.arkalix.query.ServiceQuery#using(ArConsumerFactory) using()} method of
+ * the {@link se.arkalix.query.ServiceQuery ServiceQuery} class, which is
+ * returned by the {@link ArSystem#consume()} method.
+ */
 public class HttpConsumerFactory implements ArConsumerFactory<HttpConsumer> {
     @Override
-    public Collection<TransportDescriptor> supportedTransports() {
+    public Collection<TransportDescriptor> serviceTransports() {
         return Collections.singleton(HTTP);
     }
 

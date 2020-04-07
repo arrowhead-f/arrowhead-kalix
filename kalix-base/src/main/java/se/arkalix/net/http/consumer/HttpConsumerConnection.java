@@ -6,6 +6,7 @@ import se.arkalix.security.identity.SystemIdentity;
 import se.arkalix.util.concurrent.Future;
 
 import java.net.InetSocketAddress;
+import java.util.Objects;
 
 /**
  * Connection useful for sending HTTP requests to a consumed service.
@@ -14,16 +15,18 @@ public class HttpConsumerConnection {
     private final HttpClientConnection connection;
     private final EncodingDescriptor encoding;
     private final SystemIdentity provider;
-
+    private final String authorization;
 
     HttpConsumerConnection(
         final HttpClientConnection connection,
         final EncodingDescriptor encoding,
-        final SystemIdentity provider)
+        final SystemIdentity provider,
+        final String authorization)
     {
         this.connection = connection;
         this.encoding = encoding;
         this.provider = provider;
+        this.authorization = authorization;
     }
 
     /**
@@ -67,6 +70,14 @@ public class HttpConsumerConnection {
      * @return {@code Future} {@code HttpConsumerResponse}.
      */
     public Future<HttpConsumerResponse> send(final HttpConsumerRequest request) {
+        Objects.requireNonNull(request, "Expected request");
+        request.setEncodingIfRequired(() -> encoding.asDtoEncoding().orElseThrow(() ->
+            new IllegalStateException("No DTO support is available for the " +
+                "encoding \"" + encoding + "\"; the request body must be " +
+                "encoded some other way")));
+        if (authorization != null) {
+            request.headers().setIfEmpty("authorization", authorization);
+        }
         return connection.send(request.asClientRequest())
             .map(response -> new HttpConsumerResponse(response, encoding));
     }
@@ -81,8 +92,8 @@ public class HttpConsumerConnection {
      * @return {@code Future} {@code HttpConsumerResponse}.
      */
     public Future<HttpConsumerResponse> sendAndClose(final HttpConsumerRequest request) {
-        return connection.sendAndClose(request.asClientRequest())
-            .map(response -> new HttpConsumerResponse(response, encoding));
+        return send(request)
+            .flatMapResult(result -> close().mapResult(ignored -> result));
     }
 
     /**

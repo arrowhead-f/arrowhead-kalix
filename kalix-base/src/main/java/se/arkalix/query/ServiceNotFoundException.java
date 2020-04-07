@@ -1,6 +1,14 @@
 package se.arkalix.query;
 
+/**
+ * Signifies that some service queried for could not be resolved.
+ */
 public class ServiceNotFoundException extends Exception {
+    /**
+     * Creates new exception from given failing service {@code query}.
+     *
+     * @param query {@link ServiceQuery} that could not be resolved.
+     */
     public ServiceNotFoundException(final ServiceQuery query) {
         super(queryToString(query));
     }

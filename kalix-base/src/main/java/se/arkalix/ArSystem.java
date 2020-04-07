@@ -181,18 +181,19 @@ public class ArSystem {
     }
 
     /**
-     * Creates new query useful for resolving services, provided by other
-     * Arrowhead systems, with the given {@code serviceName}.
+     * Creates new query useful for resolving services provided by other
+     * Arrowhead systems.
      * <p>
      * Resolution will always complete with an empty result unless a {@link
      * Plugin} has been provided at {@link Builder#plugins(Collection) system
      * creation} that is able to perform service lookup.
      *
      * @return Service query builder.
+     * @see ServiceQuery
      */
     @ThreadSafe
-    public ServiceQuery consume(final String serviceName) {
-        return new ServiceQuery(this, serviceName, pluginNotifier::onServiceQueried);
+    public ServiceQuery consume() {
+        return new ServiceQuery(this, pluginNotifier::onServiceQueried);
     }
 
     /**

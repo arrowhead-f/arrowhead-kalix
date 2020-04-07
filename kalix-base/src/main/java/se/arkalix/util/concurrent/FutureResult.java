@@ -1,6 +1,7 @@
 package se.arkalix.util.concurrent;
 
 import se.arkalix.util.Result;
+import se.arkalix.util.function.ThrowingConsumer;
 import se.arkalix.util.function.ThrowingFunction;
 
 import java.time.Duration;
@@ -13,7 +14,7 @@ import java.util.function.Consumer;
  *
  * @param <V> Type of value that is included if the result is successful.
  */
-class FutureResult<V> implements Future<V> {
+class FutureResult<V> implements FutureProgress<V> {
     private final Result<V> result;
 
     /**
@@ -43,6 +44,60 @@ class FutureResult<V> implements Future<V> {
         if (result.isFailure()) {
             consumer.accept(result.fault());
         }
+    }
+
+    @Override
+    public Future<V> addProgressListener(final Listener listener) {
+        Objects.requireNonNull(listener, "Expected listener");
+        // Does nothing.
+        return this;
+    }
+
+    @Override
+    public Future<V> ifSuccess(final ThrowingConsumer<? super V> consumer) {
+        Objects.requireNonNull(consumer, "Expected consumer");
+        if (result.isSuccess()) {
+            try {
+                consumer.accept(result.value());
+            }
+            catch (final Throwable throwable) {
+                return Future.failure(throwable);
+            }
+        }
+        return this;
+    }
+
+    @Override
+    public <T extends Throwable> Future<V> ifFailure(final Class<T> class_, final ThrowingConsumer<T> consumer) {
+        Objects.requireNonNull(consumer, "Expected consumer");
+        if (result.isFailure()) {
+            final var fault = result.fault();
+            if (class_.isAssignableFrom(fault.getClass())) {
+                try {
+                    consumer.accept(class_.cast(fault));
+                }
+                catch (final Throwable throwable) {
+                    throwable.addSuppressed(fault);
+                    return Future.failure(throwable);
+                }
+            }
+        }
+        return this;
+    }
+
+    @Override
+    public Future<V> always(final ThrowingConsumer<Result<? super V>> consumer) {
+        Objects.requireNonNull(consumer, "Expected consumer");
+        try {
+            consumer.accept(result);
+        }
+        catch (final Throwable throwable) {
+            if (result.isFailure()) {
+                throwable.addSuppressed(result.fault());
+            }
+            return Future.failure(throwable);
+        }
+        return this;
     }
 
     @Override

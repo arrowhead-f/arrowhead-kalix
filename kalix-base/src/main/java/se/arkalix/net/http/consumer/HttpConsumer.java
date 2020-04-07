@@ -83,7 +83,7 @@ public class HttpConsumer implements ArConsumer {
     public HttpConsumer(
         final HttpClient client,
         final ServiceDescription service,
-        Collection<EncodingDescriptor> encodings)
+        final Collection<EncodingDescriptor> encodings)
     {
         this.client = Objects.requireNonNull(client, "Expected client");
         this.service = Objects.requireNonNull(service, "Expected service");
@@ -105,11 +105,6 @@ public class HttpConsumer implements ArConsumer {
             }
         }
 
-        if (encodings == null || encodings.isEmpty()) {
-            encodings = EncodingDescriptor.dtoEncodings();
-        }
-
-        final var encodings0 = encodings;
         final var compatibleEntry = service.interfaceTokens()
             .entrySet()
             .stream()
@@ -117,7 +112,7 @@ public class HttpConsumer implements ArConsumer {
                 final var descriptor = entry.getKey();
                 return descriptor.transport() == HTTP &&
                     descriptor.isSecure() == isSecure &&
-                    encodings0.contains(descriptor.encoding());
+                    encodings.contains(descriptor.encoding());
             })
             .sorted((a, b) -> b.getValue().length() - a.getValue().length())
             .findAny()
@@ -129,7 +124,7 @@ public class HttpConsumer implements ArConsumer {
                     .append(" HTTP interface with any of the encodings [");
 
                 var isFirst = true;
-                for (final var encoding : encodings0) {
+                for (final var encoding : encodings) {
                     if (!isFirst) {
                         builder.append(", ");
                     }
@@ -199,7 +194,7 @@ public class HttpConsumer implements ArConsumer {
      */
     public Future<HttpConsumerConnection> connect(final InetSocketAddress localSocketAddress) {
         return client.connect(service.provider().socketAddress(), localSocketAddress)
-            .map(connection -> new HttpConsumerConnection(connection, encoding, service.provider().identity()));
+            .map(connection -> new HttpConsumerConnection(connection, encoding, service.provider().identity(), authorization));
     }
 
     /**
@@ -213,13 +208,6 @@ public class HttpConsumer implements ArConsumer {
      */
     public Future<HttpConsumerResponse> send(final HttpConsumerRequest request) {
         Objects.requireNonNull(request, "Expected request");
-        request.setEncodingIfRequired(() -> encoding.asDtoEncoding().orElseThrow(() ->
-            new IllegalStateException("No DTO support is available for the " +
-                "encoding \"" + encoding + "\"; the request body must be " +
-                "encoded some other way")));
-        if (authorization != null) {
-            request.headers().setIfEmpty("authorization", authorization);
-        }
         return connect().flatMap(connection -> connection.sendAndClose(request));
     }
 }
