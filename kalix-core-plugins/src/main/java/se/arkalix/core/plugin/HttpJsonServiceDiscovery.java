@@ -1,14 +1,15 @@
 package se.arkalix.core.plugin;
 
-import se.arkalix.core.plugin.dto.ServiceQueryDto;
-import se.arkalix.core.plugin.dto.ServiceQueryResultDto;
-import se.arkalix.core.plugin.dto.ServiceRegistrationDto;
+import se.arkalix.core.plugin.dto.Error;
+import se.arkalix.core.plugin.dto.*;
+import se.arkalix.description.ServiceDescription;
+import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.net.http.client.HttpClient;
-import se.arkalix.net.http.client.HttpClientRequest;
-import se.arkalix.net.http.client.HttpClientResponseException;
+import se.arkalix.net.http.consumer.HttpConsumer;
+import se.arkalix.net.http.consumer.HttpConsumerRequest;
 import se.arkalix.util.concurrent.Future;
 
-import java.net.InetSocketAddress;
+import java.util.Collections;
 import java.util.Objects;
 
 import static se.arkalix.dto.DtoEncoding.JSON;
@@ -20,38 +21,52 @@ import static se.arkalix.net.http.HttpMethod.POST;
  * HTTP/JSON in either secure or insecure mode.
  */
 public class HttpJsonServiceDiscovery implements ArServiceDiscovery {
-    private final HttpClient client;
-    private final InetSocketAddress remoteSocketAddress;
+    private final HttpConsumer consumer;
+    private final ServiceDescription service;
 
     private final String uriQuery;
     private final String uriRegister;
     private final String uriUnregister;
 
-    private HttpJsonServiceDiscovery(final Builder builder) {
-        client = Objects.requireNonNull(builder.client, "Expected client");
-        remoteSocketAddress = Objects.requireNonNull(builder.remoteSocketAddress, "Expected remoteSocketAddress");
+    public HttpJsonServiceDiscovery(final HttpClient client, final ServiceDescription service) {
+        Objects.requireNonNull(client, "Expected client");
+        this.service = Objects.requireNonNull(service, "Expected service");
 
-        final var basePath = Objects.requireNonNullElse(builder.basePath, "/serviceregistry");
+        if (!Objects.equals(service.name(), "service-discovery")) {
+            throw new IllegalArgumentException("Expected given service to " +
+                "have the name \"service-discovery\", but it has \"" +
+                service.name() + "\"; cannot create HTTP/JSON service " +
+                "discovery consumer");
+        }
+
+        consumer = new HttpConsumer(client, service, Collections.singleton(EncodingDescriptor.JSON));
+
+        final var basePath = service.uri();
         uriQuery = basePath + "/query";
         uriRegister = basePath + "/register";
         uriUnregister = basePath + "/unregister";
     }
 
     @Override
+    public ServiceDescription service() {
+        return service;
+    }
+
+    @Override
     public Future<ServiceQueryResultDto> query(final ServiceQueryDto query) {
-        return client
-            .send(remoteSocketAddress, new HttpClientRequest()
+        return consumer
+            .send(new HttpConsumerRequest()
                 .method(POST)
                 .uri(uriQuery)
-                .body(JSON, query))
+                .body(query))
             .flatMap(response -> {
                 final var status = response.status();
                 if (status.isSuccess()) {
                     return response.bodyAs(JSON, ServiceQueryResultDto.class);
                 }
                 if (status.isClientError() && response.headers().getAsInteger("content-length").orElse(0) > 0) {
-                    return response.bodyAsString() // TODO: Parse error message and present better string.
-                        .mapThrow(HttpClientResponseException::new);
+                    return response.bodyAs(JSON, ErrorDto.class)
+                        .mapThrow(Error::toException);
                 }
                 return Future.failure(response.reject("Failed to query " +
                     "service registry for \"" + query.name() + "\""));
@@ -60,19 +75,19 @@ public class HttpJsonServiceDiscovery implements ArServiceDiscovery {
 
     @Override
     public Future<?> register(final ServiceRegistrationDto registration) {
-        return client
-            .send(remoteSocketAddress, new HttpClientRequest()
+        return consumer
+            .send(new HttpConsumerRequest()
                 .method(POST)
                 .uri(uriRegister)
-                .body(JSON, registration))
+                .body(registration))
             .flatMap(response -> {
                 final var status = response.status();
                 if (status.isSuccess()) {
                     return Future.done();
                 }
                 if (status.isClientError() && response.headers().getAsInteger("content-length").orElse(0) > 0) {
-                    return response.bodyAsString() // TODO: Parse error message and present better string.
-                        .mapThrow(HttpClientResponseException::new);
+                    return response.bodyAs(JSON, ErrorDto.class)
+                        .mapThrow(Error::toException);
                 }
                 return Future.failure(response.reject("Failed to register service \"" + registration.name() + "\""));
             });
@@ -85,8 +100,8 @@ public class HttpJsonServiceDiscovery implements ArServiceDiscovery {
         final String hostname,
         final int port)
     {
-        return client
-            .send(remoteSocketAddress, new HttpClientRequest()
+        return consumer
+            .send(new HttpConsumerRequest()
                 .method(DELETE)
                 .uri(uriUnregister)
                 .queryParameter("service_definition", serviceName)
@@ -99,63 +114,10 @@ public class HttpJsonServiceDiscovery implements ArServiceDiscovery {
                     return Future.done();
                 }
                 if (status.isClientError() && response.headers().getAsInteger("content-length").orElse(0) > 0) {
-                    return response.bodyAsString() // TODO: Parse error message and present better string.
-                        .mapThrow(HttpClientResponseException::new);
+                    return response.bodyAs(JSON, ErrorDto.class)
+                        .mapThrow(Error::toException);
                 }
                 return Future.failure(response.reject("Failed to unregister service \"" + serviceName + "\""));
             });
-    }
-
-    /**
-     * Builder useful for constructing {@link HttpJsonServiceDiscovery} instances.
-     */
-    public static class Builder {
-        private String basePath;
-        private HttpClient client;
-        private InetSocketAddress remoteSocketAddress;
-
-        /**
-         * Service discovery base path.
-         * <p>
-         * Defaults to "/serviceregistry".
-         *
-         * @param basePath Base path.
-         * @return This builder.
-         */
-        public Builder basePath(final String basePath) {
-            this.basePath = basePath;
-            return this;
-        }
-
-        /**
-         * HTTP client to use for making requests. <b>Must be specified.</b>
-         *
-         * @param client HTTP client.
-         * @return This builder.
-         */
-        public Builder client(final HttpClient client) {
-            this.client = client;
-            return this;
-        }
-
-        /**
-         * The hostname/port of the service registry. <b>Must be specified.</b>
-         *
-         * @param remoteSocketAddress Hostname/port.
-         * @return This builder.
-         */
-        public Builder remoteSocketAddress(final InetSocketAddress remoteSocketAddress) {
-            this.remoteSocketAddress = remoteSocketAddress;
-            return this;
-        }
-
-        /**
-         * Finishes construction of {@link HttpJsonServiceDiscovery}.
-         *
-         * @return New HTTP/JSON service discovery object.
-         */
-        public HttpJsonServiceDiscovery build() {
-            return new HttpJsonServiceDiscovery(this);
-        }
     }
 }

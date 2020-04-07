@@ -2,12 +2,44 @@ package se.arkalix.internal.security.identity;
 
 import se.arkalix.util.annotation.Internal;
 
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Optional;
 
 @Internal
 public class X509Keys {
     private X509Keys() {}
+
+    /**
+     * Takes Base64 and DER encoded public key, formatted as specified by RFC
+     * 5280, Section 4.1.2.7, and tries to convert it into a {@link PublicKey}.
+     *
+     * @param publicKeyBase64 Base64-encoded public key to convert.
+     * @return Converted public key.
+     * @throws NoSuchAlgorithmException If the public key algorithm could not
+     *                                  be identified.
+     */
+    public static PublicKey parsePublicKey(final String publicKeyBase64) throws NoSuchAlgorithmException {
+        final var publicKeyDer = Base64.getDecoder().decode(publicKeyBase64);
+        final var algorithm = X509Keys.identifyPublicKeyAlgorithm(publicKeyDer);
+        if (algorithm.isEmpty()) {
+            throw new NoSuchAlgorithmException("Failed to identify public " +
+                "key algorithm");
+        }
+        final var keySpec = new X509EncodedKeySpec(publicKeyDer);
+        final var keyFactory = KeyFactory.getInstance(algorithm.get());
+        try {
+            return keyFactory.generatePublic(keySpec);
+        }
+        catch (final InvalidKeySpecException exception) {
+            throw new RuntimeException(exception); // This should never happen.
+        }
+    }
 
     private static final byte[] OID_EC = new byte[]{
         (byte) 0x2A, (byte) 0x86, (byte) 0x48, (byte) 0xCE, (byte) 0x3D,
@@ -45,7 +77,7 @@ public class X509Keys {
      * @see <a href="https://tools.ietf.org/html/rfc3279">RFC 3279</a>
      * @see <a href="https://tools.ietf.org/html/rfc5280#section-4.1.2.7">RFC 5280, Section 4.1.2.7</a>
      */
-    public static Optional<String> identifyPublicKeyAlgorithm(final byte[] publicKeyDer) {
+    static Optional<String> identifyPublicKeyAlgorithm(final byte[] publicKeyDer) {
         String name = null;
 
         done:

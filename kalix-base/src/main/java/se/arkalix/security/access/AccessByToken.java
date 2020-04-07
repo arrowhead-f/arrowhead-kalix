@@ -1,10 +1,10 @@
 package se.arkalix.security.access;
 
+import se.arkalix.ArSystem;
+import se.arkalix.description.ConsumerDescription;
 import se.arkalix.description.ServiceDescription;
-import se.arkalix.description.SystemDescription;
 import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.internal.security.access.AccessToken;
-import se.arkalix.security.identity.OwnedIdentity;
 
 import java.security.PublicKey;
 import java.util.Objects;
@@ -77,7 +77,11 @@ public class AccessByToken implements AccessPolicy {
     }
 
     @Override
-    public boolean isAuthorized(final SystemDescription consumer, final ServiceDescription service, final String token)
+    public boolean isAuthorized(
+        final ConsumerDescription consumer,
+        final ArSystem provider,
+        final ServiceDescription service,
+        final String token)
         throws AccessTokenException
     {
         Objects.requireNonNull(consumer, "Expected consumer");
@@ -92,12 +96,7 @@ public class AccessByToken implements AccessPolicy {
             throw new IllegalStateException("Cannot verify token; no authorization key is available");
         }
 
-        final var systemCertificateChain = service.provider().identity();
-        if (!(systemCertificateChain instanceof OwnedIdentity)) {
-            throw new IllegalStateException("Cannot verify token; no system private key is available");
-        }
-        final var receiverKey = ((OwnedIdentity) systemCertificateChain).privateKey();
-
+        final var receiverKey = provider.identity().privateKey();
         final var token0 = AccessToken.read(token, receiverKey, senderKey);
 
         final var cid = token0.cid();

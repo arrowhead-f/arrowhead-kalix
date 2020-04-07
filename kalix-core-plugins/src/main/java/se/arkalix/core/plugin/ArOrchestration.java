@@ -1,5 +1,6 @@
 package se.arkalix.core.plugin;
 
+import se.arkalix.ArConsumer;
 import se.arkalix.core.plugin.dto.OrchestrationQueryDto;
 import se.arkalix.core.plugin.dto.OrchestrationQueryResultDto;
 import se.arkalix.util.concurrent.Future;
@@ -7,7 +8,7 @@ import se.arkalix.util.concurrent.Future;
 /**
  * Represents an Arrowhead orchestration service.
  */
-public interface ArOrchestration {
+public interface ArOrchestration extends ArConsumer {
     /**
      * Queries orchestration service for services that should be consumed.
      *

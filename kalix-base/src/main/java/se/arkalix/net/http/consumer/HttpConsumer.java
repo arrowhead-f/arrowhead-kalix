@@ -5,6 +5,8 @@ import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.net.http.client.HttpClient;
+import se.arkalix.security.identity.SystemIdentity;
+import se.arkalix.util.Result;
 import se.arkalix.util.concurrent.Future;
 
 import java.net.InetSocketAddress;
@@ -194,7 +196,37 @@ public class HttpConsumer implements ArConsumer {
      */
     public Future<HttpConsumerConnection> connect(final InetSocketAddress localSocketAddress) {
         return client.connect(service.provider().socketAddress(), localSocketAddress)
-            .map(connection -> new HttpConsumerConnection(connection, encoding, service.provider().identity(), authorization));
+            .mapResult(result -> {
+                if (result.isFailure()) {
+                    return Result.failure(result.fault());
+                }
+                final var connection = result.value();
+                final SystemIdentity identity;
+                if (isSecure()) {
+                    identity = new SystemIdentity(connection.certificateChain());
+                    if (!Objects.equals(identity.publicKey(), service.provider().publicKey())) {
+                        connection.close();
+                        return Result.failure(new HttpConsumerConnectionException("" +
+                            "The public key known to be associated with the " +
+                            "the consumed system \"" + service.provider().name() +
+                            "\" does not match the public key in the " +
+                            "certificate retrieved when connecting to it; " +
+                            "cannot connect to service"));
+                    }
+
+                    if (!Objects.equals(client.identity().cloud(), identity.cloud())) {
+                        connection.close();
+                        return Result.failure(new HttpConsumerConnectionException("" +
+                            "The consumed system \"" + service.provider().name() +
+                            "\" does belong to the same local cloud as this " +
+                            "system; cannot connect to service"));
+                    }
+                }
+                else {
+                    identity = null;
+                }
+                return Result.success(new HttpConsumerConnection(connection, encoding, identity, authorization));
+            });
     }
 
     /**

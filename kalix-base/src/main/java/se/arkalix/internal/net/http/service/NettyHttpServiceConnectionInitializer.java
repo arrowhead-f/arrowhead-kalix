@@ -3,6 +3,7 @@ package se.arkalix.internal.net.http.service;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
+import se.arkalix.ArSystem;
 import se.arkalix.util.annotation.Internal;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
@@ -17,16 +18,16 @@ import java.util.concurrent.TimeUnit;
  */
 @Internal
 public class NettyHttpServiceConnectionInitializer extends ChannelInitializer<SocketChannel> {
+    private final ArSystem system;
     private final HttpServiceLookup serviceLookup;
     private final SslContext sslContext;
 
-    /**
-     * @param serviceLookup Function to use for determining what
-     *                      {@link HttpServiceInternal HttpService}
-     *                      to forward received requests to.
-     * @param sslContext    SSL/TLS context from Netty bootstrap used to
-     */
-    public NettyHttpServiceConnectionInitializer(final HttpServiceLookup serviceLookup, final SslContext sslContext) {
+    public NettyHttpServiceConnectionInitializer(
+        final ArSystem system,
+        final HttpServiceLookup serviceLookup,
+        final SslContext sslContext)
+    {
+        this.system = Objects.requireNonNull(system, "Expected system");
         this.serviceLookup = Objects.requireNonNull(serviceLookup, "Expected serviceLookup");
         this.sslContext = sslContext;
     }
@@ -49,6 +50,6 @@ public class NettyHttpServiceConnectionInitializer extends ChannelInitializer<So
             .addLast(new HttpContentDecompressor())
             .addLast(new HttpContentCompressor())
 
-            .addLast(new NettyHttpServiceConnectionHandler(serviceLookup, sslHandler));
+            .addLast(new NettyHttpServiceConnectionHandler(system, serviceLookup, sslHandler));
     }
 }

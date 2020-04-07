@@ -64,7 +64,7 @@ public class HttpServer implements ArServer {
                 .group(scheduler.eventLoopGroup())
                 .channel(scheduler.serverSocketChannelClass())
                 .handler(new LoggingHandler())
-                .childHandler(new NettyHttpServiceConnectionInitializer(server::getServiceByPath, sslContext));
+                .childHandler(new NettyHttpServiceConnectionInitializer(system, server::getServiceByPath, sslContext));
 
             return adapt(bootstrap.bind(system.localAddress(), system.localPort()))
                 .map(channel -> {

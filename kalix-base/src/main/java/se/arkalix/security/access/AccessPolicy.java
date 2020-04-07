@@ -1,7 +1,8 @@
 package se.arkalix.security.access;
 
+import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
-import se.arkalix.description.SystemDescription;
+import se.arkalix.description.ConsumerDescription;
 import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.security.identity.SystemIdentity;
 
@@ -38,7 +39,7 @@ public interface AccessPolicy {
      * @return {@code true} only if {@code consumer} is permitted to consume
      * {@code service}.
      */
-    boolean isAuthorized(SystemDescription consumer, ServiceDescription service, String token)
+    boolean isAuthorized(ConsumerDescription consumer, ArSystem provider, ServiceDescription service, String token)
         throws AccessTokenException;
 
     /**

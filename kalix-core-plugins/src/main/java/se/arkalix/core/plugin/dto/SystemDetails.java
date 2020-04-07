@@ -1,9 +1,13 @@
 package se.arkalix.core.plugin.dto;
 
+import se.arkalix.description.ProviderDescription;
 import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoWritableAs;
 import se.arkalix.dto.json.JsonName;
+import se.arkalix.internal.security.identity.X509Keys;
 
+import java.net.InetSocketAddress;
+import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
 
 import static se.arkalix.dto.DtoEncoding.JSON;
@@ -39,4 +43,25 @@ public interface SystemDetails {
      */
     @JsonName("authenticationInfo")
     Optional<String> publicKeyBase64();
+
+    /**
+     * Converts this objects into a {@link ProviderDescription}.
+     *
+     * @return New {@link ProviderDescription}.
+     * @throws RuntimeException If the value returned by {@link
+     *                          #publicKeyBase64()} is not a supported type of
+     *                          public key.
+     */
+    default ProviderDescription toProviderDescription() {
+        return new ProviderDescription(name(), new InetSocketAddress(hostname(), port()), publicKeyBase64()
+            .map(publicKeyBase64 -> {
+                try {
+                    return X509Keys.parsePublicKey(publicKeyBase64);
+                }
+                catch (final NoSuchAlgorithmException exception) {
+                    throw new RuntimeException(exception);
+                }
+            })
+            .orElse(null));
+    }
 }

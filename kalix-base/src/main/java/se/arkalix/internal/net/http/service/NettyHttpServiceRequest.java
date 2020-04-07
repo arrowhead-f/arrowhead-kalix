@@ -2,7 +2,7 @@ package se.arkalix.internal.net.http.service;
 
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.QueryStringDecoder;
-import se.arkalix.description.SystemDescription;
+import se.arkalix.description.ConsumerDescription;
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadable;
 import se.arkalix.internal.net.http.NettyHttpBodyReceiver;
@@ -23,7 +23,7 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
     private final NettyHttpBodyReceiver body;
     private final QueryStringDecoder queryStringDecoder;
     private final HttpRequest request;
-    private final SystemDescription consumer;
+    private final ConsumerDescription consumer;
 
     private HttpHeaders headers = null;
     private HttpMethod method = null;
@@ -102,7 +102,7 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
     }
 
     @Override
-    public SystemDescription consumer() {
+    public ConsumerDescription consumer() {
         if (consumer == null) {
             throw new IllegalStateException("Not in secure mode; consumer " +
                 "information unavailable");
@@ -121,7 +121,7 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
     public static class Builder {
         private NettyHttpBodyReceiver body;
         private HttpRequest request;
-        private SystemDescription consumer;
+        private ConsumerDescription consumer;
         private QueryStringDecoder queryStringDecoder;
 
         public Builder body(final NettyHttpBodyReceiver body) {
@@ -139,7 +139,7 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
             return this;
         }
 
-        public Builder consumer(final SystemDescription consumer) {
+        public Builder consumer(final ConsumerDescription consumer) {
             this.consumer = consumer;
             return this;
         }

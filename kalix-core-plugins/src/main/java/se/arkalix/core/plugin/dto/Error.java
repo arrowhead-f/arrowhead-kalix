@@ -2,6 +2,7 @@ package se.arkalix.core.plugin.dto;
 
 import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.json.JsonName;
+import se.arkalix.net.http.client.HttpClientResponseException;
 
 import static se.arkalix.dto.DtoEncoding.JSON;
 
@@ -28,4 +29,11 @@ public interface Error {
      */
     @JsonName("exceptionType")
     String type();
+
+    /**
+     * @return This error as a {@link HttpClientResponseException}.
+     */
+    default HttpClientResponseException toException() {
+        return new HttpClientResponseException(type() + " [" + code() + "]: " + message());
+    }
 }

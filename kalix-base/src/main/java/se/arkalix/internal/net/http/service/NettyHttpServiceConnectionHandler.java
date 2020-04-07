@@ -3,7 +3,8 @@ package se.arkalix.internal.net.http.service;
 import io.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.arkalix.description.SystemDescription;
+import se.arkalix.ArSystem;
+import se.arkalix.description.ConsumerDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.dto.DtoReadException;
 import se.arkalix.internal.net.http.HttpMediaTypes;
@@ -22,6 +23,7 @@ import io.netty.handler.timeout.IdleStateEvent;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import java.net.InetSocketAddress;
+import java.util.Objects;
 import java.util.Optional;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
@@ -31,17 +33,23 @@ import static se.arkalix.util.concurrent.Future.done;
 public class NettyHttpServiceConnectionHandler extends NettySimpleChannelInboundHandler<Object> {
     private static final Logger logger = LoggerFactory.getLogger(NettyHttpServiceConnectionHandler.class);
 
+    private final ArSystem system;
     private final HttpServiceLookup serviceLookup;
     private final SslHandler sslHandler;
 
     private HttpRequest request = null;
     private boolean keepAlive = false;
     private HttpServiceInternal service = null;
-    private SystemDescription consumer = null;
+    private ConsumerDescription consumer = null;
     private NettyHttpBodyReceiver body = null;
 
-    public NettyHttpServiceConnectionHandler(final HttpServiceLookup serviceLookup, final SslHandler sslHandler) {
-        this.serviceLookup = serviceLookup;
+    public NettyHttpServiceConnectionHandler(
+        final ArSystem system,
+        final HttpServiceLookup serviceLookup,
+        final SslHandler sslHandler)
+    {
+        this.system = Objects.requireNonNull(system, "Expected system");
+        this.serviceLookup = Objects.requireNonNull(serviceLookup, "Expected serviceLookup");
         this.sslHandler = sslHandler;
     }
 
@@ -127,7 +135,7 @@ public class NettyHttpServiceConnectionHandler extends NettySimpleChannelInbound
         }
         try {
             if (consumer == null && sslHandler != null) {
-                final var optionalConsumer = SystemDescription.tryFrom(
+                final var optionalConsumer = ConsumerDescription.tryFrom(
                     sslHandler.engine().getSession().getPeerCertificates(),
                     (InetSocketAddress) ctx.channel().remoteAddress());
 
@@ -138,7 +146,7 @@ public class NettyHttpServiceConnectionHandler extends NettySimpleChannelInbound
                 consumer = optionalConsumer.get();
             }
 
-            if (!service.accessPolicy().isAuthorized(consumer, service.description(), token)) {
+            if (!service.accessPolicy().isAuthorized(consumer, system, service.description(), token)) {
                 sendEmptyResponseAndCleanup(ctx, UNAUTHORIZED);
                 return false;
             }

@@ -9,6 +9,7 @@ import se.arkalix.internal.net.http.client.FutureHttpClientConnection;
 import se.arkalix.internal.net.http.client.NettyHttpClientConnectionInitializer;
 import se.arkalix.internal.util.concurrent.NettyScheduler;
 import se.arkalix.security.identity.OwnedIdentity;
+import se.arkalix.security.identity.SystemIdentity;
 import se.arkalix.security.identity.TrustStore;
 import se.arkalix.util.annotation.ThreadSafe;
 import se.arkalix.util.concurrent.Future;
@@ -35,6 +36,7 @@ public class HttpClient {
     private final Bootstrap bootstrap;
     private final InetSocketAddress localSocketAddress;
     private final SslContext sslContext;
+    private final SystemIdentity identity;
 
     private HttpClient(final Builder builder) throws SSLException {
         final var scheduler = (NettyScheduler) Schedulers.fixed();
@@ -45,6 +47,7 @@ public class HttpClient {
 
         if (builder.isInsecure) {
             sslContext = null;
+            identity = null;
         }
         else {
             final var sslContextBuilder = SslContextBuilder.forClient()
@@ -57,6 +60,7 @@ public class HttpClient {
                     .clientAuth(ClientAuth.REQUIRE);
             }
             sslContext = sslContextBuilder.build();
+            identity = builder.identity;
         }
     }
 
@@ -72,7 +76,7 @@ public class HttpClient {
      * class for consuming system services, as it takes care of keeping track
      * of IP addresses, authorization tokens and other relevant details. Such
      * an instance can with advantage be constructed from the successful result
-     * of the {@link ArSystem#consume(String)} method.
+     * of the {@link ArSystem#consume()} method.
      * <p>
      * If wanting to communicate with other Arrowhead systems without
      * creating an {@link ArSystem} instance, use the {@link Builder} instead.
@@ -157,6 +161,27 @@ public class HttpClient {
             https = new Builder().build();
         }
         return https;
+    }
+
+    /**
+     * @return Identity of the system owning this client.
+     * @throws IllegalStateException If this client was not provided an
+     *                               identity when created.
+     */
+    public SystemIdentity identity() {
+        if (identity == null) {
+            throw new IllegalStateException("Anonymous HTTP client; no " +
+                "system identity is available");
+        }
+        return identity;
+    }
+
+    /**
+     * @return {@code true} only if this client has a {@link SystemIdentity},
+     * accessible via the {@link #identity()} method.
+     */
+    public boolean isIdentifiable() {
+        return identity != null;
     }
 
     /**

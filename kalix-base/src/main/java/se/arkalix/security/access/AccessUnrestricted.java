@@ -1,10 +1,9 @@
 package se.arkalix.security.access;
 
+import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
-import se.arkalix.description.SystemDescription;
+import se.arkalix.description.ConsumerDescription;
 import se.arkalix.descriptor.SecurityDescriptor;
-
-import java.util.Objects;
 
 /**
  * Unrestricted access policy.
@@ -26,7 +25,8 @@ public class AccessUnrestricted implements AccessPolicy {
 
     @Override
     public boolean isAuthorized(
-        final SystemDescription consumer,
+        final ConsumerDescription consumer,
+        final ArSystem provider,
         final ServiceDescription service,
         final String token)
     {

@@ -8,16 +8,16 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Describes an Arrowhead system, especially in terms of how it can be
- * contacted.
+ * Describes an Arrowhead system as seen when it attempts to consume a service
+ * provided by this application.
  */
-public class SystemDescription {
+public class ConsumerDescription {
     private final SystemIdentity identity;
     private final String name;
     private final InetSocketAddress remoteSocketAddress;
 
     /**
-     * Creates new Arrowhead system description.
+     * Creates new Arrowhead consumer system description.
      *
      * @param identity            System certificate chain.
      * @param remoteSocketAddress IP-address/hostname and port through which
@@ -25,7 +25,7 @@ public class SystemDescription {
      * @throws NullPointerException If {@code identity} or {@code
      *                              remoteSocketAddress} is {@code null}.
      */
-    public SystemDescription(final SystemIdentity identity, final InetSocketAddress remoteSocketAddress) {
+    public ConsumerDescription(final SystemIdentity identity, final InetSocketAddress remoteSocketAddress) {
         this.identity = Objects.requireNonNull(identity, "Expected certificate");
         this.remoteSocketAddress = Objects.requireNonNull(remoteSocketAddress, "Expected remoteSocketAddress");
 
@@ -33,7 +33,7 @@ public class SystemDescription {
     }
 
     /**
-     * Creates new Arrowhead system description.
+     * Creates new Arrowhead consumer system description.
      * <p>
      * This constructor is meant to be used only if the system invoking it is
      * running in insecure mode.
@@ -44,7 +44,7 @@ public class SystemDescription {
      * @throws NullPointerException If {@code name} or {@code
      *                              remoteSocketAddress} is {@code null}.
      */
-    public SystemDescription(final String name, final InetSocketAddress remoteSocketAddress) {
+    public ConsumerDescription(final String name, final InetSocketAddress remoteSocketAddress) {
         this.name = Objects.requireNonNull(name, "Expected name");
         this.remoteSocketAddress = Objects.requireNonNull(remoteSocketAddress, "Expected remoteSocketAddress");
 
@@ -60,7 +60,7 @@ public class SystemDescription {
      *                            the system can be contacted.
      * @return System description, if all criteria are satisfied.
      */
-    public static Optional<SystemDescription> tryFrom(
+    public static Optional<ConsumerDescription> tryFrom(
         final Certificate[] chain,
         final InetSocketAddress remoteSocketAddress)
     {
@@ -68,7 +68,7 @@ public class SystemDescription {
             return Optional.empty();
         }
         return SystemIdentity.tryFrom(chain)
-            .map(identity -> new SystemDescription(identity, remoteSocketAddress));
+            .map(identity -> new ConsumerDescription(identity, remoteSocketAddress));
     }
 
     /**

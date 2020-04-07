@@ -1,7 +1,8 @@
 package se.arkalix.security.access;
 
+import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
-import se.arkalix.description.SystemDescription;
+import se.arkalix.description.ConsumerDescription;
 import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.security.identity.SystemIdentity;
 
@@ -46,14 +47,15 @@ public class AccessByCertificate implements AccessPolicy {
 
     @Override
     public boolean isAuthorized(
-        final SystemDescription consumer,
+        final ConsumerDescription consumer,
+        final ArSystem provider,
         final ServiceDescription service,
         final String token)
     {
         Objects.requireNonNull(consumer, "Expected consumer");
         Objects.requireNonNull(service, "Expected service");
 
-        return Objects.equals(consumer.identity().cloud(), service.provider().identity().cloud()) &&
+        return Objects.equals(consumer.identity().cloud(), provider.identity().cloud()) &&
             (whitelist == null || whitelist.contains(consumer.name()));
     }
 }

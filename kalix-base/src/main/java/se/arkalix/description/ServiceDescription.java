@@ -4,6 +4,8 @@ import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.internal.net.dns.DnsNames;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -12,8 +14,9 @@ import java.util.stream.Collectors;
  */
 public class ServiceDescription implements Comparable<ServiceDescription> {
     private final String name;
-    private final SystemDescription provider;
+    private final ProviderDescription provider;
     private final String uri;
+    private final Instant renewAt;
     private final SecurityDescriptor security;
     private final Map<String, String> metadata;
     private final int version;
@@ -29,6 +32,8 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
         }
         provider = Objects.requireNonNull(builder.provider, "Expected provider");
         uri = Objects.requireNonNull(builder.uri, "Expected uri");
+        renewAt = Objects.requireNonNullElseGet(builder.renewAt, () -> Instant.now()
+            .plus(Duration.ofMinutes(10))); // TODO: Make configurable.
         if (uri.isBlank()) {
             throw new IllegalArgumentException("Blank or null qualifiers " +
                 "are not permitted");
@@ -55,7 +60,7 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
     /**
      * @return Description of system providing this service.
      */
-    public SystemDescription provider() {
+    public ProviderDescription provider() {
         return provider;
     }
 
@@ -71,6 +76,14 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
      */
     public String uri() {
         return uri;
+    }
+
+    /**
+     * @return Time at which this service description should be renewed or
+     * refreshed.
+     */
+    public Instant renewAt() {
+        return renewAt;
     }
 
     /**
@@ -148,9 +161,10 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
      */
     public static class Builder {
         private String name;
-        private SystemDescription provider;
+        private ProviderDescription provider;
         private Map<InterfaceDescriptor, String> interfaceTokens;
         private String uri;
+        private Instant renewAt;
         private SecurityDescriptor security;
         private Map<String, String> metadata;
         private int version;
@@ -173,7 +187,7 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
          * @param provider Providing system description.
          * @return This builder.
          */
-        public Builder provider(final SystemDescription provider) {
+        public Builder provider(final ProviderDescription provider) {
             this.provider = provider;
             return this;
         }
@@ -186,6 +200,19 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
          */
         public Builder uri(final String uri) {
             this.uri = uri;
+            return this;
+        }
+
+        /**
+         * Sets time at which this service description should be renewed or
+         * refreshed.
+         *
+         * @param renewAt Instant soon after which this service description
+         *                should be renewed or refreshed.
+         * @return This builder.
+         */
+        public Builder renewAt(final Instant renewAt) {
+            this.renewAt = renewAt;
             return this;
         }
 
@@ -220,6 +247,18 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
         public Builder version(final int version) {
             this.version = version;
             return this;
+        }
+
+        /**
+         * Sets interface triplets supported by service. <b>At least one must
+         * be specified, either using this method or {@link
+         * #interfaceTokens(Map)}.</b>
+         *
+         * @param interfaces Interface triplets.
+         * @return This builder.
+         */
+        public Builder interfaces(final InterfaceDescriptor... interfaces) {
+            return interfaces(Arrays.asList(interfaces));
         }
 
         /**

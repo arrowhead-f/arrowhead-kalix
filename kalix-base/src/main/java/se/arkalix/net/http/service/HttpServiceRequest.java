@@ -1,6 +1,6 @@
 package se.arkalix.net.http.service;
 
-import se.arkalix.description.SystemDescription;
+import se.arkalix.description.ConsumerDescription;
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadable;
 import se.arkalix.net.http.*;
@@ -132,7 +132,7 @@ public interface HttpServiceRequest extends HttpBodyReceiver {
     /**
      * @return Information about the Arrowhead system that sent this request.
      */
-    SystemDescription consumer();
+    ConsumerDescription consumer();
 
     /**
      * @return HTTP version used by request.
@@ -208,7 +208,7 @@ public interface HttpServiceRequest extends HttpBodyReceiver {
             }
 
             @Override
-            public SystemDescription consumer() {
+            public ConsumerDescription consumer() {
                 return self.consumer();
             }
 

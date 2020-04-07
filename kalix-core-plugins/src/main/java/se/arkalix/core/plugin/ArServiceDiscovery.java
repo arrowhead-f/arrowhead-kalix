@@ -1,5 +1,6 @@
 package se.arkalix.core.plugin;
 
+import se.arkalix.ArConsumer;
 import se.arkalix.core.plugin.dto.ServiceQueryDto;
 import se.arkalix.core.plugin.dto.ServiceQueryResultDto;
 import se.arkalix.core.plugin.dto.ServiceRegistrationDto;
@@ -8,7 +9,7 @@ import se.arkalix.util.concurrent.Future;
 /**
  * Represents an Arrowhead service discovery service.
  */
-public interface ArServiceDiscovery {
+public interface ArServiceDiscovery extends ArConsumer {
     /**
      * Queries registry for certain service definitions.
      *

@@ -2,8 +2,9 @@ package se.arkalix;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.arkalix.description.ProviderDescription;
 import se.arkalix.description.ServiceDescription;
-import se.arkalix.description.SystemDescription;
+import se.arkalix.description.ConsumerDescription;
 import se.arkalix.internal.ArServer;
 import se.arkalix.internal.ArServerRegistry;
 import se.arkalix.internal.plugin.PluginNotifier;
@@ -41,10 +42,9 @@ public class ArSystem {
     private final SchedulerShutdownListener schedulerShutdownListener;
     private final PluginNotifier pluginNotifier;
 
+    private final ProviderDescription description;
     private final Set<ArServer> servers = Collections.synchronizedSet(new HashSet<>());
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
-
-    private SystemDescription description = null;
 
     private ArSystem(final Builder builder) {
         localSocketAddress.setPlain(Objects.requireNonNullElseGet(builder.socketAddress, () ->
@@ -83,6 +83,10 @@ public class ArSystem {
             }
             name = builder.name;
         }
+
+        description = new ProviderDescription(name, localSocketAddress.get(), isSecure
+            ? identity.publicKey()
+            : null);
 
         scheduler = (NettyScheduler) Schedulers.fixed();
         schedulerShutdownListener = (scheduler) -> shutdown()
@@ -171,12 +175,7 @@ public class ArSystem {
      * @return Description of this system.
      */
     @ThreadSafe
-    public synchronized SystemDescription description() {
-        if (description == null) {
-            description = isSecure
-                ? new SystemDescription(identity, localSocketAddress.get())
-                : new SystemDescription(name, localSocketAddress.get());
-        }
+    public ProviderDescription description() {
         return description;
     }
 
