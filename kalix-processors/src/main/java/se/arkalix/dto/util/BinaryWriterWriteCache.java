@@ -26,7 +26,7 @@ public class BinaryWriterWriteCache {
         builder.setLength(0);
     }
 
-    public void addPut(final MethodSpec.Builder methodBuilder) {
+    public void addWrite(final MethodSpec.Builder methodBuilder) {
         final var input = builder.toString().getBytes(StandardCharsets.UTF_8);
         if (input.length == 1) {
             methodBuilder.addStatement(writerName + ".write((byte) " + literalOf(input[0]) + ")");
@@ -48,7 +48,7 @@ public class BinaryWriterWriteCache {
 
     public void addWriteIfNotEmpty(final MethodSpec.Builder methodBuilder) {
         if (builder.length() > 0) {
-            addPut(methodBuilder);
+            addWrite(methodBuilder);
         }
     }
 

@@ -24,6 +24,10 @@ public class JsonTokenBuffer {
         return tokens.get(offset++);
     }
 
+    public JsonToken peek() {
+        return tokens.get(offset);
+    }
+
     public void skip() {
         var token = next();
         if (token.nChildren == 0) {

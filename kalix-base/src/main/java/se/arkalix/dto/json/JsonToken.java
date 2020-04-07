@@ -67,7 +67,8 @@ public final class JsonToken {
 
     public Duration readDurationNumber(final BinaryReader source) {
         final var number = Double.parseDouble(readStringRaw(source));
-        return Duration.ofNanos((long) (number * 1e9));
+        final long integer = (long) number;
+        return Duration.ofSeconds(integer, (long) ((number - integer) * 1e9));
     }
 
     public float readFloat(final BinaryReader source) {
@@ -106,10 +107,6 @@ public final class JsonToken {
 
     public OffsetTime readOffsetTime(final BinaryReader source) {
         return OffsetTime.parse(readStringRaw(source));
-    }
-
-    public OffsetTime readOffsetTimeNumber(final BinaryReader source) {
-        return OffsetTime.ofInstant(readInstant(source), ZoneId.systemDefault());
     }
 
     public Period readPeriod(final BinaryReader source) {

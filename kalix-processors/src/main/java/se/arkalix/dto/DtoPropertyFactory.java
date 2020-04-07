@@ -53,6 +53,8 @@ public class DtoPropertyFactory {
     // Other types.
     private final DeclaredType optionalType;
     private final DeclaredType stringType;
+    private final DeclaredType dtoReadable;
+    private final DeclaredType dtoWritable;
 
     private final Set<Modifier> publicStaticModifiers;
 
@@ -91,6 +93,8 @@ public class DtoPropertyFactory {
 
         optionalType = getDeclaredType.apply(Optional.class);
         stringType = getDeclaredType.apply(String.class);
+        dtoReadable = getDeclaredType.apply(DtoReadable.class);
+        dtoWritable = getDeclaredType.apply(DtoWritable.class);
 
         publicStaticModifiers = Stream.of(Modifier.PUBLIC, Modifier.STATIC)
             .collect(Collectors.toSet());
@@ -138,11 +142,6 @@ public class DtoPropertyFactory {
             final var declaredType = (DeclaredType) type;
             final var argumentType = declaredType.getTypeArguments().get(0);
             final var dtoType = resolveDtoType(method, argumentType);
-            if (dtoType.descriptor().isCollection()) {
-                throw new DtoException(method, "As all collection can be " +
-                    "empty, it makes little sense to make them optional; " +
-                    "replace " + type + " with " + argumentType);
-            }
             return builder
                 .type(dtoType)
                 .isOptional(true)
@@ -249,7 +248,7 @@ public class DtoPropertyFactory {
         if (isEnumLike(type)) {
             return toElementType(type, DtoDescriptor.ENUM);
         }
-        return toInterfaceType(method, type);
+        return toInterfaceOrCustomType(method, type);
     }
 
     private boolean isEnumLike(final TypeMirror type) {
@@ -326,7 +325,7 @@ public class DtoPropertyFactory {
         return DtoSequence.newArray(arrayType, element);
     }
 
-    private DtoInterface toInterfaceType(final ExecutableElement method, final TypeMirror type) throws DtoException {
+    private DtoType toInterfaceOrCustomType(final ExecutableElement method, final TypeMirror type) throws DtoException {
         final var declaredType = (DeclaredType) type;
         final var element = declaredType.asElement();
 
@@ -340,15 +339,19 @@ public class DtoPropertyFactory {
                     "or @DtoWritableAs; rather use the interface types from " +
                     "which those DTO classes were generated");
             }
+            if (typeUtils.isAssignable(type, dtoReadable) && typeUtils.isAssignable(type, dtoWritable)) {
+                return new DtoElement(type, DtoDescriptor.CUSTOM);
+            }
             throw new DtoException(method, "Getter return type must be (1) " +
                 "a primitive, (2) a boxed primitive, (3) a String, (4) an " +
                 "array (T[]), (5) a List<T>, (6) a Map<K, V>, (7) an enum, " +
                 "(8) an enum-like class, which overrides equals(), " +
                 "hashCode() and toString(), as well as having a public " +
                 "static valueOf(String) method, (9) an interface " +
-                "annotated with @DtoReadableAs and/or @DtoWritableAs, or " +
-                "(10) an Optional<T>; if an array, list, map or optional, " +
-                "its parameter(s) must conform to the same requirements");
+                "annotated with @DtoReadableAs and/or @DtoWritableAs, " +
+                "(10) an Optional<T>, or (11) a special type; if an " +
+                "array, list, map or optional, its parameter(s) must " +
+                "conform to the same requirements");
         }
 
         final var readableEncodings = readable != null ? readable.value() : new DtoEncoding[0];

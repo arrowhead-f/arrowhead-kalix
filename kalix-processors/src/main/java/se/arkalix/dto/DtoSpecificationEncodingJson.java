@@ -1,6 +1,9 @@
 package se.arkalix.dto;
 
-import com.squareup.javapoet.*;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.TypeSpec;
 import se.arkalix.dto.binary.BinaryReader;
 import se.arkalix.dto.binary.BinaryWriter;
 import se.arkalix.dto.json.*;
@@ -54,6 +57,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             .addException(DtoReadException.class)
             .addStatement("final var source = buffer.source()")
             .addStatement("var token = buffer.next()")
+            .addStatement("var type = ($T) null", JsonType.class)
             .addStatement("var error = \"\"");
 
         var hasEnum = target.properties().stream().anyMatch(property -> property.descriptor() == DtoDescriptor.ENUM);
@@ -159,6 +163,10 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         case CHARACTER_UNBOXED:
             throw characterTypesNotSupportedException();
 
+        case CUSTOM:
+            readCustom((DtoElement) type, assignment, builder);
+            break;
+
         case DOUBLE_BOXED:
         case DOUBLE_UNBOXED:
             readNumber("Double", assignment, builder);
@@ -244,7 +252,6 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             readTemporal(ZoneOffset.class, descriptor.isNumber(), assignment, builder);
             break;
 
-
         default:
             throw new IllegalStateException("Unexpected type: " + type);
         }
@@ -256,7 +263,15 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
 
         builder
             .addStatement("token = buffer.next()")
-            .beginControlFlow("if (token.type() != $T.ARRAY)", JsonType.class)
+            .addStatement("type = token.type()");
+        if (level == 0) {
+            builder
+                .beginControlFlow("if (type == $T.NULL)", JsonType.class)
+                .addStatement("continue")
+                .endControlFlow();
+        }
+        builder
+            .beginControlFlow("if (type != $T.ARRAY)", JsonType.class)
             .addStatement("error = \"Expected array\"")
             .addStatement("break error")
             .endControlFlow();
@@ -294,7 +309,11 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             .addStatement("boolean value$L", level)
             .beginControlFlow("switch (buffer.next().type())")
             .addStatement("case TRUE: value$L = true; break", level)
-            .addStatement("case FALSE: value$L = false; break", level)
+            .addStatement("case FALSE: value$L = false; break", level);
+        if (level == 0) {
+            builder.addStatement("case NULL: continue");
+        }
+        builder
             .beginControlFlow("default:")
             .addStatement("error = \"Expected true or false\"")
             .addStatement("break error")
@@ -303,10 +322,22 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             .addStatement(assignment.expand("value$L"), level);
     }
 
+    private void readCustom(final DtoElement type, final Expander assignment, final MethodSpec.Builder builder) {
+        builder.addStatement(assignment.expand("$T.readJson(buffer)"), type.inputTypeName());
+    }
+
     private void readEnum(final DtoType type, final Expander assignment, final MethodSpec.Builder builder) {
         builder
             .addStatement("token = buffer.next()")
-            .beginControlFlow("if (token.type() != $T.STRING)", JsonType.class)
+            .addStatement("type = token.type()");
+        if (level == 0) {
+            builder
+                .beginControlFlow("if (type == $T.NULL)", JsonType.class)
+                .addStatement("continue")
+                .endControlFlow();
+        }
+        builder
+            .beginControlFlow("if (type != $T.STRING)", JsonType.class)
             .addStatement("error = \"Expected number\"")
             .addStatement("break error")
             .endControlFlow()
@@ -318,6 +349,14 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             throw new IllegalStateException(type.simpleName() + " is not annotated with " +
                 "@DtoReadableAs, or lacks DataEncoding.JSON as annotation argument");
         }
+
+        if (level == 0) {
+            builder
+                .beginControlFlow("if (buffer.peek().type() == $T.NULL)", JsonType.class)
+                .addStatement("continue")
+                .endControlFlow();
+        }
+
         builder.addStatement(assignment.expand("$T.readJson(buffer)"), type.inputTypeName());
     }
 
@@ -327,8 +366,16 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
 
         builder
             .addStatement("token = buffer.next()")
-            .beginControlFlow("if (token.type() != $T.OBJECT)", JsonType.class)
-            .addStatement("error = \"Expected array\"")
+            .addStatement("type = token.type()");
+        if (level == 0) {
+            builder
+                .beginControlFlow("if (type == $T.NULL)", JsonType.class)
+                .addStatement("continue")
+                .endControlFlow();
+        }
+        builder
+            .beginControlFlow("if (type != $T.OBJECT)", JsonType.class)
+            .addStatement("error = \"Expected object\"")
             .addStatement("break error")
             .endControlFlow()
             .addStatement("var n$L = token.nChildren()", level)
@@ -357,7 +404,15 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
     private void readNumber(final String type, final Expander assignment, final MethodSpec.Builder builder) {
         builder
             .addStatement("token = buffer.next()")
-            .beginControlFlow("if (token.type() != $T.NUMBER)", JsonType.class)
+            .addStatement("type = token.type()");
+        if (level == 0) {
+            builder
+                .beginControlFlow("if (type == $T.NULL)", JsonType.class)
+                .addStatement("continue")
+                .endControlFlow();
+        }
+        builder
+            .beginControlFlow("if (type != $T.NUMBER)", JsonType.class)
             .addStatement("error = \"Expected number\"")
             .addStatement("break error")
             .endControlFlow()
@@ -367,7 +422,15 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
     private void readString(final Expander assignment, final MethodSpec.Builder builder) {
         builder
             .addStatement("token = buffer.next()")
-            .beginControlFlow("if (token.type() != $T.STRING)", JsonType.class)
+            .addStatement("type = token.type()");
+        if (level == 0) {
+            builder
+                .beginControlFlow("if (type == $T.NULL)", JsonType.class)
+                .addStatement("continue")
+                .endControlFlow();
+        }
+        builder
+            .beginControlFlow("if (type != $T.STRING)", JsonType.class)
             .addStatement("error = \"Expected string\"")
             .addStatement("break error")
             .endControlFlow()
@@ -385,14 +448,25 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
                 .addStatement("$T value$L", class_, level)
                 .beginControlFlow("switch (token.type())")
                 .addStatement("case NUMBER: value$L = token.read$TNumber(source); break", level, class_)
-                .addStatement("case STRING: value$L = token.read$T(source); break", level, class_)
+                .addStatement("case STRING: value$L = token.read$T(source); break", level, class_);
+            if (level == 0) {
+                builder.addStatement("case NULL: continue");
+            }
+            builder
                 .addStatement("default: error = \"Expected number or string\"; break error")
                 .endControlFlow()
                 .addStatement(assignment.expand("value$L"), level);
         }
         else {
+            builder.addStatement("type = token.type()");
+            if (level == 0) {
+                builder
+                    .beginControlFlow("if (type == $T.NULL)", JsonType.class)
+                    .addStatement("continue")
+                    .endControlFlow();
+            }
             builder
-                .beginControlFlow("if (token.type() != $T.STRING)", JsonType.class)
+                .beginControlFlow("if (type != $T.STRING)", JsonType.class)
                 .addStatement("error = \"Expected string\"")
                 .addStatement("break error")
                 .endControlFlow()
@@ -416,6 +490,10 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
 
         final var properties = target.properties();
         final var p1 = properties.size();
+        var checkBeforeWritingComma = p1 > 0 && properties.get(0).isOptional();
+        if (checkBeforeWritingComma) {
+            builder.addStatement("var addComma = false");
+        }
         for (var p0 = 0; p0 < p1; ++p0) {
             final var property = properties.get(p0);
             final var descriptor = property.descriptor();
@@ -423,19 +501,33 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             final var isOptional = property.isOptional();
             final var name = property.name();
             try {
-                if (isCollection) {
+                if (isOptional) {
                     writeCache.addWriteIfNotEmpty(builder);
-                    builder.beginControlFlow("if ($N.$N != 0)", name, descriptor == DtoDescriptor.ARRAY
-                        ? "length"
-                        : "size()");
+                    builder.beginControlFlow("if ($N != null)", name);
+                }
+                else if (isCollection) {
+                    writeCache.addWriteIfNotEmpty(builder);
+                    if (descriptor == DtoDescriptor.ARRAY) {
+                        builder.beginControlFlow("if ($N.length != 0)", name);
+                    }
+                    else {
+                        builder.beginControlFlow("if (!$N.isEmpty())", name);
+                    }
+                }
+                else {
+                    checkBeforeWritingComma = false;
                 }
 
                 if (p0 != 0) {
-                    if (isOptional) {
+                    if (checkBeforeWritingComma) {
                         writeCache.addWriteIfNotEmpty(builder);
-                        builder.beginControlFlow("if ($N != null)", name);
+                        builder.beginControlFlow("if (addComma)");
+                        writeCache.append(',').addWrite(builder);
+                        builder.endControlFlow();
                     }
-                    writeCache.append(',');
+                    else {
+                        writeCache.append(',');
+                    }
                 }
 
                 writeCache
@@ -445,13 +537,11 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
 
                 writeValue(property.type(), name, builder);
 
-                if (p0 != 0 && isOptional) {
+                if (isOptional || isCollection) {
                     writeCache.addWriteIfNotEmpty(builder);
-                    builder.endControlFlow();
-                }
-
-                if (isCollection) {
-                    writeCache.addWriteIfNotEmpty(builder);
+                    if (checkBeforeWritingComma) {
+                        builder.addStatement("addComma = true");
+                    }
                     builder.endControlFlow();
                 }
             }
@@ -496,6 +586,10 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         case CHARACTER_UNBOXED:
             throw characterTypesNotSupportedException();
 
+        case CUSTOM:
+            writeCustom(name, builder);
+            break;
+
         case DURATION:
         case INSTANT:
         case MONTH_DAY:
@@ -529,10 +623,13 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
     }
 
     private void writeArray(final DtoType type, final String name, final MethodSpec.Builder builder) {
-        writeCache.append('[').addPut(builder);
+        if (level > 0) {
+            builder.beginControlFlow("");
+        }
+
+        writeCache.append('[').addWrite(builder);
 
         builder
-            .beginControlFlow("")
             .addStatement("final var size$L = $N.$N",
                 level, name, type.descriptor() == DtoDescriptor.ARRAY
                     ? "length"
@@ -549,15 +646,22 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         level -= 1;
 
         writeCache.addWriteIfNotEmpty(builder);
-        builder
-            .endControlFlow()
-            .endControlFlow();
+        builder.endControlFlow();
 
         writeCache.append(']');
+
+        if (level > 0) {
+            builder.endControlFlow();
+        }
+    }
+
+    private void writeCustom(final String name, final MethodSpec.Builder builder) {
+        writeCache.addWriteIfNotEmpty(builder);
+        builder.addStatement("$N.writeJson(target)", name);
     }
 
     private void writeEnum(final String name, final MethodSpec.Builder builder) {
-        writeCache.append('"').addPut(builder);
+        writeCache.append('"').addWrite(builder);
         builder.addStatement("$T.write($N.toString(), target)", JsonWriter.class, name);
         writeCache.append('"');
     }
@@ -573,11 +677,14 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
     }
 
     private void writeMap(final DtoType type, final String name, final MethodSpec.Builder builder) {
-        writeCache.append('{').addWriteIfNotEmpty(builder);
+        if (level > 0) {
+            builder.beginControlFlow("");
+        }
+
+        writeCache.append('{').addWrite(builder);
 
         final var map = (DtoMap) type;
         builder
-            .beginControlFlow("")
             .addStatement("final var entrySet$L = $N.entrySet()", level, name)
             .addStatement("final var size$1L = entrySet$1L.size()", level)
             .addStatement("var i$L = 0", level)
@@ -596,11 +703,13 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         level -= 1;
 
         writeCache.addWriteIfNotEmpty(builder);
-        builder
-            .endControlFlow()
-            .endControlFlow();
+        builder.endControlFlow();
 
         writeCache.append('}');
+
+        if (level > 0) {
+            builder.endControlFlow();
+        }
     }
 
     private void writeOther(final String name, final MethodSpec.Builder builder) {
@@ -609,7 +718,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
     }
 
     private void writeString(final String name, final MethodSpec.Builder builder) {
-        writeCache.append('"').addPut(builder);
+        writeCache.append('"').addWrite(builder);
         builder.addStatement("$T.write($N, target)", JsonWriter.class, name);
         writeCache.append('"');
     }

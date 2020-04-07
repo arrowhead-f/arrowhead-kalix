@@ -2,6 +2,7 @@ package se.arkalix.dto.types;
 
 import javax.lang.model.type.TypeKind;
 
+@SuppressWarnings("unused")
 public enum DtoDescriptor {
     ARRAY(0x1100),
     BIG_DECIMAL(0x2000),
@@ -12,6 +13,7 @@ public enum DtoDescriptor {
     BYTE_UNBOXED(0x2202),
     CHARACTER_BOXED(0x0604),
     CHARACTER_UNBOXED(0x0204),
+    CUSTOM(0x0000),
     DOUBLE_BOXED(0x2608),
     DOUBLE_UNBOXED(0x2208),
     DURATION(0x6000),
