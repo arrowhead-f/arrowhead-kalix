@@ -11,6 +11,7 @@ import se.arkalix.internal.dto.json.JsonTokenizer;
 import se.arkalix.util.annotation.Internal;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -19,7 +20,11 @@ public class JsonArray implements JsonCollection, Iterable<JsonValue> {
     private final List<JsonValue> elements;
 
     public JsonArray(final List<JsonValue> elements) {
-        this.elements = elements;
+        this.elements = Collections.unmodifiableList(elements);
+    }
+
+    public JsonArray(final JsonValue... elements) {
+        this.elements = List.of(elements);
     }
 
     @Override

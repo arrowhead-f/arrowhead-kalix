@@ -12,6 +12,7 @@ import se.arkalix.internal.dto.json.JsonWriter;
 import se.arkalix.util.annotation.Internal;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -20,7 +21,11 @@ public class JsonObject implements JsonCollection, Iterable<JsonPair> {
     private final List<JsonPair> pairs;
 
     public JsonObject(final List<JsonPair> pairs) {
-        this.pairs = pairs;
+        this.pairs = Collections.unmodifiableList(pairs);
+    }
+
+    public JsonObject(final JsonPair... pairs) {
+        this.pairs = List.of(pairs);
     }
 
     @Override

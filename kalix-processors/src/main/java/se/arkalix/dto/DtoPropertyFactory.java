@@ -2,10 +2,12 @@ package se.arkalix.dto;
 
 import se.arkalix.dto.json.JsonName;
 import se.arkalix.dto.types.*;
-import se.arkalix.dto.types.DtoInterface;
 
 import javax.lang.model.element.*;
-import javax.lang.model.type.*;
+import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import java.math.BigDecimal;
@@ -59,7 +61,8 @@ public class DtoPropertyFactory {
     private final Set<Modifier> publicStaticModifiers;
 
     public DtoPropertyFactory(final Elements elementUtils, final Types typeUtils) {
-        this.typeUtils = typeUtils;
+        Objects.requireNonNull(elementUtils, "Expected elementUtils");
+        this.typeUtils = Objects.requireNonNull(typeUtils, "Expected typeUtils");
 
         final Function<Class<?>, DeclaredType> getDeclaredType = (class_) ->
             (DeclaredType) elementUtils.getTypeElement(class_.getCanonicalName()).asType();
@@ -349,9 +352,10 @@ public class DtoPropertyFactory {
                 "hashCode() and toString(), as well as having a public " +
                 "static valueOf(String) method, (9) an interface " +
                 "annotated with @DtoReadableAs and/or @DtoWritableAs, " +
-                "(10) an Optional<T>, (11) a java.time temporal type, or " +
-                "(12) a custom type; if an array, list, map or optional, " +
-                "its parameter(s) must conform to the same requirements");
+                "(10) an Optional<T>, (11) a non-local java.time temporal " +
+                "type, or (12) a custom type; if an array, list, map or " +
+                "optional, its parameter(s) must be of the same types except " +
+                "optional (10)");
         }
 
         final var readableEncodings = readable != null ? readable.value() : new DtoEncoding[0];
