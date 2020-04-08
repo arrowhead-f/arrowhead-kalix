@@ -258,12 +258,13 @@ public class ArSystem {
      * Cache of, potentially or previously, consumed services.
      * <p>
      * Searches made in this cache will never trigger any lookup in a remote
-     * service registry. The cache is strictly local. It might, however, be
-     * updated by any {@link se.arkalix.plugin.Plugin plugins} used by
-     * this {@link ArSystem system}.
+     * service registry. The cache is strictly local. It is, however, updated
+     * whenever a {@link #consume()} operation resolves in a remote lookup. For
+     * remote lookup to work, A {@link se.arkalix.plugin.Plugin plugin} must be
+     * provided at {@link ArSystem} creation that supports lookup.
      *
      * @return Service description cache containing services that this system
-     * may have considered to consume.
+     * has, or has considered to, consume.
      */
     @ThreadSafe
     public ArServiceCache consumedServices() {

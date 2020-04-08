@@ -1,0 +1,40 @@
+package se.arkalix.core.plugin;
+
+/**
+ * Enumerates the different kind of strategies that can be used when querying
+ * an {@link ArOrchestration orchestration service} for {@link
+ * se.arkalix.core.plugin.dto.ServiceConsumable services to consume}.
+ */
+public enum ArOrchestrationStrategy {
+    /**
+     * Only request predefined orchestration rules.
+     * <p>
+     * This strategy is also referred to as <i>store orchestration</i>. When
+     * used, the {@link ArOrchestration orchestration service} in question is
+     * consulted without telling it explicitly what services are wanted. The
+     * orchestration service is assumed to already know of certain predefined
+     * orchestration rules associated with the requesting {@link
+     * se.arkalix.ArSystem system}, which are returned if available.
+     */
+    RULES_ONLY,
+
+    /**
+     * First request predefined orchestration rules, then request dynamic
+     * orchestration rules if no suitable predefined rules were available.
+     * <p>
+     * In other words, if a rules-only request results in no {@link
+     * se.arkalix.core.plugin.dto.ServiceConsumable entry} matching
+     * whatever {@link se.arkalix.query.ServiceQuery query} caused the {@link
+     * ArOrchestration orchestration service} to be contacted, a dynamic
+     * orchestration attempt is made afterwards.
+     */
+    RULES_OR_DYNAMIC,
+
+    /**
+     * Only request dynamic orchestration rules.
+     * <p>
+     * When used, the {@link ArOrchestration orchestration service} in question
+     * is asked directly for explicitly specified services to consume.
+     */
+    DYNAMIC_ONLY,
+}
