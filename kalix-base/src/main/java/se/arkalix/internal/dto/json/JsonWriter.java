@@ -1,14 +1,18 @@
-package se.arkalix.dto.json;
+package se.arkalix.internal.dto.json;
 
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoWriteException;
 import se.arkalix.dto.binary.BinaryWriter;
+import se.arkalix.dto.json.JsonWritable;
+import se.arkalix.util.annotation.Internal;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
+import java.util.List;
 
+@Internal
 @SuppressWarnings("unused")
 public final class JsonWriter {
     private JsonWriter() {}
@@ -43,13 +47,7 @@ public final class JsonWriter {
         target.write(monthDay.toString().getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    public static void write(final long number, final BinaryWriter target) throws DtoWriteException {
-        if (number < -9007199254740991L || number > 9007199254740991L) {
-            throw new DtoWriteException(DtoEncoding.JSON, "Only integers in " +
-                "the range -(2^53 - 1) to (2^53 - 1) can be represented as " +
-                "JSON numbers without loss of precision; " + number + " is " +
-                "outside that range");
-        }
+    public static void write(final long number, final BinaryWriter target) {
         target.write(Long.toString(number)
             .getBytes(StandardCharsets.ISO_8859_1));
     }
@@ -113,5 +111,19 @@ public final class JsonWriter {
 
     public static void write(final ZoneOffset zoneOffset, final BinaryWriter target) {
         target.write(zoneOffset.toString().getBytes(StandardCharsets.ISO_8859_1));
+    }
+
+    public static <V extends JsonWritable> void writeMany(final List<V> elements, final BinaryWriter target)
+        throws DtoWriteException
+    {
+        target.write((byte) '[');
+        final var e1 = elements.size();
+        for (var e0 = 0; e0 < e1; ++e0) {
+            if (e0 != 0) {
+                target.write((byte) ',');
+            }
+            elements.get(e0).writeJson(target);
+        }
+        target.write((byte) ']');
     }
 }

@@ -2,6 +2,9 @@ package se.arkalix.dto;
 
 import se.arkalix.dto.binary.BinaryWriter;
 import se.arkalix.dto.json.JsonWritable;
+import se.arkalix.internal.dto.json.JsonWriter;
+
+import java.util.List;
 
 /**
  * Utilities for encoding DTO classes.
@@ -20,29 +23,48 @@ public class DtoWriter {
      * @throws UnsupportedOperationException If the DTO interface type of
      *                                       {@code t} does not include the
      *                                       given {@link DtoEncoding} as
-     *                                       argument to its {@code @DtoWritableAs}
-     *                                       annotation.
-     * @throws DtoWriteException                If writing to {@code target} fails.
+     *                                       argument to its
+     *                                       {@code @DtoWritableAs} annotation.
+     * @throws DtoWriteException             If writing to {@code target} fails.
      */
-    public static <T extends DtoWritable> void write(final T t, final DtoEncoding encoding, final BinaryWriter target)
-        throws DtoWriteException
+    public static <T extends DtoWritable> void writeOne(
+        final T t,
+        final DtoEncoding encoding,
+        final BinaryWriter target) throws DtoWriteException
     {
         if (encoding == DtoEncoding.JSON) {
             if (t instanceof JsonWritable) {
                 ((JsonWritable) t).writeJson(target);
                 return;
             }
-            throw encodingNotSupportedFor(encoding, t);
+            throw jsonNotSupportedFor(t);
         }
-        throw new IllegalStateException("DataEncoding that is supported has " +
+        throw new IllegalStateException("DtoEncoding that is supported has " +
             "not yet been added to this method");
     }
 
-    private static RuntimeException encodingNotSupportedFor(final DtoEncoding encoding, final Object object) {
+    @SuppressWarnings("unchecked")
+    public static <T extends DtoWritable> void writeMany(
+        final List<T> ts,
+        final DtoEncoding encoding,
+        final BinaryWriter target) throws DtoWriteException
+    {
+        if (encoding == DtoEncoding.JSON) {
+            if (!ts.isEmpty() && !(ts.get(0) instanceof JsonWritable)) {
+                throw jsonNotSupportedFor(ts.get(0));
+            }
+            JsonWriter.writeMany((List<JsonWritable>) ts, target);
+            return;
+        }
+        throw new IllegalStateException("DtoEncoding that is supported has " +
+            "not yet been added to this method");
+    }
+
+    private static RuntimeException jsonNotSupportedFor(final Object object) {
         return new UnsupportedOperationException("The interface type from " +
             "which the \"" + object.getClass() + "\" DTO was generated does " +
-            "not include DataEncoding." + encoding + " as argument to its " +
-            "@DtoWritableAs annotation; no corresponding encoding routine has, " +
+            "not include DtoEncoding.JSON as argument to its @DtoWritableAs " +
+            "annotation; no corresponding encoding routine has, " +
             "consequently, been generated for the class");
     }
 }

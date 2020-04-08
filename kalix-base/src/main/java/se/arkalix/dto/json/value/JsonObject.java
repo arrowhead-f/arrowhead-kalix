@@ -5,10 +5,11 @@ import se.arkalix.dto.DtoReadException;
 import se.arkalix.dto.DtoWriteException;
 import se.arkalix.dto.binary.BinaryReader;
 import se.arkalix.dto.binary.BinaryWriter;
-import se.arkalix.dto.json.JsonTokenBuffer;
-import se.arkalix.dto.json.JsonTokenizer;
 import se.arkalix.dto.json.JsonType;
-import se.arkalix.dto.json.JsonWriter;
+import se.arkalix.internal.dto.json.JsonTokenBuffer;
+import se.arkalix.internal.dto.json.JsonTokenizer;
+import se.arkalix.internal.dto.json.JsonWriter;
+import se.arkalix.util.annotation.Internal;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -50,6 +51,7 @@ public class JsonObject implements JsonCollection, Iterable<JsonPair> {
         return readJson(JsonTokenizer.tokenize(source));
     }
 
+    @Internal
     public static JsonObject readJson(final JsonTokenBuffer buffer) throws DtoReadException {
         final var source = buffer.source();
         var token = buffer.next();

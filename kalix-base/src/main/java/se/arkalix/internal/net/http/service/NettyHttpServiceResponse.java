@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -51,6 +52,7 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
         this.request = Objects.requireNonNull(request, "Expected request");
     }
 
+    @SuppressWarnings("unchecked")
     public ChannelFuture write(final Channel channel)
         throws DtoWriteException, IOException
     {
@@ -68,14 +70,20 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
         else if (body instanceof byte[]) {
             content = Unpooled.wrappedBuffer((byte[]) body);
         }
-        else if (body instanceof DtoWritable) {
+        else if (body instanceof DtoWritable || body instanceof List) {
             if (dtoEncoding == null) {
                 dtoEncoding = encoding.asDtoEncoding().orElseThrow(() -> new IllegalStateException("" +
                     "There is no DTO support for the \"" + encoding +
                     "\" encoding; response body cannot be encoded"));
             }
             content = channel.alloc().buffer();
-            DtoWriter.write((DtoWritable) body, dtoEncoding, new ByteBufWriter(content));
+            final var buffer = new ByteBufWriter(content);
+            if (body instanceof DtoWritable) {
+                DtoWriter.writeOne((DtoWritable) body, dtoEncoding, buffer);
+            }
+            else {
+                DtoWriter.writeMany((List<DtoWritable>) body, dtoEncoding, buffer);
+            }
         }
         else if (body instanceof Path) {
             final var file = new RandomAccessFile(((Path) body).toFile(), "r");
@@ -125,7 +133,14 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
     public HttpServiceResponse body(final DtoEncoding encoding, final DtoWritable data) {
         dtoEncoding = encoding;
         body = data;
-        return null;
+        return this;
+    }
+
+    @Override
+    public HttpServiceResponse body(final DtoEncoding encoding, final List<DtoWritable> data) {
+        dtoEncoding = encoding;
+        body = data;
+        return this;
     }
 
     @Override

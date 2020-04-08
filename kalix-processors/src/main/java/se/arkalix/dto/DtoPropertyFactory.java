@@ -349,9 +349,9 @@ public class DtoPropertyFactory {
                 "hashCode() and toString(), as well as having a public " +
                 "static valueOf(String) method, (9) an interface " +
                 "annotated with @DtoReadableAs and/or @DtoWritableAs, " +
-                "(10) an Optional<T>, or (11) a special type; if an " +
-                "array, list, map or optional, its parameter(s) must " +
-                "conform to the same requirements");
+                "(10) an Optional<T>, (11) a java.time temporal type, or " +
+                "(12) a custom type; if an array, list, map or optional, " +
+                "its parameter(s) must conform to the same requirements");
         }
 
         final var readableEncodings = readable != null ? readable.value() : new DtoEncoding[0];

@@ -1,9 +1,12 @@
 package se.arkalix.dto;
 
 import se.arkalix.dto.binary.BinaryReader;
+import se.arkalix.internal.dto.json.JsonReader;
+import se.arkalix.internal.dto.json.JsonTokenBuffer;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,8 +20,8 @@ public class DtoReader {
     private DtoReader() {}
 
     /**
-     * Attempts to read a value encoded with {@code encoding} from
-     * {@code source} byte buffer.
+     * Attempts to read one value encoded with {@code encoding} from {@code
+     * source} byte reader.
      *
      * @param class_   Class of value to read.
      * @param encoding Encoding decode read value with.
@@ -35,7 +38,7 @@ public class DtoReader {
      *                                       encoding} or {@code source} is
      *                                       {@code null}.
      */
-    public static <T extends DtoReadable> T read(
+    public static <T extends DtoReadable> T readOne(
         final Class<T> class_,
         final DtoEncoding encoding,
         final BinaryReader source) throws DtoReadException
@@ -45,27 +48,47 @@ public class DtoReader {
         Objects.requireNonNull(source, "Expected source");
 
         if (encoding == DtoEncoding.JSON) {
-            return readJson(class_, encoding, source);
+            return JsonReader.readOne(buffer -> invoke(class_, resolveReadJson(class_), buffer), source);
         }
         throw new IllegalStateException("DataEncoding that is supported " +
             "has not yet been added to this method");
     }
 
-    private static <T> T readJson(
+    public static <T extends DtoReadable> List<T> readMany(
         final Class<T> class_,
         final DtoEncoding encoding,
         final BinaryReader source) throws DtoReadException
     {
-        final var method = CLASS_TO_READ_JSON.computeIfAbsent(class_, (ignored) -> {
+        Objects.requireNonNull(class_, "Expected class_");
+        Objects.requireNonNull(encoding, "Expected encoding");
+        Objects.requireNonNull(source, "Expected source");
+
+        if (encoding == DtoEncoding.JSON) {
+            final var method = resolveReadJson(class_);
+            return JsonReader.readMany(buffer -> invoke(class_, method, buffer), source);
+        }
+        throw new IllegalStateException("DtoEncoding that is supported " +
+            "has not yet been added to this method");
+    }
+
+    private static <T> Method resolveReadJson(final Class<T> class_) {
+        return CLASS_TO_READ_JSON.computeIfAbsent(class_, ignored -> {
             try {
-                return class_.getDeclaredMethod("readJson", BinaryReader.class);
+                return class_.getDeclaredMethod("readJson", JsonTokenBuffer.class);
             }
             catch (final NoSuchMethodException e) {
-                throw encodingNotSupportedBy(encoding, class_);
+                throw jsonNotSupportedBy(class_);
             }
         });
+    }
+
+    private static <T> T invoke(
+        final Class<T> returnType,
+        final Method method,
+        final Object arguments) throws DtoReadException
+    {
         try {
-            return class_.cast(method.invoke(null, source));
+            return returnType.cast(method.invoke(null, arguments));
         }
         catch (final IllegalAccessException exception) {
             throw new RuntimeException(exception);
@@ -86,11 +109,11 @@ public class DtoReader {
         }
     }
 
-    private static RuntimeException encodingNotSupportedBy(final DtoEncoding encoding, final Class<?> class_) {
+    private static RuntimeException jsonNotSupportedBy(final Class<?> class_) {
         return new UnsupportedOperationException("The interface type from " +
             "which the \"" + class_ + "\" DTO was generated does not " +
-            "include DataEncoding." + encoding + " as argument to its " +
-            "@DtoReadableAs annotation; no corresponding decoding routine has, " +
+            "include DtoEncoding.JSON as argument to its @DtoReadableAs " +
+            "annotation; no corresponding decoding routine has, " +
             "consequently, been generated for the class");
     }
 }

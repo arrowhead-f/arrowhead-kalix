@@ -1,9 +1,12 @@
-package se.arkalix.dto.json;
+package se.arkalix.internal.dto.json;
 
 import se.arkalix.dto.binary.BinaryReader;
+import se.arkalix.dto.json.JsonType;
+import se.arkalix.util.annotation.Internal;
 
 import java.util.List;
 
+@Internal
 public class JsonTokenBuffer {
     private final List<JsonToken> tokens;
     private final BinaryReader source;

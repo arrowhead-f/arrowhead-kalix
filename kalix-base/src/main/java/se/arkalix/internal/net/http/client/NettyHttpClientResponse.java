@@ -13,6 +13,7 @@ import io.netty.handler.codec.http.HttpResponse;
 
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 
 import static se.arkalix.internal.net.http.NettyHttpConverters.convert;
@@ -39,6 +40,14 @@ public class NettyHttpClientResponse implements HttpClientResponse {
     @Override
     public FutureProgress<byte[]> bodyAsByteArray() {
         return body.bodyAsByteArray();
+    }
+
+    @Override
+    public <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(
+        final DtoEncoding encoding,
+        final Class<R> class_)
+    {
+        return body.bodyAsList(encoding, class_);
     }
 
     @Override

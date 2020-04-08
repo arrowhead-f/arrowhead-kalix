@@ -12,6 +12,7 @@ import se.arkalix.util.concurrent.FutureProgress;
 
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -63,6 +64,43 @@ public class HttpConsumerResponse implements HttpClientResponse {
     @Override
     public FutureProgress<byte[]> bodyAsByteArray() {
         return response.bodyAsByteArray();
+    }
+
+    /**
+     * Requests that the incoming HTTP body be collected and parsed as a list
+     * of instances of the provided {@code class_}.
+     * <p>
+     * Note that only so-called Data Transfer Object (DTO) types may be decoded
+     * using this method. More details about such types can be read in the
+     * documentation for the {@link se.arkalix.dto} package.
+     * <p>
+     * Note also that a body can typically only be requested once via this
+     * interface. Any further requests will likely cause exceptions to be
+     * thrown.
+     * <p>
+     * The body encoding is resolved automatically by the {@link HttpConsumer}
+     * through which this response was received.
+     *
+     * @param class_ Class to decode list elements of incoming HTTP body into.
+     * @param <R>    Type of {@code class_}.
+     * @return Future completed when the incoming HTTP body has been fully
+     * received and then decoded into instances of {@code class_}.
+     * @throws IllegalStateException If the body has already been requested.
+     */
+    public <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(final Class<R> class_) {
+        final var encoding0 = encoding.asDtoEncoding().orElseThrow(() ->
+            new IllegalStateException("No DTO support is available for the " +
+                "encoding \"" + encoding + "\"; receive the body as a string," +
+                "byte array or stream and then decode it some other way"));
+        return response.bodyAsList(encoding0, class_);
+    }
+
+    @Override
+    public <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(
+        final DtoEncoding encoding,
+        final Class<R> class_)
+    {
+        return response.bodyAsList(encoding, class_);
     }
 
     @Override

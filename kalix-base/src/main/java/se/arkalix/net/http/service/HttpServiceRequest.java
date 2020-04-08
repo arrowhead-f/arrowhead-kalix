@@ -39,6 +39,27 @@ public interface HttpServiceRequest extends HttpBodyReceiver {
     <R extends DtoReadable> FutureProgress<R> bodyAs(final Class<R> class_);
 
     /**
+     * Requests that the incoming HTTP body be collected and parsed, using an
+     * automatically chosen encoding, as a list of instances of the provided
+     * {@code class_}.
+     * <p>
+     * Note that only so-called Data Transfer Object (DTO) types may be decoded
+     * using this method. More details about such types can be read in the
+     * documentation for the {@link se.arkalix.dto} package.
+     * <p>
+     * Note also that a body can typically only be requested once via this
+     * interface. Any further requests will likely cause exceptions to be
+     * thrown.
+     *
+     * @param class_ Class to decode incoming HTTP body into.
+     * @param <R>    Type of {@code class_}.
+     * @return Future completed when the incoming HTTP body has been fully
+     * received and then decoded into an instance of {@code class_}.
+     * @throws IllegalStateException If the body has already been requested.
+     */
+    <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(final Class<R> class_);
+
+    /**
      * Gets value of first header with given {@code name}, if any such.
      *
      * @param name Name of header. Case is ignored. Prefer lowercase.
@@ -155,6 +176,11 @@ public interface HttpServiceRequest extends HttpBodyReceiver {
             }
 
             @Override
+            public <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(final Class<R> class_) {
+                return self.bodyAsList(class_);
+            }
+
+            @Override
             public <R extends DtoReadable> FutureProgress<R> bodyAs(
                 final DtoEncoding encoding,
                 final Class<R> class_)
@@ -165,6 +191,11 @@ public interface HttpServiceRequest extends HttpBodyReceiver {
             @Override
             public FutureProgress<byte[]> bodyAsByteArray() {
                 return self.bodyAsByteArray();
+            }
+
+            @Override
+            public <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(final DtoEncoding encoding, final Class<R> class_) {
+                return self.bodyAsList(encoding, class_);
             }
 
             @Override

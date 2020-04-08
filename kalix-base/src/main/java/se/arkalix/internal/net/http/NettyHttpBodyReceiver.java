@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.function.Consumer;
@@ -98,12 +99,12 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
         if (encoding == null) {
             throw new IllegalStateException("No default encoding has been set");
         }
-        final var dataEncoding = encoding.asDtoEncoding()
+        final var dtoEncoding = encoding.asDtoEncoding()
             .orElseThrow(() -> new UnsupportedOperationException("" +
                 "There is no DTO support for the \"" + encoding +
                 "\" encoding; request body cannot be decoded"));
 
-        return handleBodyRequest(() -> new FutureBodyAs<>(alloc, headers, class_, dataEncoding));
+        return bodyAs(dtoEncoding, class_);
     }
 
     @Override
@@ -114,6 +115,26 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
     @Override
     public FutureProgress<byte[]> bodyAsByteArray() {
         return handleBodyRequest(() -> new FutureBodyAsByteArray(alloc, headers));
+    }
+
+    public <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(final Class<R> class_) {
+        if (encoding == null) {
+            throw new IllegalStateException("No default encoding has been set");
+        }
+        final var dtoEncoding = encoding.asDtoEncoding()
+            .orElseThrow(() -> new UnsupportedOperationException("" +
+                "There is no DTO support for the \"" + encoding +
+                "\" encoding; request body cannot be decoded"));
+
+        return bodyAsList(dtoEncoding, class_);
+    }
+
+    @Override
+    public <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(
+        final DtoEncoding encoding,
+        final Class<R> class_)
+    {
+        return handleBodyRequest(() -> new FutureBodyAsList<>(alloc, headers, class_, encoding));
     }
 
     @Override
@@ -271,7 +292,7 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
         @Override
         public V assembleValue(final ByteBuf buffer) {
             try {
-                return DtoReader.read(class_, encoding, new ByteBufReader(buffer));
+                return DtoReader.readOne(class_, encoding, new ByteBufReader(buffer));
             }
             catch (final DtoReadException exception) {
                 abort(exception);
@@ -294,6 +315,36 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
             buffer.readBytes(byteArray);
             buffer.release();
             return byteArray;
+        }
+    }
+
+    private static class FutureBodyAsList<V extends DtoReadable> extends FutureBodyBuffered<List<V>> {
+        private final Class<V> class_;
+        private final DtoEncoding encoding;
+
+        private FutureBodyAsList(
+            final ByteBufAllocator alloc,
+            final HttpHeaders headers,
+            final Class<V> class_,
+            final DtoEncoding encoding)
+        {
+            super(alloc, headers);
+            this.class_ = class_;
+            this.encoding = encoding;
+        }
+
+        @Override
+        public List<V> assembleValue(final ByteBuf buffer) {
+            try {
+                return DtoReader.readMany(class_, encoding, new ByteBufReader(buffer));
+            }
+            catch (final DtoReadException exception) {
+                abort(exception);
+                return null;
+            }
+            finally {
+                buffer.release();
+            }
         }
     }
 

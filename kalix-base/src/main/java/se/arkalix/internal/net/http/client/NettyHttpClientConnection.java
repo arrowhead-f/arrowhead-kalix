@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.security.cert.Certificate;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.CancellationException;
@@ -105,6 +106,7 @@ public class NettyHttpClientConnection implements HttpClientConnection {
             });
     }
 
+    @SuppressWarnings("unchecked")
     private void writeRequestToChannel(final HttpClientRequest request, final boolean keepAlive) throws DtoWriteException, IOException {
         final var body = request.body().orElse(null);
         final var headers = request.headers().unwrap();
@@ -133,13 +135,19 @@ public class NettyHttpClientConnection implements HttpClientConnection {
         else if (body instanceof byte[]) {
             content = Unpooled.wrappedBuffer((byte[]) body);
         }
-        else if (body instanceof DtoWritable) {
+        else if (body instanceof DtoWritable || body instanceof List) {
             final var contentType = headers.get(CONTENT_TYPE);
             final var encoding = request.encoding().orElseThrow(() -> new IllegalStateException("" +
                 "DTO body set without encoding being specified"));
 
             content = channel.alloc().buffer();
-            DtoWriter.write((DtoWritable) body, encoding, new ByteBufWriter(content));
+            final var buffer = new ByteBufWriter(content);
+            if (body instanceof DtoWritable) {
+                DtoWriter.writeOne((DtoWritable) body, encoding, buffer);
+            }
+            else {
+                DtoWriter.writeMany((List<DtoWritable>) body, encoding, buffer);
+            }
 
             final var mediaType = HttpMediaTypes.toMediaType(encoding);
             if (!headers.contains(ACCEPT)) {

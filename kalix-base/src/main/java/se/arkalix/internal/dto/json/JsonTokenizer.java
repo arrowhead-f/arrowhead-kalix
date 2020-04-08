@@ -1,12 +1,15 @@
-package se.arkalix.dto.json;
+package se.arkalix.internal.dto.json;
 
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadException;
 import se.arkalix.dto.binary.BinaryReader;
+import se.arkalix.dto.json.JsonType;
+import se.arkalix.util.annotation.Internal;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
+@Internal
 @SuppressWarnings("unused")
 public final class JsonTokenizer {
     private final BinaryReader source;

@@ -6,6 +6,7 @@ import se.arkalix.util.concurrent.FutureProgress;
 
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.List;
 
 /**
  * Some handler useful for receiving an incoming HTTP body.
@@ -45,6 +46,28 @@ public interface HttpBodyReceiver {
      * @throws IllegalStateException If the body has already been requested.
      */
     FutureProgress<byte[]> bodyAsByteArray();
+
+    /**
+     * Requests that the incoming HTTP body be collected and parsed as a list
+     * of instances of the provided {@code class_}.
+     * <p>
+     * Note that only so-called Data Transfer Object (DTO) types may be decoded
+     * using this method. More details about such types can be read in the
+     * documentation for the {@link se.arkalix.dto} package.
+     * <p>
+     * Note also that a body can typically only be requested once via this
+     * interface. Any further requests will likely cause exceptions to be
+     * thrown.
+     *
+     * @param encoding Encoding to use when decoding incoming HTTP body.
+     * @param class_   Class to decode list elements of incoming HTTP body
+     *                 into.
+     * @param <R>      Type of {@code class_}.
+     * @return Future completed when the incoming HTTP body has been fully
+     * received and then decoded into instances of {@code class_}.
+     * @throws IllegalStateException If the body has already been requested.
+     */
+    <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(final DtoEncoding encoding, final Class<R> class_);
 
     /**
      * Requests that the incoming HTTP body be collected into a regular Java

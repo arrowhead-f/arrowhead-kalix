@@ -1,14 +1,17 @@
-package se.arkalix.dto.json;
+package se.arkalix.internal.dto.json;
 
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadException;
 import se.arkalix.dto.binary.BinaryReader;
+import se.arkalix.dto.json.JsonType;
+import se.arkalix.util.annotation.Internal;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
 
+@Internal
 @SuppressWarnings("unused")
 public final class JsonToken {
     final JsonType type;

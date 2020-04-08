@@ -53,6 +53,19 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
     }
 
     @Override
+    public <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(final Class<R> class_) {
+        return body.bodyAsList(class_);
+    }
+
+    @Override
+    public <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(
+        final DtoEncoding encoding,
+        final Class<R> class_)
+    {
+        return body.bodyAsList(encoding, class_);
+    }
+
+    @Override
     public FutureProgress<? extends InputStream> bodyAsStream() {
         return body.bodyAsStream();
     }

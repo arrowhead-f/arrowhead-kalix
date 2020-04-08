@@ -44,6 +44,13 @@ public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
     }
 
     @Override
+    public HttpClientRequest body(final DtoEncoding encoding, final List<DtoWritable> data) {
+        this.encoding = encoding;
+        body = data;
+        return this;
+    }
+
+    @Override
     public HttpClientRequest body(final Path path) {
         encoding = null;
         body = path;

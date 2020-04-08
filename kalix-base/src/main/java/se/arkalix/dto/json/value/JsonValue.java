@@ -2,7 +2,12 @@ package se.arkalix.dto.json.value;
 
 import se.arkalix.dto.DtoReadException;
 import se.arkalix.dto.binary.BinaryReader;
-import se.arkalix.dto.json.*;
+import se.arkalix.dto.json.JsonReadable;
+import se.arkalix.dto.json.JsonType;
+import se.arkalix.dto.json.JsonWritable;
+import se.arkalix.internal.dto.json.JsonTokenBuffer;
+import se.arkalix.internal.dto.json.JsonTokenizer;
+import se.arkalix.util.annotation.Internal;
 
 public interface JsonValue extends JsonReadable, JsonWritable {
     JsonType type();
@@ -11,6 +16,7 @@ public interface JsonValue extends JsonReadable, JsonWritable {
         return readJson(JsonTokenizer.tokenize(source));
     }
 
+    @Internal
     static JsonValue readJson(final JsonTokenBuffer buffer) throws DtoReadException {
         var token = buffer.peek();
         switch (token.type()) {

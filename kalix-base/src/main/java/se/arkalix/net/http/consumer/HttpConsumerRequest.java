@@ -61,6 +61,35 @@ public class HttpConsumerRequest implements HttpBodySender<HttpConsumerRequest> 
         return this;
     }
 
+    /**
+     * Sets outgoing HTTP body, replacing any previously set such.
+     * <p>
+     * The provided list of writable data transfer objects are scheduled for
+     * encoding and transmission to the receiver of the body. Please refer to
+     * the Javadoc for the {@code @DtoWritableAs} annotation for more
+     * information about writable data transfer objects.
+     * <p>
+     * This particular method differs from {@link #body(DtoEncoding, List)} in
+     * that the {@link DtoEncoding} is selected automatically from those
+     * supported by both the {@link HttpConsumer} sending the request and the
+     * service it is used to consume.
+     *
+     * @param data Data transfer objects to send to receiver of the body.
+     * @return This.
+     * @throws NullPointerException If {@code encoding} or {@code body} is
+     *                              {@code null}.
+     * @see DtoWritableAs @DtoWritableAs
+     */
+    public HttpConsumerRequest body(final List<DtoWritable> data) {
+        return body(null, data);
+    }
+
+    @Override
+    public HttpConsumerRequest body(final DtoEncoding encoding, final List<DtoWritable> data) {
+        request.body(encoding, data);
+        return this;
+    }
+
     @Override
     public HttpConsumerRequest body(final Path path) {
         request.body(path);

@@ -10,6 +10,11 @@ import se.arkalix.dto.json.*;
 import se.arkalix.dto.types.*;
 import se.arkalix.dto.util.BinaryWriterWriteCache;
 import se.arkalix.dto.util.Expander;
+import se.arkalix.internal.dto.json.JsonTokenBuffer;
+import se.arkalix.internal.dto.json.JsonTokenizer;
+import se.arkalix.dto.json.JsonType;
+import se.arkalix.internal.dto.json.JsonWriter;
+import se.arkalix.util.annotation.Internal;
 
 import javax.lang.model.element.Modifier;
 import java.time.*;
@@ -55,6 +60,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             .returns(dataTypeName)
             .addParameter(JsonTokenBuffer.class, "buffer", Modifier.FINAL)
             .addException(DtoReadException.class)
+            .addAnnotation(Internal.class)
             .addStatement("final var source = buffer.source()")
             .addStatement("var token = buffer.next()")
             .addStatement("var type = ($T) null", JsonType.class)
