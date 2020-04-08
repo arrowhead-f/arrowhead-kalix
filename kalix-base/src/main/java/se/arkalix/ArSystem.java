@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.description.ProviderDescription;
 import se.arkalix.description.ServiceDescription;
-import se.arkalix.description.ConsumerDescription;
 import se.arkalix.internal.ArServer;
 import se.arkalix.internal.ArServerRegistry;
 import se.arkalix.internal.plugin.PluginNotifier;
@@ -25,6 +24,7 @@ import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -42,6 +42,7 @@ public class ArSystem {
     private final SchedulerShutdownListener schedulerShutdownListener;
     private final PluginNotifier pluginNotifier;
 
+    private final ArServiceCache consumedServices = new ArServiceCache();
     private final ProviderDescription description;
     private final Set<ArServer> servers = Collections.synchronizedSet(new HashSet<>());
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
@@ -192,18 +193,81 @@ public class ArSystem {
      */
     @ThreadSafe
     public ServiceQuery consume() {
-        return new ServiceQuery(this, pluginNotifier::onServiceQueried);
+        return new ServiceQuery(this, this::query);
+    }
+
+    private Future<Set<ServiceDescription>> query(final ServiceQuery query) {
+        final var matchingServices0 = consumedServices.getAll()
+            .filter(service -> {
+                final var queryName = query.name();
+                if (queryName.isPresent() && !Objects.equals(service.name(), queryName.get())) {
+                    return false;
+                }
+
+                final var serviceInterfaces = service.interfaces();
+
+                final var queryTransports = query.transports();
+                if (!queryTransports.isEmpty() && serviceInterfaces.stream()
+                    .noneMatch(triplet -> queryTransports.contains(triplet.transport())))
+                {
+                    return false;
+                }
+
+                final var queryEncodings = query.encodings();
+                if (!queryEncodings.isEmpty() && serviceInterfaces.stream()
+                    .noneMatch(triplet -> queryEncodings.contains(triplet.encoding())))
+                {
+                    return false;
+                }
+
+                final var queryMetadata = query.metadata();
+                if (!queryMetadata.isEmpty() && !service.metadata().entrySet().containsAll(queryMetadata.entrySet())) {
+                    return false;
+                }
+
+                final var serviceVersion = service.version();
+
+                final var queryVersion = query.version();
+                if (queryVersion.isPresent() && serviceVersion != queryVersion.get()) {
+                    return false;
+                }
+
+                final var queryVersionMax = query.versionMax();
+                if (queryVersionMax.isPresent() && serviceVersion > queryVersionMax.get()) {
+                    return false;
+                }
+
+                final var queryVersionMin = query.versionMin();
+                if (queryVersionMin.isPresent() && serviceVersion < queryVersionMin.get()) {
+                    return false;
+                }
+
+                return service.security().isSecure() == query.isSecure();
+            })
+            .collect(Collectors.toUnmodifiableSet());
+
+        if (!matchingServices0.isEmpty()) {
+            return Future.success(matchingServices0);
+        }
+
+        return pluginNotifier.onServiceQueried(query)
+            .ifSuccess(consumedServices::update);
     }
 
     /**
-     * @return Stream of descriptions of all services currently provided by
-     * this system.
+     * Cache of, potentially or previously, consumed services.
+     * <p>
+     * Searches made in this cache will never trigger any lookup in a remote
+     * service registry. The cache is strictly local. It might, however, be
+     * updated by any {@link se.arkalix.plugin.Plugin plugins} used by
+     * this {@link ArSystem system}.
+     *
+     * @return Service description cache containing services that this system
+     * may have considered to consume.
      */
     @ThreadSafe
-    public Stream<ServiceDescription> providedServices() {
-        return servers.stream()
-            .flatMap(server -> server.providedServices()
-                .map(ArServiceHandle::description));
+    public ArServiceCache consumedServices() {
+        return consumedServices;
     }
 
     /**
@@ -250,6 +314,17 @@ public class ArSystem {
 
     private Throwable cannotProvideServiceShuttingDownException() {
         return new IllegalStateException("Cannot provide service; system is shutting down");
+    }
+
+    /**
+     * @return Stream of descriptions of all services currently provided by
+     * this system.
+     */
+    @ThreadSafe
+    public Stream<ServiceDescription> providedServices() {
+        return servers.stream()
+            .flatMap(server -> server.providedServices()
+                .map(ArServiceHandle::description));
     }
 
     /**

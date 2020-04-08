@@ -70,8 +70,8 @@ public class ServiceQuery {
     /**
      * @return Name of service to be consumed.
      */
-    public String name() {
-        return name;
+    public Optional<String> name() {
+        return Optional.ofNullable(name);
     }
 
     /**

@@ -22,9 +22,17 @@ public final class SecurityDescriptor {
      * @param name Desired security descriptor name.
      * @return New or existing security descriptor.
      */
-    public SecurityDescriptor getOrCreate(final String name) {
+    public static SecurityDescriptor getOrCreate(final String name) {
         return valueOf(name);
     }
+
+    /**
+     * @return {@code true} only if this descriptor is not {@link #NOT_SECURE}.
+     */
+    public boolean isSecure() {
+        return this != NOT_SECURE;
+    }
+
 
     /**
      * Certificate access policy.
