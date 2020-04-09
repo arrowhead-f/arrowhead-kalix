@@ -7,7 +7,6 @@ import se.arkalix.dto.json.JsonName;
 import se.arkalix.internal.security.identity.X509Keys;
 
 import java.net.InetSocketAddress;
-import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
 
 import static se.arkalix.dto.DtoEncoding.JSON;
@@ -54,14 +53,7 @@ public interface SystemDetails {
      */
     default ProviderDescription toProviderDescription() {
         return new ProviderDescription(name(), new InetSocketAddress(hostname(), port()), publicKeyBase64()
-            .map(publicKeyBase64 -> {
-                try {
-                    return X509Keys.parsePublicKey(publicKeyBase64);
-                }
-                catch (final NoSuchAlgorithmException exception) {
-                    throw new RuntimeException(exception);
-                }
-            })
+            .map(X509Keys::parsePublicKey)
             .orElse(null));
     }
 }

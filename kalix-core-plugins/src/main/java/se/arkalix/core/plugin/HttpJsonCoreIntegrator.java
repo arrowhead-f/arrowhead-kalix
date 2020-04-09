@@ -3,6 +3,7 @@ package se.arkalix.core.plugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.ArService;
+import se.arkalix.ArSystem;
 import se.arkalix.core.plugin.dto.*;
 import se.arkalix.description.ProviderDescription;
 import se.arkalix.description.ServiceDescription;
@@ -17,17 +18,15 @@ import se.arkalix.plugin.Plugin;
 import se.arkalix.query.ServiceQuery;
 import se.arkalix.security.access.AccessByToken;
 import se.arkalix.security.identity.SystemIdentity;
+import se.arkalix.security.identity.UnsupportedKeyAlgorithm;
 import se.arkalix.util.Result;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.concurrent.FutureAnnouncement;
 
 import java.net.InetSocketAddress;
-import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static se.arkalix.descriptor.SecurityDescriptor.CERTIFICATE;
 import static se.arkalix.descriptor.SecurityDescriptor.NOT_SECURE;
@@ -49,13 +48,14 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 public class HttpJsonCoreIntegrator implements Plugin {
     private static final Logger logger = LoggerFactory.getLogger(HttpJsonCoreIntegrator.class);
 
-    private final String serviceRegistryBasePath;
     private final InetSocketAddress serviceRegistrySocketAddress;
 
     private final Object serviceDiscoveryLock = new Object();
+    private final String serviceDiscoveryBasePath;
     private FutureAnnouncement<HttpJsonServiceDiscovery> serviceDiscoveryAnnouncement = null;
 
     private final Object orchestrationLock = new Object();
+    private final ArOrchestrationStrategy orchestrationStrategy;
     private FutureAnnouncement<HttpJsonOrchestration> orchestrationAnnouncement = null;
 
     private HttpClient client = null;
@@ -63,53 +63,30 @@ public class HttpJsonCoreIntegrator implements Plugin {
     private final Object authorizationKeyLock = new Object();
     private FutureAnnouncement<PublicKey> authorizationKeyAnnouncement = null;
 
-    private HttpJsonCoreIntegrator(
-        final InetSocketAddress serviceRegistrySocketAddress,
-        final String serviceRegistryBasePath)
-    {
-        this.serviceRegistryBasePath = serviceRegistryBasePath;
-        this.serviceRegistrySocketAddress = serviceRegistrySocketAddress;
+    private HttpJsonCoreIntegrator(final Builder builder) {
+        serviceDiscoveryBasePath = Objects.requireNonNullElse(builder.serviceDiscoveryBasePath, "/serviceregistry");
+        serviceRegistrySocketAddress = Objects.requireNonNull(builder.serviceRegistrySocketAddress,
+            "Expected serviceRegistrySocketAddress");
+        orchestrationStrategy = Objects.requireNonNullElse(builder.orchestrationStrategy,
+            ArOrchestrationStrategy.STORED_THEN_DYNAMIC);
     }
 
     /**
      * Creates new HTTP/JSON core service integrator that tries to enter a
-     * local cloud using the service registry system at the specified {@code
-     * socketAddress} as starting point.
+     * local cloud via the service registry system available at the specified
+     * {@code socketAddress}.
      * <p>
-     * The service URI, or base path, of the service registry system is assumed
-     * to be {@code "/serviceregistry"}.
+     * If more control over the behavior of the core integrator is desired,
+     * please use the {@link Builder builder class} instead.
      *
      * @param socketAddress IP address or hostname and port of service registry
      *                      system to use for entering local cloud.
      * @return New core integrator.
      */
-    public static HttpJsonCoreIntegrator enterViaServiceRegistry(final InetSocketAddress socketAddress) {
-        return enterViaServiceRegistry(socketAddress, "/serviceregistry");
-    }
-
-    /**
-     * Creates new HTTP/JSON core service integrator that tries to enter a
-     * local cloud using the service registry system at the specified {@code
-     * socketAddress} as starting point.
-     * <p>
-     * If the service URI, or base path, of the service registry system is not
-     * known, please use {@link #enterViaServiceRegistry(InetSocketAddress)}.
-     *
-     * @param socketAddress IP address or hostname and port of service registry
-     *                      system to use for entering local cloud.
-     * @param basePath      The base path that HTTP request URIs must be
-     *                      prefixed with in order for them to be received by
-     *                      the service discovery service of the service
-     *                      registry system available via {@code
-     *                      socketAddress}.
-     * @return New core integrator.
-     */
-    public static HttpJsonCoreIntegrator enterViaServiceRegistry(
-        final InetSocketAddress socketAddress,
-        final String basePath)
-    {
-        Objects.requireNonNull(socketAddress, "Expected socketAddress");
-        return new HttpJsonCoreIntegrator(socketAddress, basePath);
+    public static HttpJsonCoreIntegrator viaServiceRegistryAt(final InetSocketAddress socketAddress) {
+        return new HttpJsonCoreIntegrator.Builder()
+            .serviceRegistrySocketAddress(socketAddress)
+            .build();
     }
 
     @Override
@@ -242,7 +219,24 @@ public class HttpJsonCoreIntegrator implements Plugin {
 
     @Override
     public Future<Collection<ServiceDescription>> onServiceQueried(final Plug plug, final ServiceQuery query) {
-        throw new UnsupportedOperationException(); // TODO_ Orchestrator
+        final var system = plug.system();
+        switch (orchestrationStrategy) {
+        case STORED_ONLY:
+            return queryOrchestratorForStoredRules(system);
+
+        case STORED_THEN_DYNAMIC:
+            return queryOrchestratorForStoredRules(system)
+                .flatMap(services -> {
+                    if (services.stream().anyMatch(query::matches)) {
+                        return Future.success(services);
+                    }
+                    return queryOrchestratorForDynamicRules(system, query);
+                });
+
+        case DYNAMIC_ONLY:
+            return queryOrchestratorForDynamicRules(system, query);
+        }
+        throw new IllegalStateException("Unsupported orchestration strategy: " + orchestrationStrategy);
     }
 
     private Future<HttpJsonServiceDiscovery> requestServiceDiscovery() {
@@ -282,7 +276,7 @@ public class HttpJsonCoreIntegrator implements Plugin {
                             new ServiceDescription.Builder()
                                 .name("service-discovery")
                                 .provider(provider)
-                                .uri(serviceRegistryBasePath)
+                                .uri(serviceDiscoveryBasePath)
                                 .security(isSecure ? CERTIFICATE : NOT_SECURE)
                                 .interfaces(InterfaceDescriptor.getOrCreate(HTTP, isSecure, EncodingDescriptor.JSON))
                                 .build());
@@ -354,7 +348,7 @@ public class HttpJsonCoreIntegrator implements Plugin {
                         try {
                             publicKey = X509Keys.parsePublicKey(publicKeyBase64);
                         }
-                        catch (final NoSuchAlgorithmException exception) {
+                        catch (final UnsupportedKeyAlgorithm exception) {
                             return Result.failure(new ArCoreIntegrationException("" +
                                 "The \"auth-public-key\" service provider public " +
                                 "key seems to use an unsupported key algorithm; " +
@@ -422,6 +416,127 @@ public class HttpJsonCoreIntegrator implements Plugin {
                     .toAnnouncement();
             }
             return orchestrationAnnouncement.subscribe();
+        }
+    }
+
+    private Future<Collection<ServiceDescription>> queryOrchestratorForDynamicRules(
+        final ArSystem system,
+        final ServiceQuery query)
+    {
+        final var options = new HashMap<OrchestrationOption, Boolean>();
+        options.put(OrchestrationOption.ENABLE_INTER_CLOUD, true);
+        options.put(OrchestrationOption.OVERRIDE_STORE, true);
+        if (!query.metadata().isEmpty()) {
+            options.put(OrchestrationOption.METADATA_SEARCH, true);
+        }
+        return requestOrchestration()
+            .flatMap(orchestration -> orchestration.query(new OrchestrationQueryBuilder()
+                .requester(systemToSystemDetailsDto(system))
+                .service(queryToServiceQueryDto(query))
+                .options(options)
+                .build()))
+            .map(queryResult -> queryResult.services()
+                .stream()
+                .map(ServiceDetails::toServiceDescription)
+                .collect(Collectors.toUnmodifiableList()));
+    }
+
+    private Future<Collection<ServiceDescription>> queryOrchestratorForStoredRules(final ArSystem system) {
+        final var options = Collections.singletonMap(OrchestrationOption.ENABLE_INTER_CLOUD, true);
+        return requestOrchestration()
+            .flatMap(orchestration -> orchestration.query(new OrchestrationQueryBuilder()
+                .requester(systemToSystemDetailsDto(system))
+                .options(options)
+                .build()))
+            .map(queryResult -> queryResult.services()
+                .stream()
+                .map(ServiceDetails::toServiceDescription)
+                .collect(Collectors.toUnmodifiableList()));
+    }
+
+    private static ServiceQueryDto queryToServiceQueryDto(final ServiceQuery query) {
+        final var isSecure = query.isSecure();
+        return new ServiceQueryBuilder()
+            .name(query.name().orElse(null))
+            .interfaces(query.transports()
+                .stream()
+                .flatMap(transport -> query.encodings()
+                    .stream()
+                    .map(encoding -> InterfaceDescriptor.getOrCreate(transport, isSecure, encoding)))
+                .collect(Collectors.toUnmodifiableList()))
+            .metadata(query.metadata())
+            .version(query.version().orElse(null))
+            .versionMax(query.versionMax().orElse(null))
+            .versionMin(query.versionMin().orElse(null))
+            .build();
+    }
+
+    private static SystemDetailsDto systemToSystemDetailsDto(final ArSystem system) {
+        return new SystemDetailsBuilder()
+            .name(system.name())
+            .hostname(system.localSocketAddress().getHostString())
+            .port(system.localPort())
+            .publicKeyBase64(system.isSecure() ?
+                Base64.getEncoder().encodeToString(system.identity().publicKey().getEncoded()) : null)
+            .build();
+    }
+
+    /**
+     * Builder useful for constructing {@link HttpJsonCoreIntegrator} instances.
+     */
+    public static class Builder {
+        private String serviceDiscoveryBasePath;
+        private InetSocketAddress serviceRegistrySocketAddress;
+        private ArOrchestrationStrategy orchestrationStrategy;
+
+        /**
+         * Sets base path, or <i>service URI</i>, of the service discovery
+         * service provided by {@link
+         * #serviceRegistrySocketAddress(InetSocketAddress)} the designated
+         * service registry system}. If not specified, a default that should
+         * work with most service registries will be used.
+         *
+         * @param serviceDiscoveryBasePath Base path of service discovery
+         *                                 service.
+         * @return This builder.
+         */
+        public Builder serviceDiscoveryBasePath(final String serviceDiscoveryBasePath) {
+            this.serviceDiscoveryBasePath = serviceDiscoveryBasePath;
+            return this;
+        }
+
+        /**
+         * Sets hostname/IP-address and port of the service registry system to
+         * use for entering into an Arrowhead local cloud. <b>Must be
+         * specified.</b>
+         *
+         * @param serviceRegistrySocketAddress Service registry system socket
+         *                                     address.
+         * @return This builder.
+         */
+        public Builder serviceRegistrySocketAddress(final InetSocketAddress serviceRegistrySocketAddress) {
+            this.serviceRegistrySocketAddress = serviceRegistrySocketAddress;
+            return this;
+        }
+
+        /**
+         * Sets {@link ArOrchestrationStrategy orchestration strategy} to use
+         * when {@link se.arkalix.ArSystem#consume() resolving what services}
+         * to consume.
+         *
+         * @param orchestrationStrategy Desired orchestration strategy.
+         * @return This builder.
+         */
+        public Builder orchestrationStrategy(final ArOrchestrationStrategy orchestrationStrategy) {
+            this.orchestrationStrategy = orchestrationStrategy;
+            return this;
+        }
+
+        /**
+         * @return New {@link HttpJsonCoreIntegrator}.
+         */
+        public HttpJsonCoreIntegrator build() {
+            return new HttpJsonCoreIntegrator(this);
         }
     }
 }

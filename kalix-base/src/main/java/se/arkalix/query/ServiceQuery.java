@@ -415,4 +415,55 @@ public class ServiceQuery {
                 .orElseGet(() -> Result.failure(new ServiceNotFoundException(this)));
         });
     }
+
+    /**
+     * Tests whether this query matches the given {@code service} description.
+     *
+     * @param service Service description to test.
+     * @return {@code true} only if the given {@code service} satisfies the
+     * requirements of this query.
+     */
+    public boolean matches(final ServiceDescription service) {
+        if (name != null && !name.equals(service.name())) {
+            return false;
+        }
+
+        final var serviceInterfaces = service.interfaces();
+
+        final var queryTransports = transports();
+        if (!queryTransports.isEmpty() && serviceInterfaces.stream()
+            .noneMatch(triplet -> queryTransports.contains(triplet.transport())))
+        {
+            return false;
+        }
+
+        final var queryEncodings = encodings();
+        if (!queryEncodings.isEmpty() && serviceInterfaces.stream()
+            .noneMatch(triplet -> queryEncodings.contains(triplet.encoding())))
+        {
+            return false;
+        }
+
+        if (metadata != null && !metadata.isEmpty() && !service.metadata()
+            .entrySet().containsAll(metadata.entrySet()))
+        {
+            return false;
+        }
+
+        final var serviceVersion = service.version();
+
+        if (version != null && serviceVersion != version) {
+            return false;
+        }
+
+        if (versionMax != null && serviceVersion > versionMax) {
+            return false;
+        }
+
+        if (versionMin != null && serviceVersion < versionMin) {
+            return false;
+        }
+
+        return service.security().isSecure() == isSecure();
+    }
 }

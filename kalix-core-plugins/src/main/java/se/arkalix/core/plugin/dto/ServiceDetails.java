@@ -77,11 +77,17 @@ public interface ServiceDetails {
      *                          #provider()}, if any, is not supported.
      */
     default ServiceDescription toServiceDescription() {
+        final var provider = provider().toProviderDescription();
+        if (!provider.isSecure() && security().isSecure()) {
+            throw new IllegalStateException("The description of the \"" +
+                name().name() + "\" service implies that it is served over " +
+                "a secure transport, but its provider \"" + provider.name() +
+                "\" does not specify a public key");
+        }
         return new ServiceDescription.Builder()
             .name(name().name())
-            .provider(provider().toProviderDescription())
+            .provider(provider)
             .uri(uri())
-            .receivedAt(Instant.now())
             .expiresAt(expiresAt()
                 .map(Instants::fromAitiaDateTimeString)
                 .orElse(null))

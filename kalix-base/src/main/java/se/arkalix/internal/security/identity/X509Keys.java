@@ -1,5 +1,6 @@
 package se.arkalix.internal.security.identity;
 
+import se.arkalix.security.identity.UnsupportedKeyAlgorithm;
 import se.arkalix.util.annotation.Internal;
 
 import java.security.KeyFactory;
@@ -9,6 +10,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Objects;
 import java.util.Optional;
 
 @Internal
@@ -21,22 +23,25 @@ public class X509Keys {
      *
      * @param publicKeyBase64 Base64-encoded public key to convert.
      * @return Converted public key.
-     * @throws NoSuchAlgorithmException If the public key algorithm could not
-     *                                  be identified.
+     * @throws NullPointerException    If {@code publicKeyBase64} is {@code
+     *                                 null}.
+     * @throws UnsupportedKeyAlgorithm If the public key algorithm could not be
+     *                                 identified.
      */
-    public static PublicKey parsePublicKey(final String publicKeyBase64) throws NoSuchAlgorithmException {
+    public static PublicKey parsePublicKey(final String publicKeyBase64) {
+        Objects.requireNonNull(publicKeyBase64, "Expected publicKeyBase64");
         final var publicKeyDer = Base64.getDecoder().decode(publicKeyBase64);
         final var algorithm = X509Keys.identifyPublicKeyAlgorithm(publicKeyDer);
         if (algorithm.isEmpty()) {
-            throw new NoSuchAlgorithmException("Failed to identify public " +
-                "key algorithm");
+            throw new UnsupportedKeyAlgorithm("Provided public key deems to " +
+                "be using an unsupported key algorithm");
         }
-        final var keySpec = new X509EncodedKeySpec(publicKeyDer);
-        final var keyFactory = KeyFactory.getInstance(algorithm.get());
         try {
+            final var keySpec = new X509EncodedKeySpec(publicKeyDer);
+            final var keyFactory = KeyFactory.getInstance(algorithm.get());
             return keyFactory.generatePublic(keySpec);
         }
-        catch (final InvalidKeySpecException exception) {
+        catch (final NoSuchAlgorithmException | InvalidKeySpecException exception) {
             throw new RuntimeException(exception); // This should never happen.
         }
     }

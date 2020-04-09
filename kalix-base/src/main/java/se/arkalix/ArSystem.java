@@ -200,57 +200,12 @@ public class ArSystem {
     }
 
     private Future<Set<ServiceDescription>> query(final ServiceQuery query) {
-        final var matchingServices0 = consumedServices.getAll()
-            .filter(service -> {
-                final var queryName = query.name();
-                if (queryName.isPresent() && !Objects.equals(service.name(), queryName.get())) {
-                    return false;
-                }
-
-                final var serviceInterfaces = service.interfaces();
-
-                final var queryTransports = query.transports();
-                if (!queryTransports.isEmpty() && serviceInterfaces.stream()
-                    .noneMatch(triplet -> queryTransports.contains(triplet.transport())))
-                {
-                    return false;
-                }
-
-                final var queryEncodings = query.encodings();
-                if (!queryEncodings.isEmpty() && serviceInterfaces.stream()
-                    .noneMatch(triplet -> queryEncodings.contains(triplet.encoding())))
-                {
-                    return false;
-                }
-
-                final var queryMetadata = query.metadata();
-                if (!queryMetadata.isEmpty() && !service.metadata().entrySet().containsAll(queryMetadata.entrySet())) {
-                    return false;
-                }
-
-                final var serviceVersion = service.version();
-
-                final var queryVersion = query.version();
-                if (queryVersion.isPresent() && serviceVersion != queryVersion.get()) {
-                    return false;
-                }
-
-                final var queryVersionMax = query.versionMax();
-                if (queryVersionMax.isPresent() && serviceVersion > queryVersionMax.get()) {
-                    return false;
-                }
-
-                final var queryVersionMin = query.versionMin();
-                if (queryVersionMin.isPresent() && serviceVersion < queryVersionMin.get()) {
-                    return false;
-                }
-
-                return service.security().isSecure() == query.isSecure();
-            })
+        final var matchingServices = consumedServices.getAll()
+            .filter(query::matches)
             .collect(Collectors.toUnmodifiableSet());
 
-        if (!matchingServices0.isEmpty()) {
-            return Future.success(matchingServices0);
+        if (!matchingServices.isEmpty()) {
+            return Future.success(matchingServices);
         }
 
         return pluginNotifier.onServiceQueried(query)

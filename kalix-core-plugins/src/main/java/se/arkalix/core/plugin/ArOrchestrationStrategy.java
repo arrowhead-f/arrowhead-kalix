@@ -16,7 +16,7 @@ public enum ArOrchestrationStrategy {
      * orchestration rules associated with the requesting {@link
      * se.arkalix.ArSystem system}, which are returned if available.
      */
-    RULES_ONLY,
+    STORED_ONLY,
 
     /**
      * First request predefined orchestration rules, then request dynamic
@@ -28,7 +28,7 @@ public enum ArOrchestrationStrategy {
      * ArOrchestration orchestration service} to be contacted, a dynamic
      * orchestration attempt is made afterwards.
      */
-    RULES_OR_DYNAMIC,
+    STORED_THEN_DYNAMIC,
 
     /**
      * Only request dynamic orchestration rules.
