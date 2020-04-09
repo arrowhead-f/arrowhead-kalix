@@ -5,7 +5,6 @@ import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.json.JsonName;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -82,14 +81,9 @@ public interface ServiceDetails {
             .name(name().name())
             .provider(provider().toProviderDescription())
             .uri(uri())
-            .renewAt(expiresAt()
-                .map(expiresAt -> {
-                    final var instant = Instants.fromAitiaDateTimeString(expiresAt);
-                    final var limit = Instant.now().plus(Duration.ofMinutes(10)); // TODO: Make configurable.
-                    return limit.isAfter(instant)
-                        ? limit
-                        : instant.minus(Duration.ofSeconds(10)); // TODO: Make configurable.
-                })
+            .receivedAt(Instant.now())
+            .expiresAt(expiresAt()
+                .map(Instants::fromAitiaDateTimeString)
                 .orElse(null))
             .security(security())
             .metadata(metadata())

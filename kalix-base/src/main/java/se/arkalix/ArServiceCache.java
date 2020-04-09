@@ -4,10 +4,12 @@ import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.util.annotation.ThreadSafe;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Stream;
 
@@ -17,6 +19,37 @@ import java.util.stream.Stream;
  */
 public class ArServiceCache {
     private final ConcurrentSkipListSet<ServiceDescription> services = new ConcurrentSkipListSet<>();
+    private final Duration entryLifetimeLimit;
+
+    private ArServiceCache(final Duration entryLifetimeLimit) {
+        this.entryLifetimeLimit = Objects.requireNonNull(entryLifetimeLimit, "Expected entryLifetimeLimit");
+    }
+
+    /**
+     * Creates a new service cache that will not hold on to provided service
+     * descriptions for longer than a default duration.
+     *
+     * @return New service cache.
+     */
+    public static ArServiceCache withDefaultEntryLifetimeLimit() {
+        return new ArServiceCache(Duration.ofMinutes(5));
+    }
+
+    /**
+     * Creates a new service cache that will not hold on to provided service
+     * descriptions for longer than specified by the given
+     * {@code entryLifetimeLimit}.
+     *
+     * @param entryLifetimeLimit Duration after which service descriptions
+     *                           added to this cache become stale and are
+     *                           removed, even if they explicitly specify a
+     *                           later {@link ServiceDescription#expiresAt()
+     *                           expiration time}.
+     * @return New service cache.
+     */
+    public static ArServiceCache withEntryLifetimeLimit(final Duration entryLifetimeLimit) {
+        return new ArServiceCache(entryLifetimeLimit);
+    }
 
     /**
      * Empties cache.
@@ -78,7 +111,8 @@ public class ArServiceCache {
     @ThreadSafe
     public Stream<ServiceDescription> getAll() {
         final var now = Instant.now();
-        services.removeIf(service -> service.renewAt().isAfter(now));
+        services.removeIf(service -> service.expiresAt().isAfter(now) ||
+            service.receivedAt().plus(entryLifetimeLimit).isAfter(now));
         return services.stream();
     }
 

@@ -42,7 +42,7 @@ public class ArSystem {
     private final SchedulerShutdownListener schedulerShutdownListener;
     private final PluginNotifier pluginNotifier;
 
-    private final ArServiceCache consumedServices = new ArServiceCache();
+    private final ArServiceCache consumedServices;
     private final ProviderDescription description;
     private final Set<ArServer> servers = Collections.synchronizedSet(new HashSet<>());
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
@@ -88,6 +88,9 @@ public class ArSystem {
         description = new ProviderDescription(name, localSocketAddress.get(), isSecure
             ? identity.publicKey()
             : null);
+
+        consumedServices = Objects.requireNonNullElseGet(builder.serviceCache,
+            ArServiceCache::withDefaultEntryLifetimeLimit);
 
         scheduler = (NettyScheduler) Schedulers.fixed();
         schedulerShutdownListener = (scheduler) -> shutdown()
@@ -370,6 +373,7 @@ public class ArSystem {
         private TrustStore trustStore;
         private boolean isSecure = true;
         private Collection<Plugin> plugins;
+        private ArServiceCache serviceCache;
 
         /**
          * Sets system name.
@@ -553,6 +557,24 @@ public class ArSystem {
          */
         public final Builder insecure() {
             this.isSecure = false;
+            return this;
+        }
+
+        /**
+         * Sets {@link ArServiceCache service cache} to be used by this system
+         * for storing information about remote services of interest. If not
+         * provided, a such with a {@link
+         * ArServiceCache#withDefaultEntryLifetimeLimit() default entry
+         * expiration time} will be used.
+         * <p>
+         * After system instance creation, the cache will be available via the
+         * {@link ArSystem#consumedServices()} method.
+         *
+         * @param serviceCache Desired service cache.
+         * @return This builder.
+         */
+        public Builder serviceCache(final ArServiceCache serviceCache) {
+            this.serviceCache = serviceCache;
             return this;
         }
 

@@ -1,10 +1,9 @@
 package se.arkalix.description;
 
-import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.descriptor.InterfaceDescriptor;
+import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.internal.net.dns.DnsNames;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -16,7 +15,8 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
     private final String name;
     private final ProviderDescription provider;
     private final String uri;
-    private final Instant renewAt;
+    private final Instant receivedAt;
+    private final Instant expiresAt;
     private final SecurityDescriptor security;
     private final Map<String, String> metadata;
     private final int version;
@@ -32,8 +32,8 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
         }
         provider = Objects.requireNonNull(builder.provider, "Expected provider");
         uri = Objects.requireNonNull(builder.uri, "Expected uri");
-        renewAt = Objects.requireNonNullElseGet(builder.renewAt, () -> Instant.now()
-            .plus(Duration.ofMinutes(10))); // TODO: Make configurable.
+        receivedAt = Objects.requireNonNullElseGet(builder.receivedAt, Instant::now);
+        expiresAt = Objects.requireNonNullElse(builder.expiresAt, Instant.MAX);
         if (uri.isBlank()) {
             throw new IllegalArgumentException("Blank or null qualifiers " +
                 "are not permitted");
@@ -79,11 +79,18 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
     }
 
     /**
+     * @return Time at which this service description was received or created.
+     */
+    public Instant receivedAt() {
+        return receivedAt;
+    }
+
+    /**
      * @return Time at which this service description should be renewed or
      * refreshed.
      */
-    public Instant renewAt() {
-        return renewAt;
+    public Instant expiresAt() {
+        return expiresAt;
     }
 
     /**
@@ -164,7 +171,8 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
         private ProviderDescription provider;
         private Map<InterfaceDescriptor, String> interfaceTokens;
         private String uri;
-        private Instant renewAt;
+        private Instant receivedAt;
+        private Instant expiresAt;
         private SecurityDescriptor security;
         private Map<String, String> metadata;
         private int version;
@@ -204,6 +212,19 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
         }
 
         /**
+         * Sets time at which this service description is to be considered to
+         * have been received from its source.
+         *
+         * @param receivedAt Instant at which this service description was
+         *                   learned about.
+         * @return This builder.
+         */
+        public Builder receivedAt(final Instant receivedAt) {
+            this.receivedAt = receivedAt;
+            return this;
+        }
+
+        /**
          * Sets time at which this service description should be renewed or
          * refreshed.
          *
@@ -211,8 +232,8 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
          *                should be renewed or refreshed.
          * @return This builder.
          */
-        public Builder renewAt(final Instant renewAt) {
-            this.renewAt = renewAt;
+        public Builder expiresAt(final Instant renewAt) {
+            this.expiresAt = renewAt;
             return this;
         }
 
