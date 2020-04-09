@@ -121,32 +121,34 @@ public final class JsonToken {
     }
 
     public String readString(final BinaryReader source) throws DtoReadException {
-        source.readOffset(begin);
-
-        final var buffer = new byte[length()];
-        var b0 = 0; // Index of first unwritten byte in buffer.
         var p0 = begin; // Index of first non-appended byte in source.
+        var p1 = begin; // Current source offset.
+        final var p2 = end; // End of string source region.
+
+        final var buffer = new byte[p2 - p1];
+        var b0 = 0; // Index of first unwritten byte in buffer.
+
         var badEscapeBuilder = new StringBuilder(0);
         error:
         {
-            while (source.readOffset() < end) {
-                var b = source.readByte();
+            while (p1 < p2) {
+                var b = source.getByte(p1++);
                 if (b == '\\') {
                     // Collect bytes before escape sequence into buffer.
                     {
-                        final var length = source.readOffset() - p0;
-                        source.readOffset(p0);
-                        source.readBytes(buffer, b0, length);
+                        final var length = p1 - p0;
+                        source.getBytes(p0, buffer, b0, length);
                         b0 += length;
-                        p0 = source.readOffset();
+                        p0 = p1;
+                        p1 += length;
                     }
 
-                    if (p0 == end) {
+                    if (p1 == end) {
                         badEscapeBuilder.append('\\');
                         break error;
                     }
 
-                    b = source.readByte();
+                    b = source.getByte(p1++);
                     switch (b) {
                     case '\"':
                     case '/':
@@ -161,7 +163,7 @@ public final class JsonToken {
 
                     case 'u':
                         final var uBuffer = new byte[4];
-                        if (source.readOffset() + 4 <= end) {
+                        if (p1 + 4 <= p2) {
                             try {
                                 source.readBytes(uBuffer);
                                 if (uBuffer[0] != '+') {
@@ -178,7 +180,7 @@ public final class JsonToken {
                             catch (final NumberFormatException ignored) {}
                         }
                         else {
-                            source.readBytes(uBuffer, 0, end - source.readOffset());
+                            source.getBytes(p1, uBuffer, 0, p2 - p1);
                         }
                         badEscapeBuilder.append("\\u").append(new String(uBuffer, StandardCharsets.US_ASCII));
                         break error;
@@ -190,12 +192,10 @@ public final class JsonToken {
                     buffer[b0++] = b;
                 }
             }
-            final var length = source.readOffset() - p0;
-            source.readOffset(p0);
-            source.readBytes(buffer, b0, length);
+            source.getBytes(p0, buffer, b0, p1 - p0);
             return new String(buffer, StandardCharsets.UTF_8);
         }
-        throw new DtoReadException(DtoEncoding.JSON, "Bad escape", badEscapeBuilder.toString(), p0);
+        throw new DtoReadException(DtoEncoding.JSON, "Bad escape", badEscapeBuilder.toString(), p1);
     }
 
     public String readStringRaw(final BinaryReader source) {

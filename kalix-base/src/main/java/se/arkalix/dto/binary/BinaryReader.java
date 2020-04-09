@@ -1,5 +1,7 @@
 package se.arkalix.dto.binary;
 
+import java.util.function.Predicate;
+
 public interface BinaryReader {
     int readOffset();
 
@@ -7,7 +9,11 @@ public interface BinaryReader {
 
     int readableBytes();
 
+    byte getByte(int offset);
+
     void getBytes(int offset, byte[] target);
+
+    void getBytes(final int offset, final byte[] target, final int targetOffset, final int length);
 
     byte peekByte();
 
@@ -30,4 +36,10 @@ public interface BinaryReader {
     }
 
     void skipBytes(int n);
+
+    default void skipWhile(final Predicate<Byte> predicate) {
+        while (readableBytes() > 0 && predicate.test(peekByte())) {
+            skipByte();
+        }
+    }
 }

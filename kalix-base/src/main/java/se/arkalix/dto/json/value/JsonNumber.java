@@ -16,6 +16,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.Objects;
 
 @SuppressWarnings("unused")
 public class JsonNumber implements JsonValue {
@@ -26,11 +27,11 @@ public class JsonNumber implements JsonValue {
     }
 
     public JsonNumber(final BigDecimal number) {
-        this.number = number.toString();
+        this.number = Objects.requireNonNull(number, "Expected number").toString();
     }
 
-    public JsonNumber(final BigInteger integer) {
-        this.number = integer.toString();
+    public JsonNumber(final BigInteger number) {
+        this.number = Objects.requireNonNull(number, "Expected number").toString();
     }
 
     public JsonNumber(final byte number) {
@@ -42,7 +43,8 @@ public class JsonNumber implements JsonValue {
     }
 
     public JsonNumber(final Duration number) {
-        this.number = String.format("%d.%09d", number.toSeconds(), number.toNanosPart());
+        Objects.requireNonNull(number, "Expected number");
+        this.number = formatDecimal(number.getSeconds(), number.toNanosPart());
     }
 
     public JsonNumber(final float number) {
@@ -54,7 +56,8 @@ public class JsonNumber implements JsonValue {
     }
 
     public JsonNumber(final Instant number) {
-        this.number = String.format("%d.%09d", number.getEpochSecond(), number.getNano());
+        Objects.requireNonNull(number, "Expected number");
+        this.number = formatDecimal(number.getEpochSecond(), number.getNano());
     }
 
     public JsonNumber(final long number) {
@@ -62,12 +65,32 @@ public class JsonNumber implements JsonValue {
     }
 
     public JsonNumber(final OffsetDateTime number) {
-        final var instant = number.toInstant();
-        this.number = String.format("%d.%09d", instant.getEpochSecond(), instant.getNano());
+        final var instant = Objects.requireNonNull(number, "Expected number").toInstant();
+        this.number = formatDecimal(instant.getEpochSecond(), instant.getNano());
     }
 
     public JsonNumber(final short number) {
         this.number = Short.toString(number);
+    }
+
+    private static String formatDecimal(final long seconds, final int nanos) {
+        final var builder = new StringBuilder().append(seconds);
+        if (nanos == 0) {
+            return builder.toString();
+        }
+        builder.append('.');
+        final var n = Integer.toString(nanos);
+        var n1 = n.length();
+        for (var padLeft = 9 - n1; padLeft-- != 0; ) {
+            builder.append('0');
+        }
+        while (n1 > 0 && n.charAt(n1 - 1) == '0') {
+            n1 -= 1;
+        }
+        for (var n0 = 0; n0 < n1; ++n0) {
+            builder.append(n.charAt(n0));
+        }
+        return builder.toString();
     }
 
     @Override
@@ -123,11 +146,6 @@ public class JsonNumber implements JsonValue {
         return Short.parseShort(number);
     }
 
-    @Override
-    public String toString() {
-        return number;
-    }
-
     public static JsonNumber readJson(final BinaryReader source) throws DtoReadException {
         return readJson(JsonTokenizer.tokenize(source));
     }
@@ -146,5 +164,23 @@ public class JsonNumber implements JsonValue {
     @Override
     public void writeJson(final BinaryWriter writer) {
         writer.write(number.getBytes(StandardCharsets.ISO_8859_1));
+    }
+
+    @Override
+    public boolean equals(final Object other) {
+        if (this == other) { return true; }
+        if (other == null || getClass() != other.getClass()) { return false; }
+        final JsonNumber that = (JsonNumber) other;
+        return number.equals(that.number);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(number);
+    }
+
+    @Override
+    public String toString() {
+        return number;
     }
 }

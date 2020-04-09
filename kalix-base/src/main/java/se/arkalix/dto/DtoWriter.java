@@ -1,70 +1,35 @@
 package se.arkalix.dto;
 
 import se.arkalix.dto.binary.BinaryWriter;
-import se.arkalix.dto.json.JsonWritable;
-import se.arkalix.internal.dto.json.JsonWriter;
 
 import java.util.List;
 
-/**
- * Utilities for encoding DTO classes.
- */
-public class DtoWriter {
-    private DtoWriter() {}
+public interface DtoWriter {
+    /**
+     * Attempts to encode {@code value} and write it to {@code target}.
+     *
+     * @param value  Object to encode and write to {@code target}.
+     * @param target Receiver of encoded form of {@code value}.
+     * @throws DtoWriteException             If writing to {@code target} fails.
+     * @throws NullPointerException          If {@code value} or {@code target}
+     *                                       is {@code null}.
+     * @throws UnsupportedOperationException If the DTO interface type of
+     *                                       {@code value} does not support the
+     *                                       encoding of this writer.
+     */
+    <T extends DtoWritable> void writeOne(final T value, final BinaryWriter target) throws DtoWriteException;
 
     /**
-     * Attempts to write {@code t} encoded with {@code encoding} to
-     * {@code target} byte buffer.
+     * Attempts to encode {@code values} and write them to {@code target}.
      *
-     * @param t        Object to encode and write to {@code target}.
-     * @param encoding Encoding to use when writing {@code t}.
-     * @param target   Byte buffer to write encoded form of {@code t} to.
-     * @param <T>      Type of {@code t}.
-     * @throws UnsupportedOperationException If the DTO interface type of
-     *                                       {@code t} does not include the
-     *                                       given {@link DtoEncoding} as
-     *                                       argument to its
-     *                                       {@code @DtoWritableAs} annotation.
+     * @param values Objects to encode and write to {@code target}.
+     * @param target Receiver of encoded form of {@code values}.
      * @throws DtoWriteException             If writing to {@code target} fails.
+     * @throws NullPointerException          If {@code values} or
+     *                                       {@code target} is {@code null}.
+     * @throws UnsupportedOperationException If the DTO interface type of
+     *                                       {@code values} does not support
+     *                                       the encoding of this writer.
      */
-    public static <T extends DtoWritable> void writeOne(
-        final T t,
-        final DtoEncoding encoding,
-        final BinaryWriter target) throws DtoWriteException
-    {
-        if (encoding == DtoEncoding.JSON) {
-            if (t instanceof JsonWritable) {
-                ((JsonWritable) t).writeJson(target);
-                return;
-            }
-            throw jsonNotSupportedFor(t);
-        }
-        throw new IllegalStateException("DtoEncoding that is supported has " +
-            "not yet been added to this method");
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T extends DtoWritable> void writeMany(
-        final List<T> ts,
-        final DtoEncoding encoding,
-        final BinaryWriter target) throws DtoWriteException
-    {
-        if (encoding == DtoEncoding.JSON) {
-            if (!ts.isEmpty() && !(ts.get(0) instanceof JsonWritable)) {
-                throw jsonNotSupportedFor(ts.get(0));
-            }
-            JsonWriter.writeMany((List<JsonWritable>) ts, target);
-            return;
-        }
-        throw new IllegalStateException("DtoEncoding that is supported has " +
-            "not yet been added to this method");
-    }
-
-    private static RuntimeException jsonNotSupportedFor(final Object object) {
-        return new UnsupportedOperationException("The interface type from " +
-            "which the \"" + object.getClass() + "\" DTO was generated does " +
-            "not include DtoEncoding.JSON as argument to its @DtoWritableAs " +
-            "annotation; no corresponding encoding routine has, " +
-            "consequently, been generated for the class");
-    }
+    <T extends DtoWritable> void writeMany(final List<T> values, final BinaryWriter target) throws DtoWriteException;
 }

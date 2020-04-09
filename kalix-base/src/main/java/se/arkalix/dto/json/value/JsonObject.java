@@ -11,10 +11,7 @@ import se.arkalix.internal.dto.json.JsonTokenizer;
 import se.arkalix.internal.dto.json.JsonWriter;
 import se.arkalix.util.annotation.Internal;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 @SuppressWarnings("unused")
 public class JsonObject implements JsonCollection, Iterable<JsonPair> {
@@ -83,10 +80,29 @@ public class JsonObject implements JsonCollection, Iterable<JsonPair> {
             else {
                 writer.write((byte) ',');
             }
+            writer.write((byte) '"');
             JsonWriter.write(pair.name(), writer);
-            writer.write((byte) ':');
+            writer.write(new byte[]{'"', ':'});
             pair.value().writeJson(writer);
         }
         writer.write((byte) '}');
+    }
+
+    @Override
+    public boolean equals(final Object other) {
+        if (this == other) { return true; }
+        if (other == null || getClass() != other.getClass()) { return false; }
+        final JsonObject jsonPairs = (JsonObject) other;
+        return pairs.equals(jsonPairs.pairs);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(pairs);
+    }
+
+    @Override
+    public String toString() {
+        return "{" + pairs + '}';
     }
 }

@@ -3,23 +3,21 @@ package se.arkalix.internal.dto.json;
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoWriteException;
 import se.arkalix.dto.binary.BinaryWriter;
-import se.arkalix.dto.json.JsonWritable;
 import se.arkalix.util.annotation.Internal;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
-import java.util.List;
 
 @Internal
 @SuppressWarnings("unused")
 public final class JsonWriter {
     private JsonWriter() {}
 
-    private static byte[] TRUE = new byte[]{'t', 'r', 'u', 'e'};
-    private static byte[] FALSE = new byte[]{'f', 'a', 'l', 's', 'e'};
-    private static byte[] HEX = new byte[]{
+    private static final byte[] TRUE = new byte[]{'t', 'r', 'u', 'e'};
+    private static final byte[] FALSE = new byte[]{'f', 'a', 'l', 's', 'e'};
+    private static final byte[] HEX = new byte[]{
         '0', '1', '2', '3', '4', '5', '6', '7',
         '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
@@ -75,7 +73,7 @@ public final class JsonWriter {
 
     public static void write(final String string, final BinaryWriter target) {
         for (var b : string.getBytes(StandardCharsets.UTF_8)) {
-            if (b < ' ') {
+            if (b >= 0 && b < ' ') {
                 target.write((byte) '\\');
                 switch (b) {
                 case '\b': b = 'b'; break;
@@ -111,19 +109,5 @@ public final class JsonWriter {
 
     public static void write(final ZoneOffset zoneOffset, final BinaryWriter target) {
         target.write(zoneOffset.toString().getBytes(StandardCharsets.ISO_8859_1));
-    }
-
-    public static <V extends JsonWritable> void writeMany(final List<V> elements, final BinaryWriter target)
-        throws DtoWriteException
-    {
-        target.write((byte) '[');
-        final var e1 = elements.size();
-        for (var e0 = 0; e0 < e1; ++e0) {
-            if (e0 != 0) {
-                target.write((byte) ',');
-            }
-            elements.get(e0).writeJson(target);
-        }
-        target.write((byte) ']');
     }
 }

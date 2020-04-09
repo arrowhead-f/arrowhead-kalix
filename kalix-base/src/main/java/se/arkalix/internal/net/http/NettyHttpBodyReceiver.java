@@ -1,16 +1,5 @@
 package se.arkalix.internal.net.http;
 
-import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.dto.DtoEncoding;
-import se.arkalix.dto.DtoReadable;
-import se.arkalix.dto.DtoReader;
-import se.arkalix.dto.DtoReadException;
-import se.arkalix.internal.dto.binary.ByteBufReader;
-import se.arkalix.net.http.HttpBodyReceiver;
-import se.arkalix.util.Result;
-import se.arkalix.util.annotation.Internal;
-import se.arkalix.util.concurrent.Future;
-import se.arkalix.util.concurrent.FutureProgress;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufInputStream;
@@ -19,6 +8,16 @@ import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
+import se.arkalix.descriptor.EncodingDescriptor;
+import se.arkalix.dto.DtoEncoding;
+import se.arkalix.dto.DtoReadException;
+import se.arkalix.dto.DtoReadable;
+import se.arkalix.internal.dto.binary.ByteBufReader;
+import se.arkalix.net.http.HttpBodyReceiver;
+import se.arkalix.util.Result;
+import se.arkalix.util.annotation.Internal;
+import se.arkalix.util.concurrent.Future;
+import se.arkalix.util.concurrent.FutureProgress;
 
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -292,7 +291,7 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
         @Override
         public V assembleValue(final ByteBuf buffer) {
             try {
-                return DtoReader.readOne(class_, encoding, new ByteBufReader(buffer));
+                return encoding.reader().readOne(class_, new ByteBufReader(buffer));
             }
             catch (final DtoReadException exception) {
                 abort(exception);
@@ -336,7 +335,7 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
         @Override
         public List<V> assembleValue(final ByteBuf buffer) {
             try {
-                return DtoReader.readMany(class_, encoding, new ByteBufReader(buffer));
+                return encoding.reader().readMany(class_, new ByteBufReader(buffer));
             }
             catch (final DtoReadException exception) {
                 abort(exception);
@@ -350,8 +349,7 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
 
     private static class FutureBodyToPath extends FutureBody<Path> {
         private final Path path;
-
-        private FileOutputStream stream;
+        private final FileOutputStream stream;
 
         public FutureBodyToPath(final Path path, final boolean append, final HttpHeaders headers) {
             super(headers);

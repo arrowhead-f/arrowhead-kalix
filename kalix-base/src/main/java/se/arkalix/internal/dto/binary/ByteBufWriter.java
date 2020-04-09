@@ -25,6 +25,11 @@ public class ByteBufWriter implements BinaryWriter {
     }
 
     @Override
+    public int writableBytes() {
+        return byteBuf.writableBytes();
+    }
+
+    @Override
     public void write(final byte b) {
         byteBuf.writeByte(b);
     }

@@ -28,6 +28,11 @@ public class ByteBufReader implements BinaryReader {
     }
 
     @Override
+    public byte getByte(final int offset) {
+        return byteBuf.getByte(offset);
+    }
+
+    @Override
     public byte peekByte() {
         return byteBuf.getByte(byteBuf.readerIndex());
     }
@@ -50,6 +55,10 @@ public class ByteBufReader implements BinaryReader {
     @Override
     public void getBytes(final int offset, final byte[] target) {
         byteBuf.getBytes(offset, target);
+    }
+
+    public void getBytes(final int offset, final byte[] target, final int targetOffset, final int length) {
+        byteBuf.getBytes(offset, target, targetOffset, length);
     }
 
     @Override

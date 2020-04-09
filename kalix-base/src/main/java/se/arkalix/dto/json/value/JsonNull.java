@@ -42,4 +42,9 @@ public class JsonNull implements JsonValue {
     public void writeJson(final BinaryWriter writer) {
         writer.write(new byte[]{'n', 'u', 'l', 'l'});
     }
+
+    @Override
+    public String toString() {
+        return "null";
+    }
 }

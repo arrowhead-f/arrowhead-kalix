@@ -1,10 +1,15 @@
 package se.arkalix.internal.net.http.service;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.DefaultFileRegion;
+import io.netty.handler.codec.http.*;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoWritable;
 import se.arkalix.dto.DtoWriteException;
-import se.arkalix.dto.DtoWriter;
 import se.arkalix.internal.dto.binary.ByteBufWriter;
 import se.arkalix.internal.net.http.HttpMediaTypes;
 import se.arkalix.net.http.HttpHeaders;
@@ -12,12 +17,6 @@ import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.HttpVersion;
 import se.arkalix.net.http.service.HttpServiceResponse;
 import se.arkalix.util.annotation.Internal;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.DefaultFileRegion;
-import io.netty.handler.codec.http.*;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -27,8 +26,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static se.arkalix.internal.net.http.NettyHttpConverters.convert;
-import static io.netty.handler.codec.http.HttpHeaderNames.*;
 
 @Internal
 public class NettyHttpServiceResponse implements HttpServiceResponse {
@@ -78,11 +78,12 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
             }
             content = channel.alloc().buffer();
             final var buffer = new ByteBufWriter(content);
+            final var writer = dtoEncoding.writer();
             if (body instanceof DtoWritable) {
-                DtoWriter.writeOne((DtoWritable) body, dtoEncoding, buffer);
+                writer.writeOne((DtoWritable) body, buffer);
             }
             else {
-                DtoWriter.writeMany((List<DtoWritable>) body, dtoEncoding, buffer);
+                writer.writeMany((List<DtoWritable>) body, buffer);
             }
         }
         else if (body instanceof Path) {

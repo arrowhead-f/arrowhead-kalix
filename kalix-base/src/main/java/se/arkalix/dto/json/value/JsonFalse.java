@@ -42,4 +42,9 @@ public class JsonFalse implements JsonValue {
     public void writeJson(final BinaryWriter writer) {
         writer.write(new byte[]{'f', 'a', 'l', 's', 'e'});
     }
+
+    @Override
+    public String toString() {
+        return "false";
+    }
 }

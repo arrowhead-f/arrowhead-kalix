@@ -42,4 +42,9 @@ public class JsonTrue implements JsonValue {
     public void writeJson(final BinaryWriter writer) {
         writer.write(new byte[]{'t', 'r', 'u', 'e'});
     }
+
+    @Override
+    public String toString() {
+        return "true";
+    }
 }

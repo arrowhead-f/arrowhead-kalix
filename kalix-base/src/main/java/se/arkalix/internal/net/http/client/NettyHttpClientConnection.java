@@ -1,7 +1,11 @@
 package se.arkalix.internal.net.http.client;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.DefaultFileRegion;
+import io.netty.handler.codec.http.*;
 import se.arkalix.dto.DtoWritable;
-import se.arkalix.dto.DtoWriter;
 import se.arkalix.dto.DtoWriteException;
 import se.arkalix.internal.dto.binary.ByteBufWriter;
 import se.arkalix.internal.net.http.HttpMediaTypes;
@@ -12,11 +16,6 @@ import se.arkalix.net.http.client.HttpClientResponse;
 import se.arkalix.util.Result;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.DefaultFileRegion;
-import io.netty.handler.codec.http.*;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -142,11 +141,12 @@ public class NettyHttpClientConnection implements HttpClientConnection {
 
             content = channel.alloc().buffer();
             final var buffer = new ByteBufWriter(content);
+            final var writer = encoding.writer();
             if (body instanceof DtoWritable) {
-                DtoWriter.writeOne((DtoWritable) body, encoding, buffer);
+                writer.writeOne((DtoWritable) body, buffer);
             }
             else {
-                DtoWriter.writeMany((List<DtoWritable>) body, encoding, buffer);
+                writer.writeMany((List<DtoWritable>) body, buffer);
             }
 
             final var mediaType = HttpMediaTypes.toMediaType(encoding);

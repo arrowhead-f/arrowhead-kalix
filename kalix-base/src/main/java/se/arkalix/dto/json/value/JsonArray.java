@@ -10,17 +10,14 @@ import se.arkalix.internal.dto.json.JsonTokenBuffer;
 import se.arkalix.internal.dto.json.JsonTokenizer;
 import se.arkalix.util.annotation.Internal;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 @SuppressWarnings("unused")
 public class JsonArray implements JsonCollection, Iterable<JsonValue> {
     private final List<JsonValue> elements;
 
     public JsonArray(final List<JsonValue> elements) {
-        this.elements = Collections.unmodifiableList(elements);
+        this.elements = Collections.unmodifiableList(Objects.requireNonNull(elements, "Expected elements"));
     }
 
     public JsonArray(final JsonValue... elements) {
@@ -83,5 +80,23 @@ public class JsonArray implements JsonCollection, Iterable<JsonValue> {
             element.writeJson(writer);
         }
         writer.write((byte) ']');
+    }
+
+    @Override
+    public boolean equals(final Object other) {
+        if (this == other) { return true; }
+        if (other == null || getClass() != other.getClass()) { return false; }
+        final JsonArray that = (JsonArray) other;
+        return elements.equals(that.elements);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(elements);
+    }
+
+    @Override
+    public String toString() {
+        return "[" + elements + ']';
     }
 }
