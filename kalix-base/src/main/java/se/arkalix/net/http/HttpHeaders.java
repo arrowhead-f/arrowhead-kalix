@@ -20,6 +20,7 @@ import java.util.*;
  * @see <a href="https://tools.ietf.org/html/rfc7540#section-8.1.2">RFC 7540, Section 8.1.2</a>
  * @see <a href="https://www.iana.org/assignments/message-headers/message-headers.xhtml">IANA Message Headers</a>
  */
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class HttpHeaders {
     private final io.netty.handler.codec.http.HttpHeaders headers;
 

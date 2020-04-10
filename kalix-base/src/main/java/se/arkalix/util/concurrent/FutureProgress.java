@@ -6,6 +6,7 @@ package se.arkalix.util.concurrent;
  * @param <V> Type of value that can be retrieved if the operation succeeds.
  * @see Future
  */
+@SuppressWarnings("unused")
 public interface FutureProgress<V> extends Future<V> {
     /**
      * Sets progress listener, replacing any previously set such.

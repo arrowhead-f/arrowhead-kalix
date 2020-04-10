@@ -13,6 +13,7 @@ import java.util.concurrent.RejectedExecutionException;
  * some variant of the {@link Thread} class, used to schedule and execute given
  * jobs.
  */
+@SuppressWarnings("unused")
 public interface Scheduler {
     /**
      * Executes given {@code command} as soon as an execution resource is

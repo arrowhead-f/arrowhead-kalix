@@ -1,10 +1,11 @@
 package se.arkalix.net.http.service;
 
+import se.arkalix.net.http.HttpStatus;
 import se.arkalix.util.concurrent.Future;
 
 /**
  * A route handler, meant to process incoming HTTP requests matching some
- * arbitrary set of preconditions.
+ * {@link HttpRoute set of preconditions}.
  */
 @FunctionalInterface
 public interface HttpRouteHandler {
@@ -14,7 +15,9 @@ public interface HttpRouteHandler {
      * @param request  Information about the incoming HTTP request, including
      *                 its header and body.
      * @param response An object useful for indicating how the request is to be
-     *                 responded to.
+     *                 responded to. It is an error for a route handler not to
+     *                 set a {@link HttpServiceResponse#status(HttpStatus)
+     *                 status code}.
      * @return Future completed when handling is complete.
      * @throws Exception Whatever exception the handle may want to throw. If
      *                   the HTTP service owning this handle knows how to

@@ -5,6 +5,7 @@ import se.arkalix.description.ConsumerDescription;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.internal.security.access.AccessToken;
+import se.arkalix.util.annotation.ThreadSafe;
 
 import java.security.PublicKey;
 import java.util.Objects;
@@ -13,9 +14,11 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Token access policy.
  * <p>
- * A consuming system is trusted only if it can (1) present a certificate with
- * at least one trusted issuer, as well as (2) present a token originating from
- * a designated authorization system.
+ * A consuming system is granted access only if it can (1) present a
+ * certificate with at least one trusted issuer, as well as (2) present a token
+ * originating from a designated authorization system. The consuming system
+ * does not have to be a member of the same local cloud as the system using
+ * this access policy.
  * <p>
  * The designated authorization system is identified by a {@link PublicKey},
  * which can either be specified directly or be resolved at a later time.
@@ -35,7 +38,8 @@ public class AccessByToken implements AccessPolicy {
      * system public key.
      * <p>
      * The key must be set later via the {@link #authorizationKey(PublicKey)}
-     * method, or the access policy will throw exceptions when used.
+     * method, perhaps via a {@link se.arkalix.plugin.Plugin plugin}. This
+     * access policy will prevent all access until a valid key has been set.
      */
     public AccessByToken() {
         authorizationKey = new AtomicReference<>(null);
@@ -48,8 +52,7 @@ public class AccessByToken implements AccessPolicy {
      * The key can be changed later via the
      * {@link #authorizationKey(PublicKey)} method.
      *
-     * @param authorizationKey Public key of issuer of acceptable access
-     *                         tokens.
+     * @param authorizationKey Public key of issuer of acceptable access tokens.
      */
     public AccessByToken(final PublicKey authorizationKey) {
         this.authorizationKey = new AtomicReference<>(authorizationKey);
@@ -62,11 +65,10 @@ public class AccessByToken implements AccessPolicy {
      * the system owning the corresponding private key, which in most scenarios
      * can be expected to be an authorization system belonging to the same
      * cloud as the service provider using this access policy.
-     * <p>
-     * This method is thread-safe.
      *
      * @param authorizationKey Public key of designated authorization system.
      */
+    @ThreadSafe
     public void authorizationKey(final PublicKey authorizationKey) {
         this.authorizationKey.set(authorizationKey);
     }

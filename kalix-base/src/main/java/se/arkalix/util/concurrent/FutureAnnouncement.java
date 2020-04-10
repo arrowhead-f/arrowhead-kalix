@@ -18,6 +18,7 @@ import java.util.Set;
  *            Result} if the {@code Future} in question completes
  *            successfully.
  */
+@SuppressWarnings("unused")
 public class FutureAnnouncement<V> {
     private final Future<V> future;
     private final Set<FutureCompletion<V>> subscribers = new HashSet<>();

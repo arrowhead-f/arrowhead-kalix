@@ -16,6 +16,7 @@ import java.util.Optional;
 /**
  * The head and body of an incoming HTTP request.
  */
+@SuppressWarnings("unused")
 public interface HttpServiceRequest extends HttpBodyReceiver {
     /**
      * Requests that the incoming HTTP body be collected and parsed, using an

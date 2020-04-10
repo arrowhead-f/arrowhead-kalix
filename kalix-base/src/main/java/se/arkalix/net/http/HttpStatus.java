@@ -19,6 +19,7 @@ import java.util.Objects;
  * @see <a href="https://tools.ietf.org/html/rfc7235">RFC 7235</a>
  * @see <a href="https://tools.ietf.org/html/rfc7238">RFC 7238</a>
  */
+@SuppressWarnings("unused")
 public class HttpStatus {
     private final int code;
     private final boolean isStandard;

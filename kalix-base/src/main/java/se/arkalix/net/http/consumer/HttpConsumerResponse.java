@@ -16,7 +16,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * An incoming  HTTP response, received from a consumed service.
+ * An incoming HTTP response, received from a {@link se.arkalix consumed
+ * service}.
  */
 public class HttpConsumerResponse implements HttpClientResponse {
     private final HttpClientResponse response;

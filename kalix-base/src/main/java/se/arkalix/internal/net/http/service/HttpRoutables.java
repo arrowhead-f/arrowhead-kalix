@@ -94,22 +94,22 @@ public class HttpRoutables {
     }
 
     /**
-     * Compares given validators <i>a</i> and <i>b</i> such that -1 is returned
+     * Compares given filters <i>a</i> and <i>b</i> such that -1 is returned
      * if <i>a</i> is more specialized than <i>b</i>, 1 is returned if <i>a</i>
      * is less specialized than <i>b</i> and 0 is returned if their patterns,
      * methods and exception classes are equal.
      * <p>
-     * A validator is more specialized than another such only if the subset of
-     * method/path/exception combinations it can match is smaller than that of
-     * another validator.
+     * A filter is more specialized than another such only if the subset of
+     * method/path combinations it can match is smaller than that of another
+     * filter.
      *
-     * @param a First validator to compare.
-     * @param b Second validator to compare.
+     * @param a First filter to compare.
+     * @param b Second filter to compare.
      * @return A negative integer, zero, or a positive integer depending on
      * whether <i>a</i> is more specialized, equal to, or less specialized than
      * <i>b</i>, respectively.
      */
-    public static int compareValidators(final HttpValidator a, final HttpValidator b) {
+    public static int compareFilters(final HttpFilter a, final HttpFilter b) {
         final var cr = compare(a, b);
         if (cr != 0) {
             return cr;

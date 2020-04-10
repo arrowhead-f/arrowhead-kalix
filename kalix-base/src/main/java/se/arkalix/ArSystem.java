@@ -498,7 +498,8 @@ public class ArSystem {
         }
 
         /**
-         * Explicitly enables insecure mode for this Arrowhead system.
+         * Explicitly enables {@link se.arkalix.security insecure mode} for
+         * this Arrowhead system.
          * <p>
          * In insecure mode, no cryptography is used to establish identities or
          * connections between systems. Usage of this mode is not advised for

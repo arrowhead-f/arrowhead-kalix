@@ -11,12 +11,15 @@ import java.util.Optional;
 
 /**
  * Represents a trusted identity, where trust was established by being able to
- * present a valid certificate chain containing a trusted issuer.
+ * present a valid <a href="https://tools.ietf.org/html/rfc5280">x.509</a>
+ * certificate chain containing at least one trusted issuer.
  * <p>
  * Note that this class, in and of itself, does not guarantee that the
  * certificate chain it holds is known to be correct and trustworthy. That fact
  * is assumed to be established prior to this class being handed any
  * certificates.
+ *
+ * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
  */
 public class TrustedIdentity {
     protected final X509Certificate[] chain;
@@ -26,7 +29,8 @@ public class TrustedIdentity {
     private String commonName = null;
 
     /**
-     * Creates new trusted identity from given chain of x.509 certificates.
+     * Creates new trusted identity from given chain of
+     * <a href="https://tools.ietf.org/html/rfc5280">x.509 certificates</a>.
      * <p>
      * The certificate at index 0 must represent the identity in question while
      * all subsequent certificates constitute its chain of issuers. The
@@ -45,6 +49,7 @@ public class TrustedIdentity {
      *                                  {@code chain} contains any other type
      *                                  of certificate than
      *                                  {@link X509Certificate}.
+     * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      */
     public TrustedIdentity(final Certificate[] chain) {
         Objects.requireNonNull(chain, "Expected chain");
@@ -69,7 +74,8 @@ public class TrustedIdentity {
     }
 
     /**
-     * Creates new trusted identity from given chain of x.509 certificates.
+     * Creates new trusted identity from given chain of
+     * <a href="https://tools.ietf.org/html/rfc5280">x.509 certificates</a>.
      * <p>
      * The certificate at index 0 must represent the identity in question while
      * all subsequent certificates constitute its chain of issuers. The
@@ -84,6 +90,7 @@ public class TrustedIdentity {
      * @param chain x.509 certificate chain.
      * @throws NullPointerException     If {@code chain} is {@code null}.
      * @throws IllegalArgumentException If {@code chain.length == 0}.
+     * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      */
     public TrustedIdentity(final X509Certificate[] chain) {
         this.chain = Objects.requireNonNull(chain, "Expected chain");
@@ -104,7 +111,8 @@ public class TrustedIdentity {
     }
 
     /**
-     * @return Clone of x.509 certificate chain.
+     * @return Clone of x.509 certificate chain associated with this identity.
+     * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      */
     public X509Certificate[] chain() {
         return Arrays.copyOfRange(chain, chainOffset, chain.length);
@@ -112,6 +120,7 @@ public class TrustedIdentity {
 
     /**
      * @return Representation of certificate issuer, if any such is available.
+     * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      */
     public Optional<TrustedIdentity> issuer() {
         if (issuer == null) {
@@ -125,7 +134,8 @@ public class TrustedIdentity {
     }
 
     /**
-     * @return x.509 certificate of trusted identity.
+     * @return x.509 certificate of this identity.
+     * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      */
     public X509Certificate certificate() {
         return chain[chainOffset];
@@ -143,6 +153,7 @@ public class TrustedIdentity {
      * @return Subject common name.
      * @throws IllegalStateException If no common name is specified in the
      *                               certificate.
+     * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      */
     public String commonName() {
         if (commonName == null) {
@@ -156,6 +167,7 @@ public class TrustedIdentity {
 
     /**
      * @return Public key of trusted identity.
+     * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      */
     public PublicKey publicKey() {
         return certificate().getPublicKey();

@@ -278,14 +278,16 @@ public class HttpClient {
         /**
          * Sets owned identity to use for representing created HTTP clients.
          * <p>
-         * If insecure mode is not enabled and no identity is provided, client
-         * authentication is disabled for created HTTP clients, making them
-         * unsuitable for communicating with Arrowhead systems. The clients
-         * may, however, be used for communicating with arbitrary HTTP servers
-         * that do not require client authentication.
+         * If {@link #insecure() insecure mode} is <i>not</i> enabled and no
+         * identity is provided, client authentication is disabled for created
+         * HTTP clients, making them unsuitable for communicating with
+         * Arrowhead systems. The clients may, however, be used for
+         * communicating with arbitrary HTTP servers that do not require client
+         * authentication.
          *
          * @param identity Owned identity to use.
          * @return This builder.
+         * @see se.arkalix.security Arrowhead Security
          */
         public final Builder identity(final OwnedIdentity identity) {
             this.identity = identity;
@@ -296,13 +298,14 @@ public class HttpClient {
          * Sets trust store to use for determining what systems are trusted to
          * be communicated with by created HTTP clients.
          * <p>
-         * If insecure mode is not enabled and no trust store is provided, the
-         * default system trust store is used instead. This is typically
-         * suitable if wanting to communicate with regular HTTP servers over
-         * HTTPS.
+         * If {@link #insecure() insecure mode} is <i>not</i> enabled and no
+         * trust store is provided, the default system trust store is used
+         * instead. This is typically suitable if wanting to communicate with
+         * regular HTTP servers over HTTPS.
          *
          * @param trustStore Trust store to use.
          * @return This builder.
+         * @see se.arkalix.security Arrowhead Security
          */
         public final Builder trustStore(final TrustStore trustStore) {
             this.trustStore = trustStore;
@@ -312,11 +315,12 @@ public class HttpClient {
         /**
          * Explicitly enables insecure mode for this client.
          * <p>
-         * In insecure mode, no cryptography is used to establish identities or
-         * connections between systems. Usage of this mode is not advised for
-         * most kinds of production scenarios.
+         * In {@link se.arkalix.security insecure mode}, no cryptography is
+         * used to establish identities or connections between systems. Usage
+         * of this mode is not advised for most kinds of production scenarios.
          *
          * @return This builder.
+         * @see se.arkalix.security Arrowhead Security
          */
         public final Builder insecure() {
             this.isInsecure = true;

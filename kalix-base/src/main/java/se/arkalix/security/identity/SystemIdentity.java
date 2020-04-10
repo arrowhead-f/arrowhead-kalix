@@ -11,53 +11,11 @@ import java.util.Optional;
 /**
  * An x.509 certificate chain associated with an Arrowhead system.
  * <p>
- * The Arrowhead Framework mandates that a particular naming schema be used for
- * certificate Common Names (CNs). The naming schema is intended to reflect the
- * following hierarchy:
- * <ol>
- *     <li>SYSTEM / OPERATOR</li>
- *     <li>CLOUD</li>
- *     <li>COMPANY</li>
- *     <li>MASTER</li>
- *     <li>SUPER</li>
- * </ol>
- * Every SYSTEM / OPERATOR certificate <b>must</b> be issued by a CLOUD
- * certificate, which in turn <i>may</i> be issued by either a COMPANY or
- * MASTER certificate. Each COMPANY certificate <i>may</i> be issued by a
- * MASTER, which in turn may be issued by one or more SUPER certificates.
- * <p>
- * Excluding the SUPER level, all other certificate types must contain a single
- * Common Name (CN), part of its subject LDAP Distinguished Name, that is a DNS
- * domain name containing the entirety of its issuer CN. If, for example, a
- * MASTER certificate would contain the CN "arrowhead.eu", then must the CNs of
- * all COMPANY and/or CLOUD certificates issued by that MASTER end with
- * ".arrowhead.eu".
- * <p>
- * Looking at an example SYSTEM CN, the names of the first four levels of the
- * hierarchy become apparent:
- * <pre>
- *     system-14.cloud-1.the-company.arrowhead.eu
- *     |_______| |_____| |_________| |__________|
- *         |        |         |           |
- *       SYSTEM   CLOUD    COMPANY      MASTER
- * </pre>
- * The CN of the <i>cloud-1</i> certificate would be
- * "cloud-1.the-company.arrowhead.eu", the CN of the COMPANY would be
- * "the-company.arrowhead.eu" and, finally, the CN of the MASTER would be
- * "arrowhead.eu". As it is not always relevant to use the full CNs when
- * referring to systems, clouds, and so on, these components are also referred
- * to by their so-called <i>names</i>. The name of the cloud in the above
- * example would simply be "cloud-1", while the name of the system would be
- * "system-14". SYSTEM, CLOUD and COMPANY names must consist <b>only</b> of a
- * single DNS name label, which means that they must consist solely of the
- * characters {@code 0-9 A-Z a-z} and {@code -}. A label may not begin with a
- * digit or hyphen, and may not end with a hyphen. The same applies for the
- * MASTER name, with the exception that it may consist of multiple labels
- * separated by dots.
+ * Instances of this class are guaranteed to only hold x.509 certificates
+ * complying to the Arrowhead certificate {@link se.arkalix.security.identity
+ * naming conventions}.
  *
- * @see <a href="https://tools.ietf.org/html/rfc1035#section-2.3.1">RFC 1035, Section 2.3.1</a>
- * @see <a href="https://tools.ietf.org/html/rfc4512#section-1.4">RFC 4512, Section 1.4</a>
- * @see <a href="https://tools.ietf.org/html/rfc4514#section-3">RFC 4515, Section 3</a>
+ * @see se.arkalix.security.identity Arrowhead Identity Management
  * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
  */
 public class SystemIdentity extends TrustedIdentity {
@@ -91,7 +49,7 @@ public class SystemIdentity extends TrustedIdentity {
      *                                  subject common name of the certificate
      *                                  at index 0 is not a valid Arrowhead
      *                                  system certificate name.
-     * @see SystemIdentity Class description for details on valid names.
+     * @see se.arkalix.security.identity Arrowhead Identity Management
      */
     public SystemIdentity(final Certificate[] chain) {
         super(chain);
@@ -122,7 +80,7 @@ public class SystemIdentity extends TrustedIdentity {
      *                                  subject common name of the certificate
      *                                  at index 0 is not a valid Arrowhead
      *                                  system certificate name.
-     * @see SystemIdentity Class description for details on valid names.
+     * @see se.arkalix.security.identity Arrowhead Identity Management
      */
     public SystemIdentity(final X509Certificate[] chain) {
         super(chain);
@@ -137,13 +95,14 @@ public class SystemIdentity extends TrustedIdentity {
      * Promotes given {@code identity} to a {@link SystemIdentity}.
      * <p>
      * The promotion will succeed only if the certificate of the given
-     * {@code identity} contains an Arrowhead-compliant subject common name.
+     * {@code identity} contains an Arrowhead-compliant subject common name and
+     * has a cloud certificate in its certificate chain.
      *
      * @param identity Identity to promote.
      * @throws IllegalArgumentException If given {@code identity} does not
-     *                                  satisfy the Arrowhead naming
-     *                                  requirements.
-     * @see SystemIdentity Class description for details on valid names.
+     *                                  satisfy the requirements for being a
+     *                                  system identity.
+     * @see se.arkalix.security.identity Arrowhead Identity Management
      */
     public SystemIdentity(final TrustedIdentity identity) {
         super(identity.chain, 0);
@@ -190,8 +149,7 @@ public class SystemIdentity extends TrustedIdentity {
     }
 
     /**
-     * Attempts to create new system identity from given chain of
-     * x.509 certificates.
+     * Attempts to create new system identity from given chain of certificates.
      * <p>
      * The certificate at index 0 must represent the identity in question while
      * all subsequent certificates constitute its chain of issuers. The
@@ -207,7 +165,7 @@ public class SystemIdentity extends TrustedIdentity {
      * @param chain x.509 certificate chain belonging to an Arrowhead system.
      * @return System identity only if given {@code chain} satisfies all
      * criteria.
-     * @see SystemIdentity Class description for details on valid names.
+     * @see se.arkalix.security.identity Arrowhead Identity Management
      */
     public static Optional<SystemIdentity> tryFrom(final Certificate[] chain) {
         if (chain == null) {
@@ -258,7 +216,7 @@ public class SystemIdentity extends TrustedIdentity {
 
     /**
      * @return System name.
-     * @see SystemIdentity See class description for more details.
+     * @see se.arkalix.security.identity Arrowhead Identity Management
      */
     public String name() {
         return systemName;
@@ -274,7 +232,7 @@ public class SystemIdentity extends TrustedIdentity {
 
     /**
      * @return Cloud name.
-     * @see SystemIdentity See class description for more details.
+     * @see se.arkalix.security.identity Arrowhead Identity Management
      */
     public String cloudName() {
         return cloudName;
@@ -282,7 +240,7 @@ public class SystemIdentity extends TrustedIdentity {
 
     /**
      * @return Company name.
-     * @see SystemIdentity See class description for more details.
+     * @see se.arkalix.security.identity Arrowhead Identity Management
      */
     public String companyName() {
         return companyName;
@@ -290,7 +248,7 @@ public class SystemIdentity extends TrustedIdentity {
 
     /**
      * @return Master name. Always identical to full master CN.
-     * @see SystemIdentity See class description for more details.
+     * @see se.arkalix.security.identity Arrowhead Identity Management
      */
     public String masterName() {
         return masterName;

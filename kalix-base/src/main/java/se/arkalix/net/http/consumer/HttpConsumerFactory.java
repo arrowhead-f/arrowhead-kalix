@@ -17,8 +17,13 @@ import static se.arkalix.descriptor.TransportDescriptor.HTTP;
  * <p>
  * This class is primarily useful as input to the {@link
  * se.arkalix.query.ServiceQuery#using(ArConsumerFactory) using()} method of
- * the {@link se.arkalix.query.ServiceQuery ServiceQuery} class, which is
- * returned by the {@link ArSystem#consume()} method.
+ * the {@link se.arkalix.query.ServiceQuery ServiceQuery} class, an instance of
+ * which is returned by the {@link ArSystem#consume()} method. See the {@link
+ * se.arkalix.net.http.consumer package documentation} for more details about
+ * how this class can be used.
+ * <p>
+ * Use the {@link HttpConsumer#factory()} method to get an instance of this
+ * class.
  */
 public class HttpConsumerFactory implements ArConsumerFactory<HttpConsumer> {
     @Override

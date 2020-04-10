@@ -8,6 +8,7 @@ import java.util.Objects;
  * @see <a href="https://tools.ietf.org/html/rfc7231#section-4">RFC 7231, Section 4</a>
  * @see <a href="https://tools.ietf.org/html/rfc5789">RFC 5789</a>
  */
+@SuppressWarnings("unused")
 public final class HttpMethod implements Comparable<HttpMethod> {
     private final String name;
     private final boolean isStandard;

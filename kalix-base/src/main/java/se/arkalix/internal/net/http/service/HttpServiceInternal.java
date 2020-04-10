@@ -40,7 +40,7 @@ public class HttpServiceInternal {
             throw new IllegalArgumentException("Expected HttpService encodings.size() > 0");
         }
 
-        final var routeSequenceFactory = new HttpRouteSequenceFactory(service.catchers(), service.validators());
+        final var routeSequenceFactory = new HttpRouteSequenceFactory(service.catchers(), service.filters());
         routeSequences = service.routes().stream()
             .sorted(HttpRoutables::compare)
             .map(routeSequenceFactory::createRouteSequenceFor)

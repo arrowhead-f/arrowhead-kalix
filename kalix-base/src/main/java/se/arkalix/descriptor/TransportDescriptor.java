@@ -3,7 +3,8 @@ package se.arkalix.descriptor;
 import java.util.Objects;
 
 /**
- * Names an application-level transport protocol.
+ * Names an application-level transport protocol stack, such as {@link #COAP}
+ * or {@link #HTTP}.
  */
 public final class TransportDescriptor {
     private final String name;

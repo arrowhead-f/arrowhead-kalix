@@ -1,13 +1,12 @@
 package se.arkalix.net.http.service;
 
-import se.arkalix.internal.net.http.service.HttpServiceInternal;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.util.concurrent.Future;
 
 import java.util.*;
 
 /**
- * A {@link HttpServiceInternal} exception catcher, useful for handling errors
+ * A {@link HttpService} exception catcher, useful for handling errors
  * occurring while receiving or responding to HTTP requests.
  */
 public class HttpCatcher<T extends Throwable> implements HttpRoutable {
@@ -18,16 +17,17 @@ public class HttpCatcher<T extends Throwable> implements HttpRoutable {
     private final HttpCatcherHandler<T> handler;
 
     /**
-     * Creates new {@link HttpServiceInternal} exception catcher.
+     * Creates new {@link HttpService} exception catcher.
      *
-     * @param ordinal        When to execute the filter relative to other
-     *                       filters. Lower numbers are executed first.
-     * @param method         HTTP method to require in filtered requests. Use
-     *                       {@code null} to allow any method.
-     * @param pattern        HTTP pattern to require filtered request paths to
-     *                       match. Use {@code null} to allow any path.
+     * @param ordinal        When to execute the catcher relative to other
+     *                       catchers. Lower numbers are executed first.
+     * @param method         HTTP method that must be matched by caught request
+     *                       exceptions. Use {@code null} to allow any method.
+     * @param pattern        HTTP pattern that must be matched by caught
+     *                       request exceptions. Use {@code null} to allow any
+     *                       path.
      * @param exceptionClass Type caught exceptions must be assignable to. Use
-     *                       {@code null} to catch all exceptions.
+     *                       {@code null} to allow all exceptions.
      * @param handler        The handler to execute with matching requests.
      */
     public HttpCatcher(
@@ -46,8 +46,8 @@ public class HttpCatcher<T extends Throwable> implements HttpRoutable {
 
     /**
      * @return Integer indicating when to execute this catcher in relation to
-     * other catchers that match the same {@link HttpMethod methods} and
-     * have the exact same {@link HttpPattern patterns}.
+     * other catchers that match the same {@link HttpMethod methods}, {@link
+     * HttpPattern patterns} and {@link Throwable exception}.
      */
     public int ordinal() {
         return ordinal;

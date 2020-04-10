@@ -15,9 +15,10 @@ import static se.arkalix.descriptor.TransportDescriptor.HTTP;
 /**
  * A concrete Arrowhead service, exposing its functions as HTTP endpoints.
  * <p>
- * TODO: Write more extensive documentation, including about validators, routes
- * and catchers, as well as about patterns and matching.
+ * Please refer to the {@link se.arkalix.net.http.service package
+ * documentation} for more details about how this class can be used.
  */
+@SuppressWarnings("unused")
 public final class HttpService implements ArService {
     static {
         ArServerRegistry.set(HttpService.class, HttpServer::create);
@@ -25,7 +26,7 @@ public final class HttpService implements ArService {
 
     private final ArrayList<HttpCatcher<?>> catchers = new ArrayList<>(0);
     private final ArrayList<HttpRoute> routes = new ArrayList<>(0);
-    private final ArrayList<HttpValidator> validators = new ArrayList<>(0);
+    private final ArrayList<HttpFilter> filters = new ArrayList<>(0);
 
     private String name;
     private String basePath;
@@ -41,6 +42,11 @@ public final class HttpService implements ArService {
      * Sets name of this service. <b>Must be specified.</b>
      * <p>
      * Service names are also referred to as <i>service definitions</i>.
+     * <p>
+     * While any characters may be used in the name, it is recommended to stick
+     * to the lowercase alphabetic characters, the numeric characters and dash
+     * of the ASCII character set ({@code a-z 0-9 -}) to maximize compatibility
+     * with existing tools and solutions.
      *
      * @param name Desired service name.
      * @return This service.
@@ -51,9 +57,8 @@ public final class HttpService implements ArService {
     }
 
     /**
-     * Sets service qualifier, in this case a <i>base path</i>, that must be
-     * matched by HTTP requests received by this service. <b>Must be
-     * specified.</b>
+     * Sets service URI, in this case a <i>base path</i>, that must be matched
+     * by HTTP requests received by this service. <b>Must be specified.</b>
      * <p>
      * The base path must start with a forward slash ({@code /}), must not end
      * with a forward slash, and may only contain the following characters:
@@ -96,7 +101,7 @@ public final class HttpService implements ArService {
      *                  default when received requests do not include enough
      *                  details about their bodies.
      * @return This service.
-     * @see se.arkalix.dto
+     * @see se.arkalix.dto Data Transfer Object Utilities
      */
     public HttpService encodings(final EncodingDescriptor... encodings) {
         this.encodings = Arrays.asList(encodings.clone());
@@ -105,13 +110,13 @@ public final class HttpService implements ArService {
 
     /**
      * Declares what access policy this service is to use. Unless the service
-     * is provided by a system running in insecure mode, an access policy
-     * <b>must be specified.</b>
+     * is provided by a system running in {@link se.arkalix.security insecure
+     * mode}, an access policy <b>must be specified.</b>
      *
      * @param accessPolicy Desired access policy.
      * @return This service.
      * @see AccessPolicy#cloud() Same-cloud access
-     * @see AccessPolicy#cloudWhitelist(String...) same-cloud/whitelist access
+     * @see AccessPolicy#whitelist(String...) same-cloud/whitelist access
      * @see AccessPolicy#token() token access
      */
     public HttpService accessPolicy(final AccessPolicy accessPolicy) {
@@ -135,12 +140,12 @@ public final class HttpService implements ArService {
     }
 
     /**
-     * Saves key/value pair into metadata map associated with this service.
+     * Saves key/value pair into the {@link #metadata(Map) metadata map}
+     * associated with this service.
      *
      * @param key   Desired key.
      * @param value Desired value.
      * @return This service.
-     * @see #metadata(Map)
      */
     public HttpService metadata(final String key, final String value) {
         if (metadata == null) {
@@ -286,9 +291,9 @@ public final class HttpService implements ArService {
      * A route is a primary handler for a particular set of HTTP requests. If
      * an incoming HTTP request matches its method and path pattern, it is
      * executed with the expectation that it will specify an HTTP response.
-     * However, if a {@link HttpValidator validator} executed before the route
+     * However, if a {@link HttpFilter filter} executed before the route
      * responds to the request or throws an exception, it is never invoked. In
-     * the case of either a validator or a route throwing an exception, any
+     * the case of either a filter or a route throwing an exception, any
      * registered {@link HttpCatcher catcher} matching the request and
      * exception will be given a chance to handle the exception.
      *
@@ -315,9 +320,9 @@ public final class HttpService implements ArService {
      * A route is a primary handler for a particular set of HTTP requests. If
      * an incoming HTTP request matches its method and path pattern, it is
      * executed with the expectation that it will specify an HTTP response.
-     * However, if a {@link HttpValidator validator} executed before the route
+     * However, if a {@link HttpFilter filter} executed before the route
      * responds to the request or throws an exception, it is never invoked. In
-     * the case of either a validator or a route throwing an exception, any
+     * the case of either a filter or a route throwing an exception, any
      * registered {@link HttpCatcher catcher} matching the request and
      * exception will be given a chance to handle the exception.
      *
@@ -345,9 +350,9 @@ public final class HttpService implements ArService {
      * A route is a primary handler for a particular set of HTTP requests. If
      * an incoming HTTP request matches its method and path pattern, it is
      * executed with the expectation that it will specify an HTTP response.
-     * However, if a {@link HttpValidator validator} executed before the route
+     * However, if a {@link HttpFilter filter} executed before the route
      * responds to the request or throws an exception, it is never invoked. In
-     * the case of either a validator or a route throwing an exception, any
+     * the case of either a filter or a route throwing an exception, any
      * registered {@link HttpCatcher catcher} matching the request and
      * exception will be given a chance to handle the exception.
      * <p>
@@ -376,9 +381,9 @@ public final class HttpService implements ArService {
      * A route is a primary handler for a particular set of HTTP requests. If
      * an incoming HTTP request matches its method and path pattern, it is
      * executed with the expectation that it will specify an HTTP response.
-     * However, if a {@link HttpValidator validator} executed before the route
+     * However, if a {@link HttpFilter filter} executed before the route
      * responds to the request or throws an exception, it is never invoked. In
-     * the case of either a validator or a route throwing an exception, any
+     * the case of either a filter or a route throwing an exception, any
      * registered {@link HttpCatcher catcher} matching the request and
      * exception will be given a chance to handle the exception.
      * <p>
@@ -407,9 +412,9 @@ public final class HttpService implements ArService {
      * A route is a primary handler for a particular set of HTTP requests. If
      * an incoming HTTP request matches its method and path pattern, it is
      * executed with the expectation that it will specify an HTTP response.
-     * However, if a {@link HttpValidator validator} executed before the route
+     * However, if a {@link HttpFilter filter} executed before the route
      * responds to the request or throws an exception, it is never invoked. In
-     * the case of either a validator or a route throwing an exception, any
+     * the case of either a filter or a route throwing an exception, any
      * registered {@link HttpCatcher catcher} matching the request and
      * exception will be given a chance to handle the exception.
      * <p>
@@ -435,7 +440,7 @@ public final class HttpService implements ArService {
      * Adds an exception catcher to this service.
      * <p>
      * An exception catcher is invoked whenever an exception occurs in a
-     * validator, route handler, or other catcher, while handling an incoming
+     * filter, route handler, or other catcher, while handling an incoming
      * HTTP request that matches its method, path pattern and exception class.
      * <p>
      * If multiple catchers are created with matching methods, path patterns
@@ -455,7 +460,7 @@ public final class HttpService implements ArService {
      * Adds an exception catcher to this service.
      * <p>
      * An exception catcher is invoked whenever an exception occurs in a
-     * validator, route handler, or other catcher, while handling an incoming
+     * filter, route handler, or other catcher, while handling an incoming
      * HTTP request that matches its method, path pattern and exception class.
      *
      * @param method         Request method to match.
@@ -485,7 +490,7 @@ public final class HttpService implements ArService {
      * Adds an exception catcher to this service.
      * <p>
      * An exception catcher is invoked whenever an exception occurs in a
-     * validator, route handler, or other catcher, while handling an incoming
+     * filter, route handler, or other catcher, while handling an incoming
      * HTTP request that matches its method, path pattern and exception class.
      * <p>
      * <i>This method creates a catcher that matches any exception.</i>
@@ -508,7 +513,7 @@ public final class HttpService implements ArService {
      * Adds an exception catcher to this service.
      * <p>
      * An exception catcher is invoked whenever an exception occurs in a
-     * validator, route handler, or other catcher, while handling an incoming
+     * filter, route handler, or other catcher, while handling an incoming
      * HTTP request that matches its method, path pattern and exception class.
      * <p>
      * <i>This method creates a catcher that matches any method or
@@ -527,7 +532,7 @@ public final class HttpService implements ArService {
      * Adds an exception catcher to this service.
      * <p>
      * An exception catcher is invoked whenever an exception occurs in a
-     * validator, route handler, or other catcher, while handling an incoming
+     * filter, route handler, or other catcher, while handling an incoming
      * HTTP request that matches its method, path pattern and exception class.
      * <p>
      * <i>This method creates a catcher that matches any method.</i>
@@ -550,7 +555,7 @@ public final class HttpService implements ArService {
      * Adds an exception catcher to this service.
      * <p>
      * An exception catcher is invoked whenever an exception occurs in a
-     * validator, route handler, or other catcher, while handling an incoming
+     * filter, route handler, or other catcher, while handling an incoming
      * HTTP request that matches its method, path pattern and exception class.
      * <p>
      * <i>This method creates a catcher that matches any path or exception.</i>
@@ -568,7 +573,7 @@ public final class HttpService implements ArService {
      * Adds an exception catcher to this service.
      * <p>
      * An exception catcher is invoked whenever an exception occurs in a
-     * validator, route handler, or other catcher, while handling an incoming
+     * filter, route handler, or other catcher, while handling an incoming
      * HTTP request that matches its method, path pattern and exception class.
      * <p>
      * <i>This method creates a catcher that matches any path.</i>
@@ -591,7 +596,7 @@ public final class HttpService implements ArService {
      * Adds an exception catcher to this service.
      * <p>
      * An exception catcher is invoked whenever an exception occurs in a
-     * validator, route handler, or other catcher, while handling an incoming
+     * filter, route handler, or other catcher, while handling an incoming
      * HTTP request that matches its method, path pattern and exception class.
      * <p>
      * <i>This method creates a catcher that matches any method or path.</i>
@@ -612,7 +617,7 @@ public final class HttpService implements ArService {
      * Adds an exception catcher to this service.
      * <p>
      * An exception catcher is invoked whenever an exception occurs in a
-     * validator, route handler, or other catcher, while handling an incoming
+     * filter, route handler, or other catcher, while handling an incoming
      * HTTP request that matches its method, path pattern and exception class.
      * <p>
      * <i>This method creates a catcher that matches any method, path or
@@ -627,33 +632,33 @@ public final class HttpService implements ArService {
     }
 
     /**
-     * Adds incoming HTTP request validator to the created service.
+     * Adds incoming HTTP request filter to the created service.
      * <p>
-     * Validators are executed with incoming HTTP requests before they end up
-     * at their designated routes. Each validator matching the method and path
+     * Filters are executed with incoming HTTP requests before they end up
+     * at their designated routes. Each filter matching the method and path
      * of the request is given the opportunity read the request, modify its
      * headers and, potentially, respond to the request. If a response is
      * generated, no more handler are invoked with the request, unless sending
      * the response fails and a catcher is executed.
      * <p>
-     * If multiple validators are created with matching methods or path
+     * If multiple filters are created with matching methods or path
      * patterns, the one with the smallest ordinal will be executed first.
-     * If no validator responds to the request, all matching validators are
+     * If no filter responds to the request, all matching filters are
      * executed before the request is provided to its designated route.
      *
-     * @param validator HTTP request validator to add.
+     * @param filter HTTP request filter to add.
      * @return This service.
      */
-    public HttpService validator(final HttpValidator validator) {
-        validators.add(validator);
+    public HttpService filter(final HttpFilter filter) {
+        filters.add(filter);
         return this;
     }
 
     /**
-     * Adds incoming HTTP request validator to the created service.
+     * Adds incoming HTTP request filter to the created service.
      * <p>
-     * Validators are executed with incoming HTTP requests before they end up
-     * at their designated routes. Each validator matching the method and path
+     * Filters are executed with incoming HTTP requests before they end up
+     * at their designated routes. Each filter matching the method and path
      * of the request is given the opportunity read the request, modify its
      * headers and, potentially, respond to the request. If a response is
      * generated, no more handler are invoked with the request, unless sending
@@ -663,79 +668,79 @@ public final class HttpService implements ArService {
      * @param pattern Request path pattern to match.
      * @param handler Handler to invoke with matching requests.
      * @return This service.
-     * @see #validator(HttpValidator)
+     * @see #filter(HttpFilter)
      */
-    public HttpService validator(
+    public HttpService filter(
         final HttpMethod method,
         final String pattern,
-        final HttpValidatorHandler handler)
+        final HttpFilterHandler handler)
     {
-        return validator(new HttpValidator(filterOrdinal++, method, pattern != null
+        return filter(new HttpFilter(filterOrdinal++, method, pattern != null
             ? HttpPattern.valueOf(pattern)
             : null, handler));
     }
 
     /**
-     * Adds incoming HTTP request validator to the created service.
+     * Adds incoming HTTP request filter to the created service.
      * <p>
-     * Validators are executed with incoming HTTP requests before they end up
-     * at their designated routes. Each validator matching the method and path
+     * Filters are executed with incoming HTTP requests before they end up
+     * at their designated routes. Each filter matching the method and path
      * of the request is given the opportunity read the request, modify its
      * headers and, potentially, respond to the request. If a response is
      * generated, no more handler are invoked with the request, unless sending
      * the response fails and a catcher is executed.
      * <p>
-     * <i>This method creates a validator that matches any method.</i>
+     * <i>This method creates a filter that matches any method.</i>
      *
      * @param pattern Request path pattern to match.
      * @param handler Handler to invoke with matching requests.
      * @return This service.
-     * @see #validator(HttpValidator)
+     * @see #filter(HttpFilter)
      */
-    public HttpService validator(final String pattern, final HttpValidatorHandler handler) {
-        return validator(null, pattern, handler);
+    public HttpService filter(final String pattern, final HttpFilterHandler handler) {
+        return filter(null, pattern, handler);
     }
 
     /**
-     * Adds incoming HTTP request validator to the created service.
+     * Adds incoming HTTP request filter to the created service.
      * <p>
-     * Validators are executed with incoming HTTP requests before they end up
-     * at their designated routes. Each validator matching the method and path
+     * Filters are executed with incoming HTTP requests before they end up
+     * at their designated routes. Each filter matching the method and path
      * of the request is given the opportunity read the request, modify its
      * headers and, potentially, respond to the request. If a response is
      * generated, no more handler are invoked with the request, unless sending
      * the response fails and a catcher is executed.
      * <p>
-     * <i>This method creates a validator that matches any path.</i>
+     * <i>This method creates a filter that matches any path.</i>
      *
      * @param method  Request method to match.
      * @param handler Handler to invoke with matching requests.
      * @return This service.
-     * @see #validator(HttpValidator)
+     * @see #filter(HttpFilter)
      */
-    public HttpService validator(final HttpMethod method, final HttpValidatorHandler handler) {
-        return validator(method, null, handler);
+    public HttpService filter(final HttpMethod method, final HttpFilterHandler handler) {
+        return filter(method, null, handler);
     }
 
     /**
-     * Adds incoming HTTP request validator to the created service.
+     * Adds incoming HTTP request filter to the created service.
      * <p>
-     * Validators are executed with incoming HTTP requests before they end up
-     * at their designated routes. Each validator matching the method and path
+     * Filters are executed with incoming HTTP requests before they end up
+     * at their designated routes. Each filter matching the method and path
      * of the request is given the opportunity read the request, modify its
      * headers and, potentially, respond to the request. If a response is
      * generated, no more handler are invoked with the request, unless sending
      * the response fails and a catcher is executed.
      * <p>
-     * <i>This method creates a validator that matches any method or
+     * <i>This method creates a filter that matches any method or
      * path.</i>
      *
      * @param handler Handler to invoke with matching requests.
      * @return This service.
-     * @see #validator(HttpValidator)
+     * @see #filter(HttpFilter)
      */
-    public HttpService validator(final HttpValidatorHandler handler) {
-        return validator(null, null, handler);
+    public HttpService filter(final HttpFilterHandler handler) {
+        return filter(null, null, handler);
     }
 
     /**
@@ -814,8 +819,8 @@ public final class HttpService implements ArService {
     }
 
     /**
-     * Gets value from service metadata map associated with given {@code key},
-     * if any.
+     * Gets value from service {@link #metadata(Map) metadata map} associated
+     * with given {@code key}, if any.
      *
      * @param key Key associated with desired metadata value.
      * @return Value associated with {@code key}, if any.
@@ -833,8 +838,7 @@ public final class HttpService implements ArService {
     }
 
     /**
-     * @return Unmodifiable list of all currently set
-     * {@link HttpRoute routes}.
+     * @return Unmodifiable list of all currently set {@link HttpRoute routes}.
      * @see #route(HttpRoute)
      */
     public List<HttpRoute> routes() {
@@ -842,11 +846,11 @@ public final class HttpService implements ArService {
     }
 
     /**
-     * @return Unmodifiable list of all currently set
-     * {@link HttpValidator validators}.
-     * @see #validator(HttpValidator)
+     * @return Unmodifiable list of all currently set {@link HttpFilter
+     * filters}.
+     * @see #filter(HttpFilter)
      */
-    public List<HttpValidator> validators() {
-        return Collections.unmodifiableList(validators);
+    public List<HttpFilter> filters() {
+        return Collections.unmodifiableList(filters);
     }
 }

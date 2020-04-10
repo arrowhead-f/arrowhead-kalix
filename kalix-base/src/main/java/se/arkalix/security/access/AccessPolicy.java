@@ -5,6 +5,7 @@ import se.arkalix.description.ServiceDescription;
 import se.arkalix.description.ConsumerDescription;
 import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.security.identity.SystemIdentity;
+import se.arkalix.util.annotation.ThreadSafe;
 
 import java.security.PublicKey;
 import java.util.Collection;
@@ -25,6 +26,7 @@ public interface AccessPolicy {
     /**
      * @return Access policy descriptor.
      */
+    @ThreadSafe
     SecurityDescriptor descriptor();
 
     /**
@@ -33,56 +35,24 @@ public interface AccessPolicy {
      *
      * @param consumer Description of system attempting to consume the
      *                 {@code service} in question.
+     * @param provider The system providing the consumed {@code service}.
      * @param service  Description of service that the {@code consumer}
      *                 attempts to consume.
      * @param token    Access token presented by the {@code consumer}, if any.
      * @return {@code true} only if {@code consumer} is permitted to consume
      * {@code service}.
      */
+    @ThreadSafe
     boolean isAuthorized(ConsumerDescription consumer, ArSystem provider, ServiceDescription service, String token)
         throws AccessTokenException;
 
     /**
-     * @return Access policy granting access to consumers originating from the
-     * same cloud as the provider of the service being consumed.
+     * @return Access policy granting access to all consumers belong to the
+     * same local cloud as the provider of the service being consumed.
      */
+    @ThreadSafe
     static AccessPolicy cloud() {
         return AccessByCertificate.INSTANCE;
-    }
-
-    /**
-     * Creates new access policy only granting access to consumers originating
-     * from the same cloud as the provider of the service being consumed, as
-     * well as being named in the white-list.
-     * <p>
-     * Note that the white-listed names are not full names. Only the system
-     * name parts, as described
-     * {@link SystemIdentity here}.
-     *
-     * @param whitelist Names of systems to be allowed access.
-     * @return Created access policy.
-     */
-    static AccessPolicy cloudWhitelist(final String... whitelist) {
-        return cloudWhitelist(List.of(whitelist));
-    }
-
-    /**
-     * Creates new access policy only granting access to consumers originating
-     * from the same cloud as the provider of the service being consumed, as
-     * well as being named in the white-list.
-     * <p>
-     * Note that the white-listed names are not full names. Only the system
-     * name parts, as described
-     * {@link SystemIdentity here}.
-     * <p>
-     * Also note that access policy instances of this type can be shared by
-     * multiple services.
-     *
-     * @param whitelist Collection of names of systems to be allowed access.
-     * @return Created access policy.
-     */
-    static AccessPolicy cloudWhitelist(final Collection<String> whitelist) {
-        return new AccessByCertificate(whitelist);
     }
 
     /**
@@ -101,6 +71,7 @@ public interface AccessPolicy {
      *
      * @return New token access policy.
      */
+    @ThreadSafe
     static AccessPolicy token() {
         return new AccessByToken();
     }
@@ -118,14 +89,53 @@ public interface AccessPolicy {
      *
      * @return New token access policy.
      */
+    @ThreadSafe
     static AccessPolicy token(final PublicKey authorizationKey) {
         return new AccessByToken(authorizationKey);
+    }
+
+    /**
+     * Creates new access policy only granting access to consumers from the
+     * same local cloud as the provider of the service being consumed, as well
+     * as being named in the given white-list.
+     * <p>
+     * Note that the white-listed names are not full names. Only the system
+     * name parts, as described
+     * {@link SystemIdentity here}.
+     *
+     * @param whitelist Names of systems to be allowed access.
+     * @return Created access policy.
+     */
+    @ThreadSafe
+    static AccessPolicy whitelist(final String... whitelist) {
+        return whitelist(List.of(whitelist));
+    }
+
+    /**
+     * Creates new access policy only granting access to consumers originating
+     * from the same cloud as the provider of the service being consumed, as
+     * well as being named in the white-list.
+     * <p>
+     * Note that the white-listed names are not full names. Only the system
+     * name parts, as described
+     * {@link SystemIdentity here}.
+     * <p>
+     * Also note that access policy instances of this type can be shared by
+     * multiple services.
+     *
+     * @param whitelist Collection of names of systems to be allowed access.
+     * @return Created access policy.
+     */
+    @ThreadSafe
+    static AccessPolicy whitelist(final Collection<String> whitelist) {
+        return new AccessByWhitelist(whitelist);
     }
 
     /**
      * @return Access policy granting unrestricted access. Use of this access
      * policy is only allowed for systems running in insecure mode.
      */
+    @ThreadSafe
     static AccessPolicy unrestricted() {
         return AccessUnrestricted.INSTANCE;
     }

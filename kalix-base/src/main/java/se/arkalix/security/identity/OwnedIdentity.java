@@ -8,7 +8,6 @@ import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
 
@@ -17,9 +16,10 @@ import java.util.Objects;
  * <i>owned</i> system or operator identity.
  * <p>
  * Instances of this class are guaranteed to only hold x.509 certificates
- * complying to the Arrowhead certificate {@link SystemIdentity naming
- * conventions}.
+ * complying to the Arrowhead certificate {@link se.arkalix.security.identity
+ * naming conventions}.
  *
+ * @see se.arkalix.security.identity Arrowhead Identity Management
  * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
  */
 public class OwnedIdentity extends SystemIdentity {
@@ -160,9 +160,10 @@ public class OwnedIdentity extends SystemIdentity {
         /**
          * Sets JVM-compatible {@link KeyStore} instance to use.
          * <p>
-         * As of Java 11, only the PKCS#12 key store format is mandatory to
-         * support for Java implementations. Your JVM version may support
-         * additional formats.
+         * As of Java 11, only the
+         * <a href="https://tools.ietf.org/html/rfc7292">PKCS#12</a> key store
+         * format is mandatory to support for Java implementations. Your JVM
+         * version may support additional formats.
          * <p>
          * Note that it is an error to provide both a {@code keyStore} and a
          * {@code keyStorePath} via {@link #keyStorePath(Path)}. However, at
@@ -180,9 +181,10 @@ public class OwnedIdentity extends SystemIdentity {
         /**
          * Sets path to file containing JVM-compatible key store.
          * <p>
-         * As of Java 11, only the PKCS#12 key store format is mandatory to
-         * support for Java implementations. Your JVM version may support
-         * additional formats.
+         * As of Java 11, only the
+         * <a href="https://tools.ietf.org/html/rfc7292">PKCS#12</a> key store
+         * format is mandatory to support for Java implementations. Your JVM
+         * version may support additional formats.
          * <p>
          * Note that it is an error to provide both a {@code keyStorePath} and
          * a {@code keyStore} via {@link #keyStore(KeyStore)}. However, at

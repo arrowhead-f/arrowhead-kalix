@@ -9,7 +9,7 @@ import java.util.*;
  * <p>
  * At its simplest, a pattern is a regular URI path, as defined by RFC 3986,
  * Section 3.3. Such a path starts with a forward slash ({@code /}) and then
- * continues with zero or more segments separated by for forward slashes. An
+ * continues with zero or more segments separated by forward slashes. An
  * optional forward slash may be located at the end. While it is recommended
  * for segments to contain only the alphanumeric ASCII characters and hyphens
  * to maximize compatibility with various HTTP libraries and frameworks, RFC
@@ -34,7 +34,7 @@ import java.util.*;
  * denote that the pattern is to be considered a prefix. Prefix patterns match
  * all paths with matching segments up until the right angle bracket. When such
  * a prefix pattern is matched successfully against a path, the segments after
- * the prefix is collected into the path parameter list.
+ * the prefix is collected into any path parameter list.
  *
  * @see <a href="https://tools.ietf.org/html/rfc3986#section-3.3">RFC 3986, Section 3.3</a>
  */

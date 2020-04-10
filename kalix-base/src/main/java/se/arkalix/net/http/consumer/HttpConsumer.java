@@ -16,7 +16,8 @@ import java.util.Objects;
 import static se.arkalix.descriptor.TransportDescriptor.HTTP;
 
 /**
- * Client useful for consuming secure or insecure HTTP service.
+ * Client useful for consuming an {@link se.arkalix.security secure or
+ * insecure} HTTP {@link se.arkalix service}.
  * <p>
  * This class provides similar functionality to {@link HttpClient}, with the
  * exception that hostnames, encodings, authorization tokens and other
@@ -107,6 +108,13 @@ public class HttpConsumer implements ArConsumer {
             }
         }
 
+        if (isSecure && !client.isIdentifiable()) {
+            throw new IllegalArgumentException("" +
+                "The provided HttpClient is not associated with an owned " +
+                "identity, even though secure mode is enabled; cannot " +
+                "consume service");
+        }
+
         final var compatibleEntry = service.interfaceTokens()
             .entrySet()
             .stream()
@@ -150,7 +158,7 @@ public class HttpConsumer implements ArConsumer {
     }
 
     /**
-     * @return Default {@link HttpConsumer} factory.
+     * @return Default {@link HttpConsumerFactory}.
      */
     public static HttpConsumerFactory factory() {
         return factory;

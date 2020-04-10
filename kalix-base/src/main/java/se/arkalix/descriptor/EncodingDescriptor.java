@@ -7,7 +7,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Names a type of message payload encoding.
+ * Names a message payload encoding, such as {@link #CBOR} or {@link #JSON}.
+ * <p>
+ * Encodings are used for representing messages while in transit between
+ * systems. They can also be used for representing data that is stored to disk,
+ * databases or other media.
  */
 public final class EncodingDescriptor {
     private static final Set<EncodingDescriptor> DTO_ENCODINGS;

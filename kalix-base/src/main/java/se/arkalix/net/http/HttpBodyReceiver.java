@@ -11,6 +11,7 @@ import java.util.List;
 /**
  * Some handler useful for receiving an incoming HTTP body.
  */
+@SuppressWarnings("unused")
 public interface HttpBodyReceiver {
     /**
      * Requests that the incoming HTTP body be collected and parsed as an

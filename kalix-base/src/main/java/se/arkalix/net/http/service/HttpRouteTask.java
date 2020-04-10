@@ -1,7 +1,5 @@
 package se.arkalix.net.http.service;
 
-import se.arkalix.internal.net.http.service.HttpServiceInternal;
-
 import java.util.Objects;
 
 /**
@@ -19,7 +17,8 @@ public class HttpRouteTask {
     }
 
     /**
-     * @return The base path of the {@link HttpServiceInternal} that created this task.
+     * @return The {@link HttpService#basePath(String) base path} of the
+     * {@link HttpService} for which this task was created.
      */
     public String basePath() {
         return basePath;
@@ -39,26 +38,53 @@ public class HttpRouteTask {
         return response;
     }
 
+    /**
+     * Builder useful for creating {@link HttpRouteTask} instances.
+     */
     public static class Builder {
         private String basePath;
         private HttpServiceRequest request;
         private HttpServiceResponse response;
 
+        /**
+         * {@link HttpService#basePath(String) Base path} of the {@link
+         * HttpService} to handle the created {@link HttpRouteTask}.
+         *
+         * @param basePath Base path to associate with created task.
+         * @return This builder.
+         * @see <a href="https://tools.ietf.org/html/rfc3986">RFC 3986</a>
+         */
         public Builder basePath(final String basePath) {
             this.basePath = basePath;
             return this;
         }
 
+        /**
+         * Incoming HTTP request handled by the created {@link HttpRouteTask}.
+         *
+         * @param request Incoming HTTP request.
+         * @return This builder.
+         */
         public Builder request(final HttpServiceRequest request) {
             this.request = request;
             return this;
         }
 
+        /**
+         * Response object constructed by the service handling the created
+         * {@link HttpRouteTask}.
+         *
+         * @param response Unfinished outgoing HTTP response.
+         * @return This builder.
+         */
         public Builder response(final HttpServiceResponse response) {
             this.response = response;
             return this;
         }
 
+        /**
+         * @return New {@link HttpRouteTask}.
+         */
         public HttpRouteTask build() {
             return new HttpRouteTask(this);
         }

@@ -9,7 +9,8 @@ import java.net.InetSocketAddress;
 import java.util.Objects;
 
 /**
- * Connection useful for sending HTTP requests to a consumed service.
+ * Connection useful for sending HTTP requests to a {@link se.arkalix consumed
+ * service}.
  */
 public class HttpConsumerConnection {
     private final HttpClientConnection connection;

@@ -7,6 +7,10 @@ import java.util.Optional;
 /**
  * Represents some handler that may be invoked with incoming HTTP request that
  * match its {@link #method() method} and {@link #pattern() path pattern}.
+ * <p>
+ * Please refer to the {@link se.arkalix.net.http.service package
+ * documentation} for more details about {@link HttpRoutable routable classes}
+ * and routing.
  */
 public interface HttpRoutable {
     /**

@@ -9,7 +9,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Describes an Arrowhead Framework service.
+ * Describes an Arrowhead Framework service, as provided by a local or
+ * remote {@link se.arkalix.ArSystem system}.
  */
 public class ServiceDescription implements Comparable<ServiceDescription> {
     private final String name;
@@ -32,12 +33,12 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
         }
         provider = Objects.requireNonNull(builder.provider, "Expected provider");
         uri = Objects.requireNonNull(builder.uri, "Expected uri");
+        if (uri.isBlank()) {
+            throw new IllegalArgumentException("Blank or null URI" +
+                "qualifiers are not permitted");
+        }
         receivedAt = Objects.requireNonNullElseGet(builder.receivedAt, Instant::now);
         expiresAt = Objects.requireNonNullElse(builder.expiresAt, Instant.MAX);
-        if (uri.isBlank()) {
-            throw new IllegalArgumentException("Blank or null qualifiers " +
-                "are not permitted");
-        }
         security = Objects.requireNonNull(builder.security, "Expected security");
         metadata = builder.metadata == null
             ? Collections.emptyMap()

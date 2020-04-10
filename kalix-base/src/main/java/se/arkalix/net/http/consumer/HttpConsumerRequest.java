@@ -16,7 +16,8 @@ import java.util.*;
 import java.util.function.Supplier;
 
 /**
- * An outgoing HTTP request, to be sent to a consumed service.
+ * An outgoing HTTP request, to be sent to a {@link se.arkalix consumed
+ * service}.
  */
 public class HttpConsumerRequest implements HttpBodySender<HttpConsumerRequest> {
     private final HttpClientRequest request = new HttpClientRequest();
@@ -109,8 +110,8 @@ public class HttpConsumerRequest implements HttpBodySender<HttpConsumerRequest> 
     }
 
     /**
-     * @return Encoding set with the most recent call to
-     * {@link #body(DtoEncoding, DtoWritable)}, if any.
+     * @return Encoding set with the most recent call to {@link
+     * #body(DtoEncoding, DtoWritable)}, if any.
      */
     public Optional<DtoEncoding> encoding() {
         return request.encoding();
@@ -240,9 +241,14 @@ public class HttpConsumerRequest implements HttpBodySender<HttpConsumerRequest> 
 
     /**
      * Sets HTTP version.
+     * <p>
+     * Note that only HTTP/1.0 and HTTP/1.1 are supported by this version of
+     * Kalix.
      *
      * @param version Desired HTTP version.
      * @return This request.
+     * @throws IllegalArgumentException If any other HTTP version than HTTP/1.0
+     *                                  or HTTP/1.1 is provided.
      */
     public HttpConsumerRequest version(final HttpVersion version) {
         request.version(version);
@@ -256,6 +262,10 @@ public class HttpConsumerRequest implements HttpBodySender<HttpConsumerRequest> 
         return request;
     }
 
+    /**
+     * This is an internal method. Use of it is not advised as it may change in
+     * breaking ways between minor or patch releases of the Kalix library.
+     */
     @Internal
     void setEncodingIfRequired(final Supplier<DtoEncoding> encoding) {
         if (encoding().isPresent()) {

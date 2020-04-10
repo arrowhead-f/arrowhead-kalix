@@ -2,7 +2,6 @@ package se.arkalix.net.http.service;
 
 import se.arkalix.dto.DtoWritable;
 import se.arkalix.dto.DtoWritableAs;
-import se.arkalix.internal.net.http.service.HttpServiceInternal;
 import se.arkalix.net.http.HttpBodySender;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpStatus;
@@ -11,7 +10,7 @@ import se.arkalix.net.http.HttpVersion;
 import java.util.Optional;
 
 /**
- * An outgoing HTTP response, to be sent by an {@link HttpServiceInternal}.
+ * An outgoing HTTP response, to be sent by an {@link HttpService}.
  */
 public interface HttpServiceResponse extends HttpBodySender<HttpServiceResponse> {
     /**
@@ -72,10 +71,6 @@ public interface HttpServiceResponse extends HttpBodySender<HttpServiceResponse>
 
     /**
      * Sets response status.
-     * <p>
-     * If a response status is explicitly set by a
-     * {@link HttpValidatorHandler}, the associated request will <i>not</i> be
-     * passed on to any further validator handlers or a route handler.
      *
      * @param status New response {@link HttpStatus}.
      * @return This response object.

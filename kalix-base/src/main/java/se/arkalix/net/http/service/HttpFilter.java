@@ -1,6 +1,5 @@
 package se.arkalix.net.http.service;
 
-import se.arkalix.internal.net.http.service.HttpServiceInternal;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.util.concurrent.Future;
 
@@ -10,18 +9,18 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * A {@link HttpServiceInternal} validator, useful for verifying and/or responding to
- * incoming HTTP requests before they are provided to their designated
- * {@link HttpRoute}s.
+ * A {@link HttpService} filter, useful for verifying and/or responding to
+ * incoming {@link HttpServiceRequest HTTP requests} before they are provided
+ * to their designated {@link HttpRoute}s.
  */
-public class HttpValidator implements HttpRoutable {
+public class HttpFilter implements HttpRoutable {
     private final int ordinal;
     private final HttpMethod method;
     private final HttpPattern pattern;
-    private final HttpValidatorHandler handler;
+    private final HttpFilterHandler handler;
 
     /**
-     * Creates new {@link HttpServiceInternal} filter.
+     * Creates new {@link HttpService} filter.
      *
      * @param ordinal When to execute the filter relative to other filters.
      *                Lower numbers are executed first.
@@ -31,11 +30,11 @@ public class HttpValidator implements HttpRoutable {
      *                Use {@code null} to allow any path.
      * @param handler The handler to execute with matching requests.
      */
-    public HttpValidator(
+    public HttpFilter(
         final int ordinal,
         final HttpMethod method,
         final HttpPattern pattern,
-        final HttpValidatorHandler handler)
+        final HttpFilterHandler handler)
     {
         this.ordinal = ordinal;
         this.method = method;
@@ -44,9 +43,9 @@ public class HttpValidator implements HttpRoutable {
     }
 
     /**
-     * @return Integer indicating when to execute this validator in relation to
-     * other catchers that match the same {@link HttpMethod methods} and
-     * have the exact same {@link HttpPattern patterns}.
+     * @return Integer indicating when to execute this filter in relation to
+     * other filters that match the same {@link HttpMethod methods} and have
+     * the exact same {@link HttpPattern patterns}.
      */
     public int ordinal() {
         return ordinal;
@@ -54,7 +53,7 @@ public class HttpValidator implements HttpRoutable {
 
     /**
      * @return {@link HttpMethod}, if any, that requests causing thrown
-     * exceptions must match for this validator to be invoked.
+     * exceptions must match for this filter to be invoked.
      */
     @Override
     public Optional<HttpMethod> method() {
@@ -63,7 +62,7 @@ public class HttpValidator implements HttpRoutable {
 
     /**
      * @return {@link HttpPattern}, if any, that paths of requests causing
-     * thrown exceptions must match for this validator to be invoked.
+     * thrown exceptions must match for this filter to be invoked.
      */
     @Override
     public Optional<HttpPattern> pattern() {
@@ -71,15 +70,15 @@ public class HttpValidator implements HttpRoutable {
     }
 
     /**
-     * Offers this validator the opportunity to respond to the request in the
+     * Offers this filter the opportunity to respond to the request in the
      * given task. If it does respond, it is assumed that the request needs no
      * more processing and a response is sent to the requester immediately.
      * <p>
-     * A validator will typically only handle a request if it is invalid.
+     * A filter will typically only handle a request if it is invalid.
      *
      * @param task Incoming HTTP request route task.
-     * @return Future completed when validation is complete. Its value is
-     * {@code true} only if the request was handled.
+     * @return Future completed when filtering is complete. Its value is {@code
+     * true} only if the request was handled.
      */
     public Future<Boolean> tryHandle(final HttpRouteTask task) {
         mismatch:

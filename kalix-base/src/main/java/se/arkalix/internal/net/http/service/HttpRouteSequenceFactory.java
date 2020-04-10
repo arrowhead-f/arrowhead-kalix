@@ -2,7 +2,7 @@ package se.arkalix.internal.net.http.service;
 
 import se.arkalix.net.http.service.HttpCatcher;
 import se.arkalix.net.http.service.HttpRoute;
-import se.arkalix.net.http.service.HttpValidator;
+import se.arkalix.net.http.service.HttpFilter;
 import se.arkalix.util.annotation.Internal;
 
 import java.util.ArrayList;
@@ -15,44 +15,44 @@ import java.util.List;
 @Internal
 public class HttpRouteSequenceFactory {
     private final List<HttpCatcher<?>> catchers;
-    private final List<HttpValidator> validators;
+    private final List<HttpFilter> filters;
 
     /**
      * Creates new factory containing given {@code catchers} and
-     * {@code validators}.
+     * {@code filters}.
      * <p>
      * Subsequently created {@link HttpRouteSequence}s will contain references
-     * to all catchers and validators that could, potentially, match incoming
+     * to all catchers and filters that could, potentially, match incoming
      * HTTP requests targeted at certain {@link HttpRoute}s.
      *
-     * @param catchers   Route exception handlers.
-     * @param validators Route validation handlers.
+     * @param catchers Route exception catchers.
+     * @param filters  Route filters.
      */
-    public HttpRouteSequenceFactory(final List<HttpCatcher<?>> catchers, final List<HttpValidator> validators) {
+    public HttpRouteSequenceFactory(final List<HttpCatcher<?>> catchers, final List<HttpFilter> filters) {
         this.catchers = new ArrayList<>(catchers);
-        this.validators = new ArrayList<>(validators);
+        this.filters = new ArrayList<>(filters);
 
         this.catchers.sort(HttpRoutables::compareCatchers);
-        this.validators.sort(HttpRoutables::compareValidators);
+        this.filters.sort(HttpRoutables::compareFilters);
     }
 
     /**
      * Creates new {@link HttpRouteSequence} containing references to all
-     * catchers and validators, known by this factory, that could, potentially,
-     * match incoming  HTTP requests targeted at the given {@link HttpRoute}.
+     * catchers and filters, known by this factory, that could, potentially,
+     * match incoming HTTP requests targeted at the given {@link HttpRoute}.
      *
      * @param route Route to create route sequence for.
      * @return New route sequence.
      */
     public HttpRouteSequence createRouteSequenceFor(final HttpRoute route) {
-        final var routeValidators = validators.stream()
-            .filter(validator -> HttpRoutables.intersect(validator, route))
-            .toArray(HttpValidator[]::new);
+        final var routeFilters = filters.stream()
+            .filter(filter -> HttpRoutables.intersect(filter, route))
+            .toArray(HttpFilter[]::new);
 
         final var routeCatchers = catchers.stream()
             .filter(catcher -> HttpRoutables.intersect(catcher, route))
             .toArray(HttpCatcher[]::new);
 
-        return new HttpRouteSequence(routeValidators, route, routeCatchers);
+        return new HttpRouteSequence(routeFilters, route, routeCatchers);
     }
 }

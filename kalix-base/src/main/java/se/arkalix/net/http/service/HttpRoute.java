@@ -1,6 +1,5 @@
 package se.arkalix.net.http.service;
 
-import se.arkalix.internal.net.http.service.HttpServiceInternal;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.util.concurrent.Future;
 
@@ -17,7 +16,7 @@ public class HttpRoute implements HttpRoutable {
     private final HttpRouteHandler handler;
 
     /**
-     * Creates new {@link HttpServiceInternal} route.
+     * Creates new {@link HttpService} route.
      *
      * @param method  HTTP method to require for given requests to match this
      *                route. Use {@code null} to allow any method.

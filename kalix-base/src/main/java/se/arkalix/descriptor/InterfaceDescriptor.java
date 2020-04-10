@@ -9,9 +9,14 @@ import java.util.regex.Pattern;
 
 /**
  * Names a network interface protocol triplet.
- *
- * Such a triplet names a transport protocol, indicates whether or not TLS is
- * required, as well as naming a message payload encoding.
+ * <p>
+ * Each provided Arrowhead {@link se.arkalix.ArService service} exposes its
+ * functionality via at least one <i>interface</i>. An interface consists of a
+ * {@link TransportDescriptor transport protocol}, a requirement to either use
+ * or not to use <a href="https://tools.ietf.org/html/rfc7925">TLS/DTLS</a>, as
+ * well as a {@link EncodingDescriptor payload encoding}. When it is advertised
+ * what interfaces are certain services support, they are always represented by
+ * this descriptor.
  */
 public final class InterfaceDescriptor implements Comparable<InterfaceDescriptor> {
     private static final Pattern TRIPLET_PATTERN = Pattern.compile("^([0-9A-Z_]+)-(IN)?SECURE-([0-9A-Z_]+)$");

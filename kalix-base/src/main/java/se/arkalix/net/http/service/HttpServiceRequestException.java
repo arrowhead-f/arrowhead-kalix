@@ -1,10 +1,9 @@
 package se.arkalix.net.http.service;
 
-import se.arkalix.internal.net.http.service.HttpServiceInternal;
 import se.arkalix.net.http.HttpStatus;
 
 /**
- * Signifies that some HTTP request received by a {@link HttpServiceInternal} contains
+ * Signifies that some HTTP request received by a {@link HttpService} contains
  * an error and, therefore, will not be processed.
  * <p>
  * As these exceptions are expected to be quite common, and are caused by
@@ -12,6 +11,7 @@ import se.arkalix.net.http.HttpStatus;
  * traces</i>. If an HTTP request causes an error that should generate a stack
  * trace, some other exception type should be used instead.
  */
+@SuppressWarnings("unused")
 public class HttpServiceRequestException extends RuntimeException {
     private final HttpStatus status;
 
@@ -32,7 +32,7 @@ public class HttpServiceRequestException extends RuntimeException {
      * @param message Human-readable description of issue.
      */
     public HttpServiceRequestException(final HttpStatus status, final String message) {
-        super(status + " " + message, null, true, false); // Disable stack trace.
+        super(status.text() + " " + message, null, true, false); // Disable stack trace.
         this.status = status;
     }
 

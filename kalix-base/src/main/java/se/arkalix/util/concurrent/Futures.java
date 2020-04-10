@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 /**
  * Various utilities for working will collections of {@link Future Futures}.
  */
+@SuppressWarnings("unused")
 public final class Futures {
     private Futures() {}
 

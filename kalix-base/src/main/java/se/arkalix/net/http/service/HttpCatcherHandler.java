@@ -4,7 +4,7 @@ import se.arkalix.util.concurrent.Future;
 
 /**
  * A handler meant to process exceptions occurring while handling incoming
- * HTTP requests, or while responding to them.
+ * {@link HttpServiceRequest HTTP requests}, or while responding to them.
  */
 @FunctionalInterface
 public interface HttpCatcherHandler<T extends Throwable> {

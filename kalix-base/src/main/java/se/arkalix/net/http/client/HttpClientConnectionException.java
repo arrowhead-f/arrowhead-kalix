@@ -1,7 +1,7 @@
 package se.arkalix.net.http.client;
 
 /**
- * Signifies that some HTTP client failed to establish some
+ * Signifies that some {@link HttpClient} failed to establish a
  * {@link HttpClientConnection}.
  * <p>
  * As these exceptions are expected to be quite common, and are caused by
@@ -11,9 +11,10 @@ package se.arkalix.net.http.client;
  */
 public class HttpClientConnectionException extends HttpClientException {
     /**
-     * Creates new HTTP client connection exception with given message.
+     * Creates new {@link HttpClient} connection exception with given message.
      *
-     * @param message Human-readable description of issue.
+     * @param message Human-readable description of cause of exception being
+     *                thrown.
      */
     public HttpClientConnectionException(final String message) {
         super(message);

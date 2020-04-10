@@ -14,11 +14,12 @@ import java.util.Objects;
  * @see <a href="https://tools.ietf.org/html/rfc7235">RFC 7235</a>
  * @see <a href="https://tools.ietf.org/html/rfc7235">RFC 7540</a>
  */
+@SuppressWarnings("unused")
 public class HttpVersion {
     private final int major;
     private final int minor;
     private final String text;
-    private boolean isStandard;
+    private final boolean isStandard;
 
     private HttpVersion(final int major, final int minor, final String text, final boolean isStandard) {
         this.major = major;

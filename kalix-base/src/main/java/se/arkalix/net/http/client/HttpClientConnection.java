@@ -6,8 +6,8 @@ import java.net.InetSocketAddress;
 import java.security.cert.Certificate;
 
 /**
- * Connection useful for sending HTTP requests to a single remote socket
- * address.
+ * Connection, established via a {@link HttpClient}, useful for sending HTTP
+ * requests to a single remote socket address.
  */
 public interface HttpClientConnection {
     /**

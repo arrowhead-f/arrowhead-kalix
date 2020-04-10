@@ -10,10 +10,14 @@ import se.arkalix.descriptor.SecurityDescriptor;
  * <p>
  * No certificates or other credentials are exchanged while systems
  * interact under this policy. The policy is <i>only</i> allowed for
- * services being provided by systems running in insecure mode.
+ * services being provided by systems running in
+ * {@link se.arkalix.security insecure mode}.
  * <p>
  * Note that access policy instances of this type can be shared by multiple
  * services.
+ * <p>
+ * Use the {@link AccessPolicy#unrestricted()} method to get an instance of
+ * this class.
  */
 public class AccessUnrestricted implements AccessPolicy {
     static AccessUnrestricted INSTANCE = new AccessUnrestricted();

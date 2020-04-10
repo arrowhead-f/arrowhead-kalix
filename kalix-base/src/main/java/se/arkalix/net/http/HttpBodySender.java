@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+@SuppressWarnings("UnusedReturnValue")
 public interface HttpBodySender<Self> {
     /**
      * Gets outgoing HTTP body, if any is set.
