@@ -18,6 +18,7 @@ import java.util.Optional;
  * @see se.arkalix.security.identity Arrowhead Identity Management
  * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
  */
+@SuppressWarnings("unused")
 public class SystemIdentity extends TrustedIdentity {
     private final String systemName;
     private final String cloudName;

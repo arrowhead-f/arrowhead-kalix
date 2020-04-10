@@ -18,21 +18,123 @@ import java.util.function.Consumer;
 /**
  * Represents an operation that will complete at some point in the future.
  * <p>
- * To make it convenient to act on the completion of this {@code Future}, the
- * receiver of it is expected to provide a {@code Consumer} to the
- * {@link #onResult(Consumer)} method, which should be invoked whenever the
- * {@link Result} of the operation becomes available.
+ * Each {@code Future} eventually completes successfully or fails. If a
+ * success, the {@code Future} in question will contain a {@link Result#value()
+ * value}. If a failure, it will contain a {@link Result#fault() fault}.
  * <p>
- * It is the responsibility of the receiver of a {@code Future} to make sure
- * that its {@link #onResult(Consumer)} is called, or any method listed here
- * that uses it internally, as it may be the case that the operation
- * represented by the future will not start running this method is invoked.
- * Failing to call it may lead to memory or other resources never being
- * reclaimed.
+ * In order for the {@link Result} of any given {@code Future} to be received,
+ * a {@link Consumer} function <i>must</i> be provided to its {@link
+ * #onResult(Consumer)} method. Whenever the result of a {@code Future} is not
+ * or no longer desired, its {@link #cancel(boolean)} method should always be
+ * called.
  * <p>
- * Furthermore, implementations of this interface are likely <i>not</i> going
- * to be thread safe. Unless otherwise advertised, sharing individual
- * {@code Futures} between multiple threads may cause race conditions.
+ * To make it more convenient to handle different kinds of result, the
+ * following default methods are provided, categorized after their areas of
+ * application:
+ * <ol type="A">
+ *     <li>
+ *         <b>Result Consumption</b>
+ *         <p>Basic methods for receiving and ignoring the {@link Result} of
+ *            this {@code Future}.
+ *             <ol>
+ *                 <li>{@link #onResult(Consumer)}</li>
+ *                 <li>{@link #cancel(boolean)}</li>
+ *                 <li>{@link #cancel()}</li>
+ *                 <li>{@link #onFailure(Consumer)}</li>
+ *             </ol>
+ *         </p>
+ *     </li>
+ *     <li>
+ *         <b>Side Effects</b>
+ *         <p>Methods that each both execute a {@link Consumer} function with
+ *            <i>and</i> return a new {@code Future} containing the
+ *            {@link Result} of this {@code Future}.
+ *             <ol>
+ *                 <li>{@link #ifFailure(Class, ThrowingConsumer)}</li>
+ *                 <li>{@link #ifSuccess(ThrowingConsumer)}</li>
+ *                 <li>{@link #always(ThrowingConsumer)}</li>
+ *             </ol>
+ *         </p>
+ *     </li>
+ *     <li>
+ *         <b>Result Transformation</b>
+ *         <p>Methods that each potentially transforms the {@link Result} of
+ *            this {@code Future} and returns a new {@link Future} containing
+ *            the potentially transformed value or fault. These methods can
+ *            be divided into the <i>map</i> category and the <i>flat map</i>
+ *            category. The methods of the former category simply transform the
+ *            value or fault of this {@code Future}, while the latter both
+ *            transform and await the completion of that transformation.
+ *             <ol>
+ *                 <li>{@link #map(ThrowingFunction)}</li>
+ *                 <li>{@link #mapCatch(Class, ThrowingFunction)}</li>
+ *                 <li>{@link #mapFault(Class, ThrowingFunction)}</li>
+ *                 <li>{@link #mapResult(ThrowingFunction)}</li>
+ *                 <li>{@link #mapThrow(ThrowingFunction)}</li>
+ *                 <li>{@link #flatMap(ThrowingFunction)}</li>
+ *                 <li>{@link #flatMapCatch(Class, ThrowingFunction)}</li>
+ *                 <li>{@link #flatMapFault(Class, ThrowingFunction)}</li>
+ *                 <li>{@link #flatMapResult(ThrowingFunction)}</li>
+ *                 <li>{@link #flatMapThrow(ThrowingFunction)}</li>
+ *             </ol>
+ *         </p>
+ *     </li>
+ *     <li>
+ *         <b>Result Substitution</b>
+ *         <p>Methods useful for replacing the {@link Result} of this {@code
+ *            Future} with arbitrary values or faults.
+ *             <ol>
+ *                 <li>{@link #pass(Object)}</li>
+ *                 <li>{@link #fail(Throwable)}</li>
+ *             </ol>
+ *         </p>
+ *     </li>
+ *     <li>
+ *         <b>Result Distribution</b>
+ *         <p>Method allowing for multiple {@link Consumer} functions to
+ *            receive the {@link Result} of this {@code Future}.
+ *             <ol>
+ *                 <li>{@link #toAnnouncement()}</li>
+ *             </ol>
+ *         </p>
+ *     </li>
+ *     <li>
+ *         <b>Result Suspension</b>
+ *         <p>Each method returns a new {@code Future} that is completed with
+ *            the {@link Result} of this {@code Future} at some later point in
+ *            time.
+ *             <ol>
+ *                 <li>{@link #delay(Duration)}</li>
+ *                 <li>{@link #delayUntil(Instant)}</li>
+ *             </ol>
+ *         </p>
+ *     </li>
+ *     <li>
+ *         <b>Thread Management</b>
+ *         <p>Each method consumes the {@link Result} of this {@code Future} on
+ *            a separate thread.
+ *             <ol>
+ *                 <li>{@link #fork(Consumer)}</li>
+ *                 <li>{@link #forkJoin(ThrowingFunction)}</li>
+ *             </ol>
+ *         </p>
+ *     </li>
+ *     <li>
+ *         <b>Future Result Predetermination</b>
+ *         <p>Each of the following static factory functions help create
+ *            {@code Future} instances with a predetermined {@link Result}.
+ *             <ol>
+ *                 <li>{@link #done()}</li>
+ *                 <li>{@link #success(Object)}</li>
+ *                 <li>{@link #fail(Throwable)}</li>
+ *                 <li>{@link #of(Result)}</li>
+ *             </ol>
+ *         </p>
+ *     </li>
+ * </ol>
+ * Implementations of this interface are likely <i>not</i> going to be thread
+ * safe. Unless otherwise advertised, sharing individual {@code Futures}
+ * between multiple threads may cause race conditions.
  *
  * @param <V> Type of value that can be retrieved if the operation succeeds.
  */

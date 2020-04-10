@@ -7,6 +7,7 @@ package se.arkalix.security.identity;
  * @see java.security.PublicKey
  * @see java.security.PrivateKey
  */
+@SuppressWarnings("unused")
 public class UnsupportedKeyAlgorithm extends RuntimeException {
     /**
      * @param message Human-readable description of why this exception was

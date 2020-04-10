@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
  * what interfaces are certain services support, they are always represented by
  * this descriptor.
  */
+@SuppressWarnings("unused")
 public final class InterfaceDescriptor implements Comparable<InterfaceDescriptor> {
     private static final Pattern TRIPLET_PATTERN = Pattern.compile("^([0-9A-Z_]+)-(IN)?SECURE-([0-9A-Z_]+)$");
 

@@ -19,6 +19,7 @@ import java.util.Collections;
  *
  * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
  */
+@SuppressWarnings("unused")
 public class TrustStore {
     private final X509Certificate[] certificates;
 

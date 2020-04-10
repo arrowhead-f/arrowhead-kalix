@@ -122,10 +122,6 @@
  * promoted} to a so-called {@link se.arkalix.security.identity.SystemIdentity}
  * if it must be established that it represents a valid system identity.
  *
- * @see se.arkalix.security.identity.OwnedIdentity OwnedIdentity
- * @see se.arkalix.security.identity.SystemIdentity SystemIdentity
- * @see se.arkalix.security.identity.TrustedIdentity TrustedIdentity
- * @see se.arkalix.security.identity.TrustStore TrustStore
  * @see <a href="https://tools.ietf.org/html/rfc1035#section-2.3.1">RFC 1035, Section 2.3.1</a>
  * @see <a href="https://tools.ietf.org/html/rfc4512#section-1.4">RFC 4512, Section 1.4</a>
  * @see <a href="https://tools.ietf.org/html/rfc4514#section-3">RFC 4515, Section 3</a>

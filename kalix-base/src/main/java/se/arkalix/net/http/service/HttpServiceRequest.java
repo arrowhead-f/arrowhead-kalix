@@ -4,6 +4,7 @@ import se.arkalix.description.ConsumerDescription;
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadable;
 import se.arkalix.net.http.*;
+import se.arkalix.security.NotSecureException;
 import se.arkalix.util.concurrent.FutureProgress;
 
 import java.io.InputStream;
@@ -153,6 +154,9 @@ public interface HttpServiceRequest extends HttpBodyReceiver {
 
     /**
      * @return Information about the Arrowhead system that sent this request.
+     * @throws NotSecureException If the system providing the service receiving
+     *                            this request is not running in {@link
+     *                            se.arkalix.security secure mode}.
      */
     ConsumerDescription consumer();
 

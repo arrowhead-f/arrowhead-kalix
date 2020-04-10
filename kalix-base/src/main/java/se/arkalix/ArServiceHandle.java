@@ -10,6 +10,7 @@ import se.arkalix.util.annotation.ThreadSafe;
  * The interface is primarily useful because of its {@link #dismiss()}
  * method, which causes the service to no longer be provided when called.
  */
+@SuppressWarnings("unused")
 public interface ArServiceHandle {
     /**
      * @return Description of AHF service.

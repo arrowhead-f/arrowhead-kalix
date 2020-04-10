@@ -39,7 +39,7 @@
  *     | Filter  2  |                                 |
  *     | Filter  3  |        +-------------+          |
  *     | Filter ... | throws | Catcher  1  |          |
- *     | Filter  N  |------->| Catcher  2  |          |
+ *     | Filter  N  |-------&gt;| Catcher  2  |          |
  *     +-----+------+        | Catcher  3  | responds |
  *           | delegates     | Catcher ... |----------+
  *           |               | Catcher  M  |          |
@@ -47,7 +47,7 @@
  *           |                      A                 |
  *           V               throws |                 |
  *     +------------+               | responds        V
- *     |   Route    |---------------+---------> RESPONSE SENT
+ *     |   Route    |---------------+---------&gt; RESPONSE SENT
  *     +------------+
  * </pre>
  * When an incoming request is received, a route sequence with a matching route

@@ -13,6 +13,7 @@ import se.arkalix.net.http.HttpVersion;
 import se.arkalix.net.http.client.HttpClientConnection;
 import se.arkalix.net.http.client.HttpClientRequest;
 import se.arkalix.net.http.client.HttpClientResponse;
+import se.arkalix.security.NotSecureException;
 import se.arkalix.util.Result;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;
@@ -61,7 +62,7 @@ public class NettyHttpClientConnection implements HttpClientConnection {
     @Override
     public Certificate[] certificateChain() {
         if (certificateChain == null) {
-            throw new IllegalStateException("Connection not secured;" +
+            throw new NotSecureException("Connection not secured;" +
                 " no certificates are available");
         }
         return certificateChain;

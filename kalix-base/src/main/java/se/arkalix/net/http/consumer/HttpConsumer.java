@@ -23,6 +23,7 @@ import static se.arkalix.descriptor.TransportDescriptor.HTTP;
  * exception that hostnames, encodings, authorization tokens and other
  * details are managed automatically.
  */
+@SuppressWarnings("unused")
 public class HttpConsumer implements ArConsumer {
     private static final HttpConsumerFactory factory = new HttpConsumerFactory();
 

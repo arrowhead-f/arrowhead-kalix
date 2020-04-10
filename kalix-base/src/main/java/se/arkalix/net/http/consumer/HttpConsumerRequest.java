@@ -19,6 +19,7 @@ import java.util.function.Supplier;
  * An outgoing HTTP request, to be sent to a {@link se.arkalix consumed
  * service}.
  */
+@SuppressWarnings("unused")
 public class HttpConsumerRequest implements HttpBodySender<HttpConsumerRequest> {
     private final HttpClientRequest request = new HttpClientRequest();
 

@@ -19,6 +19,7 @@ import java.util.Objects;
  * An incoming HTTP response, received from a {@link se.arkalix consumed
  * service}.
  */
+@SuppressWarnings("unused")
 public class HttpConsumerResponse implements HttpClientResponse {
     private final HttpClientResponse response;
     private final EncodingDescriptor encoding;

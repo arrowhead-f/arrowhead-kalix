@@ -11,6 +11,7 @@ import java.util.Optional;
 /**
  * An incoming  HTTP response.
  */
+@SuppressWarnings("unused")
 public interface HttpClientResponse extends HttpBodyReceiver {
     /**
      * Retrieves the body of this response, if its status code is in the range

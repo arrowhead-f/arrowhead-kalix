@@ -23,10 +23,5 @@
  * <p>
  * More details about the access control paradigms can be read in the classes
  * representing them.
- *
- * @see se.arkalix.security.access.AccessByCertificate AccessByCertificate
- * @see se.arkalix.security.access.AccessByToken AccessByToken
- * @see se.arkalix.security.access.AccessByWhitelist AccessByWhitelist
- * @see se.arkalix.security.access.AccessUnrestricted AccessUnrestricted
  */
 package se.arkalix.security.access;

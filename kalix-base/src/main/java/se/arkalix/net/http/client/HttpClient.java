@@ -8,6 +8,7 @@ import se.arkalix.ArSystem;
 import se.arkalix.internal.net.http.client.FutureHttpClientConnection;
 import se.arkalix.internal.net.http.client.NettyHttpClientConnectionInitializer;
 import se.arkalix.internal.util.concurrent.NettyScheduler;
+import se.arkalix.security.NotSecureException;
 import se.arkalix.security.identity.OwnedIdentity;
 import se.arkalix.security.identity.SystemIdentity;
 import se.arkalix.security.identity.TrustStore;
@@ -164,14 +165,15 @@ public class HttpClient {
     }
 
     /**
-     * @return Identity of the system owning this client.
-     * @throws IllegalStateException If this client was not provided an
-     *                               identity when created.
+     * @return {@link se.arkalix.security.identity Identity} of the system
+     * owning this client.
+     * @throws NotSecureException If this client was not provided a system
+     *                            identity when created.
      */
     public SystemIdentity identity() {
         if (identity == null) {
-            throw new IllegalStateException("Anonymous HTTP client; no " +
-                "system identity is available");
+            throw new NotSecureException("Anonymous HTTP client; no system " +
+                "identity is available");
         }
         return identity;
     }

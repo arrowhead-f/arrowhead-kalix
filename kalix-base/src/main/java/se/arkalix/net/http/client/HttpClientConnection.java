@@ -1,5 +1,6 @@
 package se.arkalix.net.http.client;
 
+import se.arkalix.security.NotSecureException;
 import se.arkalix.util.concurrent.Future;
 
 import java.net.InetSocketAddress;
@@ -23,7 +24,7 @@ public interface HttpClientConnection {
     /**
      * @return Certificate chain associated with host reachable via this
      * connection.
-     * @throws IllegalStateException If the connection is not secure.
+     * @throws NotSecureException If the connection is not secure.
      */
     Certificate[] certificateChain();
 

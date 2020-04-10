@@ -41,6 +41,7 @@ import java.util.*;
  *     </li>
  * </ol>
  */
+@SuppressWarnings("unused")
 public class ServiceQuery {
     private final ArSystem consumer;
     private final ThrowingFunction<ServiceQuery, Future<Set<ServiceDescription>>> resolver;
@@ -325,7 +326,7 @@ public class ServiceQuery {
         version = version0;
 
         // Set and check service version min/max range.
-        final var versionMin0 = factory.serviceVersion().orElse(null);
+        final var versionMin0 = factory.serviceVersionMin().orElse(null);
         final int versionMin1;
         if (versionMin == null && versionMin0 != null) {
             versionMin1 = versionMin0;
@@ -336,7 +337,7 @@ public class ServiceQuery {
         else {
             versionMin1 = 0;
         }
-        final var versionMax0 = factory.serviceVersion().orElse(null);
+        final var versionMax0 = factory.serviceVersionMax().orElse(null);
         final int versionMax1;
         if (versionMax == null && versionMax0 != null) {
             versionMax1 = versionMax0;

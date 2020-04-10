@@ -1,5 +1,7 @@
 package se.arkalix.description;
 
+import se.arkalix.security.NotSecureException;
+
 import java.net.InetSocketAddress;
 import java.security.PublicKey;
 import java.util.Objects;
@@ -73,16 +75,16 @@ public class ProviderDescription {
 
     /**
      * @return System public key.
-     * @throws IllegalStateException If the system does not have an public key.
-     *                               This will only be the case if the
-     *                               described system runs in the
-     *                               <i>insecure</i> security mode, which it
-     *                               only can do if the system that requested
-     *                               it also runs in insecure mode.
+     * @throws NotSecureException If the system does not have an public key.
+     *                            This will only be the case if the described
+     *                            system runs in the <i>insecure</i> {@link
+     *                            se.arkalix.security security mode}, which it
+     *                            only can do if the system that requested it
+     *                            also runs in insecure mode.
      */
     public PublicKey publicKey() {
         if (publicKey == null) {
-            throw new IllegalStateException("Not in secure mode");
+            throw new NotSecureException("Not in secure mode");
         }
         return publicKey;
     }

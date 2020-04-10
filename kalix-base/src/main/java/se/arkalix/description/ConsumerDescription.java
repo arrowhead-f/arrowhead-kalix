@@ -1,5 +1,6 @@
 package se.arkalix.description;
 
+import se.arkalix.security.NotSecureException;
 import se.arkalix.security.identity.SystemIdentity;
 
 import java.net.InetSocketAddress;
@@ -95,14 +96,15 @@ public class ConsumerDescription {
 
     /**
      * @return System identity.
-     * @throws IllegalStateException If the system does not have an identity.
-     *                               This will only be the case if the system
-     *                               that retrieved this description runs in
-     *                               the <i>insecure</i> security mode.
+     * @throws NotSecureException If the system does not have an identity. This
+     *                            will only be the case if the system that
+     *                            retrieved this description runs in the
+     *                            <i>insecure</i> {@link se.arkalix.security
+     *                            security mode}.
      */
     public SystemIdentity identity() {
         if (identity == null) {
-            throw new IllegalStateException("Not in secure mode");
+            throw new NotSecureException("Not in secure mode");
         }
         return identity;
     }

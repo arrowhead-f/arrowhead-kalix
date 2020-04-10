@@ -8,6 +8,7 @@ import java.util.Objects;
  * Names an {@link se.arkalix.security.access.AccessPolicy access policy} that
  * Arrowhead services can be configured to use.
  */
+@SuppressWarnings("unused")
 public final class SecurityDescriptor {
     private final String name;
 

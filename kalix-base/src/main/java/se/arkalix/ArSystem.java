@@ -10,6 +10,7 @@ import se.arkalix.internal.plugin.PluginNotifier;
 import se.arkalix.internal.util.concurrent.NettyScheduler;
 import se.arkalix.plugin.Plugin;
 import se.arkalix.query.ServiceQuery;
+import se.arkalix.security.NotSecureException;
 import se.arkalix.security.identity.OwnedIdentity;
 import se.arkalix.security.identity.SystemIdentity;
 import se.arkalix.security.identity.TrustStore;
@@ -30,6 +31,7 @@ import java.util.stream.Stream;
 /**
  * An Arrowhead Framework (AHF) system.
  */
+@SuppressWarnings("unused")
 public class ArSystem {
     private static final Logger logger = LoggerFactory.getLogger(ArSystem.class);
 
@@ -149,13 +151,13 @@ public class ArSystem {
 
     /**
      * @return The cryptographic identity of this system.
-     * @throws IllegalStateException If this system is not running in secure
+     * @throws NotSecureException If this system is not running in secure
      *                               mode.
      */
     @ThreadSafe
     public final OwnedIdentity identity() {
         if (!isSecure) {
-            throw new IllegalStateException("System \"" + name() + "\" not " +
+            throw new NotSecureException("System \"" + name() + "\" not " +
                 "in secure mode");
         }
         return identity;
@@ -163,13 +165,13 @@ public class ArSystem {
 
     /**
      * @return Trust store, which contains certificates trusted by this system.
-     * @throws IllegalStateException If this system is not running in secure
+     * @throws NotSecureException If this system is not running in secure
      *                               mode.
      */
     @ThreadSafe
     public final TrustStore trustStore() {
         if (!isSecure) {
-            throw new IllegalStateException("System \"" + name() + "\" not " +
+            throw new NotSecureException("System \"" + name() + "\" not " +
                 "in secure mode");
         }
         return trustStore;

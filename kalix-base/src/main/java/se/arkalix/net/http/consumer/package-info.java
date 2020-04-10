@@ -18,19 +18,14 @@
  *         .name("the-service-name")
  *         .encoding(EncodingDescriptor.JSON)
  *         .using(HttpConsumer.factory())
- *         .flatMap(consumer -> consumer.send(new HttpConsumerRequest()
+ *         .flatMap(consumer -&gt; consumer.send(new HttpConsumerRequest()
  *            {...})
  *         .flatMap(HttpConsumerResponse::bodyAsString)
- *         .ifSuccess(body -> System.out.println(body))
+ *         .ifSuccess(body -&gt; System.out.println(body))
  *         .onFailure(Throwable::printStackTrace);
  * </pre>
  * It should be noted that all functionality provided by this package is
  * <i>non-blocking</i> by virtue of all I/O operations being handled by the
  * {@link se.arkalix.util.concurrent.Schedulers Kalix schedulers}.
- *
- * @see se.arkalix.net.http.consumer.HttpConsumer HttpConsumer
- * @see se.arkalix.net.http.consumer.HttpConsumerFactory HttpConsumerFactory
- * @see se.arkalix.net.http.consumer.HttpConsumerRequest HttpConsumerRequest
- * @see se.arkalix.net.http.consumer.HttpConsumerResponse HttpConsumerResponse
  */
 package se.arkalix.net.http.consumer;

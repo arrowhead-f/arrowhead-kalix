@@ -167,6 +167,7 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
     /**
      * Builder useful for creating {@link ServiceDescription} instances.
      */
+    @SuppressWarnings("unused")
     public static class Builder {
         private String name;
         private ProviderDescription provider;

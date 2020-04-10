@@ -2,6 +2,7 @@ package se.arkalix.net.http.consumer;
 
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.net.http.client.HttpClientConnection;
+import se.arkalix.security.NotSecureException;
 import se.arkalix.security.identity.SystemIdentity;
 import se.arkalix.util.concurrent.Future;
 
@@ -12,6 +13,7 @@ import java.util.Objects;
  * Connection useful for sending HTTP requests to a {@link se.arkalix consumed
  * service}.
  */
+@SuppressWarnings("unused")
 public class HttpConsumerConnection {
     private final HttpClientConnection connection;
     private final EncodingDescriptor encoding;
@@ -24,8 +26,8 @@ public class HttpConsumerConnection {
         final SystemIdentity provider,
         final String authorization)
     {
-        this.connection = connection;
-        this.encoding = encoding;
+        this.connection = Objects.requireNonNull(connection, "Expected connection");
+        this.encoding = Objects.requireNonNull(encoding, "Expected encoding");
         this.provider = provider;
         this.authorization = authorization;
     }
@@ -39,10 +41,13 @@ public class HttpConsumerConnection {
 
     /**
      * @return Identity associated with the provider of the consumed service.
-     * @throws IllegalStateException If the provider is not running in secure
+     * @throws NotSecureException If the provider is not running in secure
      *                               mode.
      */
     public SystemIdentity provider() {
+        if (provider == null) {
+            throw new NotSecureException("Not in secure mode");
+        }
         return provider;
     }
 

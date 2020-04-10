@@ -14,6 +14,7 @@ import java.util.*;
 /**
  * An outgoing HTTP request.
  */
+@SuppressWarnings("UnusedReturnValue")
 public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
     private final HttpHeaders headers = new HttpHeaders();
     private final Map<String, List<String>> queryParameters = new HashMap<>();

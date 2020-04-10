@@ -17,6 +17,7 @@ import java.util.stream.Stream;
  * A local service registry, maintaining descriptions of known remote services
  * whose service registry entries have not yet expired.
  */
+@SuppressWarnings("unused")
 public class ArServiceCache {
     private final ConcurrentSkipListSet<ServiceDescription> services = new ConcurrentSkipListSet<>();
     private final Duration entryLifetimeLimit;

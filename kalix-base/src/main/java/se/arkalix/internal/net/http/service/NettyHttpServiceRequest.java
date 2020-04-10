@@ -11,6 +11,7 @@ import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.net.http.HttpVersion;
 import se.arkalix.net.http.service.HttpServiceRequest;
+import se.arkalix.security.NotSecureException;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.FutureProgress;
 
@@ -117,7 +118,7 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
     @Override
     public ConsumerDescription consumer() {
         if (consumer == null) {
-            throw new IllegalStateException("Not in secure mode; consumer " +
+            throw new NotSecureException("Not in secure mode; consumer " +
                 "information unavailable");
         }
         return consumer;
