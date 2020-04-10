@@ -264,8 +264,8 @@ public class HttpConsumerRequest implements HttpBodySender<HttpConsumerRequest> 
     }
 
     /**
-     * This is an internal method. Use of it is not advised as it may change in
-     * breaking ways between minor or patch releases of the Kalix library.
+     * <i>Internal API</i>. Might change in breaking ways between patch
+     * versions of the Kalix library. Use is not advised.
      */
     @Internal
     void setEncodingIfRequired(final Supplier<DtoEncoding> encoding) {

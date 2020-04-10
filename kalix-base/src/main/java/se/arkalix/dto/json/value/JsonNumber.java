@@ -150,6 +150,10 @@ public class JsonNumber implements JsonValue {
         return readJson(JsonTokenizer.tokenize(source));
     }
 
+    /**
+     * <i>Internal API</i>. Might change in breaking ways between patch
+     * versions of the Kalix library. Use is not advised.
+     */
     @Internal
     public static JsonNumber readJson(final JsonTokenBuffer buffer) throws DtoReadException {
         final var source = buffer.source();

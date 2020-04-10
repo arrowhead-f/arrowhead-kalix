@@ -32,10 +32,8 @@ public class HttpHeaders {
     }
 
     /**
-     * This is an <i>internal</i> API. It may change in breaking ways between
-     * patch versions of the Kalix library. Use of it is not advised.
-     *
-     * @param headers Netty headers.
+     * <i>Internal API</i>. Might change in breaking ways between patch
+     * versions of the Kalix library. Use is not advised.
      */
     @Internal
     public HttpHeaders(final io.netty.handler.codec.http.HttpHeaders headers) {
@@ -280,10 +278,8 @@ public class HttpHeaders {
     }
 
     /**
-     * This is an <i>internal</i> API. It may change in breaking ways between
-     * patch versions of the Kalix library. Use of it is not advised.
-     *
-     * @return Netty headers.
+     * <i>Internal API</i>. Might change in breaking ways between patch
+     * versions of the Kalix library. Use is not advised.
      */
     @Internal
     public io.netty.handler.codec.http.HttpHeaders unwrap() {

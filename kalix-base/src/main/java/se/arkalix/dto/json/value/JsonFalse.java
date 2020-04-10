@@ -28,6 +28,10 @@ public class JsonFalse implements JsonValue {
         return readJson(JsonTokenizer.tokenize(source));
     }
 
+    /**
+     * <i>Internal API</i>. Might change in breaking ways between patch
+     * versions of the Kalix library. Use is not advised.
+     */
     @Internal
     public static JsonFalse readJson(final JsonTokenBuffer buffer) throws DtoReadException {
         var token = buffer.next();

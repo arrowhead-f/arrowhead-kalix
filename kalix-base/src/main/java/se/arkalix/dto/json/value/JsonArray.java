@@ -12,14 +12,31 @@ import se.arkalix.util.annotation.Internal;
 
 import java.util.*;
 
+/**
+ * A JSON array.
+ *
+ * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
+ */
 @SuppressWarnings("unused")
 public class JsonArray implements JsonCollection, Iterable<JsonValue> {
     private final List<JsonValue> elements;
 
+    /**
+     * Creates new JSON array from given list of {@link JsonValue elements}.
+     *
+     * @param elements Elements to make up the contents of the created JSON
+     *                 array.
+     */
     public JsonArray(final List<JsonValue> elements) {
         this.elements = Collections.unmodifiableList(Objects.requireNonNull(elements, "Expected elements"));
     }
 
+    /**
+     * Creates new JSON array from given list of {@link JsonValue elements}.
+     *
+     * @param elements Elements to make up the contents of the created JSON
+     *                 array.
+     */
     public JsonArray(final JsonValue... elements) {
         this.elements = List.of(elements);
     }
@@ -39,6 +56,9 @@ public class JsonArray implements JsonCollection, Iterable<JsonValue> {
         return elements.size();
     }
 
+    /**
+     * @return Array elements.
+     */
     public List<JsonValue> elements() {
         return elements;
     }
@@ -48,10 +68,22 @@ public class JsonArray implements JsonCollection, Iterable<JsonValue> {
         return elements.iterator();
     }
 
+    /**
+     * Creates JSON array by reading JSON from given {@code source}.
+     *
+     * @param source Source containing encoded JSON array.
+     * @return Decoded JSON array.
+     * @throws DtoReadException If the source does not contain valid JSON or
+     *                          could not be read.
+     */
     public static JsonArray readJson(final BinaryReader source) throws DtoReadException {
         return readJson(JsonTokenizer.tokenize(source));
     }
 
+    /**
+     * <i>Internal API</i>. Might change in breaking ways between patch
+     * versions of the Kalix library. Use is not advised.
+     */
     @Internal
     public static JsonArray readJson(final JsonTokenBuffer buffer) throws DtoReadException {
         final var source = buffer.source();

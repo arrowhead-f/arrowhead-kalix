@@ -8,7 +8,7 @@
  * <p>
  * A service could be thought of as a network API made available through a
  * concrete set of {@link se.arkalix.descriptor.InterfaceDescriptor network
- * interfaces}. Consuming a service concretely entails sending message to it.
+ * interfaces}. Consuming a service concretely entails sending messages to it.
  * <p>
  * This package most significantly contains the {@link se.arkalix.ArSystem
  * ArSystem} class, which is what allows a Kalix application to host Arrowhead
