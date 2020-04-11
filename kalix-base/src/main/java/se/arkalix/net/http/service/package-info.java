@@ -31,9 +31,9 @@
  * Routables are organized into <i>route sequences</i>, which can be visualized
  * as follows:
  * <pre>
- *     REQUEST RECEIVED
- *            |
- *            V
+ *    REQUEST RECEIVED
+ *           |
+ *           V
  *     +------------+ responds
  *     | Filter  1  |---------------------------------+
  *     | Filter  2  |                                 |
