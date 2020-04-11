@@ -345,17 +345,9 @@ public class DtoPropertyFactory {
             if (typeUtils.isAssignable(type, dtoReadable) && typeUtils.isAssignable(type, dtoWritable)) {
                 return new DtoElement(type, DtoDescriptor.CUSTOM);
             }
-            throw new DtoException(method, "Getter return type must be (1) " +
-                "a primitive, (2) a boxed primitive, (3) a String, (4) an " +
-                "array (T[]), (5) a List<T>, (6) a Map<K, V>, (7) an enum, " +
-                "(8) an enum-like class, which overrides equals(), " +
-                "hashCode() and toString(), as well as having a public " +
-                "static valueOf(String) method, (9) an interface " +
-                "annotated with @DtoReadableAs and/or @DtoWritableAs, " +
-                "(10) an Optional<T>, (11) a non-local java.time temporal " +
-                "type, or (12) a custom type; if an array, list, map or " +
-                "optional, its parameter(s) must be of the same types except " +
-                "optional (10)");
+            throw new DtoException(method, "Invalid getter return type; " +
+                "please refer to the `se.arkalix.dto` package documentation " +
+                "for a complete list of supported return types");
         }
 
         final var readableEncodings = readable != null ? readable.value() : new DtoEncoding[0];

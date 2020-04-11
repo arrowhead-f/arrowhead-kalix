@@ -2,11 +2,24 @@ package se.arkalix.dto.binary;
 
 import java.util.Objects;
 
+/**
+ * A {@link BinaryWriter} that writes to a plain byte array.
+ * <p>
+ * This writer is naive in the sense that it does not check for range errors
+ * before executing on any contained byte array. However, as range errors are
+ * checked by Java on byte array operations, the error messages should still be
+ * quite informative for most categories of errors.
+ */
 public class ByteArrayWriter implements BinaryWriter {
     private final byte[] byteArray;
 
     private int offset = 0;
 
+    /**
+     * Creates new byte array writer.
+     *
+     * @param byteArray Byte array to write to.
+     */
     public ByteArrayWriter(final byte[] byteArray) {
         this.byteArray = Objects.requireNonNull(byteArray, "Expected byteArray");
     }
@@ -46,6 +59,9 @@ public class ByteArrayWriter implements BinaryWriter {
         offset += bytes.length;
     }
 
+    /**
+     * @return Byte array contained in this writer.
+     */
     public byte[] asByteArray() {
         return byteArray;
     }

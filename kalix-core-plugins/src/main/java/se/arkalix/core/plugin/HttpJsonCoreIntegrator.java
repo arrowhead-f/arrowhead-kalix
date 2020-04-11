@@ -484,6 +484,7 @@ public class HttpJsonCoreIntegrator implements Plugin {
     /**
      * Builder useful for constructing {@link HttpJsonCoreIntegrator} instances.
      */
+    @SuppressWarnings("unused")
     public static class Builder {
         private String serviceDiscoveryBasePath;
         private InetSocketAddress serviceRegistrySocketAddress;

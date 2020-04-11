@@ -10,13 +10,6 @@ import java.util.Objects;
  * Options like the ones listed below may be used to affect the behavior of an
  * {@link ArOrchestration orchestration service} while it handles {@link
  * OrchestrationQuery orchestration queries}.
- *
- * @see #MATCHMAKING
- * @see #METADATA_SEARCH
- * @see #ONLY_PREFERRED
- * @see #OVERRIDE_STORE
- * @see #TRIGGER_INTER_CLOUD
- * @see #ENABLE_INTER_CLOUD
  */
 public final class OrchestrationOption {
     private final String name;

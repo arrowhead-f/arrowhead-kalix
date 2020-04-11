@@ -12,5 +12,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
 public @interface DtoExclusive {
+    /**
+     * The DTO encoding the annotated type is exclusive to.
+     */
     DtoEncoding value();
 }

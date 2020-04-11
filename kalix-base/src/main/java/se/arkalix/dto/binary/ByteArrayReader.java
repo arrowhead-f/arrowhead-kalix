@@ -4,6 +4,11 @@ import java.util.Objects;
 
 /**
  * A {@link BinaryReader} that reads from a plain byte array.
+ * <p>
+ * This reader is naive in the sense that it does not check for range errors
+ * before executing on any contained byte array. However, as range errors are
+ * checked by Java on byte array operations, the error messages should still be
+ * quite informative for most categories of errors.
  */
 public class ByteArrayReader implements BinaryReader {
     private final byte[] byteArray;
@@ -26,9 +31,6 @@ public class ByteArrayReader implements BinaryReader {
 
     @Override
     public void readOffset(final int offset) {
-        if (offset < 0 || offset > byteArray.length) {
-            throw new IndexOutOfBoundsException("offset < 0 || offset > byteArray.length");
-        }
         this.offset = offset;
     }
 
@@ -39,37 +41,16 @@ public class ByteArrayReader implements BinaryReader {
 
     @Override
     public byte getByte(final int offset) {
-        if (offset < 0 || offset > byteArray.length) {
-            throw new IndexOutOfBoundsException("offset < 0 || offset > byteArray.length");
-        }
         return byteArray[offset];
     }
 
     @Override
     public void getBytes(final int offset, final byte[] target) {
-        if (offset < 0) {
-            throw new IndexOutOfBoundsException("offset < 0");
-        }
-        if (offset > byteArray.length - target.length) {
-            throw new IndexOutOfBoundsException("Not enough bytes available from offset to fill target");
-        }
         System.arraycopy(byteArray, offset, target, 0, target.length);
     }
 
     @Override
     public void getBytes(final int offset, final byte[] target, final int targetOffset, final int length) {
-        if (offset < 0 || targetOffset < 0) {
-            throw new IndexOutOfBoundsException("offset < 0 || targetOffset < 0");
-        }
-        if (offset > byteArray.length - length) {
-            throw new IndexOutOfBoundsException("Less than length bytes available from offset");
-        }
-        if (targetOffset > target.length) {
-            throw new IndexOutOfBoundsException("targetOffset > target.length");
-        }
-        if (length < 0 || length > target.length) {
-            throw new IndexOutOfBoundsException("length < 0 || length > target.length");
-        }
         System.arraycopy(byteArray, offset, target, targetOffset, length);
     }
 
@@ -80,32 +61,17 @@ public class ByteArrayReader implements BinaryReader {
 
     @Override
     public byte readByte() {
-        if (readableBytes() < 1) {
-            throw new IndexOutOfBoundsException("No bytes to read");
-        }
         return byteArray[offset++];
     }
 
     @Override
     public void readBytes(final byte[] target, final int targetOffset, final int length) {
-        if (targetOffset < 0 || targetOffset > target.length) {
-            throw new IndexOutOfBoundsException("targetOffset < 0 || targetOffset > target.length");
-        }
-        if (target.length < length) {
-            throw new IndexOutOfBoundsException("target.length < length");
-        }
-        if (readableBytes() < length) {
-            throw new IndexOutOfBoundsException("Less than `length` readable bytes remaining");
-        }
         System.arraycopy(byteArray, offset, target, targetOffset, length);
         offset += length;
     }
 
     @Override
     public void skipBytes(final int n) {
-        if (readableBytes() < n) {
-            throw new IndexOutOfBoundsException("Less than `n` readable bytes remaining");
-        }
         offset += n;
     }
 

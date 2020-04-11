@@ -1,17 +1,16 @@
 package se.arkalix.dto.binary;
 
-import java.util.function.Predicate;
-
 /**
- * Represents an object useful for reading binary data.
+ * Represents an object useful for <i>reading</i> binary data.
  * <p>
  * Apart from keeping track of whatever source of bytes is being read, the
  * reader is also assumed to have an internal {@link #readOffset() read offset}
  * that is incremented whenever bytes are read.
  */
+@SuppressWarnings("unused")
 public interface BinaryReader {
     /**
-     * @return Points at the next byte to read.
+     * @return Index of next byte to read.
      */
     int readOffset();
 
@@ -64,11 +63,11 @@ public interface BinaryReader {
      * @param targetOffset Offset from beginning of {@code target} at which the
      *                     received bytes will be written.
      * @param length       The number of bytes to read into {@code target}.
-     * @throws IndexOutOfBoundsException If any out of {@code offset}, {@code
-     *                                   targetOffset} or {@code length} is
-     *                                   less than 0, or if those variables are
-     *                                   violate the size limits of the read
-     *                                   source or {@code target}.
+     * @throws IndexOutOfBoundsException If {@code  offset}, {@code
+     *                                   targetOffset} or {@code length} are
+     *                                   negative, out of bounds, or there are
+     *                                   less than {@code length} bytes left to
+     *                                   read.
      */
     void getBytes(final int offset, final byte[] target, final int targetOffset, final int length);
 
@@ -77,7 +76,7 @@ public interface BinaryReader {
      * incrementing the offset.
      *
      * @return Byte at the internal {@link #readOffset() read offset}.
-     * @throws IndexOutOfBoundsException If there is no byte to peek.
+     * @throws IndexOutOfBoundsException If there is no byte left to peek.
      */
     byte peekByte();
 
@@ -86,7 +85,7 @@ public interface BinaryReader {
      * increments that offset.
      *
      * @return Byte at the internal {@link #readOffset() read offset}.
-     * @throws IndexOutOfBoundsException If there is no byte to read.
+     * @throws IndexOutOfBoundsException If there is no byte left to read.
      */
     byte readByte();
 
@@ -124,8 +123,10 @@ public interface BinaryReader {
      * @param targetOffset Position in {@code target} at which to start adding
      *                     read bytes.
      * @param length       Number of bytes to read into {@code target}.
-     * @throws IndexOutOfBoundsException If less than {@code target.length}
-     *                                   bytes are available for reading.
+     * @throws IndexOutOfBoundsException If {@code targetOffset} or {@code
+     *                                   length} are negative, out of bounds,
+     *                                   or there are less than {@code length}
+     *                                   bytes left to read.
      */
     void readBytes(byte[] target, int targetOffset, int length);
 
