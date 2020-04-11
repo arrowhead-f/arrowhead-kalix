@@ -9,9 +9,24 @@ import se.arkalix.internal.dto.json.JsonTokenBuffer;
 import se.arkalix.internal.dto.json.JsonTokenizer;
 import se.arkalix.util.annotation.Internal;
 
+/**
+ * Any kind of JSON value.
+ *
+ * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
+ */
 public interface JsonValue extends JsonReadable, JsonWritable {
     JsonType type();
 
+    /**
+     * Reads JSON value from given {@code source}.
+     *
+     * @param source Source containing JSON value at the current read offset,
+     *               ignoring any whitespace.
+     * @return Decoded JSON value.
+     * @throws DtoReadException If the source does not contain a valid JSON
+     *                          value at the current read offset, or if the
+     *                          source could not be read.
+     */
     static JsonValue readJson(final BinaryReader source) throws DtoReadException {
         return readJson(JsonTokenizer.tokenize(source));
     }
@@ -28,8 +43,8 @@ public interface JsonValue extends JsonReadable, JsonWritable {
         case ARRAY: return JsonArray.readJson(buffer);
         case STRING: return JsonString.readJson(buffer);
         case NUMBER: return JsonNumber.readJson(buffer);
-        case TRUE: return JsonTrue.readJson(buffer);
-        case FALSE: return JsonFalse.readJson(buffer);
+        case TRUE:
+        case FALSE: return JsonBoolean.readJson(buffer);
         case NULL: return JsonNull.readJson(buffer);
         default:
             throw new IllegalStateException("Illegal token type: " + token.type());

@@ -4,6 +4,10 @@ import se.arkalix.dto.binary.BinaryWriter;
 
 import java.util.List;
 
+/**
+ * An object useful for writing {@link se.arkalix.dto DTO class instances} to
+ * targets representing their contents with a specific encoding.
+ */
 public interface DtoWriter {
     /**
      * Attempts to encode {@code value} and write it to {@code target}.

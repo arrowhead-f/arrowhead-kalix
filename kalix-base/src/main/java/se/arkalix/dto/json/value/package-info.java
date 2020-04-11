@@ -3,10 +3,12 @@
  * This package contains classes useful for manually constructing JSON values.
  * The {@link se.arkalix.dto.json.value.JsonArray JsonArray} and {@link
  * se.arkalix.dto.json.value.JsonObject JsonObject} classes may, in particular,
- * be used directly as {@link se.arkalix.dto DTOs}.
+ * be used as-is as {@link se.arkalix.dto DTOs}. The other classes may be used
+ * as members in {@link se.arkalix.dto DTO interfaces} that only need to ever
+ * deal with JSON input.
  * <p>
  * The following is an example meant to illustrate how to construct the JSON
- * object {@code {"x": 1}}:
+ * object {@code `{"x": 1}`}:
  * <pre>
  *     final var object = new JsonObject(
  *         new JsonPair("x", new JsonNumber(1))

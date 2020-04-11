@@ -27,7 +27,7 @@ public class TestJsonObject {
         return Stream.of(
             arguments(new JsonObject(), "{}"),
             arguments(new JsonObject(new JsonPair("x", new JsonNumber(1))), "{\"x\":1}"),
-            arguments(new JsonObject(new JsonPair("x", JsonNull.instance()), new JsonPair("y",
+            arguments(new JsonObject(new JsonPair("x", JsonNull.INSTANCE), new JsonPair("y",
                     new JsonObject(new JsonPair("z", new JsonNumber(Duration.ofSeconds(2)))))),
                 "{\"x\":null, \"y\" :{ \"z\"  :   2   }}"),
             arguments(new JsonObject(new JsonPair("räksmörgås", new JsonNumber(Duration.ofMillis(54321)))),
@@ -49,7 +49,7 @@ public class TestJsonObject {
         return Stream.of(
             arguments("{}", new JsonObject()),
             arguments("{\"x\":1}", new JsonObject(new JsonPair("x", new JsonNumber(1)))),
-            arguments("{\"x\":null,\"y\":{\"z\":2}}", new JsonObject(new JsonPair("x", JsonNull.instance()),
+            arguments("{\"x\":null,\"y\":{\"z\":2}}", new JsonObject(new JsonPair("x", JsonNull.INSTANCE),
                 new JsonPair("y", new JsonObject(new JsonPair("z", new JsonNumber(Duration.ofSeconds(2))))))),
             arguments("{\"räksmörgås\":54.321}", new JsonObject(new JsonPair("räksmörgås",
                 new JsonNumber(Duration.ofMillis(54321))))),

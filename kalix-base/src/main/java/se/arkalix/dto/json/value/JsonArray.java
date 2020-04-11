@@ -1,6 +1,6 @@
 package se.arkalix.dto.json.value;
 
-import se.arkalix.dto.DtoEncoding;
+import se.arkalix.dto.DtoExclusive;
 import se.arkalix.dto.DtoReadException;
 import se.arkalix.dto.DtoWriteException;
 import se.arkalix.dto.binary.BinaryReader;
@@ -12,11 +12,14 @@ import se.arkalix.util.annotation.Internal;
 
 import java.util.*;
 
+import static se.arkalix.dto.DtoEncoding.JSON;
+
 /**
  * A JSON array.
  *
  * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
  */
+@DtoExclusive(JSON)
 @SuppressWarnings("unused")
 public class JsonArray implements JsonCollection, Iterable<JsonValue> {
     private final List<JsonValue> elements;
@@ -69,12 +72,14 @@ public class JsonArray implements JsonCollection, Iterable<JsonValue> {
     }
 
     /**
-     * Creates JSON array by reading JSON from given {@code source}.
+     * Reads JSON array from given {@code source}.
      *
-     * @param source Source containing encoded JSON array.
+     * @param source Source containing JSON array at the current read offset,
+     *               ignoring any whitespace.
      * @return Decoded JSON array.
-     * @throws DtoReadException If the source does not contain valid JSON or
-     *                          could not be read.
+     * @throws DtoReadException If the source does not contain a valid JSON
+     *                          array at the current read offset, or if the
+     *                          source could not be read.
      */
     public static JsonArray readJson(final BinaryReader source) throws DtoReadException {
         return readJson(JsonTokenizer.tokenize(source));
@@ -89,7 +94,7 @@ public class JsonArray implements JsonCollection, Iterable<JsonValue> {
         final var source = buffer.source();
         var token = buffer.next();
         if (token.type() != JsonType.ARRAY) {
-            throw new DtoReadException(DtoEncoding.JSON, "Expected array", token.readStringRaw(source), token.begin());
+            throw new DtoReadException(JSON, "Expected array", token.readStringRaw(source), token.begin());
         }
         final var elements = new ArrayList<JsonValue>(token.nChildren());
         for (var n = token.nChildren(); n-- != 0; ) {

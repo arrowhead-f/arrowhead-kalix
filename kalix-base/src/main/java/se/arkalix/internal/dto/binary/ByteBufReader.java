@@ -63,11 +63,11 @@ public class ByteBufReader implements BinaryReader {
 
     @Override
     public void skipByte() {
-            byteBuf.readByte();
+        byteBuf.readByte();
     }
 
     @Override
     public void skipBytes(final int n) {
-            byteBuf.skipBytes(n);
+        byteBuf.skipBytes(n);
     }
 }

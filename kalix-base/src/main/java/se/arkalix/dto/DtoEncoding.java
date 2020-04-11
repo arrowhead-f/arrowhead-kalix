@@ -6,8 +6,8 @@ import se.arkalix.dto.json.JsonWriter;
 import java.util.Objects;
 
 /**
- * Enumerates the encodings that can be read and written by the Kalix DTO
- * package.
+ * Enumerates the encodings that can be read and written by the Kalix
+ * {@link se.arkalix.dto DTO} package.
  */
 public enum DtoEncoding {
     /**

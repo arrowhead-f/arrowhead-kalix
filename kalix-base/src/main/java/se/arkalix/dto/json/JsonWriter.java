@@ -7,11 +7,22 @@ import se.arkalix.dto.binary.BinaryWriter;
 
 import java.util.List;
 
+/**
+ * A {@link DtoWriter} for writing JSON data.
+ * <p>
+ * Use the {@link #instance()} method to get access to the singleton instance
+ * of this class.
+ *
+ * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
+ */
 public class JsonWriter implements DtoWriter {
     private static final JsonWriter INSTANCE = new JsonWriter();
 
     private JsonWriter() {}
 
+    /**
+     * @return Reference to JSON writer singleton instance.
+     */
     public static JsonWriter instance() {
         return INSTANCE;
     }

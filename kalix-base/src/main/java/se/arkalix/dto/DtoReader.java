@@ -4,6 +4,10 @@ import se.arkalix.dto.binary.BinaryReader;
 
 import java.util.List;
 
+/**
+ * An object useful for reading {@link se.arkalix.dto DTO class instances} from
+ * sources representing their contents with a specific encoding.
+ */
 public interface DtoReader {
     /**
      * Reads one encoded value from {@code source}.

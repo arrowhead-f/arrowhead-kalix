@@ -2,11 +2,19 @@ package se.arkalix.dto.binary;
 
 import java.util.Objects;
 
+/**
+ * A {@link BinaryReader} that reads from a plain byte array.
+ */
 public class ByteArrayReader implements BinaryReader {
     private final byte[] byteArray;
 
     private int offset = 0;
 
+    /**
+     * Creates new byte array reader.
+     *
+     * @param byteArray Byte array to read.
+     */
     public ByteArrayReader(final byte[] byteArray) {
         this.byteArray = Objects.requireNonNull(byteArray, "Expected byteArray");
     }
@@ -39,10 +47,10 @@ public class ByteArrayReader implements BinaryReader {
 
     @Override
     public void getBytes(final int offset, final byte[] target) {
-        if (offset < 0 || offset > byteArray.length) {
-            throw new IndexOutOfBoundsException("offset < 0 || offset > byteArray.length");
+        if (offset < 0) {
+            throw new IndexOutOfBoundsException("offset < 0");
         }
-        if (byteArray.length - offset < target.length) {
+        if (offset > byteArray.length - target.length) {
             throw new IndexOutOfBoundsException("Not enough bytes available from offset to fill target");
         }
         System.arraycopy(byteArray, offset, target, 0, target.length);
@@ -50,8 +58,14 @@ public class ByteArrayReader implements BinaryReader {
 
     @Override
     public void getBytes(final int offset, final byte[] target, final int targetOffset, final int length) {
-        if (targetOffset < 0 || targetOffset > target.length) {
-            throw new IndexOutOfBoundsException("targetOffset < 0 || targetOffset > target.length");
+        if (offset < 0 || targetOffset < 0) {
+            throw new IndexOutOfBoundsException("offset < 0 || targetOffset < 0");
+        }
+        if (offset > byteArray.length - length) {
+            throw new IndexOutOfBoundsException("Less than length bytes available from offset");
+        }
+        if (targetOffset > target.length) {
+            throw new IndexOutOfBoundsException("targetOffset > target.length");
         }
         if (length < 0 || length > target.length) {
             throw new IndexOutOfBoundsException("length < 0 || length > target.length");
@@ -95,6 +109,9 @@ public class ByteArrayReader implements BinaryReader {
         offset += n;
     }
 
+    /**
+     * @return Byte array contained in this reader.
+     */
     public byte[] asByteArray() {
         return byteArray;
     }

@@ -1,6 +1,7 @@
 package se.arkalix.dto.json.value;
 
 import se.arkalix.dto.DtoEncoding;
+import se.arkalix.dto.DtoExclusive;
 import se.arkalix.dto.DtoReadException;
 import se.arkalix.dto.DtoWriteException;
 import se.arkalix.dto.binary.BinaryReader;
@@ -13,14 +14,32 @@ import se.arkalix.util.annotation.Internal;
 
 import java.util.*;
 
+import static se.arkalix.dto.DtoEncoding.JSON;
+
+/**
+ * JSON object.
+ *
+ * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
+ */
+@DtoExclusive(JSON)
 @SuppressWarnings("unused")
 public class JsonObject implements JsonCollection, Iterable<JsonPair> {
     private final List<JsonPair> pairs;
 
+    /**
+     * Creates new JSON array from given list of {@link JsonPair pairs}.
+     *
+     * @param pairs Pairs to make up the contents of the created JSON object.
+     */
     public JsonObject(final List<JsonPair> pairs) {
         this.pairs = Collections.unmodifiableList(pairs);
     }
 
+    /**
+     * Creates new JSON array from given list of {@link JsonPair pairs}.
+     *
+     * @param pairs Pairs to make up the contents of the created JSON object.
+     */
     public JsonObject(final JsonPair... pairs) {
         this.pairs = List.of(pairs);
     }
@@ -40,6 +59,9 @@ public class JsonObject implements JsonCollection, Iterable<JsonPair> {
         return pairs.size();
     }
 
+    /**
+     * @return Object pairs.
+     */
     public List<JsonPair> pairs() {
         return pairs;
     }
@@ -49,6 +71,16 @@ public class JsonObject implements JsonCollection, Iterable<JsonPair> {
         return pairs.iterator();
     }
 
+    /**
+     * Reads JSON object from given {@code source}.
+     *
+     * @param source Source containing JSON object at the current read offset,
+     *               ignoring any whitespace.
+     * @return Decoded JSON object.
+     * @throws DtoReadException If the source does not contain a valid JSON
+     *                          object at the current read offset, or if the
+     *                          source could not be read.
+     */
     public static JsonObject readJson(final BinaryReader source) throws DtoReadException {
         return readJson(JsonTokenizer.tokenize(source));
     }

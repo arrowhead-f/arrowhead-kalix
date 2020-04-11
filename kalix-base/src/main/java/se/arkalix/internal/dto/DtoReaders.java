@@ -11,7 +11,7 @@ import java.lang.reflect.Method;
 public class DtoReaders {
     private DtoReaders() {}
 
-    public static <T> T invokeReadMethod(final Class<T> returnType, final Method method, final BinaryReader source)
+    public static <T> T invokeReadMethod(final Class<T> returnType, final Method method, final Object source)
         throws DtoReadException
     {
         try {
