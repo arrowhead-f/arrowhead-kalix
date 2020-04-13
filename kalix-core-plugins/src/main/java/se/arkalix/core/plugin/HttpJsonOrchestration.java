@@ -8,6 +8,7 @@ import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.net.http.client.HttpClient;
+import se.arkalix.net.http.client.HttpClientResponseException;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
 import se.arkalix.util.concurrent.Future;
@@ -85,11 +86,18 @@ public class HttpJsonOrchestration implements ArOrchestration {
             .flatMap(response -> {
                 final var status = response.status();
                 if (status.isSuccess()) {
-                    return response.bodyAsClassIfSuccess(OrchestrationQueryResultDto.class);
+                    return response.bodyAs(OrchestrationQueryResultDto.class);
                 }
-                if (status.isClientError() && response.headers().getAsInteger("content-length").orElse(0) > 0) {
-                    return response.bodyAs(JSON, ErrorDto.class)
-                        .mapThrow(Error::toException);
+                if (status.isClientError()) {
+                    final var headers = response.headers();
+                    if (headers.getAsInteger("content-length").orElse(0) > 0) {
+                        if (headers.get("content-type").orElse("").startsWith("application/json")) {
+                            return response.bodyAs(JSON, ErrorDto.class)
+                                .mapThrow(Error::toException);
+                        }
+                        return response.bodyAsString()
+                            .mapThrow(HttpClientResponseException::new);
+                    }
                 }
                 return Future.failure(response.reject("Orchestration query failed"));
             });
