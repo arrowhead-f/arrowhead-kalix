@@ -293,8 +293,14 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
          * @return This builder.
          */
         public Builder interfaces(final Collection<InterfaceDescriptor> interfaces) {
-            this.interfaceTokens = interfaces.stream()
+            final var interfaceTokens = interfaces.stream()
                 .collect(Collectors.toMap(descriptor -> descriptor, ignored -> ""));
+            if (this.interfaceTokens != null) {
+                this.interfaceTokens.putAll(interfaceTokens);
+            }
+            else {
+                this.interfaceTokens = interfaceTokens;
+            }
             return this;
         }
 
@@ -311,7 +317,12 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
          * @return This builder.
          */
         public Builder interfaceTokens(final Map<InterfaceDescriptor, String> interfaceTokens) {
-            this.interfaceTokens = interfaceTokens;
+            if (this.interfaceTokens != null) {
+                this.interfaceTokens.putAll(interfaceTokens);
+            }
+            else {
+                this.interfaceTokens = interfaceTokens;
+            }
             return this;
         }
 

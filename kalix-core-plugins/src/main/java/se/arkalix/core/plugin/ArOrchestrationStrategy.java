@@ -4,6 +4,13 @@ package se.arkalix.core.plugin;
  * Enumerates the different kind of strategies that can be used when querying
  * an {@link ArOrchestration orchestration service} for {@link
  * se.arkalix.core.plugin.dto.ServiceConsumable services to consume}.
+ * <p>
+ * TODO: This enum needs to be replaced or complemented with some kind of
+ * configurator that leaves more room for being very specific about
+ * orchestration details (such as if inter-cloud orchestration is allowed or
+ * not). The existing enum flags could probably be replaced with constants
+ * containing default configurations representing the same strategies as
+ * employed if using their current enum equivalents.
  */
 public enum ArOrchestrationStrategy {
     /**

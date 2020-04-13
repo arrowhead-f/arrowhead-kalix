@@ -1,5 +1,7 @@
 package se.arkalix.internal.net.http.client;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import se.arkalix.internal.net.http.NettyHttpBodyReceiver;
 import se.arkalix.internal.net.NettySimpleChannelInboundHandler;
 import se.arkalix.net.http.client.HttpClientConnectionException;
@@ -16,6 +18,8 @@ import java.util.Objects;
 
 @Internal
 public class NettyHttpClientConnectionHandler extends NettySimpleChannelInboundHandler<HttpObject> {
+    private static final Logger logger = LoggerFactory.getLogger(NettyHttpClientConnectionHandler.class);
+
     private final SslHandler sslHandler;
 
     private FutureHttpClientConnection futureConnection;
@@ -40,10 +44,24 @@ public class NettyHttpClientConnectionHandler extends NettySimpleChannelInboundH
             }
             if (sslHandler != null) {
                 sslHandler.handshakeFuture().addListener(ignored -> {
-                    final var chain = sslHandler.engine().getSession().getPeerCertificates();
-                    connection = new NettyHttpClientConnection(ctx.channel(), chain);
-                    futureConnection.setResult(Result.success(connection));
-                    futureConnection = null;
+                    try {
+                        final var chain = sslHandler.engine().getSession().getPeerCertificates();
+                        connection = new NettyHttpClientConnection(ctx.channel(), chain);
+                        futureConnection.setResult(Result.success(connection));
+                        futureConnection = null;
+                    }
+                    catch (final Throwable throwable) {
+                        if (futureConnection != null) {
+                            futureConnection.setResult(Result.failure(throwable));
+                            futureConnection = null;
+                        }
+                        else {
+                            if (logger.isWarnEnabled()) {
+                                logger.warn("Failed to complete TLS handshake with remote host", throwable);
+                            }
+                        }
+                        ctx.close();
+                    }
                 });
             }
             else {

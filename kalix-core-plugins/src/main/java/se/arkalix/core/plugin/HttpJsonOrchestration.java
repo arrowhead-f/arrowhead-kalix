@@ -67,7 +67,7 @@ public class HttpJsonOrchestration implements ArOrchestration {
         consumer = new HttpConsumer(client, service, Collections.singleton(EncodingDescriptor.JSON));
         // Service URI ignored as it seems to tend to be incorrect.
         // See https://github.com/arrowhead-f/core-java-spring/issues/195.
-        uriQuery = "orchestrator/orchestration";
+        uriQuery = "/orchestrator/orchestration";
     }
 
     @Override
@@ -85,7 +85,7 @@ public class HttpJsonOrchestration implements ArOrchestration {
             .flatMap(response -> {
                 final var status = response.status();
                 if (status.isSuccess()) {
-                    return Future.done();
+                    return response.bodyAsClassIfSuccess(OrchestrationQueryResultDto.class);
                 }
                 if (status.isClientError() && response.headers().getAsInteger("content-length").orElse(0) > 0) {
                     return response.bodyAs(JSON, ErrorDto.class)

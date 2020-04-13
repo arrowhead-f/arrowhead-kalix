@@ -136,15 +136,15 @@ public final class AccessToken {
         try {
             final var claims = JwtClaims.parse(payload);
 
-            final var now = System.currentTimeMillis();
+            final var now = System.currentTimeMillis() + CLOCK_SKEW_TOLERANCE_IN_MS;
 
             final var exp = claims.getExpirationTime();
-            if (exp != null && exp.getValueInMillis() < now + CLOCK_SKEW_TOLERANCE_IN_MS) {
+            if (exp != null && exp.getValueInMillis() > now) {
                 throw new AccessTokenException("JWT expired");
             }
 
             final var iat = claims.getIssuedAt();
-            if (iat != null && iat.getValueInMillis() > now - CLOCK_SKEW_TOLERANCE_IN_MS) {
+            if (iat != null && iat.getValueInMillis() > now) {
                 throw new AccessTokenException("JWT not yet issued");
             }
 

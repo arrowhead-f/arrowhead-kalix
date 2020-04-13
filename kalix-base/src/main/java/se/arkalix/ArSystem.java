@@ -24,7 +24,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -36,7 +35,7 @@ public class ArSystem {
     private static final Logger logger = LoggerFactory.getLogger(ArSystem.class);
 
     private final String name;
-    private final AtomicReference<InetSocketAddress> localSocketAddress = new AtomicReference<>();
+    private final InetSocketAddress localSocketAddress;
     private final boolean isSecure;
     private final OwnedIdentity identity;
     private final TrustStore trustStore;
@@ -50,8 +49,7 @@ public class ArSystem {
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 
     private ArSystem(final Builder builder) {
-        localSocketAddress.setPlain(Objects.requireNonNullElseGet(builder.socketAddress, () ->
-            new InetSocketAddress(0)));
+        localSocketAddress = Objects.requireNonNullElseGet(builder.socketAddress, () -> new InetSocketAddress(0));
 
         if (builder.isSecure) {
             isSecure = true;
@@ -87,7 +85,7 @@ public class ArSystem {
             name = builder.name;
         }
 
-        description = new ProviderDescription(name, localSocketAddress.get(), isSecure
+        description = new ProviderDescription(name, localSocketAddress, isSecure
             ? identity.publicKey()
             : null);
 
@@ -109,7 +107,13 @@ public class ArSystem {
     }
 
     /**
-     * @return Human and machine-readable name of this system.
+     * Gets human and machine-readable name of this system.
+     * <p>
+     * If this system is running in secure mode, the returned name will be the
+     * system name in its {@link se.arkalix.security.identity certificate}. It
+     * will otherwise be a {@link Builder#name(String) configured} name.
+     *
+     * @return System name.
      */
     @ThreadSafe
     public String name() {
@@ -117,14 +121,21 @@ public class ArSystem {
     }
 
     /**
-     * @return Address and port number of locally bound network interface.
+     * Gets the Internet socket address this system has been {@link
+     * Builder#localSocketAddress(InetSocketAddress) configured} to use.
+     *
+     * @return Address/hostname and port number of locally bound network
+     * interface.
      */
     @ThreadSafe
     public InetSocketAddress localSocketAddress() {
-        return localSocketAddress.get();
+        return localSocketAddress;
     }
 
     /**
+     * Gets the Internet address this system has been {@link
+     * Builder#localSocketAddress(InetSocketAddress) configured} to use.
+     *
      * @return Local network interface address.
      */
     @ThreadSafe
@@ -133,6 +144,9 @@ public class ArSystem {
     }
 
     /**
+     * Gets the Internet port this system has been {@link
+     * Builder#localSocketAddress(InetSocketAddress) configured} to use.
+     *
      * @return Port through which this system exposes its provided services.
      */
     @ThreadSafe
@@ -141,8 +155,11 @@ public class ArSystem {
     }
 
     /**
+     * Determines whether or not this system is running in {@link
+     * se.arkalix.security secure mode}.
+     *
      * @return {@code true} if and only if this system is configured to run
-     * in secure mode.
+     * in {@link se.arkalix.security secure mode}.
      */
     @ThreadSafe
     public final boolean isSecure() {
@@ -150,9 +167,13 @@ public class ArSystem {
     }
 
     /**
+     * Gets the {@link se.arkalix.security.identity cryptographic identity}
+     * this system has been {@link Builder#identity(OwnedIdentity) configured}
+     * to use.
+     *
      * @return The cryptographic identity of this system.
      * @throws NotSecureException If this system is not running in secure
-     *                               mode.
+     *                            mode.
      */
     @ThreadSafe
     public final OwnedIdentity identity() {
@@ -164,9 +185,12 @@ public class ArSystem {
     }
 
     /**
+     * Gets the {@link se.arkalix.security.identity trust store} this system
+     * has been {@link Builder#trustStore(TrustStore)} configured} to use.
+     *
      * @return Trust store, which contains certificates trusted by this system.
      * @throws NotSecureException If this system is not running in secure
-     *                               mode.
+     *                            mode.
      */
     @ThreadSafe
     public final TrustStore trustStore() {
@@ -178,6 +202,8 @@ public class ArSystem {
     }
 
     /**
+     * Gets description of this system as a {@link se.arkalix service provider}.
+     *
      * @return Description of this system.
      */
     @ThreadSafe
@@ -267,7 +293,6 @@ public class ArSystem {
                 if (isShuttingDown.get()) {
                     return server.close().fail(cannotProvideServiceShuttingDownException());
                 }
-                localSocketAddress.set(server.localSocketAddress());
                 servers.add(server);
                 return server.provide(service);
             });
@@ -278,8 +303,9 @@ public class ArSystem {
     }
 
     /**
-     * @return Stream of descriptions of all services currently provided by
-     * this system.
+     * Gets descriptions of all services currently provided by this system.
+     *
+     * @return Stream of service descriptions.
      */
     @ThreadSafe
     public Stream<ServiceDescription> providedServices() {
@@ -293,6 +319,11 @@ public class ArSystem {
      * <p>
      * System shutdown is irreversible, meaning that the system cannot be used
      * to provide more services after this method has been invoked.
+     * <p>
+     * Note that shutting all running systems down will not terminate the Java
+     * application hosting them, as it will be kept alive by the {@link
+     * Schedulers} they used while running. If wanting to shut down the
+     * application itself, use {@link java.lang.System#exit(int)}.
      *
      * @return Future completed when shutdown is finished.
      */

@@ -136,7 +136,7 @@ public class HttpJsonCoreIntegrator implements Plugin {
             .name(service.name())
             .provider(new SystemDetailsBuilder()
                 .name(provider.name())
-                .hostname(providerSocketAddress.getHostString())
+                .hostname(providerSocketAddress.getAddress().getHostAddress())
                 .port(providerSocketAddress.getPort())
                 .publicKeyBase64(provider.isSecure()
                     ? Base64.getEncoder().encodeToString(provider.publicKey().getEncoded())
@@ -199,7 +199,7 @@ public class HttpJsonCoreIntegrator implements Plugin {
             .flatMap(serviceDiscovery -> serviceDiscovery.unregister(
                 service.name(),
                 provider.name(),
-                providerSocketAddress.getHostString(),
+                providerSocketAddress.getAddress().getHostAddress(),
                 providerSocketAddress.getPort()))
             .onResult(result -> {
                 if (result.isSuccess()) {
@@ -424,7 +424,6 @@ public class HttpJsonCoreIntegrator implements Plugin {
         final ServiceQuery query)
     {
         final var options = new HashMap<OrchestrationOption, Boolean>();
-        options.put(OrchestrationOption.ENABLE_INTER_CLOUD, true);
         options.put(OrchestrationOption.OVERRIDE_STORE, true);
         if (!query.metadata().isEmpty()) {
             options.put(OrchestrationOption.METADATA_SEARCH, true);
@@ -437,20 +436,18 @@ public class HttpJsonCoreIntegrator implements Plugin {
                 .build()))
             .map(queryResult -> queryResult.services()
                 .stream()
-                .map(ServiceDetails::toServiceDescription)
+                .map(ServiceConsumable::toServiceDescription)
                 .collect(Collectors.toUnmodifiableList()));
     }
 
     private Future<Collection<ServiceDescription>> queryOrchestratorForStoredRules(final ArSystem system) {
-        //final var options = Collections.singletonMap(OrchestrationOption.ENABLE_INTER_CLOUD, true);
         return requestOrchestration()
             .flatMap(orchestration -> orchestration.query(new OrchestrationQueryBuilder()
                 .requester(systemToSystemDetailsDto(system))
-          //      .options(options)
                 .build()))
             .map(queryResult -> queryResult.services()
                 .stream()
-                .map(ServiceDetails::toServiceDescription)
+                .map(ServiceConsumable::toServiceDescription)
                 .collect(Collectors.toUnmodifiableList()));
     }
 
@@ -474,7 +471,7 @@ public class HttpJsonCoreIntegrator implements Plugin {
     private static SystemDetailsDto systemToSystemDetailsDto(final ArSystem system) {
         return new SystemDetailsBuilder()
             .name(system.name())
-            .hostname(system.localSocketAddress().getHostString())
+            .hostname(system.localSocketAddress().getAddress().getHostAddress())
             .port(system.localPort())
             .publicKeyBase64(system.isSecure() ?
                 Base64.getEncoder().encodeToString(system.identity().publicKey().getEncoded()) : null)

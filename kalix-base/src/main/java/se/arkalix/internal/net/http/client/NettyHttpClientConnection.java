@@ -125,7 +125,8 @@ public class NettyHttpClientConnection implements HttpClientConnection {
         final var uri = queryStringEncoder.toString();
         final var version = convert(request.version().orElse(HttpVersion.HTTP_11));
 
-        headers.set(HOST, remoteSocketAddress().getHostString());
+        final var remoteSocketAddress = remoteSocketAddress();
+        headers.set(HOST, remoteSocketAddress.getAddress().getHostAddress() + ":" + remoteSocketAddress.getPort());
         HttpUtil.setKeepAlive(headers, version, keepAlive);
 
         final ByteBuf content;
