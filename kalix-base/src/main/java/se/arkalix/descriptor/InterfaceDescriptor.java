@@ -15,8 +15,8 @@ import java.util.regex.Pattern;
  * {@link TransportDescriptor transport protocol}, a requirement to either use
  * or not to use <a href="https://tools.ietf.org/html/rfc7925">TLS/DTLS</a>, as
  * well as a {@link EncodingDescriptor payload encoding}. When it is advertised
- * what interfaces are certain services support, they are always represented by
- * this descriptor.
+ * what interfaces a certain service support, each of those interfaces will be
+ * represented by an instance of this descriptor.
  */
 @SuppressWarnings("unused")
 public final class InterfaceDescriptor implements Comparable<InterfaceDescriptor> {
