@@ -57,17 +57,17 @@ public class HttpJsonOrchestration implements ArOrchestration {
         Objects.requireNonNull(client, "Expected client");
         this.service = Objects.requireNonNull(service, "Expected service");
 
-        if (!Objects.equals(service.name(), "orchestration")) {
+        if (!Objects.equals(service.name(), "orchestration-service")) {
             throw new IllegalArgumentException("Expected given service to " +
-                "have the name \"orchestration\", but it has \"" +
+                "have the name \"orchestration-service\", but its name is \"" +
                 service.name() + "\"; cannot create HTTP/JSON orchestration " +
                 "service consumer");
         }
 
         consumer = new HttpConsumer(client, service, Collections.singleton(EncodingDescriptor.JSON));
-
-        final var basePath = service.uri();
-        uriQuery = basePath + "/orchestration";
+        // Service URI ignored as it seems to tend to be incorrect.
+        // See https://github.com/arrowhead-f/core-java-spring/issues/195.
+        uriQuery = "orchestrator/orchestration";
     }
 
     @Override

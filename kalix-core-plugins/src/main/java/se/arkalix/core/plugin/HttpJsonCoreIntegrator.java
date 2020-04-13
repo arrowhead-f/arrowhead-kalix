@@ -382,7 +382,7 @@ public class HttpJsonCoreIntegrator implements Plugin {
                 final var isSecure = client.isSecure();
                 orchestrationAnnouncement = requestServiceDiscovery()
                     .flatMap(serviceDiscovery -> serviceDiscovery.query(new ServiceQueryBuilder()
-                        .name("orchestration")
+                        .name("orchestration-service")
                         .interfaces(InterfaceDescriptor.getOrCreate(HTTP, isSecure, EncodingDescriptor.JSON))
                         .securityModes(isSecure ? CERTIFICATE : NOT_SECURE)
                         .build()))
@@ -442,11 +442,11 @@ public class HttpJsonCoreIntegrator implements Plugin {
     }
 
     private Future<Collection<ServiceDescription>> queryOrchestratorForStoredRules(final ArSystem system) {
-        final var options = Collections.singletonMap(OrchestrationOption.ENABLE_INTER_CLOUD, true);
+        //final var options = Collections.singletonMap(OrchestrationOption.ENABLE_INTER_CLOUD, true);
         return requestOrchestration()
             .flatMap(orchestration -> orchestration.query(new OrchestrationQueryBuilder()
                 .requester(systemToSystemDetailsDto(system))
-                .options(options)
+          //      .options(options)
                 .build()))
             .map(queryResult -> queryResult.services()
                 .stream()

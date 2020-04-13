@@ -178,7 +178,7 @@ public class TrustedIdentity {
         if (this == other) { return true; }
         if (other == null || getClass() != other.getClass()) { return false; }
         TrustedIdentity that = (TrustedIdentity) other;
-        return Arrays.equals(chain, that.chain);
+        return chain[chainOffset].equals(that.chain[that.chainOffset]);
     }
 
     @Override

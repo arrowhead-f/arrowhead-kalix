@@ -178,6 +178,9 @@ public class DnsNames {
      * Verifies and splits given DNS {@code name} into no more than
      * {@code limit} parts. Each part will contain exactly one DNS name label,
      * except for the last, which will contain all remaining labels.
+     * <p>
+     * Even though not standards compliant, this method allows DNS labels to
+     * contain underscores. This will likely change in the future.
      *
      * @param name  Name to split.
      * @param limit Maximum number of parts to return.
@@ -222,7 +225,7 @@ public class DnsNames {
                     n0 = n1;
                     continue label; // End of label, start over.
                 }
-                if (!(c >= '0' && c <= '9' || c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z')) {
+                if (!(c >= '0' && c <= '9' || c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c == '_')) {
                     throw invalidLabelCharException(c);
                 }
             }

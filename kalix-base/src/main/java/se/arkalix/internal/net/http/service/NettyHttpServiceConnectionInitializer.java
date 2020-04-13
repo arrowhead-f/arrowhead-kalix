@@ -34,8 +34,7 @@ public class NettyHttpServiceConnectionInitializer extends ChannelInitializer<So
 
     @Override
     protected void initChannel(final SocketChannel ch) {
-        final var pipeline = ch.pipeline()
-            .addLast(new LoggingHandler());
+        final var pipeline = ch.pipeline();
 
         SslHandler sslHandler = null;
         if (sslContext != null) {
@@ -44,6 +43,7 @@ public class NettyHttpServiceConnectionInitializer extends ChannelInitializer<So
         }
 
         pipeline
+            .addLast(new LoggingHandler())
             .addLast(new IdleStateHandler(30, 90, 0, TimeUnit.SECONDS))
 
             .addLast(new HttpServerCodec())

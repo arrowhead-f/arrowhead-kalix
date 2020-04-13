@@ -227,8 +227,8 @@ public class HttpConsumer implements ArConsumer {
                         connection.close();
                         return Result.failure(new HttpConsumerConnectionException("" +
                             "The consumed system \"" + service.provider().name() +
-                            "\" does belong to the same local cloud as this " +
-                            "system; cannot connect to service"));
+                            "\" does not belong to the same local cloud as " +
+                            "this system; cannot connect to service"));
                     }
                 }
                 else {

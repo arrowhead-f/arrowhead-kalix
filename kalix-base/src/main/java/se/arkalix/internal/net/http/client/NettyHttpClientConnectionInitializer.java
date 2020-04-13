@@ -31,8 +31,7 @@ public class NettyHttpClientConnectionInitializer extends ChannelInitializer<Soc
             ch.close();
             return;
         }
-        final var pipeline = ch.pipeline()
-            .addLast(new LoggingHandler());
+        final var pipeline = ch.pipeline();
 
         SslHandler sslHandler = null;
         if (sslContext != null) {
@@ -41,6 +40,7 @@ public class NettyHttpClientConnectionInitializer extends ChannelInitializer<Soc
         }
 
         pipeline
+            .addLast(new LoggingHandler())
             .addLast(new IdleStateHandler(30, 120, 0, TimeUnit.SECONDS))
             .addLast(new HttpClientCodec())
             .addLast(new NettyHttpClientConnectionHandler(futureConnection, sslHandler));

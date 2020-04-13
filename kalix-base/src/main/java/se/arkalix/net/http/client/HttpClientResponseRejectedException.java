@@ -32,7 +32,7 @@ public class HttpClientResponseRejectedException extends HttpClientResponseExcep
      * @param message Human-readable description of issue.
      */
     public HttpClientResponseRejectedException(final HttpClientResponse response, final String message) {
-        super(message);
+        super("[" + response.status().text() + "] " + message);
         this.response = response;
     }
 
