@@ -1,10 +1,12 @@
 package se.arkalix.core.plugin.dto;
 
+import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.dto.DtoWritableAs;
 import se.arkalix.dto.json.JsonName;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -62,4 +64,16 @@ public interface ServiceRegistration {
      * then its two triplets would be "HTTP-SECURE-JSON" and "HTTP-SECURE-XML".
      */
     List<InterfaceDescriptor> interfaces();
+
+    static ServiceRegistrationDto from(final ServiceDescription description) {
+        return new ServiceRegistrationBuilder()
+            .name(description.name())
+            .provider(SystemDetails.from(description.provider()))
+            .uri(description.uri())
+            .security(description.security())
+            .metadata(description.metadata())
+            .version(description.version())
+            .interfaces(new ArrayList<>(description.interfaces()))
+            .build();
+    }
 }

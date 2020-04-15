@@ -16,6 +16,10 @@ public class Instants {
         .toFormatter()
         .withZone(ZoneOffset.UTC);
 
+    public static String toAitiaDateTimeString(final Instant instant) {
+        return dateTimeFormatter.format(instant);
+    }
+
     /**
      * Creates {@link Instant} from given date/time string formatted according
      * to the following pattern:

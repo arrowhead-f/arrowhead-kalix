@@ -2,12 +2,12 @@
  * <h1>Arrowhead Identity Management</h1>
  * There are five categories of identities with relevance to Arrowhead
  * Framework. Those are (1) systems, (2) operators, (3) clouds, (4) companies
- * and (5) masters. Out of these, only system identities are always associated
- * with computer applications. Operator identities, which are really just
- * special cases of system identities, are to be owned by machines that only
- * act as directed by human operators. The remaining three categories serve as
- * hierarchical groupings that allow systems to tell how they relate to other
- * systems, for example in the context of service {@link
+ * and (5) Internet authorities. Out of these, only system identities are
+ * always associated with computer applications. Operator identities, which are
+ * really just special cases of system identities, are to be owned by machines
+ * that only act as directed by human operators. The remaining three categories
+ * serve as hierarchical groupings that allow systems to tell how they relate
+ * to other systems, for example in the context of service {@link
  * se.arkalix.security.access.AccessPolicy access control}.
  *
  * <h2>Certificates</h2>

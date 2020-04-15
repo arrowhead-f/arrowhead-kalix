@@ -4,14 +4,11 @@ import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.description.ConsumerDescription;
 import se.arkalix.descriptor.SecurityDescriptor;
-import se.arkalix.security.identity.SystemIdentity;
-import se.arkalix.util.annotation.ThreadSafe;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
- * Certificate-only same-cloud access policy.
+ * Same-cloud access policy.
  * <p>
  * A consuming system is granted access only if it can present a certificate
  * issued by the same local cloud certificate as the system using this policy.
@@ -19,10 +16,10 @@ import java.util.stream.Collectors;
  * Use the {@link AccessPolicy#cloud()} method to get an instance of this
  * class.
  */
-public class AccessByCertificate implements AccessPolicy {
-    static final AccessByCertificate INSTANCE = new AccessByCertificate();
+public class AccessByCloudCertificate implements AccessPolicy {
+    static final AccessByCloudCertificate INSTANCE = new AccessByCloudCertificate();
 
-    private AccessByCertificate() {}
+    private AccessByCloudCertificate() {}
 
     @Override
     public SecurityDescriptor descriptor() {

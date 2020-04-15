@@ -1,5 +1,7 @@
 package se.arkalix.descriptor;
 
+import se.arkalix.security.access.AccessByCloudCertificate;
+import se.arkalix.security.access.AccessByCloudWhitelist;
 import se.arkalix.security.identity.SystemIdentity;
 
 import java.util.Objects;
@@ -35,9 +37,9 @@ public final class SecurityDescriptor {
     }
 
     /**
-     * Certificate {@link se.arkalix.security.access.AccessByCertificate
+     * Certificate {@link AccessByCloudCertificate
      * access policy}, with or without {@link
-     * se.arkalix.security.access.AccessByWhitelist white-listing}.
+     * AccessByCloudWhitelist white-listing}.
      * <p>
      * A consuming system is trusted only if it can (1) present a certificate
      * issued by the same cloud certificate as a provider, as well as (2) the

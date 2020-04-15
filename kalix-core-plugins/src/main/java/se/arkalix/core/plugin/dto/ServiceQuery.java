@@ -8,6 +8,7 @@ import se.arkalix.dto.json.JsonName;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static se.arkalix.dto.DtoEncoding.JSON;
 
@@ -64,4 +65,21 @@ public interface ServiceQuery {
      */
     @JsonName("pingProviders")
     Optional<Boolean> triggerPing();
+
+    static ServiceQueryDto from(final se.arkalix.query.ServiceQuery query) {
+        final var isSecure = query.isSecure();
+        return new ServiceQueryBuilder()
+            .name(query.name().orElse(null))
+            .interfaces(query.transports()
+                .stream()
+                .flatMap(transport -> query.encodings()
+                    .stream()
+                    .map(encoding -> InterfaceDescriptor.getOrCreate(transport, isSecure, encoding)))
+                .collect(Collectors.toUnmodifiableList()))
+            .metadata(query.metadata())
+            .version(query.version().orElse(null))
+            .versionMax(query.versionMax().orElse(null))
+            .versionMin(query.versionMin().orElse(null))
+            .build();
+    }
 }

@@ -88,4 +88,13 @@ public class ProviderDescription {
         }
         return publicKey;
     }
+
+    @Override
+    public String toString() {
+        return "ProviderDescription{" +
+            "name='" + name + '\'' +
+            ", remoteSocketAddress=" + remoteSocketAddress +
+            ", publicKey=" + publicKey +
+            '}';
+    }
 }

@@ -164,14 +164,8 @@ public interface Plugin {
      *
      * @param plug  Plug, representing this plugin's connection to a system.
      * @param query An incomplete description of the service being queried.
-     * @return {@code Future} that must be completed with an {@link Optional}
-     * of exactly one {@link ServiceDescription}. If the given {@code query}
-     * matches more than one service description, the plugin must choose which
-     * of them to return. If the query matches no service descriptions at all,
-     * the returned {@code Future} must be completed successfully with an empty
-     * {@link Optional}. If the returned {@code Future} is completed with a
-     * fault, service resolution will stop and no more plugins will be asked to
-     * process the query.
+     * @return {@code Future} that will complete with a collection of service
+     * descriptions, out of which some <i>may</i> match the provided query.
      */
     @ThreadSafe
     default Future<Collection<ServiceDescription>> onServiceQueried(final Plug plug, final ServiceQuery query)

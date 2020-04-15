@@ -237,7 +237,10 @@ public class ArSystem {
         }
 
         return pluginNotifier.onServiceQueried(query)
-            .ifSuccess(consumedServices::update);
+            .ifSuccess(consumedServices::update)
+            .map(services -> services.stream()
+                .filter(query::matches)
+                .collect(Collectors.toUnmodifiableSet()));
     }
 
     /**

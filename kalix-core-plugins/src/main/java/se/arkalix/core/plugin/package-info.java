@@ -4,6 +4,6 @@
  * Arrowhead Framework core services.
  * <p>
  * Currently, the most significant component of this package is the {@link
- * se.arkalix.core.plugin.HttpJsonCoreIntegrator HttpJsonCoreIntegrator} class.
+ * se.arkalix.core.plugin.HttpJsonCloudPlugin HttpJsonCloudPlugin} class.
  */
 package se.arkalix.core.plugin;

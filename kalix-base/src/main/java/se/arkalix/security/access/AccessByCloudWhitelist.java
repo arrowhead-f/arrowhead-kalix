@@ -9,7 +9,7 @@ import se.arkalix.util.annotation.ThreadSafe;
 import java.util.*;
 
 /**
- * Certificate-only same-cloud and whitelist access policy.
+ * Same-cloud and whitelist access policy.
  * <p>
  * A consuming system is granted access only if it can (1) present a
  * certificate issued by the same local cloud certificate as the system using
@@ -19,17 +19,15 @@ import java.util.*;
  * Note that access policy instances of this type can be shared by multiple
  * services.
  */
-public class AccessByWhitelist implements AccessPolicy {
+public class AccessByCloudWhitelist implements AccessPolicy {
     private final Set<String> whitelist;
 
     /**
-     * Creates new certificate-only access policy. If a white-list is provided,
-     * only systems with the while-listed {@link se.arkalix.security.identity
-     * system names} will be granted access.
+     * Creates new same-cloud and whitelist access policy.
      *
      * @param whitelist Collection of names of systems to be allowed access.
      */
-    public AccessByWhitelist(final Collection<String> whitelist) {
+    public AccessByCloudWhitelist(final Collection<String> whitelist) {
         this.whitelist = Collections.synchronizedSet(new HashSet<>(
             Objects.requireNonNull(whitelist, "Expected whitelist")));
     }

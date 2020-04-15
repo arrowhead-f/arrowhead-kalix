@@ -17,5 +17,5 @@ public interface ArOrchestration extends ArConsumer {
      * @return Future completed with the results of the query, if no errors
      * occurred.
      */
-    Future<OrchestrationQueryResultDto> query(final OrchestrationQueryDto query);
+    Future<OrchestrationQueryResultDto> query(OrchestrationQueryDto query);
 }

@@ -3,9 +3,9 @@
  * There are four access control paradigms currently supported by the Arrowhead
  * Framework, which are
  * <ol>
- *     <li>access by {@link se.arkalix.security.access.AccessByCertificate
+ *     <li>access by {@link se.arkalix.security.access.AccessByCloudCertificate
  *         certificate},</li>
- *     <li>access by {@link se.arkalix.security.access.AccessByWhitelist
+ *     <li>access by {@link se.arkalix.security.access.AccessByCloudWhitelist
  *         white-list},</li>
  *     <li>access by {@link se.arkalix.security.access.AccessByToken token}
  *         and</li>

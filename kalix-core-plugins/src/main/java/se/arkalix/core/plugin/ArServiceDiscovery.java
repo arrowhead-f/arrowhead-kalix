@@ -20,7 +20,7 @@ public interface ArServiceDiscovery extends ArConsumer {
     Future<ServiceQueryResultDto> query(ServiceQueryDto query);
 
     /**
-     * Registers a service with the registry.
+     * Registers a service.
      *
      * @param registration Description of service.
      * @return Future completed when the registration attempt is known to have
@@ -29,7 +29,7 @@ public interface ArServiceDiscovery extends ArConsumer {
     Future<?> register(ServiceRegistrationDto registration);
 
     /**
-     * Unregister a service that is currently registered with the registry.
+     * Unregisters a service that is currently registered.
      *
      * @param serviceName Name of service of existing entry.
      * @param systemName  Name of system of existing entry.

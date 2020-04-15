@@ -99,4 +99,20 @@ public interface ServiceDetails {
                 .collect(Collectors.toUnmodifiableSet()))
             .build();
     }
+
+    static ServiceDetailsDto from(final ServiceDescription description) {
+        return new ServiceDetailsBuilder()
+            .name(new ServiceNameBuilder().name(description.name()).build())
+            .provider(SystemDetails.from(description.provider()))
+            .uri(description.uri())
+            .expiresAt(Instants.toAitiaDateTimeString(description.expiresAt()))
+            .security(description.security())
+            .metadata(description.metadata())
+            .version(description.version())
+            .interfaces(description.interfaces()
+                .stream()
+                .map(descriptor -> new InterfaceNameBuilder().name(descriptor).build())
+                .collect(Collectors.toUnmodifiableList()))
+            .build();
+    }
 }
