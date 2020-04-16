@@ -2,7 +2,7 @@ package se.arkalix.core.plugin;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.arkalix.core.plugin.dto.EventDto;
+import se.arkalix.core.plugin.dto.EventIncomingDto;
 import se.arkalix.core.plugin.dto.SystemDetails;
 import se.arkalix.core.plugin.internal.ArEventSubscription;
 import se.arkalix.description.ProviderDescription;
@@ -61,7 +61,7 @@ public class HttpJsonEventSubscriptionPlugin implements Plugin {
 
                 for (final var subscription : subscriptions) {
                     eventSubscriber.post(subscription.uri(), (request, response) ->
-                        request.bodyAs(EventDto.class)
+                        request.bodyAs(EventIncomingDto.class)
                             .ifSuccess(event -> {
                                 try {
                                     subscription.publish(event.metadata(), event.data());

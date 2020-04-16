@@ -1,10 +1,7 @@
 package se.arkalix.core.plugin;
 
 import se.arkalix.ArSystem;
-import se.arkalix.core.plugin.dto.EventBuilder;
-import se.arkalix.core.plugin.dto.EventDto;
-import se.arkalix.core.plugin.dto.Instants;
-import se.arkalix.core.plugin.dto.SystemDetails;
+import se.arkalix.core.plugin.dto.*;
 import se.arkalix.util.concurrent.Future;
 
 import java.time.Instant;
@@ -22,10 +19,10 @@ public interface ArEventPublish {
      * @return {@code Future} completed when the publishing attempt is known to
      * have succeeded or failed.
      */
-    Future<?> publish(EventDto event);
+    Future<?> publish(EventOutgoingDto event);
 
     /**
-     * Publishes given arguments as an {@link se.arkalix.core.plugin.dto.Event}.
+     * Publishes given arguments as an {@link EventOutgoing}.
      *
      * @param topic     Category of event.
      * @param publisher System publishing the event.
@@ -38,7 +35,7 @@ public interface ArEventPublish {
     }
 
     /**
-     * Publishes given arguments as an {@link se.arkalix.core.plugin.dto.Event}.
+     * Publishes given arguments as an {@link EventOutgoing}.
      *
      * @param topic     Category of event.
      * @param publisher System publishing the event.
@@ -53,7 +50,7 @@ public interface ArEventPublish {
         final Map<String, String> metadata,
         final String data)
     {
-        return publish(new EventBuilder()
+        return publish(new EventOutgoingBuilder()
             .topic(topic)
             .publisher(SystemDetails.from(publisher))
             .metadata(metadata)

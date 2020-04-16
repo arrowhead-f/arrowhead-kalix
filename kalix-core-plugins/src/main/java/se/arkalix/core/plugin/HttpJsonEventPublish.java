@@ -3,7 +3,7 @@ package se.arkalix.core.plugin;
 import se.arkalix.ArConsumer;
 import se.arkalix.ArConsumerFactory;
 import se.arkalix.ArSystem;
-import se.arkalix.core.plugin.dto.EventDto;
+import se.arkalix.core.plugin.dto.EventOutgoingDto;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
@@ -43,7 +43,7 @@ public class HttpJsonEventPublish implements ArConsumer, ArEventPublish {
     }
 
     @Override
-    public Future<?> publish(final EventDto event) {
+    public Future<?> publish(final EventOutgoingDto event) {
         return consumer.send(new HttpConsumerRequest()
             .method(POST)
             .uri(service().uri())

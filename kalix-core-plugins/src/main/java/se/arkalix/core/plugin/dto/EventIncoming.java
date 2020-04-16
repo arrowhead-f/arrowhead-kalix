@@ -1,6 +1,6 @@
 package se.arkalix.core.plugin.dto;
 
-import se.arkalix.dto.DtoWritableAs;
+import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.json.JsonName;
 
 import java.util.Map;
@@ -9,10 +9,10 @@ import java.util.Optional;
 import static se.arkalix.dto.DtoEncoding.JSON;
 
 /**
- * An event description, as sent.
+ * An event description, as received.
  */
-@DtoWritableAs(JSON)
-public interface EventOutgoing {
+@DtoReadableAs(JSON)
+public interface EventIncoming {
     /**
      * Category of event.
      */
@@ -23,7 +23,7 @@ public interface EventOutgoing {
      * Information about the system publishing this event.
      */
     @JsonName("source")
-    SystemDetails publisher();
+    Optional<SystemDetails> publisher();
 
     /**
      * Arbitrary details about this event.
@@ -43,5 +43,5 @@ public interface EventOutgoing {
      * @see Instants#fromAitiaDateTimeString(String)
      */
     @JsonName("timeStamp")
-    Optional<String> createdAt();
+    String createdAt();
 }

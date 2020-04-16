@@ -10,9 +10,9 @@ import java.util.Optional;
 import static se.arkalix.dto.DtoEncoding.JSON;
 
 /**
- * A request for some {@link #subscriber() subscriber} to receive {@link Event
- * events} matching certain {@link #topic() topic} and {@link #metadata()
- * metadata} requirements.
+ * A request for some {@link #subscriber() subscriber} to receive {@link
+ * EventIncoming events} matching certain {@link #topic() topic} and {@link
+ * #metadata() metadata} requirements.
  */
 @DtoWritableAs(JSON)
 public interface EventSubscriptionRequest {
@@ -29,27 +29,27 @@ public interface EventSubscriptionRequest {
     SystemDetails subscriber();
 
     /**
-     * Metadata key/value pairs that must exist in each {@link Event} matched
+     * Metadata key/value pairs that must exist in each {@link EventOutgoing} matched
      * by this subscription.
      */
     @JsonName("filterMetaData")
     Map<String, String> metadata();
 
     /**
-     * The URI to which matching {@link Event events} will be sent as an HTTP
-     * POST request.
+     * The URI to which matching {@link EventIncoming events} will be sent as
+     * an HTTP POST request.
      * <p>
-     * In other words, whenever an eligible {@link Event} becomes available to
-     * the Event Handler receiving this subscription, the {@link #subscriber()
-     * subscriber} will be sent an HTTP POST message with this URI, containing
-     * the matching {@link Event} as message body.
+     * In other words, whenever an eligible {@link EventIncoming} becomes
+     * available to the Event Handler receiving this subscription, the {@link
+     * #subscriber() subscriber} will be sent an HTTP POST message with this
+     * URI, containing the matching {@link EventIncoming} as message body.
      */
     @JsonName("notifyUri")
     String sendToUri();
 
     /**
      * {@code true} only if the {@link #metadata() metadata} map is to be used
-     * when deciding what {@link Event events} to forward to the {@link
+     * when deciding what {@link EventOutgoing events} to forward to the {@link
      * #subscriber() subscriber}.
      */
     @JsonName("matchMetaData")
