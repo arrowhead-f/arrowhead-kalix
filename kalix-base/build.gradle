@@ -6,6 +6,7 @@ ext {
     versionJose4j = '0.7.0'
     versionJunitJupiter = '5.6.0'
     versionNetty = '4.1.45.Final'
+    versionSlf4j = '1.7.30'
 }
 
 dependencies {

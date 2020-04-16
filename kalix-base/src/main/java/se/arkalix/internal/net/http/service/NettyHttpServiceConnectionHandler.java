@@ -111,6 +111,9 @@ public class NettyHttpServiceConnectionHandler extends NettySimpleChannelInbound
             })
             .onFailure(fault -> {
                 if (fault instanceof HttpServiceRequestException || fault instanceof DtoReadException) {
+                    if (logger.isWarnEnabled()) {
+                        logger.warn("Incoming request could not be processed", fault);
+                    }
                     sendEmptyResponseAndCleanup(ctx, BAD_REQUEST, false);
                 }
                 else {

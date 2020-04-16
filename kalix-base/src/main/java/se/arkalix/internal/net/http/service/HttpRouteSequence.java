@@ -59,7 +59,10 @@ public class HttpRouteSequence {
                 final var response = task.response();
                 return route
                     .handle(task.request().cloneAndSet(pathParameters), response)
-                    .mapResult(ignored -> {
+                    .mapResult(result -> {
+                        if (result.isFailure()) {
+                            return Result.failure(result.fault());
+                        }
                         if (response.status().isEmpty()) {
                             return Result.failure(new IllegalStateException("" +
                                 "HTTP route " +
