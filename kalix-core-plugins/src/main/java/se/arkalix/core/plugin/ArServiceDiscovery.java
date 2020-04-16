@@ -1,14 +1,19 @@
 package se.arkalix.core.plugin;
 
 import se.arkalix.ArConsumer;
-import se.arkalix.core.plugin.dto.ServiceQueryDto;
-import se.arkalix.core.plugin.dto.ServiceQueryResultDto;
-import se.arkalix.core.plugin.dto.ServiceRegistrationDto;
+import se.arkalix.ArSystem;
+import se.arkalix.core.plugin.dto.*;
+import se.arkalix.description.ServiceDescription;
+import se.arkalix.query.ServiceQuery;
 import se.arkalix.util.concurrent.Future;
+
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 /**
  * Represents an Arrowhead service discovery service.
  */
+@SuppressWarnings("unused")
 public interface ArServiceDiscovery extends ArConsumer {
     /**
      * Queries registry for certain service definitions.
@@ -20,6 +25,20 @@ public interface ArServiceDiscovery extends ArConsumer {
     Future<ServiceQueryResultDto> query(ServiceQueryDto query);
 
     /**
+     * Queries registry for certain service definitions.
+     *
+     * @param query Description of what service definitions are desired.
+     * @return Future completed with the results of the query, if no errors
+     * occurred.
+     */
+    default Future<Collection<ServiceDescription>> query(final ServiceQuery query) {
+        return query(se.arkalix.core.plugin.dto.ServiceQuery.from(query))
+            .map(result -> result.services().stream()
+                .map(ServiceDetails::toServiceDescription)
+                .collect(Collectors.toUnmodifiableSet()));
+    }
+
+    /**
      * Registers a service.
      *
      * @param registration Description of service.
@@ -27,6 +46,17 @@ public interface ArServiceDiscovery extends ArConsumer {
      * succeeded or failed.
      */
     Future<?> register(ServiceRegistrationDto registration);
+
+    /**
+     * Registers a service.
+     *
+     * @param serviceDescription Description of service to register.
+     * @return Future completed when the registration attempt is known to have
+     * succeeded or failed.
+     */
+    default Future<?> register(final ServiceDescription serviceDescription) {
+        return register(ServiceRegistration.from(serviceDescription));
+    }
 
     /**
      * Unregisters a service that is currently registered.
@@ -39,4 +69,16 @@ public interface ArServiceDiscovery extends ArConsumer {
      * or failed.
      */
     Future<?> unregister(String serviceName, String systemName, String hostname, int port);
+
+    /**
+     * Unregisters a service that is currently registered.
+     *
+     * @param serviceName Name of service of existing entry.
+     * @param system      System of existing entry.
+     * @return Future completed when unregistration is known to have succeeded
+     * or failed.
+     */
+    default Future<?> unregister(final String serviceName, final ArSystem system) {
+        return unregister(serviceName, system.name(), system.localSocketAddress().getHostString(), system.localPort());
+    }
 }

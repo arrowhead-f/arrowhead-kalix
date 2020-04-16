@@ -16,7 +16,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 
-import static se.arkalix.core.plugin.HttpJsonServices.unwrap;
+import static se.arkalix.core.plugin.internal.HttpJsonServices.unwrap;
 import static se.arkalix.descriptor.EncodingDescriptor.JSON;
 import static se.arkalix.descriptor.TransportDescriptor.HTTP;
 import static se.arkalix.net.http.HttpMethod.POST;

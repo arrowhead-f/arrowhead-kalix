@@ -5,13 +5,13 @@ import java.net.InetSocketAddress;
 /**
  * Use {@link HttpJsonCloudPlugin} instead.
  */
-@Deprecated(since = "0.2.1", forRemoval = true)
+@Deprecated(since = "0.3.0", forRemoval = true)
 public class HttpJsonCoreIntegrator {
     /**
      * Use {@link HttpJsonCloudPlugin#viaServiceRegistryAt(InetSocketAddress)}
      * instead.
      */
-    @Deprecated(since = "0.2.1", forRemoval = true)
+    @Deprecated(since = "0.3.0", forRemoval = true)
     public static HttpJsonCloudPlugin viaServiceRegistryAt(final InetSocketAddress socketAddress) {
         return new HttpJsonCloudPlugin.Builder()
             .serviceRegistrySocketAddress(socketAddress)
@@ -21,6 +21,6 @@ public class HttpJsonCoreIntegrator {
     /**
      * Use {@link HttpJsonCloudPlugin.Builder} instead.
      */
-    @Deprecated(since = "0.2.1", forRemoval = true)
+    @Deprecated(since = "0.3.0", forRemoval = true)
     public static class Builder extends HttpJsonCloudPlugin.Builder {}
 }

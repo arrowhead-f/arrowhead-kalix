@@ -15,7 +15,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
  * metadata} requirements.
  */
 @DtoWritableAs(JSON)
-public interface EventSubscription {
+public interface EventSubscriptionRequest {
     /**
      * Identifies the general category of events being subscribed to.
      */

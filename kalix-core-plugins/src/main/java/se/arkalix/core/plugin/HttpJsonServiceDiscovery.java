@@ -13,7 +13,7 @@ import se.arkalix.util.concurrent.Future;
 import java.util.Collections;
 import java.util.Objects;
 
-import static se.arkalix.core.plugin.HttpJsonServices.unwrap;
+import static se.arkalix.core.plugin.internal.HttpJsonServices.unwrap;
 import static se.arkalix.net.http.HttpMethod.DELETE;
 import static se.arkalix.net.http.HttpMethod.POST;
 

@@ -3,7 +3,7 @@ package se.arkalix.core.plugin;
 import se.arkalix.ArConsumer;
 import se.arkalix.ArConsumerFactory;
 import se.arkalix.ArSystem;
-import se.arkalix.core.plugin.dto.EventSubscriptionDto;
+import se.arkalix.core.plugin.dto.EventSubscriptionRequestDto;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
@@ -16,7 +16,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 
-import static se.arkalix.core.plugin.HttpJsonServices.unwrap;
+import static se.arkalix.core.plugin.internal.HttpJsonServices.unwrap;
 import static se.arkalix.descriptor.EncodingDescriptor.JSON;
 import static se.arkalix.descriptor.TransportDescriptor.HTTP;
 import static se.arkalix.net.http.HttpMethod.POST;
@@ -43,7 +43,7 @@ public class HttpJsonEventSubscribe implements ArConsumer, ArEventSubscribe {
     }
 
     @Override
-    public Future<?> subscribe(final EventSubscriptionDto subscription) {
+    public Future<?> subscribe(final EventSubscriptionRequestDto subscription) {
         return consumer.send(new HttpConsumerRequest()
             .method(POST)
             .uri(service().uri())

@@ -46,6 +46,11 @@ import static se.arkalix.dto.DtoEncoding.JSON;
  * as (3) helps resolve {@link se.arkalix.ArSystem#consume() service
  * consumption queries}.
  * <p>
+ * If used, this plugin should typically be the first one in the list of
+ * plugins provided to {@link se.arkalix.ArSystem.Builder#plugins(Plugin...)
+ * constructed systems}, as subsequent plugins may depend on it being
+ * available for service resolution when they attach to the system in question.
+ * <p>
  * Note that the plugin currently assumes that the service registry,
  * authorization system public key and orchestrator of the cloud in question
  * will never change. It also never adds the service discovery or orchestration

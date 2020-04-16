@@ -15,7 +15,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 
-import static se.arkalix.core.plugin.HttpJsonServices.unwrap;
+import static se.arkalix.core.plugin.internal.HttpJsonServices.unwrap;
 import static se.arkalix.descriptor.EncodingDescriptor.JSON;
 import static se.arkalix.descriptor.TransportDescriptor.HTTP;
 import static se.arkalix.net.http.HttpMethod.DELETE;
@@ -42,11 +42,11 @@ public class HttpJsonEventUnsubscribe implements ArConsumer, ArEventUnsubscribe 
     }
 
     @Override
-    public Future<?> unsubscribe(final String eventType, final String subscriberName, final String hostname, final int port) {
+    public Future<?> unsubscribe(final String topic, final String subscriberName, final String hostname, final int port) {
         return consumer.send(new HttpConsumerRequest()
             .method(DELETE)
             .uri(service().uri())
-            .queryParameter("event_type", eventType)
+            .queryParameter("event_type", topic)
             .queryParameter("system_name", subscriberName)
             .queryParameter("address", hostname)
             .queryParameter("port", Integer.toString(port)))
