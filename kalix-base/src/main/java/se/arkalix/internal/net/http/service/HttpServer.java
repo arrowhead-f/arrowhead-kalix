@@ -1,8 +1,13 @@
 package se.arkalix.internal.net.http.service;
 
 import io.netty.bootstrap.ServerBootstrap;
-import se.arkalix.ArServiceHandle;
+import io.netty.channel.Channel;
+import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.ssl.ClientAuth;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
 import se.arkalix.ArService;
+import se.arkalix.ArServiceHandle;
 import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.SecurityDescriptor;
@@ -12,18 +17,14 @@ import se.arkalix.internal.util.concurrent.NettyScheduler;
 import se.arkalix.net.http.service.HttpService;
 import se.arkalix.util.Result;
 import se.arkalix.util.annotation.Internal;
-import se.arkalix.util.concurrent.Schedulers;
 import se.arkalix.util.concurrent.Future;
-import io.netty.channel.Channel;
-import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.ssl.ClientAuth;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
+import se.arkalix.util.concurrent.Schedulers;
 
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static se.arkalix.internal.util.concurrent.NettyFutures.adapt;
@@ -32,7 +33,7 @@ import static se.arkalix.internal.util.concurrent.NettyFutures.adapt;
 public class HttpServer implements ArServer {
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 
-    private final Set<ArServiceHandle> handles = Collections.synchronizedSet(new HashSet<>());
+    private final Set<ArServiceHandle> handles = new HashSet<>();
     private final Map<String, HttpServiceInternal> services = new ConcurrentSkipListMap<>(Comparator.reverseOrder());
 
     private final PluginNotifier pluginNotifier;
@@ -138,7 +139,9 @@ public class HttpServer implements ArServer {
 
             return pluginNotifier.onServiceProvided(httpService.description())
                 .mapResult(result1 -> {
-                    handles.add(handle);
+                    synchronized (handles) {
+                        handles.add(handle);
+                    }
                     if (result1.isSuccess() && !isShuttingDown.get()) {
                         return Result.success(handle);
                     }
@@ -154,7 +157,11 @@ public class HttpServer implements ArServer {
 
     @Override
     public Stream<ArServiceHandle> providedServices() {
-        return handles.stream();
+        synchronized (handles) {
+            return handles.stream()
+                .collect(Collectors.toUnmodifiableList())
+                .stream();
+        }
     }
 
     private Optional<HttpServiceInternal> getServiceByPath(final String path) {
@@ -172,8 +179,10 @@ public class HttpServer implements ArServer {
         if (isShuttingDown.getAndSet(true)) {
             return Future.done();
         }
-        for (final var handle : handles) {
-            handle.dismiss();
+        synchronized (handles) {
+            for (final var handle : handles) {
+                handle.dismiss();
+            }
         }
         return adapt(channel.close());
     }
@@ -198,6 +207,9 @@ public class HttpServer implements ArServer {
             if (!isDismissed.getAndSet(true)) {
                 pluginNotifier.onServiceDismissed(description());
                 services.remove(basePath);
+                synchronized (handles) {
+                    handles.remove(this);
+                }
             }
         }
 

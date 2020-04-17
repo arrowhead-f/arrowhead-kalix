@@ -33,7 +33,7 @@ public interface Error {
     /**
      * @return This error as a {@link HttpClientResponseException}.
      */
-    default HttpClientResponseException toException() {
-        return new HttpClientResponseException(type() + " [" + code() + "]: " + message());
+    default ErrorException toException() {
+        return new ErrorException(this);
     }
 }

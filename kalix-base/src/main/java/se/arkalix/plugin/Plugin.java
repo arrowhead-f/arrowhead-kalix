@@ -10,7 +10,6 @@ import se.arkalix.util.concurrent.Future;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Optional;
 
 /**
  * An {@link ArSystem} plugin.
@@ -44,6 +43,21 @@ public interface Plugin {
             logger.debug("\"{}\" plugin attached to \"{}\"", class_, plug.system().name());
         }
     }
+
+    /**
+     * Called to notify the plugin that this, and all other plugins given at
+     * {@link ArSystem.Builder#plugins(Plugin...) system creation}, have been
+     * attached to an {@link ArSystem}.
+     * <p>
+     * This method is guaranteed to be called exactly once for every system the
+     * plugin is attached to.
+     * <p>
+     * If this method throws an exception the plugin is detached and
+     * {@link #onDetach(Plug, Throwable)} is invoked with the exception.
+     *
+     * @param plug Plug, representing the plugin's connection to the system.
+     */
+    default void afterAttach(final Plug plug) throws Exception {}
 
     /**
      * Called to notify the plugin that it now is detached from its
@@ -86,6 +100,18 @@ public interface Plugin {
             logger.error("\"" + class_ + "\" plugin detached forcibly from \"" + plug.system().name() + "\"", cause);
         }
     }
+
+    /**
+     * Called to notify the plugin that it, and all other plugins attached to
+     * the same {@link ArSystem}, are about to be {@link #onDetach(Plug)
+     * detached} from the {@link ArSystem} in question.
+     * <p>
+     * If this method throws an exception {@link #onDetach(Plug, Throwable)} is
+     * invoked with that exception.
+     *
+     * @param plug Plug, representing this plugin's connection to a system.
+     */
+    default void beforeDetach(final Plug plug) {}
 
     /**
      * Called to notify the plugin that a new service is prepared for being

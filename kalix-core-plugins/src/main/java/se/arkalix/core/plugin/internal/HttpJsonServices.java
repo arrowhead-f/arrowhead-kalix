@@ -3,7 +3,6 @@ package se.arkalix.core.plugin.internal;
 import se.arkalix.core.plugin.dto.Error;
 import se.arkalix.core.plugin.dto.ErrorDto;
 import se.arkalix.dto.DtoReadable;
-import se.arkalix.net.http.client.HttpClientResponseException;
 import se.arkalix.net.http.consumer.HttpConsumerResponse;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;
@@ -25,13 +24,9 @@ public class HttpJsonServices {
 
         if (status.isClientError()) {
             final var headers = response.headers();
-            if (headers.getAsInteger("content-length").orElse(0) > 0) {
-                if (headers.get("content-type").orElse("").startsWith("application/json")) {
-                    return response.bodyAs(JSON, ErrorDto.class)
-                        .mapThrow(Error::toException);
-                }
-                return response.bodyAsString()
-                    .mapThrow(HttpClientResponseException::new);
+            if (headers.get("content-type").orElse("").startsWith("application/json")) {
+                return response.bodyAs(JSON, ErrorDto.class)
+                    .mapThrow(Error::toException);
             }
         }
 

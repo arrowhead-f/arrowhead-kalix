@@ -112,8 +112,8 @@ public class ArServiceCache {
     @ThreadSafe
     public Stream<ServiceDescription> getAll() {
         final var now = Instant.now();
-        services.removeIf(service -> service.expiresAt().isAfter(now) ||
-            service.receivedAt().plus(entryLifetimeLimit).isAfter(now));
+        services.removeIf(service -> now.isAfter(service.expiresAt()) ||
+            now.isAfter(service.receivedAt().plus(entryLifetimeLimit)));
         return services.stream();
     }
 

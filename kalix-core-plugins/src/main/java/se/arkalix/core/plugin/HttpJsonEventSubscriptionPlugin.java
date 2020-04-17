@@ -2,6 +2,7 @@ package se.arkalix.core.plugin;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.arkalix.core.plugin.dto.ErrorException;
 import se.arkalix.core.plugin.dto.EventIncomingDto;
 import se.arkalix.core.plugin.dto.SystemDetails;
 import se.arkalix.core.plugin.internal.ArEventSubscription;
@@ -11,10 +12,12 @@ import se.arkalix.net.http.service.HttpService;
 import se.arkalix.plugin.Plug;
 import se.arkalix.plugin.Plugin;
 import se.arkalix.security.access.AccessPolicy;
+import se.arkalix.util.concurrent.Future;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 import static se.arkalix.descriptor.EncodingDescriptor.JSON;
 
@@ -38,29 +41,47 @@ import static se.arkalix.descriptor.EncodingDescriptor.JSON;
 public class HttpJsonEventSubscriptionPlugin implements Plugin {
     private static final Logger logger = LoggerFactory.getLogger(HttpJsonEventSubscriptionPlugin.class);
 
-    private final List<ArEventSubscription> subscriptions;
+    private final Collection<ArEventSubscription> subscriptions;
     private final String basePath;
 
     private HttpJsonEventSubscriptionPlugin(final Builder builder) {
         basePath = Objects.requireNonNull(builder.basePath, "Expected basePath");
-        subscriptions = Objects.requireNonNull(builder.subscriptions, "Expected subscriptions");
+        subscriptions = Objects.requireNonNull(builder.subscriptions, "Expected subscriptions").values();
     }
 
     @Override
     public void onAttach(final Plug plug) {
+        if (logger.isInfoEnabled()) {
+            logger.info("HTTP/JSON event subscription plugin attached to \"{}\"", plug.system().name());
+        }
+    }
+
+    @Override
+    public void afterAttach(final Plug plug) {
+        if (logger.isInfoEnabled()) {
+            logger.info("Registering event subscriptions of the \"{}\" system ...", plug.system().name());
+        }
+
         final var system = plug.system();
         system.consume()
             .using(HttpJsonEventSubscribe.factory())
-            .ifSuccess(consumer -> {
+            .flatMap(eventSubscribe -> {
+                if (logger.isInfoEnabled()) {
+                    final var service = eventSubscribe.service();
+                    final var provider = eventSubscribe.service().provider();
+                    logger.info("Registering subscriptions via \"{}\" provided by \"{}\" {} for the \"{}\" system ...",
+                        service.name(), provider.name(), provider.socketAddress(), plug.system().name());
+                }
+
                 final var subscriber = SystemDetails.from(system);
                 final var eventSubscriber = new HttpService()
                     .name("event-subscriber")
                     .basePath(basePath)
-                    .accessPolicy(AccessPolicy.whitelist(consumer.service().provider().name()))
+                    .accessPolicy(AccessPolicy.whitelist(eventSubscribe.service().provider().name()))
                     .encodings(JSON);
 
                 for (final var subscription : subscriptions) {
-                    eventSubscriber.post(subscription.uri(), (request, response) ->
+                    eventSubscriber.post("/" + subscription.topic(), (request, response) ->
                         request.bodyAs(EventIncomingDto.class)
                             .ifSuccess(event -> {
                                 try {
@@ -80,27 +101,61 @@ public class HttpJsonEventSubscriptionPlugin implements Plugin {
                             }));
                 }
 
-                system.provide(eventSubscriber);
-
-                for (final var subscription : subscriptions) {
-                    consumer.subscribe(subscription.toSubscriberRequest(subscriber, basePath))
-                        .onFailure(fault -> {
-                            if (logger.isWarnEnabled()) {
-                                logger.warn("Failed to register " + subscription, fault);
-                            }
-                        });
+                return system.provide(eventSubscriber)
+                    .ifSuccess(serviceHandle -> {
+                        for (final var subscription : subscriptions) {
+                            final var sendToUri = basePath + "/" + subscription.topic();
+                            final var subscriptionRequest = subscription.toSubscriberRequest(subscriber, sendToUri);
+                            eventSubscribe.subscribe(subscriptionRequest)
+                                .flatMapCatch(ErrorException.class, fault -> {
+                                    final var error = fault.error();
+                                    if ("INVALID_PARAMETER".equals(error.type())) {
+                                        return system.consume()
+                                            .using(HttpJsonEventUnsubscribe.factory())
+                                            .flatMap(eventUnsubscribe -> eventUnsubscribe
+                                                .unsubscribe(subscription.topic(), system))
+                                            .flatMap(ignored -> eventSubscribe.subscribe(subscriptionRequest))
+                                            .pass(null);
+                                    }
+                                    return Future.failure(fault);
+                                })
+                                .ifSuccess(ignored -> {
+                                    if (logger.isInfoEnabled()) {
+                                        logger.info("Registered {} for the \"{}\" system",
+                                            subscription.toString(), plug.system().name());
+                                    }
+                                })
+                                .onFailure(fault -> {
+                                    if (logger.isWarnEnabled()) {
+                                        logger.warn("Failed to register " + subscription, fault);
+                                    }
+                                });
+                        }
+                    })
+                    .mapFault(Throwable.class, fault -> new Exception("" +
+                        "Failed to setup event receiver for the \"" +
+                        plug.system().name() + "\" system", fault));
+            })
+            .ifSuccess(ignored -> {
+                if (logger.isInfoEnabled()) {
+                    logger.info("Registered all event subscriptions of " +
+                        "the \"{}\" system ...", plug.system().name());
                 }
-
             })
             .onFailure(fault -> {
-                if (logger.isWarnEnabled()) {
-                    logger.warn("Failed to access event-subscribe service", fault);
+                if (logger.isErrorEnabled()) {
+                    logger.error("Failed to register the event subscriptions " +
+                        "of the \"" + plug.system().name() + "\" system", fault);
                 }
             });
     }
 
     @Override
-    public void onDetach(final Plug plug) {
+    public void beforeDetach(final Plug plug) {
+        if (logger.isInfoEnabled()) {
+            logger.info("Unregistering event subscriptions of the \"{}\" system ...", plug.system().name());
+        }
+
         final var system = plug.system();
         system.consume()
             .using(HttpJsonEventUnsubscribe.factory())
@@ -116,9 +171,25 @@ public class HttpJsonEventSubscriptionPlugin implements Plugin {
             })
             .onFailure(fault -> {
                 if (logger.isWarnEnabled()) {
-                    logger.warn("Failed to access event-unsubscribe service", fault);
+                    logger.warn("Failed to unregister the event subscriptions " +
+                        "of the \"" + plug.system().name() + "\" system", fault);
                 }
             });
+    }
+
+    @Override
+    public void onDetach(final Plug plug) {
+        if (logger.isInfoEnabled()) {
+            logger.info("HTTP/JSON event subscription plugin detached from \"{}\"", plug.system().name());
+        }
+    }
+
+    @Override
+    public void onDetach(final Plug plug, final Throwable cause) {
+        if (logger.isErrorEnabled()) {
+            logger.error("HTTP/JSON event subscription plugin forcibly " +
+                "detached from \"" + plug.system().name() + "\"", cause);
+        }
     }
 
     /**
@@ -126,28 +197,28 @@ public class HttpJsonEventSubscriptionPlugin implements Plugin {
      * instances.
      */
     public static class Builder {
-        private final String basePath;
-        private final List<ArEventSubscription> subscriptions = new ArrayList<>();
+        private final Map<String, ArEventSubscription> subscriptions = new HashMap<>();
+
+        private String basePath;
 
         /**
-         * Creates new builder.
+         * Sets base path to be associated with {@link HttpService} that will
+         * be set up to receive incoming events.
+         *
+         * @param basePath HTTP URI base path.
+         * @return This builder.
          */
-        public Builder() {
-            try {
-                final var nounce = new byte[5];
-                SecureRandom.getInstanceStrong().nextBytes(nounce);
-                basePath = "/" + Base64.getUrlEncoder().encodeToString(nounce);
-            }
-            catch (final NoSuchAlgorithmException exception) {
-                throw new RuntimeException(exception);
-            }
+        public Builder basePath(final String basePath) {
+            this.basePath = basePath;
+            return this;
         }
 
         /**
          * Adds new desired subscription to builder.
          *
          * @param topic   Topic, or "eventType", that must be matched by
-         *                received events.
+         *                received events. Topics are case insensitive and can
+         *                only be subscribed to once.
          * @param handler Handler to receive matching events.
          * @return This builder.
          */
@@ -159,7 +230,8 @@ public class HttpJsonEventSubscriptionPlugin implements Plugin {
          * Adds new desired subscription to builder.
          *
          * @param topic    Topic, or "eventType", that must be matched by
-         *                 received events.
+         *                 received events. Topics are case insensitive and can
+         *                 only be subscribed to once.
          * @param metadata Metadata pairs that must be matched by received
          *                 events.
          * @param handler  Handler to receive matching events.
@@ -177,7 +249,8 @@ public class HttpJsonEventSubscriptionPlugin implements Plugin {
          * Adds new desired subscription to builder.
          *
          * @param topic     Topic, or "eventType", that must be matched by
-         *                  received events.
+         *                  received events. Topics are case insensitive and
+         *                  can only be subscribed to once.
          * @param providers Event providers to receive events from.
          * @param handler   Handler to receive matching events.
          * @return This builder.
@@ -194,7 +267,8 @@ public class HttpJsonEventSubscriptionPlugin implements Plugin {
          * Adds new desired subscription to builder.
          *
          * @param topic     Topic, or "eventType", that must be matched by
-         *                  received events.
+         *                  received events. Topics are case insensitive and
+         *                  can only be subscribed to once.
          * @param metadata  Metadata pairs that must be matched by received
          *                  events.
          * @param providers Event providers to receive events from.
@@ -202,27 +276,20 @@ public class HttpJsonEventSubscriptionPlugin implements Plugin {
          * @return This builder.
          */
         public Builder subscribe(
-            final String topic,
+            String topic,
             final Map<String, String> metadata,
             final Collection<ProviderDescription> providers,
             final ArEventSubscriptionHandler handler)
         {
-            final String uri;
-            try {
-                final var nounce = new byte[20];
-                SecureRandom.getInstanceStrong().nextBytes(nounce);
-                uri = Base64.getUrlEncoder().encodeToString(nounce);
-            }
-            catch (final NoSuchAlgorithmException exception) {
-                throw new RuntimeException(exception);
-            }
-            subscriptions.add(new ArEventSubscription.Builder()
+            topic = Objects.requireNonNull(topic, "Expected topic").toLowerCase();
+
+            subscriptions.putIfAbsent(topic, new ArEventSubscription.Builder()
                 .topic(topic)
                 .metadata(metadata)
                 .providers(providers)
                 .handler(handler)
-                .uri(uri)
                 .build());
+
             return this;
         }
 

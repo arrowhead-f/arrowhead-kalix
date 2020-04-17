@@ -45,11 +45,25 @@ public class Schedulers {
 
         final Thread hookDynamic = new Thread(dynamicScheduler::shutdown);
         runtime.addShutdownHook(hookDynamic);
-        dynamicScheduler.addShutdownListener(scheduler -> runtime.removeShutdownHook(hookDynamic));
+        dynamicScheduler.addShutdownListener(scheduler -> {
+            try {
+                runtime.removeShutdownHook(hookDynamic);
+            }
+            catch (final IllegalStateException exception) {
+                // Ignored.
+            }
+        });
 
         final Thread hookFixed = new Thread(fixedScheduler::shutdown);
         runtime.addShutdownHook(hookFixed);
-        fixedScheduler.addShutdownListener(scheduler -> runtime.removeShutdownHook(hookFixed));
+        fixedScheduler.addShutdownListener(scheduler -> {
+            try {
+                runtime.removeShutdownHook(hookFixed);
+            }
+            catch (final IllegalStateException exception) {
+                // Ignored.
+            }
+        });
     }
 
     private Schedulers() {}

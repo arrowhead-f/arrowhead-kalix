@@ -45,7 +45,7 @@ public class ArSystem {
 
     private final ArServiceCache consumedServices;
     private final ProviderDescription description;
-    private final Set<ArServer> servers = Collections.synchronizedSet(new HashSet<>());
+    private final Set<ArServer> servers = new HashSet<>();
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 
     private ArSystem(final Builder builder) {
@@ -104,6 +104,7 @@ public class ArSystem {
         pluginNotifier = new PluginNotifier(this, builder.plugins != null
             ? builder.plugins
             : Collections.emptyList());
+        pluginNotifier.onAttach();
     }
 
     /**
@@ -280,9 +281,11 @@ public class ArSystem {
             return Future.failure(cannotProvideServiceShuttingDownException());
         }
 
-        for (final var server : servers) {
-            if (server.canProvide(service)) {
-                return server.provide(service);
+        synchronized (servers) {
+            for (final var server : servers) {
+                if (server.canProvide(service)) {
+                    return server.provide(service);
+                }
             }
         }
 
@@ -312,9 +315,11 @@ public class ArSystem {
      */
     @ThreadSafe
     public Stream<ServiceDescription> providedServices() {
-        return servers.stream()
-            .flatMap(server -> server.providedServices()
-                .map(ArServiceHandle::description));
+        synchronized (servers) {
+            return servers.stream()
+                .flatMap(server -> server.providedServices()
+                    .map(ArServiceHandle::description));
+        }
     }
 
     /**
@@ -336,12 +341,16 @@ public class ArSystem {
             return Future.done();
         }
         scheduler.removeShutdownListener(schedulerShutdownListener);
-        return Futures.serialize(servers.stream().map(ArServer::close))
-            .mapResult(result -> {
-                pluginNotifier.clear();
-                servers.clear();
-                return result;
-            });
+        synchronized (servers) {
+            return Futures.serialize(servers.stream().map(ArServer::close))
+                .mapResult(result -> {
+                    pluginNotifier.onDetach();
+                    synchronized (servers) {
+                        servers.clear();
+                    }
+                    return result;
+                });
+        }
     }
 
     /**

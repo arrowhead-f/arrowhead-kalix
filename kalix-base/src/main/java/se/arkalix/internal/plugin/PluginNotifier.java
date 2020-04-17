@@ -40,13 +40,18 @@ public class PluginNotifier {
             },
             plugin -> plugin)
         );
-        forEach((plug, plugin) -> plugin.onAttach(plug));
     }
 
     @ThreadSafe
-    public void clear() {
+    public void onAttach() {
+        forEach((plug, plugin) -> plugin.onAttach(plug));
+        forEach((plug, plugin) -> plugin.afterAttach(plug));
+    }
+
+    @ThreadSafe
+    public void onDetach() {
+        forEach((plug, plugin) -> plugin.beforeDetach(plug));
         forEach((plug, plugin) -> plugin.onDetach(plug));
-        plugins.clear();
     }
 
     @ThreadSafe

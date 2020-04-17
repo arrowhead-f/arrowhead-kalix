@@ -10,9 +10,7 @@ import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.internal.security.identity.X509Keys;
-import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.client.HttpClient;
-import se.arkalix.net.http.client.HttpClientResponseRejectedException;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.plugin.Plug;
 import se.arkalix.plugin.Plugin;
@@ -26,13 +24,15 @@ import se.arkalix.util.concurrent.FutureAnnouncement;
 
 import java.net.InetSocketAddress;
 import java.security.PublicKey;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static se.arkalix.descriptor.SecurityDescriptor.CERTIFICATE;
 import static se.arkalix.descriptor.SecurityDescriptor.NOT_SECURE;
 import static se.arkalix.descriptor.TransportDescriptor.HTTP;
-import static se.arkalix.dto.DtoEncoding.JSON;
 
 /**
  * HTTP/JSON cloud plugin.
@@ -149,37 +149,32 @@ public class HttpJsonCloudPlugin implements Plugin {
         return requestServiceDiscovery()
             .flatMap(serviceDiscovery -> serviceDiscovery
                 .register(registration)
-                .flatMapCatch(HttpClientResponseRejectedException.class, fault -> {
-                    if (fault.status() == HttpStatus.BAD_REQUEST) {
-                        return fault.unwrap()
-                            .bodyAs(JSON, ErrorDto.class)
-                            .flatMap(error -> {
-                                if (!"INVALID_PARAMETER".equals(error.type())) {
-                                    return Future.failure(error.toException());
-                                }
-                                return serviceDiscovery.unregister(
-                                    service.name(),
-                                    provider.name(),
-                                    providerSocketAddress.getHostString(),
-                                    providerSocketAddress.getPort())
-                                    .flatMap(ignored -> serviceDiscovery.register(registration).pass(null));
-                            })
-                            .pass(null);
+                .flatMapCatch(ErrorException.class, fault -> {
+                    final var error = fault.error();
+                    if ("INVALID_PARAMETER".equals(error.type())) {
+                        return serviceDiscovery.unregister(
+                            service.name(),
+                            provider.name(),
+                            providerSocketAddress.getHostString(),
+                            providerSocketAddress.getPort())
+                            .flatMap(ignored -> serviceDiscovery.register(registration)
+                                .pass(null));
                     }
                     return Future.failure(fault);
                 })
                 .mapResult(result -> {
                     if (result.isSuccess()) {
                         if (logger.isInfoEnabled()) {
-                            logger.info("Registered \"{}\" provided by \"{}\"",
+                            logger.info("Registered the \"{}\" service " +
+                                    "provided by the \"{}\" system",
                                 service.name(), plug.system().name());
                         }
                     }
                     else {
                         if (logger.isErrorEnabled()) {
-                            logger.error("Failed to register \"" + service.name() +
-                                "\" provided by \"" + plug.system().name() +
-                                "\"", result.fault());
+                            logger.error("Failed to register the \"" + service.name() +
+                                "\" service provided by the \"" + plug.system().name() +
+                                "\" system", result.fault());
                         }
                     }
                     return result;
@@ -189,7 +184,8 @@ public class HttpJsonCloudPlugin implements Plugin {
     @Override
     public void onServiceDismissed(final Plug plug, final ServiceDescription service) {
         if (logger.isInfoEnabled()) {
-            logger.info("Unregistering \"{}\" provided by \"{}\" ...", service.name(), plug.system().name());
+            logger.info("Unregistering the \"{}\" service provided by " +
+                "the \"{}\" system ...", service.name(), plug.system().name());
         }
         final var provider = service.provider();
         final var providerSocketAddress = provider.socketAddress();
@@ -202,15 +198,15 @@ public class HttpJsonCloudPlugin implements Plugin {
             .onResult(result -> {
                 if (result.isSuccess()) {
                     if (logger.isInfoEnabled()) {
-                        logger.info("Unregistered \"{}\" provided by \"{}\"",
-                            service.name(), plug.system().name());
+                        logger.info("Unregistered the \"{}\" service " +
+                            "provided by the \"{}\" system", service.name(), plug.system().name());
                     }
                 }
                 else {
                     if (logger.isWarnEnabled()) {
-                        logger.warn("Failed to unregister service \"" +
-                            service.name() + "\" provided by \"" +
-                            plug.system().name() + "\"", result.fault());
+                        logger.warn("Failed to unregister the \"" + service.name() +
+                            "\" service provided by the \"" + plug.system().name() +
+                            "\" system", result.fault());
                     }
                 }
             });

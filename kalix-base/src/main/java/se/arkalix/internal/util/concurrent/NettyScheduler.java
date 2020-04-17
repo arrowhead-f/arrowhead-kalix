@@ -33,7 +33,7 @@ public final class NettyScheduler extends AbstractScheduler {
     private final Class<? extends ServerSocketChannel> serverSocketChannelClass;
 
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
-    private final Set<SchedulerShutdownListener> shutdownListeners = Collections.synchronizedSet(new HashSet<>());
+    private final Set<SchedulerShutdownListener> shutdownListeners = new HashSet<>();
 
     public NettyScheduler() {
         final var threadFactory = new NettyThreadFactory();
@@ -130,11 +130,16 @@ public final class NettyScheduler extends AbstractScheduler {
 
     @Override
     public void addShutdownListener(final SchedulerShutdownListener listener) {
+        if (isShuttingDown.get()) {
+            throw new IllegalStateException("Already shutting down");
+        }
         shutdownListeners.add(listener);
     }
 
     @Override
     public void removeShutdownListener(final SchedulerShutdownListener listener) {
-        shutdownListeners.remove(listener);
+        if (!isShuttingDown.get()) {
+            shutdownListeners.remove(listener);
+        }
     }
 }

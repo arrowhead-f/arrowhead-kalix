@@ -15,7 +15,7 @@ public class DynamicScheduler extends AbstractScheduler {
 
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(0);
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
-    private final Set<SchedulerShutdownListener> shutdownListeners = Collections.synchronizedSet(new HashSet<>(0));
+    private final Set<SchedulerShutdownListener> shutdownListeners = new HashSet<>();
 
     @Override
     protected ScheduledExecutorService executor() {
@@ -46,11 +46,17 @@ public class DynamicScheduler extends AbstractScheduler {
 
     @Override
     public void addShutdownListener(final SchedulerShutdownListener listener) {
+        if (isShuttingDown.get()) {
+            throw new IllegalStateException("Already shutting down");
+        }
         shutdownListeners.add(listener);
     }
 
     @Override
     public void removeShutdownListener(final SchedulerShutdownListener listener) {
+        if (isShuttingDown.get()) {
+            throw new IllegalStateException("Already shutting down");
+        }
         shutdownListeners.remove(listener);
     }
 
