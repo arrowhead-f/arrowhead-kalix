@@ -29,7 +29,9 @@ import static se.arkalix.descriptor.EncodingDescriptor.JSON;
  * looks up the "event-subscribe" and "event-unsubscribe" services, out of
  * which it is assumed to only exist one each, and uses the former service to
  * subscribe to all desired events. When the systems in question shuts down,
- * the latter service is used to unsubscribe to the same events.
+ * the latter service is used to unsubscribe to the same events. Events are
+ * received by automatically setting up an {@link HttpService} that specifies
+ * one endpoint for each kind of event of interest.
  * <p>
  * Use of this plugin requires either that the mentioned services are preloaded
  * into the service cache of built systems, or that a plugin that performs
@@ -203,12 +205,17 @@ public class HttpJsonEventSubscriptionPlugin implements Plugin {
 
         /**
          * Sets base path to be associated with {@link HttpService} that will
-         * be set up to receive incoming events.
+         * be set up to receive incoming events. <b>Must be specified.</b>
          *
          * @param basePath HTTP URI base path.
          * @return This builder.
          */
         public Builder basePath(final String basePath) {
+            if (basePath != null && (basePath.length() < 2 || basePath.charAt(0) != '/')) {
+                throw new IllegalArgumentException("Valid base paths must " +
+                    "begin with a forward slash (/) and contain at least one " +
+                    "segment");
+            }
             this.basePath = basePath;
             return this;
         }
@@ -283,12 +290,17 @@ public class HttpJsonEventSubscriptionPlugin implements Plugin {
         {
             topic = Objects.requireNonNull(topic, "Expected topic").toLowerCase();
 
-            subscriptions.putIfAbsent(topic, new ArEventSubscription.Builder()
+            final var existing = subscriptions.putIfAbsent(topic, new ArEventSubscription.Builder()
                 .topic(topic)
                 .metadata(metadata)
                 .providers(providers)
                 .handler(handler)
                 .build());
+
+            if (existing != null) {
+                throw new IllegalArgumentException("A subscription already " +
+                    "exists for the topic \"" + topic + "\"");
+            }
 
             return this;
         }
