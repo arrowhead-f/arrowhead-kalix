@@ -496,10 +496,15 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
 
         final var properties = target.properties();
         final var p1 = properties.size();
-        var checkBeforeWritingComma = p1 > 0 && properties.get(0).isOptional();
-        if (checkBeforeWritingComma) {
-            builder.addStatement("var addComma = false");
+        var checkBeforeWritingComma = false;
+        if (p1 > 0) {
+            final var property0 = properties.get(0);
+            if (property0.isOptional() || property0.descriptor().isCollection()) {
+                checkBeforeWritingComma = true;
+                builder.addStatement("var addComma = false");
+            }
         }
+        var stopCheckingBeforeWritingComma = false;
         for (var p0 = 0; p0 < p1; ++p0) {
             final var property = properties.get(p0);
             final var descriptor = property.descriptor();
@@ -521,7 +526,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
                     }
                 }
                 else {
-                    checkBeforeWritingComma = false;
+                    stopCheckingBeforeWritingComma = true;
                 }
 
                 if (p0 != 0) {
@@ -534,6 +539,10 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
                     else {
                         writeCache.append(',');
                     }
+                }
+
+                if (stopCheckingBeforeWritingComma) {
+                    checkBeforeWritingComma = false;
                 }
 
                 writeCache
