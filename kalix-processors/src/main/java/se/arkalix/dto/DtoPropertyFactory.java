@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DtoPropertyFactory {
+    private final Elements elementUtils;
     private final Types typeUtils;
 
     // Primitive types.
@@ -61,7 +62,7 @@ public class DtoPropertyFactory {
     private final Set<Modifier> publicStaticModifiers;
 
     public DtoPropertyFactory(final Elements elementUtils, final Types typeUtils) {
-        Objects.requireNonNull(elementUtils, "Expected elementUtils");
+        this.elementUtils = Objects.requireNonNull(elementUtils, "Expected elementUtils");
         this.typeUtils = Objects.requireNonNull(typeUtils, "Expected typeUtils");
 
         final Function<Class<?>, DeclaredType> getDeclaredType = (class_) ->
@@ -330,10 +331,21 @@ public class DtoPropertyFactory {
 
     private DtoType toInterfaceOrCustomType(final ExecutableElement method, final TypeMirror type) throws DtoException {
         final var declaredType = (DeclaredType) type;
-        final var element = declaredType.asElement();
+        var element = typeUtils.asElement(type);
 
-        final var readable = element.getAnnotation(DtoReadableAs.class);
-        final var writable = element.getAnnotation(DtoWritableAs.class);
+        var readable = element.getAnnotation(DtoReadableAs.class);
+        var writable = element.getAnnotation(DtoWritableAs.class);
+
+        if (readable == null && writable == null) {
+            if (element instanceof TypeElement) {
+                element = elementUtils.getTypeElement(((TypeElement) element).getQualifiedName());
+            }
+            else {
+                element = elementUtils.getTypeElement(elementUtils.getName(type.toString()));
+            }
+            readable = element.getAnnotation(DtoReadableAs.class);
+            writable = element.getAnnotation(DtoWritableAs.class);
+        }
 
         if (readable == null && writable == null) {
             if (element.getSimpleName().toString().endsWith(DtoTarget.DATA_SUFFIX)) {
