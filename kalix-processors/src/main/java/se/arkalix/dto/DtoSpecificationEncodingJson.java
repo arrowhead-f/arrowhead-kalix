@@ -46,6 +46,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
     private void implementReadMethodsFor(final DtoTarget target, final TypeSpec.Builder implementation) throws DtoException {
         final var dataTypeName = target.dataTypeName();
         final var dataSimpleName = target.dataSimpleName();
+        final var properties = target.properties();
 
         implementation.addMethod(MethodSpec.methodBuilder("readJson")
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
@@ -64,13 +65,16 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             .addStatement("final var source = buffer.source()")
             .addStatement("var token = buffer.next()")
             .addStatement("var type = ($T) null", JsonType.class)
-            .addStatement("var error = \"\"");
+            .addStatement("var errorMessage = \"\"")
+            .addStatement("var errorCause = ($T) null", Throwable.class)
+            .addStatement("var n = -1");
 
-        var hasEnum = target.properties().stream().anyMatch(property -> property.descriptor() == DtoDescriptor.ENUM);
-        var hasMandatory = target.properties().stream().anyMatch(property -> !property.isOptional());
-        var hasNumber = target.properties().stream().anyMatch(property -> property.descriptor().isNumber());
+        var hasEnum = properties.stream().anyMatch(property -> property.descriptor() == DtoDescriptor.ENUM);
+        var hasInterface = properties.stream().anyMatch(property -> property.descriptor() == DtoDescriptor.INTERFACE);
+        var hasMandatory = properties.stream().anyMatch(property -> !property.isOptional());
+        var hasNumber = properties.stream().anyMatch(property -> property.descriptor().isNumber());
 
-        if (hasEnum || hasMandatory || hasNumber) {
+        if (hasEnum || hasInterface || hasMandatory || hasNumber) {
             builder.beginControlFlow("error: try");
         }
         else {
@@ -80,14 +84,14 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         final var builderName = target.interfaceType().simpleName() + "Builder";
         builder
             .beginControlFlow("if (token.type() != $T.OBJECT)", JsonType.class)
-            .addStatement("error = \"Expected object\"")
+            .addStatement("errorMessage = \"Expected object\"")
             .addStatement("break error")
             .endControlFlow()
             .addStatement("final var builder = new $N()", builderName)
-            .beginControlFlow("for (var n = token.nChildren(); n-- != 0; )")
+            .beginControlFlow("for (n = token.nChildren(); n != 0; --n)")
             .beginControlFlow("switch (buffer.next().readString(source))");
 
-        for (final var property : target.properties()) {
+        for (final var property : properties) {
             try {
                 builder.beginControlFlow("case $S:", property.nameFor(DtoEncoding.JSON));
                 final var name = property.name();
@@ -101,7 +105,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
 
         builder
             .beginControlFlow("default:")
-            .addStatement("buffer.skip()")
+            .addStatement("buffer.skipValue()")
             .endControlFlow("break");
 
         builder
@@ -110,30 +114,40 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             .addStatement("return builder.build()")
             .endControlFlow();
 
+        if (hasInterface) {
+            builder
+                .beginControlFlow("catch (final $T exception)", DtoReadException.class)
+                .addStatement("errorMessage = \"($N) Failed to read child object\"", dataSimpleName)
+                .addStatement("errorCause = exception")
+                .endControlFlow();
+        }
         if (hasNumber) {
             builder
-                .beginControlFlow("catch (final $T ignored)", NumberFormatException.class)
-                .addStatement("error = \"($N) Invalid number\"", dataSimpleName)
+                .beginControlFlow("catch (final $T exception)", NumberFormatException.class)
+                .addStatement("errorMessage = \"($N) Invalid number\"", dataSimpleName)
+                .addStatement("errorCause = exception")
                 .endControlFlow();
         }
         if (hasMandatory) {
             builder
                 .beginControlFlow("catch (final $T exception)", NullPointerException.class)
-                .addStatement("error = \"($N) Mandatory field `\" + exception.getMessage() + \"` missing in object\"",
-                    dataSimpleName)
+                .addStatement("errorMessage = \"($N) Mandatory field `\" + exception.getMessage() + " +
+                        "\"` missing in object\"", dataSimpleName)
+                .addStatement("errorCause = exception")
                 .endControlFlow();
         }
         if (hasEnum) {
             builder
                 .beginControlFlow("catch (final $T exception)", IllegalArgumentException.class)
-                .addStatement("error = \"($N) \" + exception.getMessage()", dataSimpleName)
+                .addStatement("errorMessage = \"($N) \" + exception.getMessage()", dataSimpleName)
+                .addStatement("errorCause = exception")
                 .endControlFlow();
         }
 
         builder
-            .addStatement("final var atEnd = buffer.atEnd()")
-            .addStatement("throw new $1T($2T.JSON, error, atEnd " +
-                    "? \"{\" : token.readStringRaw(source), atEnd ? 0 : token.begin())",
+            .addStatement("final var atEnd = n == 0")
+            .addStatement("throw new $1T($2T.JSON, errorMessage, atEnd " +
+                    "? \"{\" : token.readStringRaw(source), atEnd ? 0 : token.begin(), errorCause)",
                 DtoReadException.class, DtoEncoding.class);
 
         implementation.addMethod(builder.build());
@@ -278,7 +292,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         }
         builder
             .beginControlFlow("if (type != $T.ARRAY)", JsonType.class)
-            .addStatement("error = \"Expected array\"")
+            .addStatement("errorMessage = \"Expected array\"")
             .addStatement("break error")
             .endControlFlow();
 
@@ -321,7 +335,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         }
         builder
             .beginControlFlow("default:")
-            .addStatement("error = \"Expected true or false\"")
+            .addStatement("errorMessage = \"Expected true or false\"")
             .addStatement("break error")
             .endControlFlow()
             .endControlFlow()
@@ -329,6 +343,14 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
     }
 
     private void readCustom(final DtoElement type, final Expander assignment, final MethodSpec.Builder builder) {
+        if (level == 0) {
+            builder
+                .beginControlFlow("if (buffer.peek().type() == $T.NULL)", JsonType.class)
+                .addStatement("buffer.skipElement()")
+                .addStatement("continue")
+                .endControlFlow();
+        }
+
         builder.addStatement(assignment.expand("$T.readJson(buffer)"), type.inputTypeName());
     }
 
@@ -344,7 +366,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         }
         builder
             .beginControlFlow("if (type != $T.STRING)", JsonType.class)
-            .addStatement("error = \"Expected number\"")
+            .addStatement("errorMessage = \"Expected number\"")
             .addStatement("break error")
             .endControlFlow()
             .addStatement(assignment.expand("$T.valueOf(token.readString(source))"), type.inputTypeName());
@@ -359,6 +381,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         if (level == 0) {
             builder
                 .beginControlFlow("if (buffer.peek().type() == $T.NULL)", JsonType.class)
+                .addStatement("buffer.skipElement()")
                 .addStatement("continue")
                 .endControlFlow();
         }
@@ -381,7 +404,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         }
         builder
             .beginControlFlow("if (type != $T.OBJECT)", JsonType.class)
-            .addStatement("error = \"Expected object\"")
+            .addStatement("errorMessage = \"Expected object\"")
             .addStatement("break error")
             .endControlFlow()
             .addStatement("var n$L = token.nChildren()", level)
@@ -419,7 +442,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         }
         builder
             .beginControlFlow("if (type != $T.NUMBER)", JsonType.class)
-            .addStatement("error = \"Expected number\"")
+            .addStatement("errorMessage = \"Expected number\"")
             .addStatement("break error")
             .endControlFlow()
             .addStatement(assignment.expand("token.read" + type + "(source)"));
@@ -437,7 +460,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         }
         builder
             .beginControlFlow("if (type != $T.STRING)", JsonType.class)
-            .addStatement("error = \"Expected string\"")
+            .addStatement("errorMessage = \"Expected string\"")
             .addStatement("break error")
             .endControlFlow()
             .addStatement(assignment.expand("token.readString(source)"));
@@ -459,7 +482,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
                 builder.addStatement("case NULL: continue");
             }
             builder
-                .addStatement("default: error = \"Expected number or string\"; break error")
+                .addStatement("default: errorMessage = \"Expected number or string\"; break error")
                 .endControlFlow()
                 .addStatement(assignment.expand("value$L"), level);
         }
@@ -473,7 +496,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             }
             builder
                 .beginControlFlow("if (type != $T.STRING)", JsonType.class)
-                .addStatement("error = \"Expected string\"")
+                .addStatement("errorMessage = \"Expected string\"")
                 .addStatement("break error")
                 .endControlFlow()
                 .addStatement(assignment.expand("token.read$T(source)"), class_);

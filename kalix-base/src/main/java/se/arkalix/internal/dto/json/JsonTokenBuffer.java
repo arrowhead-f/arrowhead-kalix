@@ -31,21 +31,25 @@ public class JsonTokenBuffer {
         return tokens.get(offset);
     }
 
-    public void skip() {
+    public void skipElement() {
+        offset += 1;
+    }
+
+    public void skipValue() {
         var token = next();
         if (token.nChildren == 0) {
             return;
         }
         if (token.type == JsonType.ARRAY) {
             for (var n = token.nChildren; n-- != 0;) {
-                skip();
+                skipValue();
             }
             return;
         }
         if (token.type == JsonType.OBJECT) {
             for (var n = token.nChildren; n-- != 0;) {
                 offset += 1; // Skip key.
-                skip();
+                skipValue();
             }
         }
     }
