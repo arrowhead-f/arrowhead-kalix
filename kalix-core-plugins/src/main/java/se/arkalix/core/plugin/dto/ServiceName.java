@@ -1,6 +1,7 @@
 package se.arkalix.core.plugin.dto;
 
 import se.arkalix.dto.DtoReadableAs;
+import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.json.JsonName;
 
 import static se.arkalix.dto.DtoEncoding.JSON;
@@ -9,6 +10,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
  * The name of a service.
  */
 @DtoReadableAs(JSON)
+@DtoToString
 public interface ServiceName {
     /**
      * Service name.

@@ -1,5 +1,6 @@
 package se.arkalix.core.plugin.dto;
 
+import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
 import se.arkalix.dto.json.JsonName;
 
@@ -15,6 +16,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
  * #metadata() metadata} requirements.
  */
 @DtoWritableAs(JSON)
+@DtoToString
 public interface EventSubscriptionRequest {
     /**
      * Identifies the general category of events being subscribed to.

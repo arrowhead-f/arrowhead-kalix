@@ -3,6 +3,7 @@ package se.arkalix.core.plugin.dto;
 import se.arkalix.ArSystem;
 import se.arkalix.description.ProviderDescription;
 import se.arkalix.dto.DtoReadableAs;
+import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
 import se.arkalix.dto.json.JsonName;
 import se.arkalix.internal.security.identity.X509Keys;
@@ -19,6 +20,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
  */
 @DtoReadableAs(JSON)
 @DtoWritableAs(JSON)
+@DtoToString
 public interface SystemDetails {
     /**
      * Name of system.

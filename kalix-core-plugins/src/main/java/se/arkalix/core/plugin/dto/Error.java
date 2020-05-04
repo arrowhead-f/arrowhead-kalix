@@ -1,6 +1,7 @@
 package se.arkalix.core.plugin.dto;
 
 import se.arkalix.dto.DtoReadableAs;
+import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.json.JsonName;
 import se.arkalix.net.http.client.HttpClientResponseException;
 
@@ -11,6 +12,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
  * cannot be fulfilled.
  */
 @DtoReadableAs(JSON)
+@DtoToString
 public interface Error {
     /**
      * Human-readable description of error.

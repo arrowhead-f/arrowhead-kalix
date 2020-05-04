@@ -1,6 +1,7 @@
 package se.arkalix.core.plugin.dto;
 
 import se.arkalix.dto.DtoReadableAs;
+import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.json.JsonName;
 
 import java.util.List;
@@ -11,6 +12,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
  * The result of an {@link OrchestrationQuery orchestration query}.
  */
 @DtoReadableAs(JSON)
+@DtoToString
 public interface OrchestrationQueryResult {
     /**
      * Services the querying system may consume.

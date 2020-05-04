@@ -1,5 +1,6 @@
 package se.arkalix.core.plugin.dto;
 
+import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
 import se.arkalix.dto.json.JsonName;
 
@@ -12,6 +13,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
  * An event description, as sent.
  */
 @DtoWritableAs(JSON)
+@DtoToString
 public interface EventOutgoing {
     /**
      * Category of event.

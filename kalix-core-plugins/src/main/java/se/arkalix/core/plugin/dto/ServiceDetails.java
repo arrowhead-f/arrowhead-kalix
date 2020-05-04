@@ -3,6 +3,7 @@ package se.arkalix.core.plugin.dto;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.dto.DtoReadableAs;
+import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.json.JsonName;
 
 import java.util.List;
@@ -16,6 +17,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
  * A service definition, as it appears in a {@link ServiceQueryResult}.
  */
 @DtoReadableAs(JSON)
+@DtoToString
 public interface ServiceDetails {
     /**
      * Service name.
