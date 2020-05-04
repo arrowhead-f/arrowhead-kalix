@@ -48,11 +48,25 @@ public class DtoSpecificationFactory {
                 .addModifiers(Modifier.PUBLIC)
                 .returns(property.isOptional()
                     ? ParameterizedTypeName.get(ClassName.get(Optional.class), outputTypeName)
-                    : outputTypeName);
+                    : descriptor.isCollection() ? outputTypeName : inputTypeName);
 
-            final Expander output = property.isOptional()
-                ? (expression) -> "return Optional.ofNullable(" + expression + ")"
-                : (expression) -> "return " + expression;
+            final Expander output;
+
+            if (property.isOptional()) {
+                output = (expression) -> "return Optional.ofNullable(" + expression + ')';
+
+                if (descriptor == DtoDescriptor.INTERFACE) {
+                    implementation.addMethod(MethodSpec.methodBuilder(name + "AsDto")
+                        .addModifiers(Modifier.PUBLIC)
+                        .addJavadoc("@see #$N()", name)
+                        .returns(ParameterizedTypeName.get(ClassName.get(Optional.class), inputTypeName))
+                        .addStatement(output.expand("$N"), name)
+                        .build());
+                }
+            }
+            else {
+                output = (expression) -> "return " + expression;
+            }
 
             switch (descriptor) {
             case ARRAY:
@@ -66,7 +80,7 @@ public class DtoSpecificationFactory {
                         .addMember("value", "\"unchecked\"").build());
                     getter.addStatement(output.expand("($N) $N"), descriptor == LIST ? "List" : "Map", name);
 
-                    implementation.addMethod(MethodSpec.methodBuilder(name + "Dto")
+                    implementation.addMethod(MethodSpec.methodBuilder(name + "AsDtos")
                         .addModifiers(Modifier.PUBLIC)
                         .addJavadoc("@see #$N()", name)
                         .returns(inputTypeName)
