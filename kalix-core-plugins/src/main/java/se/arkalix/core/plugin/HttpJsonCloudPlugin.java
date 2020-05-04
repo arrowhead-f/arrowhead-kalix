@@ -14,6 +14,7 @@ import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.plugin.Plug;
 import se.arkalix.plugin.Plugin;
+import se.arkalix.plugin.PluginFirst;
 import se.arkalix.query.ServiceQuery;
 import se.arkalix.security.access.AccessByToken;
 import se.arkalix.security.identity.SystemIdentity;
@@ -24,10 +25,7 @@ import se.arkalix.util.concurrent.FutureAnnouncement;
 
 import java.net.InetSocketAddress;
 import java.security.PublicKey;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static se.arkalix.descriptor.SecurityDescriptor.CERTIFICATE;
@@ -37,19 +35,14 @@ import static se.arkalix.descriptor.TransportDescriptor.HTTP;
 /**
  * HTTP/JSON cloud plugin.
  * <p>
- * This class helps one or more {@link se.arkalix.ArSystem systems} with
- * joining a local cloud by communicating with the mandatory Arrowhead core
- * services of that cloud using HTTP and JSON. More precisely, it (1) registers
- * and unregisters the {@link se.arkalix.ArSystem#provide(ArService) services
- * provided} by its systems, (2) retrieves the public key required to {@link
+ * This class helps one {@link se.arkalix.ArSystem system} to join a local
+ * cloud by communicating with the mandatory Arrowhead core services of that
+ * cloud using HTTP and JSON. More precisely, it (1) registers and unregisters
+ * the {@link se.arkalix.ArSystem#provide(ArService) services provided} by its
+ * system, (2) retrieves the public key required to {@link
  * se.arkalix.security.access.AccessByToken validate consumer tokens}, as well
  * as (3) helps resolve {@link se.arkalix.ArSystem#consume() service
  * consumption queries}.
- * <p>
- * If used, this plugin should typically be the first one in the list of
- * plugins provided to {@link se.arkalix.ArSystem.Builder#plugins(Plugin...)
- * constructed systems}, as subsequent plugins may depend on it being
- * available for service resolution when they attach to the system in question.
  * <p>
  * Note that the plugin currently assumes that the service registry,
  * authorization system public key and orchestrator of the cloud in question
@@ -58,6 +51,7 @@ import static se.arkalix.descriptor.TransportDescriptor.HTTP;
  * systems using them, making them inaccessible via the
  * {@link ArSystem#consume()} method.
  */
+@PluginFirst
 public class HttpJsonCloudPlugin implements Plugin {
     private static final Logger logger = LoggerFactory.getLogger(HttpJsonCloudPlugin.class);
 
@@ -103,7 +97,7 @@ public class HttpJsonCloudPlugin implements Plugin {
     }
 
     @Override
-    public void onAttach(final Plug plug) throws Exception {
+    public void onAttach(final Plug plug, final Set<Plugin> plugins) throws Exception {
         client = HttpClient.from(plug.system());
 
         if (logger.isInfoEnabled()) {

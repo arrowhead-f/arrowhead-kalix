@@ -14,12 +14,10 @@ import se.arkalix.plugin.Plugin;
 import se.arkalix.security.access.AccessPolicy;
 import se.arkalix.util.concurrent.Future;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import static se.arkalix.descriptor.EncodingDescriptor.JSON;
+import static se.arkalix.util.concurrent.Future.done;
 
 /**
  * HTTP/JSON event subscription plugin.
@@ -43,23 +41,16 @@ import static se.arkalix.descriptor.EncodingDescriptor.JSON;
 public class HttpJsonEventSubscriptionPlugin implements Plugin {
     private static final Logger logger = LoggerFactory.getLogger(HttpJsonEventSubscriptionPlugin.class);
 
-    private final Collection<ArEventSubscription> subscriptions;
+    private final Map<String, ArEventSubscription> subscriptions;
     private final String basePath;
 
     private HttpJsonEventSubscriptionPlugin(final Builder builder) {
         basePath = Objects.requireNonNull(builder.basePath, "Expected basePath");
-        subscriptions = Objects.requireNonNull(builder.subscriptions, "Expected subscriptions").values();
+        subscriptions = Objects.requireNonNull(builder.subscriptions, "Expected subscriptions");
     }
 
     @Override
-    public void onAttach(final Plug plug) {
-        if (logger.isInfoEnabled()) {
-            logger.info("HTTP/JSON event subscription plugin attached to \"{}\"", plug.system().name());
-        }
-    }
-
-    @Override
-    public void afterAttach(final Plug plug) {
+    public void onAttach(final Plug plug, final Set<Plugin> plugins) {
         if (logger.isInfoEnabled()) {
             logger.info("Registering event subscriptions of the \"{}\" system ...", plug.system().name());
         }
@@ -80,11 +71,15 @@ public class HttpJsonEventSubscriptionPlugin implements Plugin {
                     .name("event-subscriber")
                     .basePath(basePath)
                     .accessPolicy(AccessPolicy.whitelist(eventSubscribe.service().provider().name()))
-                    .encodings(JSON);
+                    .encodings(JSON)
 
-                for (final var subscription : subscriptions) {
-                    eventSubscriber.post("/" + subscription.topic(), (request, response) ->
-                        request.bodyAs(EventIncomingDto.class)
+                    .post("/#topic", (request, response) -> {
+                        final var topic = request.pathParameter(0);
+                        final var subscription = subscriptions.get(topic);
+                        if (subscription == null) {
+                            return done();
+                        }
+                        return request.bodyAs(EventIncomingDto.class)
                             .ifSuccess(event -> {
                                 try {
                                     subscription.publish(event.metadata(), event.data());
@@ -100,12 +95,13 @@ public class HttpJsonEventSubscriptionPlugin implements Plugin {
                                 }
                                 response.status(HttpStatus.BAD_REQUEST);
                                 return null;
-                            }));
-                }
+                            });
+                    });
+
 
                 return system.provide(eventSubscriber)
                     .ifSuccess(serviceHandle -> {
-                        for (final var subscription : subscriptions) {
+                        for (final var subscription : subscriptions.values()) {
                             final var sendToUri = basePath + "/" + subscription.topic();
                             final var subscriptionRequest = subscription.toSubscriberRequest(subscriber, sendToUri);
                             eventSubscribe.subscribe(subscriptionRequest)
@@ -153,7 +149,7 @@ public class HttpJsonEventSubscriptionPlugin implements Plugin {
     }
 
     @Override
-    public void beforeDetach(final Plug plug) {
+    public void onDetach(final Plug plug) {
         if (logger.isInfoEnabled()) {
             logger.info("Unregistering event subscriptions of the \"{}\" system ...", plug.system().name());
         }
@@ -162,8 +158,16 @@ public class HttpJsonEventSubscriptionPlugin implements Plugin {
         system.consume()
             .using(HttpJsonEventUnsubscribe.factory())
             .ifSuccess(consumer -> {
-                for (final var subscription : subscriptions) {
+                for (final var subscription : subscriptions.values()) {
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Unregistering {} of \"{}\" system ...", subscription, plug.system().name());
+                    }
                     consumer.unsubscribe(subscription.topic(), system)
+                        .ifSuccess(ignored -> {
+                            if (logger.isInfoEnabled()) {
+                                logger.info("Unregistered {} of \"{}\" system", subscription, plug.system().name());
+                            }
+                        })
                         .onFailure(fault -> {
                             if (logger.isWarnEnabled()) {
                                 logger.warn("Failed to unregister " + subscription, fault);
@@ -177,13 +181,6 @@ public class HttpJsonEventSubscriptionPlugin implements Plugin {
                         "of the \"" + plug.system().name() + "\" system", fault);
                 }
             });
-    }
-
-    @Override
-    public void onDetach(final Plug plug) {
-        if (logger.isInfoEnabled()) {
-            logger.info("HTTP/JSON event subscription plugin detached from \"{}\"", plug.system().name());
-        }
     }
 
     @Override

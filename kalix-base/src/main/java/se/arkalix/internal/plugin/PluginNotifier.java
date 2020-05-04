@@ -3,6 +3,8 @@ package se.arkalix.internal.plugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.ArService;
+import se.arkalix.plugin.PluginBefore;
+import se.arkalix.plugin.PluginFirst;
 import se.arkalix.query.ServiceQuery;
 import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
@@ -16,42 +18,67 @@ import se.arkalix.util.function.ThrowingBiConsumer;
 import se.arkalix.util.function.ThrowingBiFunction;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Internal
 public class PluginNotifier {
     private static final Logger logger = LoggerFactory.getLogger(PluginNotifier.class);
 
-    private final Map<Plug, Plugin> plugins;
+    private final List<InnerPlug> plugs;
 
     public PluginNotifier(final ArSystem system, final Collection<Plugin> plugins0) {
-        this.plugins = plugins0 == null
-            ? Collections.emptyMap()
-            : plugins0.stream().collect(Collectors.toConcurrentMap(plugin -> new Plug() {
-                @Override
-                public void detach() {
-                    PluginNotifier.detach(this, plugins, null);
+        this.plugs = plugins0 == null
+            ? Collections.emptyList()
+            : plugins0.stream()
+            .map(plugin -> new InnerPlug(plugin, system))
+            .sorted((a, b) -> {
+                final var aClass = a.plugin().getClass();
+                final var bClass = b.plugin().getClass();
+
+                final var aFirst = aClass.getAnnotation(PluginFirst.class) != null ? 1 : 0;
+                final var bFirst = bClass.getAnnotation(PluginFirst.class) != null ? 1 : 0;
+
+                final var dFirst = bFirst - aFirst;
+                if (dFirst != 0) {
+                    return dFirst;
                 }
 
-                @Override
-                public ArSystem system() {
-                    return system;
+                final var aBefore = Stream.of(aClass.getAnnotationsByType(PluginBefore.class))
+                    .anyMatch(annotation -> List.of(annotation.value()).contains(bClass))
+                    ? 1 : 0;
+
+                final var bBefore = Stream.of(bClass.getAnnotationsByType(PluginBefore.class))
+                    .anyMatch(annotation -> List.of(annotation.value()).contains(aClass))
+                    ? 1 : 0;
+
+                if (aBefore == 1 && bBefore == 1) {
+                    throw new IllegalStateException("The plugin \"" + aClass +
+                        "\" must be attached before \"" + bClass + "\" " +
+                        "according to its @PluginBefore annotation, while " +
+                        "\"" + bClass + "\" must be attached before \"" +
+                        aClass + "\", as signified by the same annotation; " +
+                        "cannot determine plugin attachment order");
                 }
-            },
-            plugin -> plugin)
-        );
+
+                return bBefore - aBefore;
+            })
+            .collect(Collectors.toUnmodifiableList());
     }
 
     @ThreadSafe
     public void onAttach() {
-        forEach((plug, plugin) -> plugin.onAttach(plug));
-        forEach((plug, plugin) -> plugin.afterAttach(plug));
+        final var plugins = plugs.stream()
+            .map(InnerPlug::plugin)
+            .collect(Collectors.toUnmodifiableSet());
+
+        forEach((plug, plugin) -> plugin.onAttach(plug, plugins));
     }
 
     @ThreadSafe
     public void onDetach() {
-        forEach((plug, plugin) -> plugin.beforeDetach(plug));
-        forEach((plug, plugin) -> plugin.onDetach(plug));
+        forEachReversed((plug, plugin) -> plugin.onDetach(plug));
     }
 
     @ThreadSafe
@@ -72,11 +99,12 @@ public class PluginNotifier {
     @ThreadSafe
     public Future<Set<ServiceDescription>> onServiceQueried(final ServiceQuery query) {
         return Futures
-            .serialize(plugins.entrySet().stream().map(entry -> {
-                final var plug = entry.getKey();
-                final var plugin = entry.getValue();
+            .serialize(plugs.stream().map(plug -> {
+                if (plug.isDetached()) {
+                    return Future.done();
+                }
                 try {
-                    return plugin.onServiceQueried(plug, query);
+                    return plug.plugin().onServiceQueried(plug, query);
                 }
                 catch (final Throwable throwable) {
                     return Future.failure(throwable);
@@ -84,28 +112,47 @@ public class PluginNotifier {
             }))
             .map(collections -> collections.stream()
                 .flatMap(Collection::stream)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toUnmodifiableSet()));
     }
 
     private void forEach(final ThrowingBiConsumer<Plug, Plugin> consumer) {
-        for (final var entry : plugins.entrySet()) {
-            final var plugin = entry.getValue();
-            final var plug = entry.getKey();
+        for (final var plug : plugs) {
+            if (plug.isDetached()) {
+                continue;
+            }
             try {
-                consumer.accept(plug, plugin);
+                consumer.accept(plug, plug.plugin());
             }
             catch (final Throwable throwable) {
-                detach(plug, plugins, throwable);
+                plug.detach(throwable);
+            }
+        }
+    }
+
+    private void forEachReversed(final ThrowingBiConsumer<Plug, Plugin> consumer) {
+        for (var i = plugs.size(); i-- != 0; ) {
+            final var plug = plugs.get(i);
+            if (plug.isDetached()) {
+                continue;
+            }
+            try {
+                consumer.accept(plug, plug.plugin());
+            }
+            catch (final Throwable throwable) {
+                plug.detach(throwable);
             }
         }
     }
 
     private Future<?> serialize(final ThrowingBiFunction<Plug, Plugin, Future<?>> function) {
-        return Futures.serialize(plugins.entrySet()
-            .stream()
-            .map(entry -> {
+        return Futures.serialize(plugs.stream()
+            .map(plug -> {
+                if (plug.isDetached()) {
+                    return Future.done();
+                }
                 try {
-                    return function.apply(entry.getKey(), entry.getValue());
+                    return function.apply(plug, plug.plugin());
                 }
                 catch (final Throwable throwable) {
                     return Future.failure(throwable);
@@ -113,30 +160,43 @@ public class PluginNotifier {
             }));
     }
 
-    private static void detach(final Plug plug, final Map<Plug, Plugin> plugins, final Throwable throwable0) {
-        final var plugin = plugins.remove(plug);
-        if (plugin == null) {
-            return;
+    private class InnerPlug implements Plug {
+        private final AtomicBoolean isDetached = new AtomicBoolean(false);
+        private final Plugin plugin;
+        private final ArSystem system;
+
+        private InnerPlug(final Plugin plugin, final ArSystem system) {
+            this.plugin = Objects.requireNonNull(plugin, "Expected plugin");
+            this.system = Objects.requireNonNull(system, "Expected system");
         }
-        if (throwable0 == null) {
-            try {
-                plugin.onDetach(plug);
+
+        @Override
+        public void detach() {
+            if (!isDetached.compareAndSet(false, true)) {
+                return;
             }
-            catch (final Throwable throwable1) {
+            try {
+                plugin.onDetach(this);
+            }
+            catch (final Throwable throwable0) {
                 try {
-                    plugin.onDetach(plug, throwable1);
+                    plugin.onDetach(this, throwable0);
                 }
-                catch (final Throwable throwable2) {
+                catch (final Throwable throwable1) {
                     if (logger.isErrorEnabled()) {
-                        throwable1.addSuppressed(throwable1);
-                        logger.error("Failed to detach plugin \"" + plugin + "\"", throwable2);
+                        throwable0.addSuppressed(throwable0);
+                        logger.error("Failed to detach plugin \"" + plugin + "\"", throwable1);
                     }
                 }
             }
         }
-        else {
+
+        public void detach(final Throwable throwable0) {
+            if (!isDetached.compareAndSet(false, true)) {
+                return;
+            }
             try {
-                plugin.onDetach(plug, throwable0);
+                plugin.onDetach(this, throwable0);
             }
             catch (final Throwable throwable1) {
                 if (logger.isErrorEnabled()) {
@@ -148,6 +208,26 @@ public class PluginNotifier {
 
                 }
             }
+        }
+
+        @Override
+        public boolean isDetached() {
+            return isDetached.get();
+        }
+
+        @Override
+        public Plugin plugin() {
+            return plugin;
+        }
+
+        @Override
+        public Collection<? extends Plug> plugs() {
+            return plugs;
+        }
+
+        @Override
+        public ArSystem system() {
+            return system;
         }
     }
 }

@@ -2,6 +2,8 @@ package se.arkalix.plugin;
 
 import se.arkalix.ArSystem;
 
+import java.util.Collection;
+
 /**
  * Represents a {@link Plugin}'s attachment to its {@link ArSystem}.
  * <p>
@@ -11,13 +13,28 @@ import se.arkalix.ArSystem;
  */
 public interface Plug {
     /**
-     * Detaches a plugin from its {@link ArSystem}, causing it to no
-     * longer receive events from it.
+     * Detaches {@link #plugin() plugin} from its {@link ArSystem}, causing it
+     * to no longer receive events from it.
      */
     void detach();
 
     /**
-     * @return The system the {@link Plugin} is attached to.
+     * @return {@code true} only if this plug is {@link #detach() detached}.
+     */
+    boolean isDetached();
+
+    /**
+     * @return The {@link Plugin} associated with this plug.
+     */
+    Plugin plugin();
+
+    /**
+     * @return All other plugs attached to the same {@link #system() system}.
+     */
+    Collection<? extends Plug> plugs();
+
+    /**
+     * @return The system the {@link #plugin()} is attached to.
      */
     ArSystem system();
 
