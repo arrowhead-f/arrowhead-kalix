@@ -74,7 +74,9 @@ public class DtoTargetFactory {
             properties.add(property);
         }
 
-        return new DtoTarget(interfaceType, properties);
+        final var isPrintable = interfaceElement.getAnnotation(DtoToString.class) != null;
+
+        return new DtoTarget(interfaceType, properties, isPrintable);
     }
 
     private void verifyAnyExclusivityConstraints(

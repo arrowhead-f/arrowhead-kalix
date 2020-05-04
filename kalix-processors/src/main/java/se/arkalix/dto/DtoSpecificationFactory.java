@@ -1,13 +1,16 @@
 package se.arkalix.dto;
 
 import com.squareup.javapoet.*;
-import se.arkalix.dto.types.DtoSequence;
 import se.arkalix.dto.types.DtoCollection;
 import se.arkalix.dto.types.DtoDescriptor;
+import se.arkalix.dto.types.DtoSequence;
 import se.arkalix.dto.util.Expander;
 
 import javax.lang.model.element.Modifier;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.Optional;
 
 import static se.arkalix.dto.types.DtoDescriptor.LIST;
 
@@ -164,6 +167,43 @@ public class DtoSpecificationFactory {
                 }
             }
         });
+
+        if (target.isPrintable()) {
+            final var toString = MethodSpec.methodBuilder("toString")
+                .addAnnotation(Override.class)
+                .addModifiers(Modifier.PUBLIC)
+                .returns(ClassName.get(String.class))
+                .addCode("return new StringBuilder(\"$N{\")\n", interfaceType.simpleName());
+
+            var index = 0;
+            for (final var property : target.properties()) {
+                final var name = property.name();
+
+                if (index++ != 0) {
+                    toString.addCode("    .append(\", $N=\")\n", name);
+                }
+                else {
+                    toString.addCode("    .append(\"$N=\")\n", name);
+                }
+
+                if (property.descriptor() == DtoDescriptor.ARRAY) {
+                    if (property.isOptional()) {
+                        toString.addCode("    .append($2N == null ? null : $1T.toString($2N))\n",
+                            Arrays.class, name);
+                    }
+                    else {
+                        toString.addCode("    .append($T.toString($N))\n", Arrays.class, name);
+                    }
+                }
+                else {
+                    toString.addCode("    .append($N)\n", name);
+                }
+            }
+
+            implementation.addMethod(toString
+                .addCode("    .append('}')\n    .toString();\n")
+                .build());
+        }
 
 
         final var targetEncodings = target.encodings();
