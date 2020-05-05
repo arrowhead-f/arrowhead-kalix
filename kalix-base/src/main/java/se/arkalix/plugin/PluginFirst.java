@@ -11,7 +11,7 @@ import java.util.Set;
  * Plugin#onAttach(Plug, Set) attached} <i>before</i> and {@link
  * Plugin#onDetach(Plug) detached} <i>after</i> all other plugins provided to
  * the same {@link se.arkalix.ArSystem.Builder#plugins(Plugin...) system}
- * without the this annotation. If multiple plugins provided to the same system
+ * without this annotation. If multiple plugins provided to the same system
  * have this annotation, the attachment and detachment orders are undefined
  * unless {@link PluginBefore} is used.
  */
