@@ -173,38 +173,43 @@ public class DtoSpecificationFactory {
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
                 .returns(ClassName.get(String.class))
-                .addCode("return new StringBuilder(\"$N{\")\n", interfaceType.simpleName());
+                .addCode("return \"$N{\" +\n", interfaceType.simpleName());
 
             var index = 0;
             for (final var property : target.properties()) {
                 final var name = property.name();
 
                 if (index++ != 0) {
-                    toString.addCode("    .append(\", $N=\")\n", name);
+                    toString.addCode("    \", $N=", name);
                 }
                 else {
-                    toString.addCode("    .append(\"$N=\")\n", name);
+                    toString.addCode("    \"$N=", name);
                 }
 
-                if (property.descriptor() == DtoDescriptor.ARRAY) {
+                switch (property.descriptor()) {
+                case STRING:
+                    toString.addCode("'\" + $N + '\\'' +\n", name);
+                    break;
+
+                case ARRAY:
                     if (property.isOptional()) {
-                        toString.addCode("    .append($2N == null ? null : $1T.toString($2N))\n",
-                            Arrays.class, name);
+                        toString.addCode("\" + ($2N == null ? \"null\" : $1T.toString($2N)) +\n", Arrays.class, name);
                     }
                     else {
-                        toString.addCode("    .append($T.toString($N))\n", Arrays.class, name);
+                        toString.addCode("\" + $T.toString($N) +\n", Arrays.class, name);
                     }
-                }
-                else {
-                    toString.addCode("    .append($N)\n", name);
+                    break;
+
+                default:
+                    toString.addCode("\" + $N +\n", name);
+                    break;
                 }
             }
 
             implementation.addMethod(toString
-                .addCode("    .append('}')\n    .toString();\n")
+                .addCode("    '}';\n")
                 .build());
         }
-
 
         final var targetEncodings = target.encodings();
         for (final var specificationEncodings : specificationEncodings) {
