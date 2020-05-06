@@ -3,7 +3,7 @@ package se.arkalix.internal.plugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.ArService;
-import se.arkalix.plugin.PluginBefore;
+import se.arkalix.plugin.PluginAfter;
 import se.arkalix.plugin.PluginFirst;
 import se.arkalix.query.ServiceQuery;
 import se.arkalix.ArSystem;
@@ -37,32 +37,34 @@ public class PluginNotifier {
                 final var aClass = a.plugin().getClass();
                 final var bClass = b.plugin().getClass();
 
-                final var aFirst = aClass.getAnnotation(PluginFirst.class) != null ? 1 : 0;
-                final var bFirst = bClass.getAnnotation(PluginFirst.class) != null ? 1 : 0;
+                final var aFirst = aClass.isAnnotationPresent(PluginFirst.class) ? 1 : 0;
+                final var bFirst = bClass.isAnnotationPresent(PluginFirst.class) ? 1 : 0;
 
                 final var dFirst = bFirst - aFirst;
                 if (dFirst != 0) {
                     return dFirst;
                 }
 
-                final var aBefore = Stream.of(aClass.getAnnotationsByType(PluginBefore.class))
-                    .anyMatch(annotation -> List.of(annotation.value()).contains(bClass))
+                final var aAfter = Optional.ofNullable(aClass.getAnnotation(PluginAfter.class))
+                    .map(annotation -> Stream.of(annotation.value()).anyMatch(type -> type.isAssignableFrom(bClass)))
+                    .orElse(false)
                     ? 1 : 0;
 
-                final var bBefore = Stream.of(bClass.getAnnotationsByType(PluginBefore.class))
-                    .anyMatch(annotation -> List.of(annotation.value()).contains(aClass))
+                final var bAfter = Optional.ofNullable(aClass.getAnnotation(PluginAfter.class))
+                    .map(annotation -> Stream.of(annotation.value()).anyMatch(type -> type.isAssignableFrom(aClass)))
+                    .orElse(false)
                     ? 1 : 0;
 
-                if (aBefore == 1 && bBefore == 1) {
+                if (aAfter == 1 && bAfter == 1) {
                     throw new IllegalStateException("The plugin \"" + aClass +
-                        "\" must be attached before \"" + bClass + "\" " +
-                        "according to its @PluginBefore annotation, while " +
-                        "\"" + bClass + "\" must be attached before \"" +
+                        "\" must be attached after \"" + bClass + "\" " +
+                        "according to its @PluginAfter annotation, while " +
+                        "\"" + bClass + "\" must be attached after \"" +
                         aClass + "\", as signified by the same annotation; " +
                         "cannot determine plugin attachment order");
                 }
 
-                return bBefore - aBefore;
+                return aAfter - bAfter;
             })
             .collect(Collectors.toUnmodifiableList());
     }

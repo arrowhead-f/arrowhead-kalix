@@ -6,7 +6,6 @@ import se.arkalix.ArSystem;
 import se.arkalix.core.plugin.ErrorException;
 import se.arkalix.core.plugin.SystemDetails;
 import se.arkalix.core.plugin.SystemDetailsDto;
-import se.arkalix.description.ProviderDescription;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.service.HttpService;
 import se.arkalix.plugin.Plug;
@@ -15,7 +14,10 @@ import se.arkalix.security.access.AccessPolicy;
 import se.arkalix.util.Result;
 import se.arkalix.util.concurrent.Future;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -44,7 +46,7 @@ import static se.arkalix.descriptor.EncodingDescriptor.JSON;
  * of any subscribing systems.
  */
 @SuppressWarnings({"unused", "UnusedReturnValue"})
-public class HttpJsonEventSubscriberPlugin implements Plugin {
+public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
     private static final Logger logger = LoggerFactory.getLogger(HttpJsonEventSubscriberPlugin.class);
 
     private static final int STATE_UNATTACHED = 0;
@@ -59,87 +61,7 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
     private ArSystem system = null;
     private SystemDetailsDto subscriber = null;
 
-    /**
-     * Registers new event subscription.
-     *
-     * @param topic   Topic, or "eventType", that must be matched by
-     *                received events. Topics are case insensitive and can
-     *                only be subscribed to once.
-     * @param handler Handler to receive matching events.
-     * @return Future completed when subscription is registered.
-     */
-    public Future<ArEventSubscriptionHandle> subscribe(final String topic, final ArEventSubscriptionHandler handler) {
-        return subscribe(topic, null, null, handler);
-    }
-
-    /**
-     * Registers new event subscription.
-     *
-     * @param topic    Topic, or "eventType", that must be matched by
-     *                 received events. Topics are case insensitive and can
-     *                 only be subscribed to once.
-     * @param metadata Metadata pairs that must be matched by received
-     *                 events.
-     * @param handler  Handler to receive matching events.
-     * @return Future completed when subscription is registered.
-     */
-    public Future<ArEventSubscriptionHandle> subscribe(
-        final String topic,
-        final Map<String, String> metadata,
-        final ArEventSubscriptionHandler handler)
-    {
-        return subscribe(topic, metadata, null, handler);
-    }
-
-    /**
-     * Registers new event subscription.
-     *
-     * @param topic     Topic, or "eventType", that must be matched by
-     *                  received events. Topics are case insensitive and
-     *                  can only be subscribed to once.
-     * @param providers Event providers to receive events from.
-     * @param handler   Handler to receive matching events.
-     * @return Future completed when subscription is registered.
-     */
-    public Future<ArEventSubscriptionHandle> subscribe(
-        final String topic,
-        final Collection<ProviderDescription> providers,
-        final ArEventSubscriptionHandler handler)
-    {
-        return subscribe(topic, null, providers, handler);
-    }
-
-    /**
-     * Registers new event subscription.
-     *
-     * @param topic     Topic, or "eventType", that must be matched by
-     *                  received events. Topics are case insensitive and
-     *                  can only be subscribed to once.
-     * @param metadata  Metadata pairs that must be matched by received
-     *                  events.
-     * @param providers Event providers to receive events from.
-     * @param handler   Handler to receive matching events.
-     * @return Future completed when subscription is registered.
-     */
-    public Future<ArEventSubscriptionHandle> subscribe(
-        final String topic,
-        final Map<String, String> metadata,
-        final Collection<ProviderDescription> providers,
-        final ArEventSubscriptionHandler handler)
-    {
-        return subscribe(new ArEventSubscription()
-            .topic(topic)
-            .metadata(metadata)
-            .providers(providers)
-            .handler(handler));
-    }
-
-    /**
-     * Registers new event subscription.
-     *
-     * @param subscription Subscription to register.
-     * @return This builder.
-     */
+    @Override
     public Future<ArEventSubscriptionHandle> subscribe(final ArEventSubscription subscription) {
         final var futureSubscription = new FutureSubscription(subscription);
         switch (state.get()) {

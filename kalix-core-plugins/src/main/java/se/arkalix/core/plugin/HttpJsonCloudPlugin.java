@@ -20,7 +20,6 @@ import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.plugin.Plug;
 import se.arkalix.plugin.Plugin;
-import se.arkalix.plugin.PluginFirst;
 import se.arkalix.query.ServiceQuery;
 import se.arkalix.security.access.AccessByToken;
 import se.arkalix.security.identity.SystemIdentity;
@@ -57,8 +56,7 @@ import static se.arkalix.descriptor.TransportDescriptor.HTTP;
  * systems using them, making them inaccessible via the
  * {@link ArSystem#consume()} method.
  */
-@PluginFirst
-public class HttpJsonCloudPlugin implements Plugin {
+public class HttpJsonCloudPlugin implements ArCloudPlugin {
     private static final Logger logger = LoggerFactory.getLogger(HttpJsonCloudPlugin.class);
 
     private final InetSocketAddress serviceRegistrySocketAddress;
