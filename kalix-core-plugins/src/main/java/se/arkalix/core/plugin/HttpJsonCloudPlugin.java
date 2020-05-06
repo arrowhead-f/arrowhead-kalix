@@ -4,7 +4,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.ArService;
 import se.arkalix.ArSystem;
-import se.arkalix.core.plugin.dto.*;
+import se.arkalix.core.plugin.or.ArOrchestrationStrategy;
+import se.arkalix.core.plugin.or.HttpJsonOrchestration;
+import se.arkalix.core.plugin.or.OrchestrationOption;
+import se.arkalix.core.plugin.or.OrchestrationQueryBuilder;
+import se.arkalix.core.plugin.sr.HttpJsonServiceDiscovery;
+import se.arkalix.core.plugin.sr.ServiceQueryBuilder;
+import se.arkalix.core.plugin.sr.ServiceRegistration;
 import se.arkalix.description.ProviderDescription;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
@@ -247,7 +253,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                             final var identity = new SystemIdentity(connection.certificateChain());
                             final var name = identity.name();
                             if (!Objects.equals(name, "service_registry")) {
-                                return Result.failure(new ArCoreIntegrationException("" +
+                                return Result.failure(new CloudException("" +
                                     "HTTP/JSON cloud plugin connected to " +
                                     "system at " + serviceRegistrySocketAddress +
                                     " and found that its certificate name " +
@@ -309,7 +315,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                         }
                         final var services = result.value().services();
                         if (services.size() == 0) {
-                            return Result.failure(new ArCoreIntegrationException("" +
+                            return Result.failure(new CloudException("" +
                                 "No \"auth-public-key\" service seems to be " +
                                 "available via the service registry at: " +
                                 serviceRegistrySocketAddress + "; token " +
@@ -325,7 +331,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                             }
                         }
                         if (publicKeyBase64 == null) {
-                            return Result.failure(new ArCoreIntegrationException("" +
+                            return Result.failure(new CloudException("" +
                                 "Even though the service registry provided " +
                                 "descriptions for " + services.size() + " " +
                                 "\"auth-public-key\" service(s), none of them " +
@@ -338,7 +344,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                             publicKey = X509Keys.parsePublicKey(publicKeyBase64);
                         }
                         catch (final UnsupportedKeyAlgorithm exception) {
-                            return Result.failure(new ArCoreIntegrationException("" +
+                            return Result.failure(new CloudException("" +
                                 "The \"auth-public-key\" service provider public " +
                                 "key seems to use an unsupported key algorithm; " +
                                 "token authorization not possible", exception));
@@ -382,7 +388,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                         final var queryResult = result.value();
                         final var services = queryResult.services();
                         if (services.isEmpty()) {
-                            return Future.failure(new ArCoreIntegrationException("" +
+                            return Future.failure(new CloudException("" +
                                 "No orchestration service available; cannot " +
                                 "request orchestration rules"));
                         }
@@ -422,7 +428,7 @@ public class HttpJsonCloudPlugin implements Plugin {
         return requestOrchestration()
             .flatMap(orchestration -> orchestration.query(new OrchestrationQueryBuilder()
                 .requester(SystemDetails.from(system))
-                .service(se.arkalix.core.plugin.dto.ServiceQuery.from(query))
+                .service(se.arkalix.core.plugin.sr.ServiceQuery.from(query))
                 .options(options)
                 .build()))
             .map(queryResult -> queryResult.services()
