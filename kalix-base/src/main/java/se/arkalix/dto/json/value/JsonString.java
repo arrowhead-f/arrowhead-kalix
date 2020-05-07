@@ -5,10 +5,9 @@ import se.arkalix.dto.DtoExclusive;
 import se.arkalix.dto.DtoReadException;
 import se.arkalix.dto.binary.BinaryReader;
 import se.arkalix.dto.binary.BinaryWriter;
-import se.arkalix.dto.json.JsonType;
 import se.arkalix.internal.dto.json.JsonTokenBuffer;
 import se.arkalix.internal.dto.json.JsonTokenizer;
-import se.arkalix.internal.dto.json.JsonWriter;
+import se.arkalix.internal.dto.json.JsonWrite;
 import se.arkalix.util.annotation.Internal;
 
 import java.time.*;
@@ -186,7 +185,7 @@ public class JsonString implements JsonValue {
     @Override
     public void writeJson(final BinaryWriter writer) {
         writer.write((byte) '"');
-        JsonWriter.write(string, writer);
+        JsonWrite.write(string, writer);
         writer.write((byte) '"');
     }
 

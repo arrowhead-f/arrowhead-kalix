@@ -12,8 +12,8 @@ import java.time.*;
 
 @Internal
 @SuppressWarnings("unused")
-public final class JsonWriter {
-    private JsonWriter() {}
+public final class JsonWrite {
+    private JsonWrite() {}
 
     private static final byte[] TRUE = new byte[]{'t', 'r', 'u', 'e'};
     private static final byte[] FALSE = new byte[]{'f', 'a', 'l', 's', 'e'};

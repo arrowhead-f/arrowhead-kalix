@@ -3,7 +3,6 @@ package se.arkalix.dto.json.value;
 import se.arkalix.dto.DtoReadException;
 import se.arkalix.dto.binary.BinaryReader;
 import se.arkalix.dto.json.JsonReadable;
-import se.arkalix.dto.json.JsonType;
 import se.arkalix.dto.json.JsonWritable;
 import se.arkalix.internal.dto.json.JsonTokenBuffer;
 import se.arkalix.internal.dto.json.JsonTokenizer;

@@ -1,4 +1,4 @@
-package se.arkalix.dto.json;
+package se.arkalix.dto.json.value;
 
 /**
  * Enumerates the different JSON types.

@@ -1,7 +1,7 @@
 package se.arkalix.internal.dto.json;
 
 import se.arkalix.dto.binary.BinaryReader;
-import se.arkalix.dto.json.JsonType;
+import se.arkalix.dto.json.value.JsonType;
 import se.arkalix.util.annotation.Internal;
 
 import java.util.List;

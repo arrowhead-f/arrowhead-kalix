@@ -6,10 +6,9 @@ import se.arkalix.dto.DtoReadException;
 import se.arkalix.dto.DtoWriteException;
 import se.arkalix.dto.binary.BinaryReader;
 import se.arkalix.dto.binary.BinaryWriter;
-import se.arkalix.dto.json.JsonType;
 import se.arkalix.internal.dto.json.JsonTokenBuffer;
 import se.arkalix.internal.dto.json.JsonTokenizer;
-import se.arkalix.internal.dto.json.JsonWriter;
+import se.arkalix.internal.dto.json.JsonWrite;
 import se.arkalix.util.annotation.Internal;
 
 import java.util.*;
@@ -117,7 +116,7 @@ public class JsonObject implements JsonCollection, Iterable<JsonPair> {
                 writer.write((byte) ',');
             }
             writer.write((byte) '"');
-            JsonWriter.write(pair.name(), writer);
+            JsonWrite.write(pair.name(), writer);
             writer.write(new byte[]{'"', ':'});
             pair.value().writeJson(writer);
         }

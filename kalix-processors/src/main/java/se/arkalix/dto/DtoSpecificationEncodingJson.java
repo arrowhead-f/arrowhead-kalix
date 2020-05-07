@@ -12,8 +12,8 @@ import se.arkalix.dto.util.BinaryWriterWriteCache;
 import se.arkalix.dto.util.Expander;
 import se.arkalix.internal.dto.json.JsonTokenBuffer;
 import se.arkalix.internal.dto.json.JsonTokenizer;
-import se.arkalix.dto.json.JsonType;
-import se.arkalix.internal.dto.json.JsonWriter;
+import se.arkalix.dto.json.value.JsonType;
+import se.arkalix.internal.dto.json.JsonWrite;
 import se.arkalix.util.annotation.Internal;
 
 import javax.lang.model.element.Modifier;
@@ -700,7 +700,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
 
     private void writeEnum(final String name, final MethodSpec.Builder builder) {
         writeCache.append('"').addWrite(builder);
-        builder.addStatement("$T.write($N.toString(), target)", JsonWriter.class, name);
+        builder.addStatement("$T.write($N.toString(), target)", JsonWrite.class, name);
         writeCache.append('"');
     }
 
@@ -752,12 +752,12 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
 
     private void writeOther(final String name, final MethodSpec.Builder builder) {
         writeCache.addWriteIfNotEmpty(builder);
-        builder.addStatement("$T.write($N, target)", JsonWriter.class, name);
+        builder.addStatement("$T.write($N, target)", JsonWrite.class, name);
     }
 
     private void writeString(final String name, final MethodSpec.Builder builder) {
         writeCache.append('"').addWrite(builder);
-        builder.addStatement("$T.write($N, target)", JsonWriter.class, name);
+        builder.addStatement("$T.write($N, target)", JsonWrite.class, name);
         writeCache.append('"');
     }
 
