@@ -18,8 +18,9 @@ import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.internal.security.identity.X509Keys;
 import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.consumer.HttpConsumer;
-import se.arkalix.plugin.Plug;
 import se.arkalix.plugin.Plugin;
+import se.arkalix.plugin.PluginAttached;
+import se.arkalix.plugin.PluginFacade;
 import se.arkalix.query.ServiceQuery;
 import se.arkalix.security.access.AccessByToken;
 import se.arkalix.security.identity.SystemIdentity;
@@ -28,6 +29,7 @@ import se.arkalix.util.Result;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.concurrent.FutureAnnouncement;
 
+import javax.net.ssl.SSLException;
 import java.net.InetSocketAddress;
 import java.security.PublicKey;
 import java.util.*;
@@ -56,23 +58,12 @@ import static se.arkalix.descriptor.TransportDescriptor.HTTP;
  * systems using them, making them inaccessible via the
  * {@link ArSystem#consume()} method.
  */
-public class HttpJsonCloudPlugin implements ArCloudPlugin {
+public class HttpJsonCloudPlugin implements Plugin {
     private static final Logger logger = LoggerFactory.getLogger(HttpJsonCloudPlugin.class);
 
     private final InetSocketAddress serviceRegistrySocketAddress;
-
-    private final Object serviceDiscoveryLock = new Object();
     private final String serviceDiscoveryBasePath;
-    private FutureAnnouncement<HttpJsonServiceDiscovery> serviceDiscoveryAnnouncement = null;
-
-    private final Object orchestrationLock = new Object();
     private final ArOrchestrationStrategy orchestrationStrategy;
-    private FutureAnnouncement<HttpJsonOrchestration> orchestrationAnnouncement = null;
-
-    private HttpClient client = null;
-
-    private final Object authorizationKeyLock = new Object();
-    private FutureAnnouncement<PublicKey> authorizationKeyAnnouncement = null;
 
     private HttpJsonCloudPlugin(final Builder builder) {
         serviceDiscoveryBasePath = Objects.requireNonNullElse(builder.serviceDiscoveryBasePath, "/serviceregistry");
@@ -101,349 +92,376 @@ public class HttpJsonCloudPlugin implements ArCloudPlugin {
     }
 
     @Override
-    public void onAttach(final Plug plug, final Set<Plugin> plugins) throws Exception {
-        client = HttpClient.from(plug.system());
-
-        if (logger.isInfoEnabled()) {
-            logger.info("HTTP/JSON cloud plugin attached to \"{}\"", plug.system().name());
-        }
+    public int ordinal() {
+        return -1000;
     }
 
     @Override
-    public void onDetach(final Plug plug) {
-        if (logger.isInfoEnabled()) {
-            logger.info("HTTP/JSON cloud plugin detached from \"{}\"", plug.system().name());
-        }
+    public PluginAttached attachTo(
+        final ArSystem system,
+        final Map<Class<? extends Plugin>, PluginFacade> dependencies)
+        throws SSLException
+    {
+        return new Attached(system);
     }
 
-    @Override
-    public void onDetach(final Plug plug, final Throwable cause) {
-        if (logger.isErrorEnabled()) {
-            logger.error("HTTP/JSON cloud plugin forcibly detached " +
-                "from \"" + plug.system().name() + "\"", cause);
-        }
-    }
+    private class Attached implements PluginAttached {
+        private final ArSystem system;
+        private final HttpClient client;
 
-    @Override
-    public Future<?> onServicePrepared(final Plug plug, final ArService service) {
-        final var accessPolicy = service.accessPolicy();
-        if (accessPolicy instanceof AccessByToken) {
-            return requestAuthorizationKey()
-                .ifSuccess(((AccessByToken) accessPolicy)::authorizationKey);
-        }
-        return Future.done();
-    }
+        private final Object serviceDiscoveryLock = new Object();
+        private FutureAnnouncement<HttpJsonServiceDiscovery> serviceDiscoveryAnnouncement = null;
 
-    @Override
-    public Future<?> onServiceProvided(final Plug plug, final ServiceDescription service) {
-        if (logger.isInfoEnabled()) {
-            logger.info("Registering \"{}\" provided by \"{}\" ...",
-                service.name(), plug.system().name());
-        }
-        final var provider = service.provider();
-        final var providerSocketAddress = provider.socketAddress();
-        final var registration = ServiceRegistration.from(service);
+        private final Object orchestrationLock = new Object();
+        private FutureAnnouncement<HttpJsonOrchestration> orchestrationAnnouncement = null;
 
-        return requestServiceDiscovery()
-            .flatMap(serviceDiscovery -> serviceDiscovery
-                .register(registration)
-                .flatMapCatch(ErrorException.class, fault -> {
-                    final var error = fault.error();
-                    if ("INVALID_PARAMETER".equals(error.type())) {
-                        return serviceDiscovery.unregister(
-                            service.name(),
-                            provider.name(),
-                            providerSocketAddress.getHostString(),
-                            providerSocketAddress.getPort())
-                            .flatMap(ignored -> serviceDiscovery.register(registration)
-                                .pass(null));
-                    }
-                    return Future.failure(fault);
-                })
-                .mapResult(result -> {
+        private final Object authorizationKeyLock = new Object();
+        private FutureAnnouncement<PublicKey> authorizationKeyAnnouncement = null;
+
+        Attached(final ArSystem system) throws SSLException {
+            this.system = Objects.requireNonNull(system, "Expected system");
+            this.client = HttpClient.from(system);
+
+            if (logger.isInfoEnabled()) {
+                logger.info("HTTP/JSON cloud plugin attached to \"{}\"", system.name());
+            }
+        }
+
+        @Override
+        public void onDetach() {
+            if (logger.isInfoEnabled()) {
+                logger.info("HTTP/JSON cloud plugin detached from \"{}\"", system.name());
+            }
+        }
+
+        @Override
+        public void onDetach(final Throwable cause) {
+            if (logger.isErrorEnabled()) {
+                logger.error("HTTP/JSON cloud plugin forcibly detached " +
+                    "from \"" + system.name() + "\"", cause);
+            }
+        }
+
+        @Override
+        public Future<?> onServicePrepared(final ArService service) {
+            final var accessPolicy = service.accessPolicy();
+            if (accessPolicy instanceof AccessByToken) {
+                return requestAuthorizationKey()
+                    .ifSuccess(((AccessByToken) accessPolicy)::authorizationKey);
+            }
+            return Future.done();
+        }
+
+        @Override
+        public Future<?> onServiceProvided(final ServiceDescription service) {
+            if (logger.isInfoEnabled()) {
+                logger.info("Registering \"{}\" provided by \"{}\" ...",
+                    service.name(), system.name());
+            }
+            final var provider = service.provider();
+            final var providerSocketAddress = provider.socketAddress();
+            final var registration = ServiceRegistration.from(service);
+
+            return requestServiceDiscovery()
+                .flatMap(serviceDiscovery -> serviceDiscovery
+                    .register(registration)
+                    .flatMapCatch(ErrorException.class, fault -> {
+                        final var error = fault.error();
+                        if ("INVALID_PARAMETER".equals(error.type())) {
+                            return serviceDiscovery.unregister(
+                                service.name(),
+                                provider.name(),
+                                providerSocketAddress.getHostString(),
+                                providerSocketAddress.getPort())
+                                .flatMap(ignored -> serviceDiscovery.register(registration)
+                                    .pass(null));
+                        }
+                        return Future.failure(fault);
+                    })
+                    .mapResult(result -> {
+                        if (result.isSuccess()) {
+                            if (logger.isInfoEnabled()) {
+                                logger.info("Registered the \"{}\" service " +
+                                        "provided by the \"{}\" system",
+                                    service.name(), system.name());
+                            }
+                        }
+                        else {
+                            if (logger.isErrorEnabled()) {
+                                logger.error("Failed to register the \"" + service.name() +
+                                    "\" service provided by the \"" + system.name() +
+                                    "\" system", result.fault());
+                            }
+                        }
+                        return result;
+                    }));
+        }
+
+        @Override
+        public void onServiceDismissed(final ServiceDescription service) {
+            if (logger.isInfoEnabled()) {
+                logger.info("Unregistering the \"{}\" service provided by " +
+                    "the \"{}\" system ...", service.name(), system.name());
+            }
+            final var provider = service.provider();
+            final var providerSocketAddress = provider.socketAddress();
+            requestServiceDiscovery()
+                .flatMap(serviceDiscovery -> serviceDiscovery.unregister(
+                    service.name(),
+                    provider.name(),
+                    providerSocketAddress.getAddress().getHostAddress(),
+                    providerSocketAddress.getPort()))
+                .onResult(result -> {
                     if (result.isSuccess()) {
                         if (logger.isInfoEnabled()) {
-                            logger.info("Registered the \"{}\" service " +
-                                    "provided by the \"{}\" system",
-                                service.name(), plug.system().name());
+                            logger.info("Unregistered the \"{}\" service " +
+                                "provided by the \"{}\" system", service.name(), system.name());
                         }
                     }
                     else {
-                        if (logger.isErrorEnabled()) {
-                            logger.error("Failed to register the \"" + service.name() +
-                                "\" service provided by the \"" + plug.system().name() +
+                        if (logger.isWarnEnabled()) {
+                            logger.warn("Failed to unregister the \"" + service.name() +
+                                "\" service provided by the \"" + system.name() +
                                 "\" system", result.fault());
                         }
                     }
-                    return result;
-                }));
-    }
-
-    @Override
-    public void onServiceDismissed(final Plug plug, final ServiceDescription service) {
-        if (logger.isInfoEnabled()) {
-            logger.info("Unregistering the \"{}\" service provided by " +
-                "the \"{}\" system ...", service.name(), plug.system().name());
-        }
-        final var provider = service.provider();
-        final var providerSocketAddress = provider.socketAddress();
-        requestServiceDiscovery()
-            .flatMap(serviceDiscovery -> serviceDiscovery.unregister(
-                service.name(),
-                provider.name(),
-                providerSocketAddress.getAddress().getHostAddress(),
-                providerSocketAddress.getPort()))
-            .onResult(result -> {
-                if (result.isSuccess()) {
-                    if (logger.isInfoEnabled()) {
-                        logger.info("Unregistered the \"{}\" service " +
-                            "provided by the \"{}\" system", service.name(), plug.system().name());
-                    }
-                }
-                else {
-                    if (logger.isWarnEnabled()) {
-                        logger.warn("Failed to unregister the \"" + service.name() +
-                            "\" service provided by the \"" + plug.system().name() +
-                            "\" system", result.fault());
-                    }
-                }
-            });
-    }
-
-    @Override
-    public Future<Collection<ServiceDescription>> onServiceQueried(final Plug plug, final ServiceQuery query) {
-        final var system = plug.system();
-        switch (orchestrationStrategy) {
-        case STORED_ONLY:
-            return queryOrchestratorForStoredRules(system);
-
-        case STORED_THEN_DYNAMIC:
-            return queryOrchestratorForStoredRules(system)
-                .flatMap(services -> {
-                    if (services.stream().anyMatch(query::matches)) {
-                        return Future.success(services);
-                    }
-                    return queryOrchestratorForDynamicRules(system, query);
                 });
-
-        case DYNAMIC_ONLY:
-            return queryOrchestratorForDynamicRules(system, query);
         }
-        throw new IllegalStateException("Unsupported orchestration strategy: " + orchestrationStrategy);
-    }
 
-    private Future<HttpJsonServiceDiscovery> requestServiceDiscovery() {
-        synchronized (serviceDiscoveryLock) {
-            if (serviceDiscoveryAnnouncement == null) {
-                if (logger.isInfoEnabled()) {
-                    logger.info("HTTP/JSON cloud plugin connecting to " +
-                        "\"service_registry\" system at {} ...", serviceRegistrySocketAddress);
-                }
-                serviceDiscoveryAnnouncement = client.connect(serviceRegistrySocketAddress)
-                    .mapResult(result -> {
-                        if (result.isFailure()) {
-                            return Result.failure(result.fault());
+        @Override
+        public Future<Collection<ServiceDescription>> onServiceQueried(final ServiceQuery query) {
+            switch (orchestrationStrategy) {
+            case STORED_ONLY:
+                return queryOrchestratorForStoredRules(system);
+
+            case STORED_THEN_DYNAMIC:
+                return queryOrchestratorForStoredRules(system)
+                    .flatMap(services -> {
+                        if (services.stream().anyMatch(query::matches)) {
+                            return Future.success(services);
                         }
-                        final var connection = result.value();
-                        final var isSecure = connection.isSecure();
-                        final ProviderDescription provider;
-                        if (isSecure) {
-                            final var identity = new SystemIdentity(connection.certificateChain());
-                            final var name = identity.name();
-                            if (!Objects.equals(name, "service_registry")) {
+                        return queryOrchestratorForDynamicRules(system, query);
+                    });
+
+            case DYNAMIC_ONLY:
+                return queryOrchestratorForDynamicRules(system, query);
+            }
+            throw new IllegalStateException("Unsupported orchestration strategy: " + orchestrationStrategy);
+        }
+
+        private Future<HttpJsonServiceDiscovery> requestServiceDiscovery() {
+            synchronized (serviceDiscoveryLock) {
+                if (serviceDiscoveryAnnouncement == null) {
+                    if (logger.isInfoEnabled()) {
+                        logger.info("HTTP/JSON cloud plugin connecting to " +
+                            "\"service_registry\" system at {} ...", serviceRegistrySocketAddress);
+                    }
+                    serviceDiscoveryAnnouncement = client.connect(serviceRegistrySocketAddress)
+                        .mapResult(result -> {
+                            if (result.isFailure()) {
+                                return Result.failure(result.fault());
+                            }
+                            final var connection = result.value();
+                            final var isSecure = connection.isSecure();
+                            final ProviderDescription provider;
+                            if (isSecure) {
+                                final var identity = new SystemIdentity(connection.certificateChain());
+                                final var name = identity.name();
+                                if (!Objects.equals(name, "service_registry")) {
+                                    return Result.failure(new CloudException("" +
+                                        "HTTP/JSON cloud plugin connected to " +
+                                        "system at " + serviceRegistrySocketAddress +
+                                        " and found that its certificate name " +
+                                        "is \"" + name + "\" while expecting it " +
+                                        "to be \"service_registry\"; failed to " +
+                                        "resolve service discovery service "));
+                                }
+                                provider = new ProviderDescription(name, serviceRegistrySocketAddress, identity.publicKey());
+                            }
+                            else {
+                                provider = new ProviderDescription("service_registry", serviceRegistrySocketAddress);
+                            }
+
+                            final var serviceDiscovery = new HttpJsonServiceDiscovery(client,
+                                new ServiceDescription.Builder()
+                                    .name("service-discovery")
+                                    .provider(provider)
+                                    .uri(serviceDiscoveryBasePath)
+                                    .security(isSecure ? CERTIFICATE : NOT_SECURE)
+                                    .interfaces(InterfaceDescriptor.getOrCreate(HTTP, isSecure, EncodingDescriptor.JSON))
+                                    .build());
+
+                            connection.close();
+
+                            if (logger.isInfoEnabled()) {
+                                logger.info("HTTP/JSON cloud plugin " +
+                                    "connected to \"service_registry\" system " +
+                                    "at {}", serviceRegistrySocketAddress);
+                            }
+
+                            return Result.success(serviceDiscovery);
+                        })
+                        .ifFailure(Throwable.class, fault -> {
+                            if (logger.isErrorEnabled()) {
+                                logger.error("HTTP/JSON cloud plugin failed to " +
+                                    "connect to \"service_registry\" system at " +
+                                    serviceRegistrySocketAddress, fault);
+                            }
+                        })
+                        .toAnnouncement();
+                }
+                return serviceDiscoveryAnnouncement.subscribe();
+            }
+        }
+
+        private Future<PublicKey> requestAuthorizationKey() {
+            synchronized (authorizationKeyLock) {
+                if (authorizationKeyAnnouncement == null) {
+                    if (logger.isInfoEnabled()) {
+                        logger.info("HTTP/JSON cloud plugin requesting authorization key ...");
+                    }
+                    authorizationKeyAnnouncement = requestServiceDiscovery()
+                        .flatMap(serviceDiscovery -> serviceDiscovery.query(new ServiceQueryBuilder()
+                            .name("auth-public-key")
+                            .build()))
+                        .mapResult(result -> {
+                            if (result.isFailure()) {
+                                return Result.failure(result.fault());
+                            }
+                            final var services = result.value().services();
+                            if (services.size() == 0) {
                                 return Result.failure(new CloudException("" +
-                                    "HTTP/JSON cloud plugin connected to " +
-                                    "system at " + serviceRegistrySocketAddress +
-                                    " and found that its certificate name " +
-                                    "is \"" + name + "\" while expecting it " +
-                                    "to be \"service_registry\"; failed to " +
-                                    "resolve service discovery service "));
+                                    "No \"auth-public-key\" service seems to be " +
+                                    "available via the service registry at: " +
+                                    serviceRegistrySocketAddress + "; token " +
+                                    "authorization not possible"));
                             }
-                            provider = new ProviderDescription(name, serviceRegistrySocketAddress, identity.publicKey());
-                        }
-                        else {
-                            provider = new ProviderDescription("service_registry", serviceRegistrySocketAddress);
-                        }
 
-                        final var serviceDiscovery = new HttpJsonServiceDiscovery(client,
-                            new ServiceDescription.Builder()
-                                .name("service-discovery")
-                                .provider(provider)
-                                .uri(serviceDiscoveryBasePath)
-                                .security(isSecure ? CERTIFICATE : NOT_SECURE)
-                                .interfaces(InterfaceDescriptor.getOrCreate(HTTP, isSecure, EncodingDescriptor.JSON))
-                                .build());
-
-                        connection.close();
-
-                        if (logger.isInfoEnabled()) {
-                            logger.info("HTTP/JSON cloud plugin " +
-                                "connected to \"service_registry\" system " +
-                                "at {}", serviceRegistrySocketAddress);
-                        }
-
-                        return Result.success(serviceDiscovery);
-                    })
-                    .ifFailure(Throwable.class, fault -> {
-                        if (logger.isErrorEnabled()) {
-                            logger.error("HTTP/JSON cloud plugin failed to " +
-                                "connect to \"service_registry\" system at " +
-                                serviceRegistrySocketAddress, fault);
-                        }
-                    })
-                    .toAnnouncement();
-            }
-            return serviceDiscoveryAnnouncement.subscribe();
-        }
-    }
-
-    private Future<PublicKey> requestAuthorizationKey() {
-        synchronized (authorizationKeyLock) {
-            if (authorizationKeyAnnouncement == null) {
-                if (logger.isInfoEnabled()) {
-                    logger.info("HTTP/JSON cloud plugin requesting authorization key ...");
-                }
-                authorizationKeyAnnouncement = requestServiceDiscovery()
-                    .flatMap(serviceDiscovery -> serviceDiscovery.query(new ServiceQueryBuilder()
-                        .name("auth-public-key")
-                        .build()))
-                    .mapResult(result -> {
-                        if (result.isFailure()) {
-                            return Result.failure(result.fault());
-                        }
-                        final var services = result.value().services();
-                        if (services.size() == 0) {
-                            return Result.failure(new CloudException("" +
-                                "No \"auth-public-key\" service seems to be " +
-                                "available via the service registry at: " +
-                                serviceRegistrySocketAddress + "; token " +
-                                "authorization not possible"));
-                        }
-
-                        String publicKeyBase64 = null;
-                        for (final var service : services) {
-                            final var key = service.provider().publicKeyBase64();
-                            if (key.isPresent()) {
-                                publicKeyBase64 = key.get();
-                                break;
+                            String publicKeyBase64 = null;
+                            for (final var service : services) {
+                                final var key = service.provider().publicKeyBase64();
+                                if (key.isPresent()) {
+                                    publicKeyBase64 = key.get();
+                                    break;
+                                }
                             }
-                        }
-                        if (publicKeyBase64 == null) {
-                            return Result.failure(new CloudException("" +
-                                "Even though the service registry provided " +
-                                "descriptions for " + services.size() + " " +
-                                "\"auth-public-key\" service(s), none of them " +
-                                "contains an authorization system public key; " +
-                                "token authorization not possible"));
-                        }
+                            if (publicKeyBase64 == null) {
+                                return Result.failure(new CloudException("" +
+                                    "Even though the service registry provided " +
+                                    "descriptions for " + services.size() + " " +
+                                    "\"auth-public-key\" service(s), none of them " +
+                                    "contains an authorization system public key; " +
+                                    "token authorization not possible"));
+                            }
 
-                        final PublicKey publicKey;
-                        try {
-                            publicKey = X509Keys.parsePublicKey(publicKeyBase64);
-                        }
-                        catch (final UnsupportedKeyAlgorithm exception) {
-                            return Result.failure(new CloudException("" +
-                                "The \"auth-public-key\" service provider public " +
-                                "key seems to use an unsupported key algorithm; " +
-                                "token authorization not possible", exception));
-                        }
+                            final PublicKey publicKey;
+                            try {
+                                publicKey = X509Keys.parsePublicKey(publicKeyBase64);
+                            }
+                            catch (final UnsupportedKeyAlgorithm exception) {
+                                return Result.failure(new CloudException("" +
+                                    "The \"auth-public-key\" service provider public " +
+                                    "key seems to use an unsupported key algorithm; " +
+                                    "token authorization not possible", exception));
+                            }
 
-                        if (logger.isInfoEnabled()) {
-                            logger.info("Authorization key retrieved: {}", publicKeyBase64);
-                        }
+                            if (logger.isInfoEnabled()) {
+                                logger.info("Authorization key retrieved: {}", publicKeyBase64);
+                            }
 
-                        return Result.success(publicKey);
-                    })
-                    .ifFailure(Throwable.class, fault -> {
-                        if (logger.isWarnEnabled()) {
-                            logger.warn("Failed to retrieve authorization key", fault);
-                        }
-                    })
-                    .toAnnouncement();
-            }
-            return authorizationKeyAnnouncement.subscribe();
-        }
-    }
-
-    private Future<HttpJsonOrchestration> requestOrchestration() {
-        synchronized (orchestrationLock) {
-            if (orchestrationAnnouncement == null) {
-                if (logger.isInfoEnabled()) {
-                    logger.info("HTTP/JSON cloud plugin connecting to " +
-                        "\"orchestrator\" system ...");
+                            return Result.success(publicKey);
+                        })
+                        .ifFailure(Throwable.class, fault -> {
+                            if (logger.isWarnEnabled()) {
+                                logger.warn("Failed to retrieve authorization key", fault);
+                            }
+                        })
+                        .toAnnouncement();
                 }
-                final var isSecure = client.isSecure();
-                orchestrationAnnouncement = requestServiceDiscovery()
-                    .flatMap(serviceDiscovery -> serviceDiscovery.query(new ServiceQueryBuilder()
-                        .name("orchestration-service")
-                        .interfaces(InterfaceDescriptor.getOrCreate(HTTP, isSecure, EncodingDescriptor.JSON))
-                        .securityModes(isSecure ? CERTIFICATE : NOT_SECURE)
-                        .build()))
-                    .flatMapResult(result -> {
-                        if (result.isFailure()) {
-                            return Future.failure(result.fault());
-                        }
-                        final var queryResult = result.value();
-                        final var services = queryResult.services();
-                        if (services.isEmpty()) {
-                            return Future.failure(new CloudException("" +
-                                "No orchestration service available; cannot " +
-                                "request orchestration rules"));
-                        }
-                        final var orchestration = new HttpJsonOrchestration(new HttpConsumer(
-                            client,
-                            services.get(0).toServiceDescription(),
-                            Collections.singleton(EncodingDescriptor.JSON)));
-
-                        if (logger.isInfoEnabled()) {
-                            logger.info("Orchestration service resolved at {}",
-                                orchestration.service().provider().socketAddress());
-                        }
-
-                        return Future.success(orchestration);
-                    })
-                    .ifFailure(Throwable.class, fault -> {
-                        if (logger.isErrorEnabled()) {
-                            logger.error("HTTP/JSON cloud plugin failed " +
-                                "to connect to \"orchestrator\" system", fault);
-                        }
-                    })
-                    .toAnnouncement();
+                return authorizationKeyAnnouncement.subscribe();
             }
-            return orchestrationAnnouncement.subscribe();
         }
-    }
 
-    private Future<Collection<ServiceDescription>> queryOrchestratorForDynamicRules(
-        final ArSystem system,
-        final ServiceQuery query)
-    {
-        final var options = new HashMap<OrchestrationOption, Boolean>();
-        options.put(OrchestrationOption.OVERRIDE_STORE, true);
-        if (!query.metadata().isEmpty()) {
-            options.put(OrchestrationOption.METADATA_SEARCH, true);
+        private Future<HttpJsonOrchestration> requestOrchestration() {
+            synchronized (orchestrationLock) {
+                if (orchestrationAnnouncement == null) {
+                    if (logger.isInfoEnabled()) {
+                        logger.info("HTTP/JSON cloud plugin connecting to " +
+                            "\"orchestrator\" system ...");
+                    }
+                    final var isSecure = client.isSecure();
+                    orchestrationAnnouncement = requestServiceDiscovery()
+                        .flatMap(serviceDiscovery -> serviceDiscovery.query(new ServiceQueryBuilder()
+                            .name("orchestration-service")
+                            .interfaces(InterfaceDescriptor.getOrCreate(HTTP, isSecure, EncodingDescriptor.JSON))
+                            .securityModes(isSecure ? CERTIFICATE : NOT_SECURE)
+                            .build()))
+                        .flatMapResult(result -> {
+                            if (result.isFailure()) {
+                                return Future.failure(result.fault());
+                            }
+                            final var queryResult = result.value();
+                            final var services = queryResult.services();
+                            if (services.isEmpty()) {
+                                return Future.failure(new CloudException("" +
+                                    "No orchestration service available; cannot " +
+                                    "request orchestration rules"));
+                            }
+                            final var orchestration = new HttpJsonOrchestration(new HttpConsumer(
+                                client,
+                                services.get(0).toServiceDescription(),
+                                Collections.singleton(EncodingDescriptor.JSON)));
+
+                            if (logger.isInfoEnabled()) {
+                                logger.info("Orchestration service resolved at {}",
+                                    orchestration.service().provider().socketAddress());
+                            }
+
+                            return Future.success(orchestration);
+                        })
+                        .ifFailure(Throwable.class, fault -> {
+                            if (logger.isErrorEnabled()) {
+                                logger.error("HTTP/JSON cloud plugin failed " +
+                                    "to connect to \"orchestrator\" system", fault);
+                            }
+                        })
+                        .toAnnouncement();
+                }
+                return orchestrationAnnouncement.subscribe();
+            }
         }
-        return requestOrchestration()
-            .flatMap(orchestration -> orchestration.query(new OrchestrationQueryBuilder()
-                .requester(SystemDetails.from(system))
-                .service(se.arkalix.core.plugin.sr.ServiceQuery.from(query))
-                .options(options)
-                .build()))
-            .map(queryResult -> queryResult.services()
-                .stream()
-                .map(ServiceConsumable::toServiceDescription)
-                .collect(Collectors.toUnmodifiableList()));
-    }
 
-    private Future<Collection<ServiceDescription>> queryOrchestratorForStoredRules(final ArSystem system) {
-        return requestOrchestration()
-            .flatMap(orchestration -> orchestration.query(new OrchestrationQueryBuilder()
-                .requester(SystemDetails.from(system))
-                .build()))
-            .map(queryResult -> queryResult.services()
-                .stream()
-                .map(ServiceConsumable::toServiceDescription)
-                .collect(Collectors.toUnmodifiableList()));
+        private Future<Collection<ServiceDescription>> queryOrchestratorForDynamicRules(
+            final ArSystem system,
+            final ServiceQuery query)
+        {
+            final var options = new HashMap<OrchestrationOption, Boolean>();
+            options.put(OrchestrationOption.OVERRIDE_STORE, true);
+            if (!query.metadata().isEmpty()) {
+                options.put(OrchestrationOption.METADATA_SEARCH, true);
+            }
+            return requestOrchestration()
+                .flatMap(orchestration -> orchestration.query(new OrchestrationQueryBuilder()
+                    .requester(SystemDetails.from(system))
+                    .service(se.arkalix.core.plugin.sr.ServiceQuery.from(query))
+                    .options(options)
+                    .build()))
+                .map(queryResult -> queryResult.services()
+                    .stream()
+                    .map(ServiceConsumable::toServiceDescription)
+                    .collect(Collectors.toUnmodifiableList()));
+        }
+
+        private Future<Collection<ServiceDescription>> queryOrchestratorForStoredRules(final ArSystem system) {
+            return requestOrchestration()
+                .flatMap(orchestration -> orchestration.query(new OrchestrationQueryBuilder()
+                    .requester(SystemDetails.from(system))
+                    .build()))
+                .map(queryResult -> queryResult.services()
+                    .stream()
+                    .map(ServiceConsumable::toServiceDescription)
+                    .collect(Collectors.toUnmodifiableList()));
+        }
     }
 
     /**
