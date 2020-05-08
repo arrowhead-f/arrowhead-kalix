@@ -42,7 +42,7 @@ public class HttpConsumerConnection {
     /**
      * @return Identity associated with the provider of the consumed service.
      * @throws NotSecureException If the provider is not running in secure
-     *                               mode.
+     *                            mode.
      */
     public SystemIdentity provider() {
         if (provider == null) {
@@ -76,14 +76,7 @@ public class HttpConsumerConnection {
      * @return {@code Future} {@code HttpConsumerResponse}.
      */
     public Future<HttpConsumerResponse> send(final HttpConsumerRequest request) {
-        Objects.requireNonNull(request, "Expected request");
-        request.setEncodingIfRequired(() -> encoding.asDtoEncoding().orElseThrow(() ->
-            new IllegalStateException("No DTO support is available for the " +
-                "encoding \"" + encoding + "\"; the request body must be " +
-                "encoded some other way")));
-        if (authorization != null) {
-            request.headers().setIfEmpty("authorization", authorization);
-        }
+        prepare(request);
         return connection.send(request.asClientRequest())
             .map(response -> new HttpConsumerResponse(response, encoding));
     }
@@ -98,8 +91,22 @@ public class HttpConsumerConnection {
      * @return {@code Future} {@code HttpConsumerResponse}.
      */
     public Future<HttpConsumerResponse> sendAndClose(final HttpConsumerRequest request) {
-        return send(request)
-            .flatMapResult(result -> close().mapResult(ignored -> result));
+        prepare(request);
+        return connection.sendAndClose(request.asClientRequest())
+            .map(response -> new HttpConsumerResponse(response, encoding));
+    }
+
+    private void prepare(final HttpConsumerRequest request) {
+        Objects.requireNonNull(request, "Expected request");
+
+        request.setEncodingIfRequired(() -> encoding.asDtoEncoding().orElseThrow(() ->
+            new IllegalStateException("No DTO support is available for the " +
+                "encoding \"" + encoding + "\"; the request body must be " +
+                "encoded some other way")));
+
+        if (authorization != null) {
+            request.headers().setIfEmpty("authorization", authorization);
+        }
     }
 
     /**
