@@ -41,6 +41,8 @@ public class NettyHttpClientConnection implements HttpClientConnection {
     private final Channel channel;
     private final Queue<FutureResponse> pendingResponseQueue = new LinkedList<>();
 
+    private boolean isClosing = false;
+
     public NettyHttpClientConnection(
         final Channel channel,
         final Certificate[] certificateChain)
@@ -62,10 +64,14 @@ public class NettyHttpClientConnection implements HttpClientConnection {
     @Override
     public Certificate[] certificateChain() {
         if (certificateChain == null) {
-            throw new NotSecureException("Connection not secured;" +
-                " no certificates are available");
+            throw new NotSecureException("Connection not secured; " +
+                "no certificates are available");
         }
         return certificateChain;
+    }
+
+    public boolean isClosing() {
+        return isClosing;
     }
 
     @Override
@@ -80,12 +86,8 @@ public class NettyHttpClientConnection implements HttpClientConnection {
 
     @Override
     public Future<HttpClientResponse> send(final HttpClientRequest request) {
-        return send(request, true);
-    }
-
-    private Future<HttpClientResponse> send(final HttpClientRequest request, final boolean keepAlive) {
         try {
-            writeRequestToChannel(request, keepAlive);
+            writeRequestToChannel(request);
         }
         catch (final Throwable throwable) {
             return Future.failure(throwable);
@@ -97,17 +99,12 @@ public class NettyHttpClientConnection implements HttpClientConnection {
 
     @Override
     public Future<HttpClientResponse> sendAndClose(final HttpClientRequest request) {
-        return send(request, false)
-            .flatMapResult(result -> {
-                if (channel.isActive()) {
-                    return close().mapResult(ignored -> result);
-                }
-                return Future.of(result);
-            });
+        isClosing = true;
+        return send(request);
     }
 
     @SuppressWarnings("unchecked")
-    private void writeRequestToChannel(final HttpClientRequest request, final boolean keepAlive) throws DtoWriteException, IOException {
+    private void writeRequestToChannel(final HttpClientRequest request) throws DtoWriteException, IOException {
         final var body = request.body().orElse(null);
         final var headers = request.headers().unwrap();
         final var method = convert(request.method().orElseThrow(() -> new IllegalArgumentException("Expected method")));
@@ -127,7 +124,7 @@ public class NettyHttpClientConnection implements HttpClientConnection {
 
         final var remoteSocketAddress = remoteSocketAddress();
         headers.set(HOST, remoteSocketAddress.getAddress().getHostAddress() + ":" + remoteSocketAddress.getPort());
-        HttpUtil.setKeepAlive(headers, version, keepAlive);
+        HttpUtil.setKeepAlive(headers, version, !isClosing);
 
         final ByteBuf content;
         if (body == null) {
@@ -220,14 +217,11 @@ public class NettyHttpClientConnection implements HttpClientConnection {
 
         /*
          * Cancelling simply causes the response to be ignored. If not wanting
-         * the response to be received at all the client must be closed.
+         * the response to be received at all the connection must be closed.
          */
         @Override
         public void cancel(final boolean mayInterruptIfRunning) {
-            if (isDone) {
-                return;
-            }
-            setResult(Result.failure(new CancellationException()));
+            isDone = true;
         }
 
         public boolean setResult(final Result<HttpClientResponse> result) {
