@@ -299,7 +299,9 @@ public class ArSystem {
                 if (isShuttingDown.get()) {
                     return server.close().fail(cannotProvideServiceShuttingDownException());
                 }
-                servers.add(server);
+                synchronized (servers) {
+                    servers.add(server);
+                }
                 return server.provide(service);
             });
     }

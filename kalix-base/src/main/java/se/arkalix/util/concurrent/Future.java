@@ -34,8 +34,7 @@ import java.util.function.Consumer;
  * <ol type="A">
  *     <li>
  *         <b>Result Consumption</b>
- *         <p>Basic methods for receiving and ignoring the {@link Result} of
- *            this {@code Future}.
+ *         <p>Receive or ignore the {@link Result} of this {@code Future}.
  *             <ol>
  *                 <li>{@link #onResult(Consumer)}</li>
  *                 <li>{@link #cancel(boolean)}</li>
@@ -46,9 +45,10 @@ import java.util.function.Consumer;
  *     </li>
  *     <li>
  *         <b>Side Effects</b>
- *         <p>Methods that each both execute a {@link Consumer} function with
- *            <i>and</i> return a new {@code Future} containing the
- *            {@link Result} of this {@code Future}.
+ *         <p>Pass the {@link Result} of this {@code Future} to a {@link
+ *            ThrowingConsumer} <i>and</i> return it in a new {@code Future}.
+ *            This is useful for reacting to certain results becoming available
+ *            without preventing them from being propagated further.
  *             <ol>
  *                 <li>{@link #ifFailure(Class, ThrowingConsumer)}</li>
  *                 <li>{@link #ifSuccess(ThrowingConsumer)}</li>
@@ -58,13 +58,13 @@ import java.util.function.Consumer;
  *     </li>
  *     <li>
  *         <b>Result Transformation</b>
- *         <p>Methods that each potentially transforms the {@link Result} of
- *            this {@code Future} and returns a new {@link Future} containing
- *            the potentially transformed value or fault. These methods can
- *            be divided into the <i>map</i> category and the <i>flat map</i>
- *            category. The methods of the former category simply transform the
- *            value or fault of this {@code Future}, while the latter both
- *            transform and await the completion of that transformation.
+ *         <p>Transform the {@link Result} of this {@code Future} and return a
+ *            new {@code Future} containing the potentially transformed value
+ *            or fault. The methods can be divided into two categories: (1)
+ *            <i>plain mappers</i> and (2) <i>flat mappers</i>. The former
+ *            category of methods simply transform the value or fault of this
+ *            {@code Future}, while the latter both transform and await the
+ *            completion of that transformation.
  *             <ol>
  *                 <li>{@link #map(ThrowingFunction)}</li>
  *                 <li>{@link #mapCatch(Class, ThrowingFunction)}</li>
@@ -81,8 +81,8 @@ import java.util.function.Consumer;
  *     </li>
  *     <li>
  *         <b>Result Substitution</b>
- *         <p>Methods useful for replacing the {@link Result} of this {@code
- *            Future} with arbitrary values or faults.
+ *         <p>Replace the {@link Result} of this {@code Future} with any value
+ *            or fault.
  *             <ol>
  *                 <li>{@link #pass(Object)}</li>
  *                 <li>{@link #fail(Throwable)}</li>
@@ -91,8 +91,8 @@ import java.util.function.Consumer;
  *     </li>
  *     <li>
  *         <b>Result Distribution</b>
- *         <p>Method allowing for multiple {@link Consumer} functions to
- *            receive the {@link Result} of this {@code Future}.
+ *         <p>Allow for for multiple consumers to receive the {@link Result} of
+ *            this {@code Future}.
  *             <ol>
  *                 <li>{@link #toAnnouncement()}</li>
  *             </ol>
@@ -100,9 +100,8 @@ import java.util.function.Consumer;
  *     </li>
  *     <li>
  *         <b>Result Suspension</b>
- *         <p>Each method returns a new {@code Future} that is completed with
- *            the {@link Result} of this {@code Future} at some later point in
- *            time.
+ *         <p>Delay completion of this {@code Future} until some point in the
+ *            future.
  *             <ol>
  *                 <li>{@link #delay(Duration)}</li>
  *                 <li>{@link #delayUntil(Instant)}</li>
@@ -111,8 +110,7 @@ import java.util.function.Consumer;
  *     </li>
  *     <li>
  *         <b>Thread Management</b>
- *         <p>Each method consumes the {@link Result} of this {@code Future} on
- *            a separate thread.
+ *         <p>Consume the result of this {@code Future} on a separate thread.
  *             <ol>
  *                 <li>{@link #fork(Consumer)}</li>
  *                 <li>{@link #forkJoin(ThrowingFunction)}</li>
@@ -121,12 +119,11 @@ import java.util.function.Consumer;
  *     </li>
  *     <li>
  *         <b>Future Result Predetermination</b>
- *         <p>Each of the following static factory functions help create
- *            {@code Future} instances with a predetermined {@link Result}.
+ *         <p>Create a new {@code Future} with a predetermined {@link Result}.
  *             <ol>
  *                 <li>{@link #done()}</li>
  *                 <li>{@link #success(Object)}</li>
- *                 <li>{@link #fail(Throwable)}</li>
+ *                 <li>{@link #failure(Throwable)}</li>
  *                 <li>{@link #of(Result)}</li>
  *             </ol>
  *         </p>
@@ -136,7 +133,8 @@ import java.util.function.Consumer;
  * safe. Unless otherwise advertised, sharing individual {@code Futures}
  * between multiple threads may cause race conditions.
  *
- * @param <V> Type of value that can be retrieved if the operation succeeds.
+ * @param <V> Type of <i>value</i> that can be retrieved if the operation
+ *            represented by this {@code Future} succeeds.
  */
 @SuppressWarnings("unused")
 public interface Future<V> {
@@ -1325,7 +1323,7 @@ public interface Future<V> {
         Objects.requireNonNull(mapper, "Expected mapper");
         final var source = this;
         return new Future<>() {
-            private AtomicReference<Future<?>> cancelTarget = new AtomicReference<>(source);
+            private final AtomicReference<Future<?>> cancelTarget = new AtomicReference<>(source);
 
             @Override
             public void onResult(final Consumer<Result<U>> consumer) {
