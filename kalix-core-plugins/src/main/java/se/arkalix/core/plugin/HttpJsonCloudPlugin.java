@@ -155,8 +155,8 @@ public class HttpJsonCloudPlugin implements Plugin {
         @Override
         public Future<?> onServiceProvided(final ServiceDescription service) {
             if (logger.isInfoEnabled()) {
-                logger.info("Registering \"{}\" provided by \"{}\" ...",
-                    service.name(), system.name());
+                logger.info("HTTP/JSON cloud plugin registering \"{}\" " +
+                    "provided by \"{}\" ...", service.name(), system.name());
             }
             final var provider = service.provider();
             final var providerSocketAddress = provider.socketAddress();
@@ -181,14 +181,16 @@ public class HttpJsonCloudPlugin implements Plugin {
                     .mapResult(result -> {
                         if (result.isSuccess()) {
                             if (logger.isInfoEnabled()) {
-                                logger.info("Registered the \"{}\" service " +
+                                logger.info("HTTP/JSON cloud plugin " +
+                                        "registered the \"{}\" service " +
                                         "provided by the \"{}\" system",
                                     service.name(), system.name());
                             }
                         }
                         else {
                             if (logger.isErrorEnabled()) {
-                                logger.error("Failed to register the \"" + service.name() +
+                                logger.error("HTTP/JSON cloud plugin failed " +
+                                    "to register the \"" + service.name() +
                                     "\" service provided by the \"" + system.name() +
                                     "\" system", result.fault());
                             }
@@ -200,8 +202,8 @@ public class HttpJsonCloudPlugin implements Plugin {
         @Override
         public void onServiceDismissed(final ServiceDescription service) {
             if (logger.isInfoEnabled()) {
-                logger.info("Unregistering the \"{}\" service provided by " +
-                    "the \"{}\" system ...", service.name(), system.name());
+                logger.info("HTTP/JSON cloud plugin unregistering the \"{}\"" +
+                    "service provided by the \"{}\" system ...", service.name(), system.name());
             }
             final var provider = service.provider();
             final var providerSocketAddress = provider.socketAddress();
@@ -214,13 +216,15 @@ public class HttpJsonCloudPlugin implements Plugin {
                 .onResult(result -> {
                     if (result.isSuccess()) {
                         if (logger.isInfoEnabled()) {
-                            logger.info("Unregistered the \"{}\" service " +
+                            logger.info("HTTP/JSON cloud plugin " +
+                                "unregistered the \"{}\" service " +
                                 "provided by the \"{}\" system", service.name(), system.name());
                         }
                     }
                     else {
                         if (logger.isWarnEnabled()) {
-                            logger.warn("Failed to unregister the \"" + service.name() +
+                            logger.warn("HTTP/JSON cloud plugin failed to " +
+                                "unregister the \"" + service.name() +
                                 "\" service provided by the \"" + system.name() +
                                 "\" system", result.fault());
                         }
@@ -263,6 +267,15 @@ public class HttpJsonCloudPlugin implements Plugin {
                             }
                             final var connection = result.value();
                             final var isSecure = connection.isSecure();
+                            if (isSecure != system.isSecure()) {
+                                return Result.failure(new CloudException("" +
+                                    "HTTP/JSON cloud plugin connected to " +
+                                    "system at " + serviceRegistrySocketAddress +
+                                    " and found that it is " + (isSecure
+                                    ? "running in secure mode, while this system is not"
+                                    : "not running in secure mode, while this system is")
+                                    + "; failed to resolve service discovery service "));
+                            }
                             final ProviderDescription provider;
                             if (isSecure) {
                                 final var identity = new SystemIdentity(connection.certificateChain());
@@ -413,7 +426,8 @@ public class HttpJsonCloudPlugin implements Plugin {
                                 Collections.singleton(EncodingDescriptor.JSON)));
 
                             if (logger.isInfoEnabled()) {
-                                logger.info("Orchestration service resolved at {}",
+                                logger.info("HTTP/JSON cloud plugin resolved " +
+                                        "orchestration service at {}",
                                     orchestration.service().provider().socketAddress());
                             }
 

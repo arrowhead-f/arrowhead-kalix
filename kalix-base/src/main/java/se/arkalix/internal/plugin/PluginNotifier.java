@@ -34,8 +34,12 @@ public class PluginNotifier {
         this.plugins = Objects.requireNonNull(plugins, "Expected plugins");
     }
 
-    public void onAttach() {
+    public Map<Class<? extends Plugin>, PluginFacade> onAttach() {
         final var handlers = new ArrayList<PluginHandler>();
+        this.handlers = Collections.unmodifiableList(handlers);
+
+        final var pluginClassToFacade = new HashMap<Class<? extends Plugin>, PluginFacade>();
+
         plugins.stream()
             .sorted((a, b) -> {
                 final var bClass = b.getClass();
@@ -48,7 +52,9 @@ public class PluginNotifier {
                     if (bLast) {
                         throw new IllegalStateException(aClass + " and " +
                             bClass + " both depend on each other; cannot " +
-                            "determine plugin attachment order");
+                            "determine plugin attachment order; cannot " +
+                            "attach plugins to system \"" + system.name() +
+                            "\"");
                     }
                     return 1;
                 }
@@ -58,23 +64,39 @@ public class PluginNotifier {
 
                 return a.ordinal() - b.ordinal();
             })
-            .forEach(plugin -> attach(plugin, handlers, system));
+            .forEach(plugin -> {
+                final var handler = attach(plugin, handlers);
+                handler.attached()
+                    .facade()
+                    .ifPresent(facade -> {
+                        final var existingClass = pluginClassToFacade.putIfAbsent(handler.plugin().getClass(), facade);
+                        if (existingClass != null) {
+                            throw new IllegalStateException("Plugins " +
+                                "providing facades when attached, such as \"" +
+                                existingClass + "\", may not be provided" +
+                                "to any one system more than once; " +
+                                "cannot attach plugins to system \"" +
+                                system.name() + "\"");
+                        }
+                    });
+            });
 
         handlers.trimToSize();
 
         this.system = null;
         this.plugins = null;
-        this.handlers = Collections.unmodifiableList(handlers);
+
+        return Collections.unmodifiableMap(pluginClassToFacade);
     }
 
-    private static PluginHandler attach(final Plugin plugin, final List<PluginHandler> handlers, final ArSystem system) {
+    private PluginHandler attach(final Plugin plugin, final List<PluginHandler> handlers) {
         final var dependencies = new HashMap<Class<? extends Plugin>, PluginFacade>();
         plugin.dependencies()
             .stream()
             .map(dependencyClass -> handlers.stream()
                 .filter(handler -> dependencyClass.isAssignableFrom(handler.plugin().getClass()))
                 .findAny()
-                .orElseGet(() -> load(dependencyClass, handlers, system)))
+                .orElseGet(() -> load(dependencyClass, handlers)))
             .forEach(handler -> handler.attached()
                 .facade()
                 .ifPresent(facade -> dependencies.put(handler.plugin().getClass(), facade)));
@@ -93,11 +115,7 @@ public class PluginNotifier {
         return handler;
     }
 
-    private static PluginHandler load(
-        final Class<? extends Plugin> dependencyClass,
-        final List<PluginHandler> handlers,
-        final ArSystem system)
-    {
+    private PluginHandler load(final Class<? extends Plugin> dependencyClass, final List<PluginHandler> handlers) {
         Exception suppressedException = null;
         Object pluginObject = null;
         try {
@@ -122,7 +140,8 @@ public class PluginNotifier {
                 throw new IllegalStateException(dependencyClass + " does not " +
                     "have a public static instance() method or a public " +
                     "constructor taking no arguments; cannot automatically " +
-                    "satisfy plugin dependency", exception);
+                    "satisfy plugin dependency of system \"" + system.name()
+                    + "\"", exception);
             }
         }
         catch (final IllegalAccessException | InvocationTargetException | InstantiationException exception) {
@@ -131,7 +150,7 @@ public class PluginNotifier {
             }
             throw new IllegalStateException("Failed to load an instance of  " +
                 dependencyClass + "; cannot automatically satisfy plugin " +
-                "dependency", exception);
+                "dependency of system \"" + system.name() + "\"", exception);
         }
         final Plugin plugin;
         try {
@@ -143,7 +162,7 @@ public class PluginNotifier {
                 "called; cannot automatically satisfy plugin " +
                 "dependency", exception);
         }
-        return attach(plugin, handlers, system);
+        return attach(plugin, handlers);
     }
 
     public void onDetach() {
@@ -241,8 +260,8 @@ public class PluginNotifier {
                 catch (final Throwable throwable1) {
                     if (logger.isErrorEnabled()) {
                         throwable0.addSuppressed(throwable0);
-                        logger.error("Failed to detach attached \"" + attached + "\"",
-                            throwable1);
+                        logger.error("Failed to detach attached \"" +
+                            attached + "\"", throwable1);
                     }
                 }
             }
@@ -258,9 +277,9 @@ public class PluginNotifier {
             catch (final Throwable throwable1) {
                 if (logger.isErrorEnabled()) {
                     throwable1.addSuppressed(throwable0);
-                    logger.error("Failed to detach attached \"" + attached +
-                            "\"; detach initiated by attached throwing " +
-                            "the suppressed exception",
+                    logger.error("Failed to detach attached plugin \"" +
+                            plugin + "\"; detach initiated by attached " +
+                            "plugin throwing the suppressed exception",
                         throwable1);
 
                 }

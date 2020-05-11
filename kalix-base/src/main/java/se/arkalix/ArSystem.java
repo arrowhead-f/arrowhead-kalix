@@ -9,6 +9,7 @@ import se.arkalix.internal.ArServerRegistry;
 import se.arkalix.internal.plugin.PluginNotifier;
 import se.arkalix.internal.util.concurrent.NettyScheduler;
 import se.arkalix.plugin.Plugin;
+import se.arkalix.plugin.PluginFacade;
 import se.arkalix.query.ServiceQuery;
 import se.arkalix.security.NotSecureException;
 import se.arkalix.security.identity.OwnedIdentity;
@@ -42,6 +43,7 @@ public class ArSystem {
     private final NettyScheduler scheduler;
     private final SchedulerShutdownListener schedulerShutdownListener;
     private final PluginNotifier pluginNotifier;
+    private final Map<Class<? extends Plugin>, PluginFacade> pluginClassToFacade;
 
     private final ArServiceCache consumedServices;
     private final ProviderDescription description;
@@ -104,7 +106,7 @@ public class ArSystem {
         pluginNotifier = new PluginNotifier(this, builder.plugins != null
             ? builder.plugins
             : Collections.emptyList());
-        pluginNotifier.onAttach();
+        pluginClassToFacade = pluginNotifier.onAttach();
     }
 
     /**
@@ -322,6 +324,26 @@ public class ArSystem {
                 .flatMap(server -> server.providedServices()
                     .map(ArServiceHandle::description));
         }
+    }
+
+    /**
+     * Gets {@link PluginFacade} associated with the identified system {@link
+     * Plugin}, if the identified plugin is attached to this system and the
+     * plugin explicitly provides a plugin facade.
+     * <p>
+     * A plugin facade allows for some attached system plugin to be interacted
+     * with. Interfaces returned by this method must be casted into some
+     * concrete type, which should be documented by the identified plugin, to
+     * become useful.
+     *
+     * @param pluginClass The class associated with the desired plugin facade.
+     * @return Plugin facade associated with a {@link
+     * Builder#plugins(Plugin...) plugin provided at system creation}, if the
+     * plugin in question provides such a facade.
+     */
+    @ThreadSafe
+    public Optional<PluginFacade> pluginFacadeOf(final Class<? extends Plugin> pluginClass) {
+        return Optional.ofNullable(pluginClassToFacade.get(pluginClass));
     }
 
     /**
