@@ -4,6 +4,7 @@ import se.arkalix.core.plugin.or.OrchestrationWarning;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.descriptor.SecurityDescriptor;
+import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.json.JsonName;
@@ -21,6 +22,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
  * information related to how it can be accessed.
  */
 @DtoReadableAs(JSON)
+@DtoEqualsHashCode
 @DtoToString
 public interface ServiceConsumable {
     /**

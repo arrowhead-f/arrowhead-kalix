@@ -12,7 +12,6 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 
-import static se.arkalix.dto.types.DtoDescriptor.LIST;
 
 public class DtoSpecificationFactory {
     private final DtoSpecificationEncoding[] specificationEncodings;
@@ -81,7 +80,7 @@ public class DtoSpecificationFactory {
                 if (((DtoCollection) property.type()).containsInterfaceType()) {
                     getter.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)
                         .addMember("value", "\"unchecked\"").build());
-                    getter.addStatement(output.expand("($N) $N"), descriptor == LIST ? "List" : "Map", name);
+                    getter.addStatement(output.expand("($N) $N"), descriptor == DtoDescriptor.LIST ? "List" : "Map", name);
 
                     implementation.addMethod(MethodSpec.methodBuilder(name + "AsDtos")
                         .addModifiers(Modifier.PUBLIC)
@@ -121,7 +120,7 @@ public class DtoSpecificationFactory {
 
             builder.addMethod(fieldSetter.build());
 
-            if (descriptor == LIST) {
+            if (descriptor == DtoDescriptor.LIST) {
                 final var element = ((DtoSequence) property.type()).element();
                 if (!element.descriptor().isCollection()) {
                     final var elementTypeName = element.inputTypeName();
@@ -167,6 +166,62 @@ public class DtoSpecificationFactory {
                 }
             }
         });
+
+        if (target.isComparable()) {
+            final var equals = MethodSpec.methodBuilder("equals")
+                .addAnnotation(Override.class)
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(TypeName.OBJECT, "other", Modifier.FINAL)
+                .returns(TypeName.BOOLEAN)
+                .addCode("if (this == other) { return true; };\n")
+                .addCode("if (other == null || getClass() != other.getClass()) { return false; };\n")
+                .addCode("final $1T that = ($1T) other;\n", target.dataTypeName())
+                .addCode("return ");
+
+            var index = 0;
+            for (final var property : target.properties()) {
+                final var descriptor = property.descriptor();
+                final var name = property.name();
+
+                if (index++ != 0) {
+                    equals.addCode(" &&\n    ");
+                }
+                if (descriptor.isPrimitiveUnboxed()) {
+                    equals.addCode("$1N == that.$1N", name);
+                }
+                else if (descriptor == DtoDescriptor.ARRAY) {
+                    equals.addCode("$1T.equals($2N, that.$2N)", Arrays.class, name);
+                }
+                else if (property.isOptional()) {
+                    equals.addCode("$1T.equals($2N, that.$2N)", Objects.class, name);
+                }
+                else {
+                    equals.addCode("$1N.equals(that.$1N)", name);
+                }
+            }
+
+            implementation.addMethod(equals
+                .addCode(";")
+                .build());
+
+            final var hashCode = MethodSpec.methodBuilder("hashCode")
+                .addAnnotation(Override.class)
+                .addModifiers(Modifier.PUBLIC)
+                .returns(TypeName.INT)
+                .addCode("return $T.hash(", Objects.class);
+
+            index = 0;
+            for (final var property : target.properties()) {
+                if (index++ != 0) {
+                    hashCode.addCode(", ");
+                }
+                hashCode.addCode(property.name());
+            }
+
+            implementation.addMethod(hashCode
+                .addCode(");")
+                .build());
+        }
 
         if (target.isPrintable()) {
             final var toString = MethodSpec.methodBuilder("toString")

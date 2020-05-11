@@ -74,9 +74,10 @@ public class DtoTargetFactory {
             properties.add(property);
         }
 
+        final var isComparable = interfaceElement.getAnnotation(DtoEqualsHashCode.class) != null;
         final var isPrintable = interfaceElement.getAnnotation(DtoToString.class) != null;
 
-        return new DtoTarget(interfaceType, properties, isPrintable);
+        return new DtoTarget(interfaceType, properties, isComparable, isPrintable);
     }
 
     private void verifyAnyExclusivityConstraints(

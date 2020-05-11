@@ -1,5 +1,6 @@
 package se.arkalix.core.plugin.eh;
 
+import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.internal.core.plugin.Instants;
 import se.arkalix.core.plugin.SystemDetails;
 import se.arkalix.dto.DtoToString;
@@ -15,6 +16,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
  * An event description, as sent.
  */
 @DtoWritableAs(JSON)
+@DtoEqualsHashCode
 @DtoToString
 public interface EventOutgoing {
     /**

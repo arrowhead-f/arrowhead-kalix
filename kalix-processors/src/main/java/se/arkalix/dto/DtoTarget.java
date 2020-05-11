@@ -4,6 +4,7 @@ import com.squareup.javapoet.TypeName;
 import se.arkalix.dto.types.DtoInterface;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 public class DtoTarget {
@@ -12,11 +13,18 @@ public class DtoTarget {
 
     private final DtoInterface interfaceType;
     private final List<DtoProperty> properties;
+    private final boolean isComparable;
     private final boolean isPrintable;
 
-    public DtoTarget(final DtoInterface interfaceType, final List<DtoProperty> properties, final boolean isPrintable) {
-        this.interfaceType = interfaceType;
-        this.properties = properties;
+    public DtoTarget(
+        final DtoInterface interfaceType,
+        final List<DtoProperty> properties,
+        final boolean isComparable,
+        final boolean isPrintable)
+    {
+        this.interfaceType = Objects.requireNonNull(interfaceType, "Expected interfaceType");
+        this.properties = Objects.requireNonNull(properties, "Expected properties");
+        this.isComparable = isComparable;
         this.isPrintable = isPrintable;
     }
 
@@ -26,6 +34,10 @@ public class DtoTarget {
 
     public List<DtoProperty> properties() {
         return properties;
+    }
+
+    public boolean isComparable() {
+        return isComparable;
     }
 
     public boolean isPrintable() {

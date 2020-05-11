@@ -3,6 +3,7 @@ package se.arkalix.core.plugin.or;
 import se.arkalix.core.plugin.ServiceProvider;
 import se.arkalix.core.plugin.SystemDetails;
 import se.arkalix.core.plugin.sr.ServiceQuery;
+import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
 import se.arkalix.dto.json.JsonName;
@@ -20,6 +21,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
  * {@link OrchestrationQueryResult list of services}.
  */
 @DtoWritableAs(JSON)
+@DtoEqualsHashCode
 @DtoToString
 public interface OrchestrationQuery {
     /**

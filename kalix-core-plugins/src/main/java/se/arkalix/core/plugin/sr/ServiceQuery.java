@@ -2,6 +2,7 @@ package se.arkalix.core.plugin.sr;
 
 import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.descriptor.SecurityDescriptor;
+import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
 import se.arkalix.dto.json.JsonName;
@@ -17,6 +18,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
  * A search query for service definitions.
  */
 @DtoWritableAs(JSON)
+@DtoEqualsHashCode
 @DtoToString
 public interface ServiceQuery {
     /**

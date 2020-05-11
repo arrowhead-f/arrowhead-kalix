@@ -4,6 +4,7 @@ import se.arkalix.core.plugin.SystemDetails;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.descriptor.InterfaceDescriptor;
+import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
 import se.arkalix.dto.json.JsonName;
@@ -19,6 +20,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
  * A service registration request.
  */
 @DtoWritableAs(JSON)
+@DtoEqualsHashCode
 @DtoToString
 public interface ServiceRegistration {
     /**

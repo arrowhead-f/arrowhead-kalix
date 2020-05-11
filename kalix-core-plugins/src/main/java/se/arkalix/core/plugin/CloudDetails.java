@@ -1,8 +1,11 @@
 package se.arkalix.core.plugin;
 
+import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
 import se.arkalix.dto.json.JsonName;
+
+import java.util.Optional;
 
 import static se.arkalix.dto.DtoEncoding.JSON;
 
@@ -11,6 +14,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
  * service messages.
  */
 @DtoWritableAs(JSON)
+@DtoEqualsHashCode
 @DtoToString
 public interface CloudDetails {
     /**
@@ -42,5 +46,5 @@ public interface CloudDetails {
      * The public key of what? The service registry? The gatekeeper?
      */
     @JsonName("authenticationInfo")
-    String publicKeyBase64();
+    Optional<String> publicKeyBase64();
 }
