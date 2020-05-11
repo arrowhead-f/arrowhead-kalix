@@ -164,6 +164,42 @@ public class ServiceDescription implements Comparable<ServiceDescription> {
         return aInterfaceArray.length - bInterfaceArray.length;
     }
 
+    @Override
+    public boolean equals(final Object other) {
+        if (this == other) { return true; }
+        if (other == null || getClass() != other.getClass()) { return false; }
+        final ServiceDescription that = (ServiceDescription) other;
+        return version == that.version &&
+            name.equals(that.name) &&
+            provider.equals(that.provider) &&
+            uri.equals(that.uri) &&
+            receivedAt.equals(that.receivedAt) &&
+            expiresAt.equals(that.expiresAt) &&
+            security.equals(that.security) &&
+            metadata.equals(that.metadata) &&
+            interfaceTokens.equals(that.interfaceTokens);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, provider, uri, receivedAt, expiresAt, security, metadata, version, interfaceTokens);
+    }
+
+    @Override
+    public String toString() {
+        return "ServiceDescription{" +
+            "name='" + name + '\'' +
+            ", provider=" + provider +
+            ", uri='" + uri + '\'' +
+            ", receivedAt=" + receivedAt +
+            ", expiresAt=" + expiresAt +
+            ", security=" + security +
+            ", metadata=" + metadata +
+            ", version=" + version +
+            ", interfaceTokens=" + interfaceTokens +
+            '}';
+    }
+
     /**
      * Builder useful for creating {@link ServiceDescription} instances.
      */

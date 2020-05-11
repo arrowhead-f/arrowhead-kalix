@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 public class ArEventSubscription {
     private String topic;
     private Map<String, String> metadata;
-    private Collection<ProviderDescription> providers;
+    private Set<ProviderDescription> providers;
     private ArEventSubscriptionHandler handler;
 
     public Optional<String> topic() {
@@ -44,16 +44,20 @@ public class ArEventSubscription {
         return this;
     }
 
-    public Collection<ProviderDescription> providers() {
+    public Set<ProviderDescription> providers() {
         if (providers == null) {
-            providers = new ArrayList<>();
+            providers = new HashSet<>();
         }
         return providers;
     }
 
     public ArEventSubscription providers(final Collection<ProviderDescription> providers) {
-        this.providers = providers;
+        this.providers = providers != null ? new HashSet<>(providers) : null;
         return this;
+    }
+
+    public ArEventSubscription providers(final ProviderDescription... providers) {
+        return providers(Arrays.asList(providers));
     }
 
     public Optional<ArEventSubscriptionHandler> handler() {

@@ -108,4 +108,28 @@ public class ConsumerDescription {
         }
         return identity;
     }
+
+    @Override
+    public boolean equals(final Object other) {
+        if (this == other) { return true; }
+        if (other == null || getClass() != other.getClass()) { return false; }
+        final ConsumerDescription that = (ConsumerDescription) other;
+        return Objects.equals(identity, that.identity) &&
+            name.equals(that.name) &&
+            remoteSocketAddress.equals(that.remoteSocketAddress);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(identity, name, remoteSocketAddress);
+    }
+
+    @Override
+    public String toString() {
+        return "ConsumerDescription{" +
+            "identity=" + identity +
+            ", name='" + name + '\'' +
+            ", remoteSocketAddress=" + remoteSocketAddress +
+            '}';
+    }
 }

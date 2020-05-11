@@ -14,13 +14,13 @@ import se.arkalix.plugin.Plugin;
 import se.arkalix.plugin.PluginAttached;
 import se.arkalix.plugin.PluginFacade;
 import se.arkalix.security.access.AccessPolicy;
-import se.arkalix.util.Result;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.concurrent.Futures;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static se.arkalix.descriptor.EncodingDescriptor.JSON;
@@ -239,7 +239,7 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
         private final ArSystem system;
         private final SystemDetailsDto subscriber;
 
-        private final ConcurrentHashMap<String, SubscriptionHandle> topicToSubscription = new ConcurrentHashMap<>();
+        private final ConcurrentHashMap<String, Topic> nameToTopic = new ConcurrentHashMap<>();
         private final AtomicBoolean isDetached = new AtomicBoolean(false);
 
         Attached(final ArSystem system, final ArrayList<ArEventSubscription> defaultSubscriptions) {
@@ -255,8 +255,8 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
                     if (logger.isInfoEnabled()) {
                         final var service = eventSubscribe.service();
                         final var provider = eventSubscribe.service().provider();
-                        logger.info("HTTP/JSON event subscriber now " +
-                                "receiving events of system \"{}\" via " +
+                        logger.info("HTTP/JSON event subscriber can now " +
+                                "receive events for system \"{}\" via " +
                                 "\"{}\" provided by \"{}\" {} ...",
                             system.name(), service.name(), provider.name(), provider.socketAddress());
                     }
@@ -268,23 +268,23 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
                         .encodings(JSON)
 
                         .post("/#topic", (request, response) -> {
-                            final var topic = request.pathParameter(0);
+                            final var topicName = request.pathParameter(0);
                             return request.bodyAs(EventIncomingDto.class)
                                 .ifSuccess(event -> {
                                     try {
-                                        final var subscription = topicToSubscription.get(topic.toLowerCase());
-                                        if (subscription != null) {
-                                            subscription.publish(event.metadata(), event.data());
+                                        final var topic = nameToTopic.get(topicName.toLowerCase());
+                                        if (topic != null) {
+                                            final var provider = event.publisher()
+                                                .map(SystemDetails::toProviderDescription)
+                                                .orElse(null);
+
+                                            topic.publish(provider, event.metadata(), event.data());
                                         }
                                         else if (logger.isWarnEnabled()) {
-                                            logger.warn("HTTP/JSON event subscriber received " +
-                                                "unexpected event [topic=" + topic + "]: {}", event);
-                                        }
-                                    }
-                                    catch (final Throwable throwable) {
-                                        if (logger.isErrorEnabled()) {
-                                            logger.error("HTTP/JSON event subscriber handler " +
-                                                "exception [topic=" + topic + ']', throwable);
+                                            logger.warn("HTTP/JSON event " +
+                                                "subscriber received " +
+                                                "unexpected event " +
+                                                "[topic=" + topicName + "]: {}", event);
                                         }
                                     }
                                     finally {
@@ -294,7 +294,7 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
                                 .mapCatch(Throwable.class, fault -> {
                                     if (logger.isWarnEnabled()) {
                                         logger.warn("HTTP/JSON event subscriber failed to " +
-                                            "handle received event [topic=" + topic + "]", fault);
+                                            "handle received event [topic=" + topicName + "]", fault);
                                     }
                                     if (response.status().isEmpty()) {
                                         response.status(HttpStatus.BAD_REQUEST);
@@ -304,8 +304,7 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
                         });
 
                     return system.provide(service)
-                        .flatMap(ignored -> Futures.serialize(defaultSubscriptions.stream()
-                            .map(FutureSubscription::new)))
+                        .flatMap(ignored -> Futures.serialize(defaultSubscriptions.stream().map(this::subscribe)))
                         .mapFault(Throwable.class, fault -> new CloudException("" +
                             "HTTP/JSON event subscriber failed to setup event " +
                             "receiver for the \"" + system.name() + "\" system", fault));
@@ -325,6 +324,89 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
                 });
         }
 
+        private Future<ArEventSubscriptionHandle> subscribe(final ArEventSubscription subscription) {
+            if (isDetached.get()) {
+                throw new IllegalStateException("Plugin \"" +
+                    HttpJsonEventSubscriberPlugin.class +
+                    "\" is detached from its system \"" + system.name() +
+                    "\"; cannot create subscription");
+            }
+
+            final var topicName = subscription.topic()
+                .orElseThrow(() -> new IllegalArgumentException(subscription +
+                    " does not specify a topic; cannot register subscription"))
+                .toLowerCase();
+
+            final var isUnsubscribed = new AtomicBoolean(false);
+            final var handle = new AtomicReference<ArEventSubscriptionHandle>(null);
+            nameToTopic.compute(topicName, (topicName0, topic) -> {
+                if (topic == null) {
+                    topic = new Topic(topicName0, this::unsubscribe);
+                    isUnsubscribed.set(true);
+                }
+                handle.set(topic.register(subscription));
+                logger.info("HTTP/JSON event subscriber registered {} to " +
+                    "topic \"{}\" for system \"{}\"", subscription, topicName0, system.name());
+                return topic;
+            });
+
+            if (!isUnsubscribed.get()) {
+                return Future.success(handle.get());
+            }
+
+            final var request = subscription.toSubscriptionRequest(subscriber, basePath + '/' + topicName);
+            logger.info("HTTP/JSON event subscriber is subscribing system " +
+                "\"{}\" to topic \"{}\" ...", system.name(), topicName);
+
+            return system.consume()
+                .using(HttpJsonEventSubscribe.factory())
+                .flatMap(eventSubscribe -> eventSubscribe.subscribe(request)
+                    .flatMapCatch(ErrorException.class, fault -> {
+                        final var error = fault.error();
+                        if ("INVALID_PARAMETER".equals(error.type())) {
+                            return system.consume()
+                                .using(HttpJsonEventUnsubscribe.factory())
+                                .flatMap(eventUnsubscribe -> eventUnsubscribe
+                                    .unsubscribe(topicName, system))
+                                .flatMap(ignored -> eventSubscribe.subscribe(request))
+                                .pass(null);
+                        }
+                        return Future.failure(fault);
+                    }))
+                .map(ignored -> {
+                    if (logger.isInfoEnabled()) {
+                        logger.info("HTTP/JSON event subscriber did " +
+                                "subscribe system \"{}\" to topic \"{}\"",
+                            system.name(), topicName);
+                    }
+                    return (ArEventSubscriptionHandle) handle.get();
+                })
+                .ifFailure(Throwable.class, fault -> {
+                    if (logger.isWarnEnabled()) {
+                        logger.warn("HTTP/JSON event subscriber did " +
+                            "fail to subscribe system \"" + system.name() +
+                            "\" to topic \"" + topicName + "\"", fault);
+                    }
+                    nameToTopic.remove(topicName);
+                });
+        }
+
+        private void unsubscribe(final String topic) {
+            logger.info("HTTP/JSON event subscriber is unsubscribing " +
+                "system \"{}\" from topic \"{}\" ...", system.name(), topic);
+
+            system.consume()
+                .using(HttpJsonEventUnsubscribe.factory())
+                .flatMap(eventUnsubscribe -> eventUnsubscribe.unsubscribe(topic, system))
+                .ifSuccess(ignored -> logger.info("HTTP/JSON event " +
+                    "subscriber unsubscribed system \"{}\" from topic " +
+                    "\"{}\"", system.name(), topic))
+                .onFailure(fault -> logger.warn("HTTP/JSON event " +
+                    "subscriber failed to unsubscribe system \"" +
+                    system.name() + "\" from topic \"" + topic +
+                    "\"", fault));
+        }
+
         @Override
         public void onDetach() {
             if (isDetached.getAndSet(true)) {
@@ -340,9 +422,10 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
             system.consume()
                 .using(HttpJsonEventUnsubscribe.factory())
                 .ifSuccess(consumer -> {
-                    for (final var subscription : topicToSubscription.values()) {
-                        subscription.unsubscribe();
+                    for (final var topicName : nameToTopic.keySet()) {
+                        unsubscribe(topicName);
                     }
+                    nameToTopic.clear();
                     logger.info("HTTP/JSON event subscriber detached from " +
                         "system \"{}\"", system.name());
                 })
@@ -358,126 +441,96 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
         private class Facade implements ArEventSubscriberPluginFacade {
             @Override
             public Future<ArEventSubscriptionHandle> subscribe(final ArEventSubscription subscription) {
-                if (isDetached.get()) {
-                    throw new IllegalStateException("Plugin \"" +
-                        HttpJsonEventSubscriberPlugin.class +
-                        "\" is detached from its system \"" + system.name() +
-                        "\"; cannot create subscription");
-                }
-                return new FutureSubscription(subscription);
+                return Attached.this.subscribe(subscription);
             }
         }
+    }
 
-        private class FutureSubscription implements Future<ArEventSubscriptionHandle> {
-            private Future<?> cancellableFuture;
-            private Consumer<Result<ArEventSubscriptionHandle>> consumer = null;
+    private static class Topic {
+        private final String name;
+        private final Consumer<String> onEmpty;
+        private final Set<Handle> handles = Collections.synchronizedSet(new HashSet<>());
 
-            public FutureSubscription(final ArEventSubscription subscription) {
-                final ArEventSubscription subscription1 = Objects.requireNonNull(subscription);
+        private Topic(final String name, final Consumer<String> onEmpty) {
+            this.name = Objects.requireNonNull(name, "Expected name");
+            this.onEmpty = Objects.requireNonNull(onEmpty, "Expected onEmpty");
+        }
 
-                final var topic = subscription.topic()
-                    .orElseThrow(() -> new IllegalArgumentException("Expected subscription topic to be set"));
+        public String name() {
+            return name;
+        }
 
-                final var handler = subscription.handler()
-                    .orElseThrow(() -> new IllegalArgumentException("Expected subscription handler to be set"));
-
-                final var subscriptionHandle = new SubscriptionHandle(topic, handler);
-                final var existingSubscription = topicToSubscription.putIfAbsent(topic, subscriptionHandle);
-                if (existingSubscription != null) {
-                    throw new IllegalStateException("A subscription already exists " +
-                        "for the topic \"" + topic + "\" " + existingSubscription +
-                        "; cannot register " + subscription);
+        public void publish(final ProviderDescription provider, final Map<String, String> metadata, final String data) {
+            for (final var subscription : handles) {
+                try {
+                    subscription.publish(provider, metadata, data);
                 }
-
-                final var request = subscription.toSubscriptionRequest(subscriber, basePath + '/' + topic);
-                logger.info("HTTP/JSON event subscriber is subscribing system \"{}\" to topic \"{}\" ...", system.name()
-                    , topic);
-                cancellableFuture = system.consume()
-                    .using(HttpJsonEventSubscribe.factory())
-                    .flatMap(eventSubscribe -> eventSubscribe.subscribe(request)
-                        .flatMapCatch(ErrorException.class, fault -> {
-                            final var error = fault.error();
-                            if ("INVALID_PARAMETER".equals(error.type())) {
-                                return system.consume()
-                                    .using(HttpJsonEventUnsubscribe.factory())
-                                    .flatMap(eventUnsubscribe -> eventUnsubscribe
-                                        .unsubscribe(topic, system))
-                                    .flatMap(ignored -> eventSubscribe.subscribe(request))
-                                    .pass(null);
-                            }
-                            return Future.failure(fault);
-                        }));
-
-                cancellableFuture
-                    .ifSuccess(ignored -> {
-                        logger.info("HTTP/JSON event subscriber did " +
-                            "subscribe system \"{}\" to topic \"{}\"", system.name(), topic);
-                        if (consumer != null) {
-                            consumer.accept(Result.success(subscriptionHandle));
-                        }
-                    })
-                    .onFailure(fault -> {
-                        if (logger.isWarnEnabled()) {
-                            logger.warn("HTTP/JSON event subscriber did " +
-                                "fail to subscribe system \"" + system.name() +
-                                "\" to topic \"" + topic + "\"", fault);
-                        }
-                        topicToSubscription.remove(topic);
-                        if (consumer != null) {
-                            consumer.accept(Result.failure(fault));
-                        }
-                    });
-            }
-
-            @Override
-            public void onResult(final Consumer<Result<ArEventSubscriptionHandle>> consumer) {
-                this.consumer = Objects.requireNonNull(consumer, "Expected consumer");
-            }
-
-            @Override
-            public void cancel(final boolean mayInterruptIfRunning) {
-                if (cancellableFuture != null) {
-                    cancellableFuture.cancel(mayInterruptIfRunning);
-                    cancellableFuture = null;
+                catch (final Throwable throwable) {
+                    logger.error("HTTP/JSON event subscription threw " +
+                        "unexpected exception while handling event " +
+                        "[topic=" + name + "]", throwable);
                 }
             }
         }
 
-        private class SubscriptionHandle implements ArEventSubscriptionHandle {
-            private final String topic;
-            private final ArEventSubscriptionHandler handler;
-            private final AtomicBoolean isUnsubscribed = new AtomicBoolean(false);
+        public ArEventSubscriptionHandle register(final ArEventSubscription subscription) {
+            final var handle = new Handle(subscription, this::remove);
+            handles.add(handle);
+            return handle;
+        }
 
-            public SubscriptionHandle(final String topic, final ArEventSubscriptionHandler handler) {
-                this.topic = Objects.requireNonNull(topic, "Expected topic");
-                this.handler = Objects.requireNonNull(handler, "Expected handler");
-            }
-
-            public void publish(final Map<String, String> metadata, final String data) {
-                handler.onPublish(
-                    Objects.requireNonNullElse(metadata, Collections.emptyMap()),
-                    Objects.requireNonNull(data, "Expected data"));
-            }
-
-            @Override
-            public void unsubscribe() {
-                if (!isUnsubscribed.compareAndSet(false, true)) {
-                    return;
+        private void remove(final Handle handle) {
+            if (handles.remove(handle)) {
+                if (handles.isEmpty()) {
+                    onEmpty.accept(name);
                 }
-                logger.info("HTTP/JSON event subscriber is unsubscribing " +
-                    "system \"{}\" from topic \"{}\" ...", system.name(), topic);
-                topicToSubscription.remove(topic);
-                system.consume()
-                    .using(HttpJsonEventUnsubscribe.factory())
-                    .flatMap(eventUnsubscribe -> eventUnsubscribe.unsubscribe(topic, system))
-                    .ifSuccess(ignored -> logger.info("HTTP/JSON event " +
-                        "subscriber unsubscribed system \"{}\" from topic " +
-                        "\"{}\"", system.name(), topic))
-                    .onFailure(fault -> logger.warn("HTTP/JSON event " +
-                        "subscriber failed to unsubscribe system \"" +
-                        system.name() + "\" from topic \"" + topic +
-                        "\"", fault));
             }
+        }
+    }
+
+    private static class Handle implements ArEventSubscriptionHandle {
+        private final ArEventSubscriptionHandler handler;
+        private final Map<String, String> metadata;
+        private final Set<ProviderDescription> providers;
+        private final Consumer<Handle> onUnsubscribe;
+        private final AtomicBoolean isUnsubscribed = new AtomicBoolean(false);
+
+        private Handle(
+            final ArEventSubscription subscription,
+            final Consumer<Handle> onUnsubscribe)
+        {
+            Objects.requireNonNull(subscription, "Expected subscription");
+            this.onUnsubscribe = Objects.requireNonNull(onUnsubscribe, "Expected onUnsubscribe");
+
+            handler = subscription.handler()
+                .orElseThrow(() -> new IllegalArgumentException(subscription +
+                    " does not contain an event handler; " +
+                    "cannot register subscription"));
+            metadata = subscription.metadata().isEmpty() ? null : subscription.metadata();
+            providers = subscription.providers().isEmpty() ? null : subscription.providers();
+        }
+
+        public void publish(final ProviderDescription provider, final Map<String, String> metadata, final String data) {
+            if (providers != null && !providers.contains(provider)) {
+                return;
+            }
+            if (this.metadata != null) {
+                for (final var entry : this.metadata.entrySet()) {
+                    final var value = metadata.get(entry.getKey());
+                    if (value == null || !value.equals(entry.getValue())) {
+                        return;
+                    }
+                }
+            }
+            handler.onPublish(metadata, data);
+        }
+
+        @Override
+        public void unsubscribe() {
+            if (!isUnsubscribed.compareAndSet(false, true)) {
+                return;
+            }
+            onUnsubscribe.accept(this);
         }
     }
 }

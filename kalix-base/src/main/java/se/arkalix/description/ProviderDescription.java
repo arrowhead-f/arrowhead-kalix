@@ -90,6 +90,21 @@ public class ProviderDescription {
     }
 
     @Override
+    public boolean equals(final Object other) {
+        if (this == other) { return true; }
+        if (other == null || getClass() != other.getClass()) { return false; }
+        final ProviderDescription that = (ProviderDescription) other;
+        return name.equals(that.name) &&
+            remoteSocketAddress.equals(that.remoteSocketAddress) &&
+            Objects.equals(publicKey, that.publicKey);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, remoteSocketAddress, publicKey);
+    }
+
+    @Override
     public String toString() {
         return "ProviderDescription{" +
             "name='" + name + '\'' +
