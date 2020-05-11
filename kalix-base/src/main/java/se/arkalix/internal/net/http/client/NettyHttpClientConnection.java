@@ -71,7 +71,7 @@ public class NettyHttpClientConnection implements HttpClientConnection {
     }
 
     public boolean isClosing() {
-        return isClosing;
+        return isClosing && pendingResponseQueue.size() == 0;
     }
 
     @Override

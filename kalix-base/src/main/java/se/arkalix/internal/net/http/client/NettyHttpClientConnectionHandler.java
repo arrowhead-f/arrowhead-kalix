@@ -90,7 +90,7 @@ public class NettyHttpClientConnectionHandler extends NettySimpleChannelInboundH
             body.finish();
             body = null;
         }
-        if (connection.isClosing()) {
+        if (connection != null && connection.isClosing()) {
             ctx.close();
         }
     }
