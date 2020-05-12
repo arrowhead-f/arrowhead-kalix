@@ -64,8 +64,9 @@ public interface SystemDetails {
             .name(system.name())
             .hostname(system.localSocketAddress().getHostString())
             .port(system.localPort())
-            .publicKeyBase64(system.isSecure() ?
-                Base64.getEncoder().encodeToString(system.identity().publicKey().getEncoded()) : null)
+            .publicKeyBase64(system.isSecure()
+                ? Base64.getEncoder().encodeToString(system.identity().publicKey().getEncoded())
+                : null)
             .build();
     }
 
@@ -75,7 +76,9 @@ public interface SystemDetails {
             .name(provider.name())
             .hostname(socketAddress.getHostString())
             .port(socketAddress.getPort())
-            .publicKeyBase64(Base64.getEncoder().encodeToString(provider.publicKey().getEncoded()))
+            .publicKeyBase64(provider.isSecure()
+                ? Base64.getEncoder().encodeToString(provider.publicKey().getEncoded())
+                : null)
             .build();
     }
 }
