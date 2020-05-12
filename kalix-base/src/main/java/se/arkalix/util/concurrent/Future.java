@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -115,6 +116,16 @@ import java.util.function.Consumer;
  *                 <li>{@link #fork(Consumer)}</li>
  *                 <li>{@link #forkJoin(ThrowingFunction)}</li>
  *             </ol>
+ *         </p>
+ *     </li>
+ *     <li>
+ *         <b>Result Awaiting</b>
+ *         <p>Block current thread until the {@link Result} of this {@code
+ *            Future} becomes available.
+ *              <ol>
+ *                  <li>{@link #await()}</li>
+ *                  <li>{@link #await(Duration)}</li>
+ *              </ol>
  *         </p>
  *     </li>
  *     <li>
@@ -1394,6 +1405,84 @@ public interface Future<V> {
                 }
             }
         };
+    }
+
+    /**
+     * Blocks the current thread until this {@code Future} completes, and then
+     * either returns its value or throws its fault.
+     * <p>
+     * Beware that awaiting a single {@code Future} more than once, either
+     * using this method or {@link #await(Duration)}, is <b>not safe</b> and is
+     * likely to result in deadlocks or stalls.
+     * <p>
+     * Using this method injudiciously may result in severe performance issues.
+     *
+     * @return Value of this {@code Future}, if successful.
+     * @throws InterruptedException If the thread awaiting the completion of
+     *                              this {@code Future} would be interrupted.
+     */
+    default V await() throws InterruptedException {
+        final var result = new AtomicReference<Result<V>>();
+        final var waiter = this;
+        onResult(result0 -> {
+            result.set(result0);
+            waiter.notify();
+        });
+        synchronized (this) {
+            while (true) {
+                final var result0 = result.get();
+                if (result0 != null) {
+                    return result0.valueOrThrow();
+                }
+                wait();
+            }
+        }
+    }
+
+    /**
+     * Blocks the current thread either until this {@code Future} completes or
+     * the given {@code timeout} expires. If this {@code Future} completes
+     * before the timeout expires, its value or fault is returned or thrown,
+     * respectively.
+     * <p>
+     * Beware that awaiting a single {@code Future} more than once, either
+     * using this method or {@link #await()}, is <b>not safe</b> and is likely
+     * to result in deadlocks or stalls.
+     * <p>
+     * Using this method injudiciously may result in severe performance issues.
+     *
+     * @param timeout Duration after which the waiting thread is no longer
+     *                blocked and a {@link TimeoutException}, unless the result
+     *                of this {@code Future} has become available.
+     * @return Value of this {@code Future}, if successful.
+     * @throws InterruptedException If the thread awaiting the completion of
+     *                              this {@code Future} would be interrupted.
+     */
+    default V await(final Duration timeout) throws InterruptedException, TimeoutException {
+        final var result = new AtomicReference<Result<V>>();
+        final var waiter = this;
+        onResult(result0 -> {
+            result.set(result0);
+            waiter.notify();
+        });
+        var timeoutNanos = timeout.toNanos();
+        var last = System.nanoTime();
+        synchronized (this) {
+            while (true) {
+                final var result0 = result.get();
+                if (result0 != null) {
+                    return result0.valueOrThrow();
+                }
+                wait(timeoutNanos / 1000000, (int) (timeoutNanos % 1000000000));
+                final var curr = System.nanoTime();
+                timeoutNanos -= (curr - last);
+                if (timeoutNanos <= 0) {
+                    break;
+                }
+                last = curr;
+            }
+        }
+        throw new TimeoutException("Result of " + this + " did not become available in " + timeout);
     }
 
     /**

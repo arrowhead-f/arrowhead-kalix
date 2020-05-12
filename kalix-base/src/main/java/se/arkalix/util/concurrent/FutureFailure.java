@@ -318,4 +318,21 @@ class FutureFailure<V> implements FutureProgress<V> {
         Objects.requireNonNull(mapper, "Expected mapper");
         return Future.failure(fault);
     }
+
+    @Override
+    public V await() {
+        throwFault();
+        return null;
+    }
+
+    @Override
+    public V await(final Duration timeout) {
+        throwFault();
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <E extends Throwable> void throwFault() throws E {
+        throw (E) fault;
+    }
 }

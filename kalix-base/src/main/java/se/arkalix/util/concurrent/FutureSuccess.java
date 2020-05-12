@@ -7,6 +7,7 @@ import se.arkalix.util.function.ThrowingFunction;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 /**
@@ -275,5 +276,15 @@ class FutureSuccess<V> implements FutureProgress<V> {
                 }
             }
         };
+    }
+
+    @Override
+    public V await() {
+        return value;
+    }
+
+    @Override
+    public V await(final Duration timeout) {
+        return value;
     }
 }

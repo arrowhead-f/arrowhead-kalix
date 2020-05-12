@@ -21,6 +21,7 @@ import java.util.function.Function;
  *
  * @param <V> Type of value provided by {@code Result} if successful.
  */
+@SuppressWarnings("unused")
 public class Result<V> {
     private static final Result<?> DONE = new Result<>(true, null, null);
 
@@ -100,22 +101,20 @@ public class Result<V> {
     /**
      * Either returns {@code Result} value or throws its fault, depending
      * on whether it is successful or not.
-     * <p>
-     * In the case of being a failure, the fault is thrown as-is if it is a
-     * subclass of {@link RuntimeException}. If not, it is wrapped in a
-     * {@code RuntimeException} before being thrown.
      *
      * @return Result value, if the {@code Result} is successful.
-     * @throws RuntimeException If the {@code Result} is a failure.
      */
     public V valueOrThrow() {
         if (isSuccess()) {
             return value();
         }
-        if (throwable instanceof RuntimeException) {
-            throw (RuntimeException) throwable;
-        }
-        throw new RuntimeException(fault());
+        throwFault();
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <E extends Throwable> void throwFault() throws E {
+        throw (E) fault();
     }
 
     /**

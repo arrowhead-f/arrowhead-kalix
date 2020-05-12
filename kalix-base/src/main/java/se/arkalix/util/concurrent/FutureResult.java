@@ -390,4 +390,14 @@ class FutureResult<V> implements FutureProgress<V> {
             }
         };
     }
+
+    @Override
+    public V await() {
+        return result.valueOrThrow();
+    }
+
+    @Override
+    public V await(final Duration timeout) {
+        return result.valueOrThrow();
+    }
 }
