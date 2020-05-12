@@ -227,11 +227,11 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
     }
 
     @Override
-    public PluginAttached attachTo(
+    public Future<PluginAttached> attachTo(
         final ArSystem system,
         final Map<Class<? extends Plugin>, PluginFacade> dependencies)
     {
-        return new Attached(system, defaultSubscriptions);
+        return Future.success(new Attached(system, defaultSubscriptions));
     }
 
     private static class Attached implements PluginAttached {

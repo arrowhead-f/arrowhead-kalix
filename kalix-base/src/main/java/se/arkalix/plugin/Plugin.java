@@ -2,6 +2,7 @@ package se.arkalix.plugin;
 
 import se.arkalix.ArSystem;
 import se.arkalix.query.ServiceQuery;
+import se.arkalix.util.concurrent.Future;
 
 import java.util.Collections;
 import java.util.Map;
@@ -75,9 +76,10 @@ public interface Plugin {
      * @param dependencies Mappings between the {@link #dependencies()
      *                     dependencies} of this plugin who provided {@link
      *                     PluginAttached#facade() facades} when attached.
-     * @return Object to concretely handle the life-cycle events of the given
+     * @return {@link Future} that, if successful, completes with an object
+     * useful for concretely handling the life-cycle events of the given
      * {@code system}.
      */
-    PluginAttached attachTo(ArSystem system, Map<Class<? extends Plugin>, PluginFacade> dependencies)
+    Future<PluginAttached> attachTo(ArSystem system, Map<Class<? extends Plugin>, PluginFacade> dependencies)
         throws Exception;
 }

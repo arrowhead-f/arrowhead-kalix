@@ -43,12 +43,13 @@ public class ArSystem {
     private final NettyScheduler scheduler;
     private final SchedulerShutdownListener schedulerShutdownListener;
     private final PluginNotifier pluginNotifier;
-    private final Map<Class<? extends Plugin>, PluginFacade> pluginClassToFacade;
 
     private final ArServiceCache consumedServices;
     private final ProviderDescription description;
     private final Set<ArServer> servers = new HashSet<>();
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
+
+    private Map<Class<? extends Plugin>, PluginFacade> pluginClassToFacade = null;
 
     private ArSystem(final Builder builder) {
         localSocketAddress = Objects.requireNonNullElseGet(builder.socketAddress, () -> new InetSocketAddress(0));
@@ -106,7 +107,11 @@ public class ArSystem {
         pluginNotifier = new PluginNotifier(this, builder.plugins != null
             ? builder.plugins
             : Collections.emptyList());
-        pluginClassToFacade = pluginNotifier.onAttach();
+    }
+
+    Future<?> attachPlugins() {
+        return pluginNotifier.onAttach()
+            .ifSuccess(pluginClassToFacade -> this.pluginClassToFacade = pluginClassToFacade);
     }
 
     /**
@@ -633,10 +638,39 @@ public class ArSystem {
         }
 
         /**
+         * Finalizes construction of new {@link ArSystem} and then blocks the
+         * current thread until all of its {@link #plugins(Plugin...) plugins}
+         * have been attached.
+         *
          * @return New {@link ArSystem}.
          */
         public ArSystem build() {
-            return new ArSystem(this);
+            final var system = new ArSystem(this);
+            try {
+                system.attachPlugins().await();
+            }
+            catch (final InterruptedException exception) {
+                throw new RuntimeException("Failed to attach system \"" + system.name() + "\" plugins", exception);
+            }
+            return system;
+        }
+
+        /**
+         * Finalizes construction of new {@link ArSystem} and then attaches all
+         * of its {@link #plugins(Plugin...) plugins} asynchronously.
+         *
+         * @return Future completed with a new {@link ArSystem} if such could
+         * be constructed and its plugins attached.
+         */
+        public Future<ArSystem> buildAsync() {
+            try {
+                final var system = new ArSystem(this);
+                return system.attachPlugins()
+                    .pass(system);
+            }
+            catch (final Throwable throwable) {
+                return Future.failure(throwable);
+            }
         }
     }
 }

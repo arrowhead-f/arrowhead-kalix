@@ -25,8 +25,9 @@ import java.util.stream.Collectors;
 public class PluginNotifier {
     private static final Logger logger = LoggerFactory.getLogger(PluginNotifier.class);
 
-    private ArSystem system;
-    private Collection<Plugin> plugins;
+    private final ArSystem system;
+    private final Collection<Plugin> plugins;
+
     private List<PluginHandler> handlers;
 
     public PluginNotifier(final ArSystem system, final Collection<Plugin> plugins) {
@@ -34,13 +35,12 @@ public class PluginNotifier {
         this.plugins = Objects.requireNonNull(plugins, "Expected plugins");
     }
 
-    public Map<Class<? extends Plugin>, PluginFacade> onAttach() {
+    public Future<Map<Class<? extends Plugin>, PluginFacade>> onAttach() {
         final var handlers = new ArrayList<PluginHandler>();
+
         this.handlers = Collections.unmodifiableList(handlers);
 
-        final var pluginClassToFacade = new HashMap<Class<? extends Plugin>, PluginFacade>();
-
-        plugins.stream()
+        return Futures.serialize(plugins.stream()
             .sorted((a, b) -> {
                 final var bClass = b.getClass();
                 final var aClass = a.getClass();
@@ -64,58 +64,62 @@ public class PluginNotifier {
 
                 return a.ordinal() - b.ordinal();
             })
-            .forEach(plugin -> {
-                final var handler = attach(plugin, handlers);
-                handler.attached()
-                    .facade()
-                    .ifPresent(facade -> {
-                        final var existingClass = pluginClassToFacade.putIfAbsent(handler.plugin().getClass(), facade);
-                        if (existingClass != null) {
+            .map(plugin -> attach(plugin, handlers)))
+            .map(ignored -> {
+                final var pluginClassToFacade = new HashMap<Class<? extends Plugin>, PluginFacade>();
+                handlers.trimToSize();
+                for (final var handler : handlers) {
+                    handler.attached()
+                        .facade()
+                        .ifPresent(facade -> {
+                            final var existingClass = pluginClassToFacade
+                                .putIfAbsent(handler.plugin().getClass(), facade);
+                            if (existingClass == null) {
+                                return;
+                            }
                             throw new IllegalStateException("Plugins " +
                                 "providing facades when attached, such as \"" +
                                 existingClass + "\", may not be provided" +
                                 "to any one system more than once; " +
                                 "cannot attach plugins to system \"" +
                                 system.name() + "\"");
-                        }
-                    });
+                        });
+                }
+                return Collections.unmodifiableMap(pluginClassToFacade);
             });
-
-        handlers.trimToSize();
-
-        this.system = null;
-        this.plugins = null;
-
-        return Collections.unmodifiableMap(pluginClassToFacade);
     }
 
-    private PluginHandler attach(final Plugin plugin, final List<PluginHandler> handlers) {
-        final var dependencies = new HashMap<Class<? extends Plugin>, PluginFacade>();
-        plugin.dependencies()
+    private Future<PluginHandler> attach(final Plugin plugin, final List<PluginHandler> handlers) {
+        return Futures.serialize(plugin.dependencies()
             .stream()
             .map(dependencyClass -> handlers.stream()
                 .filter(handler -> dependencyClass.isAssignableFrom(handler.plugin().getClass()))
+                .map(Future::success)
                 .findAny()
-                .orElseGet(() -> load(dependencyClass, handlers)))
-            .forEach(handler -> handler.attached()
-                .facade()
-                .ifPresent(facade -> dependencies.put(handler.plugin().getClass(), facade)));
-
-        final PluginAttached attached;
-        try {
-            attached = plugin.attachTo(system, dependencies);
-        }
-        catch (final Throwable throwable) {
-            throw new IllegalStateException("Plugin " + plugin + " threw " +
-                "exception while being attached to system \"" + system.name() +
-                "\"", throwable);
-        }
-        final var handler = new PluginHandler(attached, plugin);
-        handlers.add(handler);
-        return handler;
+                .orElseGet(() -> load(dependencyClass, handlers))))
+            .flatMap(handlers0 -> {
+                final var dependencies = new HashMap<Class<? extends Plugin>, PluginFacade>();
+                for (final var handler : handlers0) {
+                    handler.attached()
+                        .facade()
+                        .ifPresent(facade -> dependencies.put(handler.plugin().getClass(), facade));
+                }
+                return plugin.attachTo(system, dependencies);
+            })
+            .map(attached -> {
+                final var handler = new PluginHandler(attached, plugin);
+                handlers.add(handler);
+                return handler;
+            })
+            .mapFault(Throwable.class, throwable -> new IllegalStateException("" +
+                "Plugin " + plugin + " threw exception while being attached " +
+                "to system \"" + system.name() + "\"", throwable));
     }
 
-    private PluginHandler load(final Class<? extends Plugin> dependencyClass, final List<PluginHandler> handlers) {
+    private Future<PluginHandler> load(
+        final Class<? extends Plugin> dependencyClass,
+        final List<PluginHandler> handlers)
+    {
         Exception suppressedException = null;
         Object pluginObject = null;
         try {

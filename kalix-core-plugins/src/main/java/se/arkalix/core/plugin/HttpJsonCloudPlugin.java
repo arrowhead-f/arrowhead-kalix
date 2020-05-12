@@ -97,12 +97,12 @@ public class HttpJsonCloudPlugin implements Plugin {
     }
 
     @Override
-    public PluginAttached attachTo(
+    public Future<PluginAttached> attachTo(
         final ArSystem system,
         final Map<Class<? extends Plugin>, PluginFacade> dependencies)
         throws SSLException
     {
-        return new Attached(system);
+        return Future.success(new Attached(system));
     }
 
     private class Attached implements PluginAttached {
