@@ -28,7 +28,7 @@ public class TrustedCounterOffer {
         offeredAt = Instant.now();
         validAfter = Objects.requireNonNullElse(builder.validAfter, offeredAt);
         validUntil = Objects.requireNonNullElseGet(builder.validUntil, () ->
-            validAfter.plus(ContractProxyConstants.DEFAULT_OFFER_VALIDITY_PERIOD));
+            validAfter.plus(ArContractProxyConstants.DEFAULT_OFFER_VALIDITY_PERIOD));
         contracts = builder.contracts == null || builder.contracts.size() == 0 ? Collections.emptyList() : Collections.unmodifiableList(builder.contracts);
 
     }

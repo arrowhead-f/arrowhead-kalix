@@ -51,15 +51,24 @@ public class HttpJsonContractObservationTrustedPlugin implements Plugin {
 
         public Future<?> subscribe() {
             return eventSubscriber
-                .subscribe(ContractProxyConstants.TOPIC, (metadata, data) -> {
+                .subscribe(ArContractProxyConstants.TOPIC_SESSION_UPDATE, (metadata, data) -> {
                     final long sessionId;
                     try {
-                        sessionId = Long.parseLong(data);
+                        final var colonIndex = data.indexOf(':');
+                        if (colonIndex == -1) {
+                            throw new IllegalStateException("Expected event " +
+                                "data to consist of two colon-separated " +
+                                "numbers (<sessionId>:<candidateSeq>); no " +
+                                "colon (:) found in data");
+                        }
+                        sessionId = Long.parseLong(data, 0, colonIndex, 10);
                     }
-                    catch (final NumberFormatException exception) {
+                    catch (final Throwable throwable) {
                         logger.warn("HTTP/JSON contract observer received " +
-                            "contract event with invalid session identifier; " +
-                            "cannot process event [sessionId={}, metadata={}]", data, metadata);
+                            "contract event with invalid session and " +
+                            "candidate identifiers; cannot process event " +
+                            "[data=" + data + ", metadata=" + metadata +
+                            "]", throwable);
                         return;
                     }
 

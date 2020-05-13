@@ -55,15 +55,26 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
 
         public Future<?> subscribe() {
             return eventSubscriber
-                .subscribe(ContractProxyConstants.TOPIC, (metadata, data) -> {
+                .subscribe(ArContractProxyConstants.TOPIC_SESSION_UPDATE, (metadata, data) -> {
                     final long sessionId;
+                    final long candidateSeq;
                     try {
-                        sessionId = Long.parseLong(data);
+                        final var colonIndex = data.indexOf(':');
+                        if (colonIndex == -1) {
+                            throw new IllegalStateException("Expected event " +
+                                "data to consist of two colon-separated " +
+                                "numbers (<sessionId>:<candidateSeq>); no " +
+                                "colon (:) found in data");
+                        }
+                        sessionId = Long.parseLong(data, 0, colonIndex, 10);
+                        candidateSeq = Long.parseLong(data, colonIndex + 1, data.length(), 10);
                     }
-                    catch (final NumberFormatException exception) {
+                    catch (final Throwable throwable) {
                         logger.warn("HTTP/JSON contract negotiator received " +
-                            "contract event with invalid session identifier; " +
-                            "cannot process event [sessionId={}, metadata={}]", data, metadata);
+                            "contract event with invalid session and " +
+                            "candidate identifiers; cannot process event " +
+                            "[data=" + data + ", metadata=" + metadata +
+                            "]", throwable);
                         return;
                     }
 
@@ -71,7 +82,7 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
                     if (offerorName == null) {
                         logger.warn("HTTP/JSON contract negotiator received " +
                             "contract event without a named offeror; " +
-                            "cannot process event [sessionId={}, metadata={}]", data, metadata);
+                            "cannot process event [data={}, metadata={}]", data, metadata);
                         return;
                     }
 
@@ -79,7 +90,7 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
                     if (receiverName == null) {
                         logger.warn("HTTP/JSON contract negotiator received " +
                             "contract event without a named receiver; " +
-                            "cannot process event [sessionId={}, metadata={}]", data, metadata);
+                            "cannot process event [data={}, metadata={}]", data, metadata);
                         return;
                     }
 
@@ -88,7 +99,7 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
                     if (handler == null) {
                         logger.trace("HTTP/JSON contract negotiator received " +
                             "contract event identifying session not relevant " +
-                            "to this system; ignoring event [sessionId={}, " +
+                            "to this system; ignoring event [data={}, " +
                             "metadata={}]", data, metadata);
                         return;
                     }
@@ -100,16 +111,12 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
                             final var candidate = session.candidate();
                             switch (session.status()) {
                             case OFFERING:
-
                                 final var expirationDelay = Duration.between(
                                     candidate.validUntil(),
                                     candidate.validAfter());
                                 handler.setExpirationTask(expirationDelay, () -> {
-                                    if (handlerMap.remove(handlerKey) != null && logger.isWarnEnabled()) {
-                                        logger.warn("HTTP/JSON contract " +
-                                            "negotiator session expired due " +
-                                            "received offer never being " +
-                                            "handled [offer={}]", candidate);
+                                    if (handlerMap.remove(handlerKey) != null) {
+                                        handler.onExpiry(candidate);
                                     }
                                 });
 
@@ -121,6 +128,7 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
                                             .using(HttpJsonContractNegotiationTrusted.factory())
                                             .flatMap(service -> service.accept(new TrustedAcceptanceBuilder()
                                                 .sessionId(sessionId)
+                                                .candidateSeq(candidateSeq)
                                                 .acceptedAt(Instant.now())
                                                 .build()));
                                     }
@@ -131,16 +139,15 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
                                             offer.validUntil(),
                                             offer.validAfter());
                                         handler.setExpirationTask(expirationDelay, () -> {
-                                            if (handlerMap.remove(handlerKey) != null && logger.isWarnEnabled()) {
-                                                logger.warn("HTTP/JSON contract negotiator " +
-                                                    "session expired; counter-party never " +
-                                                    "responded to {}", offer);
+                                            if (handlerMap.remove(handlerKey) != null) {
+                                                handler.onExpiry(candidate);
                                             }
                                         });
                                         return system.consume()
                                             .using(HttpJsonContractNegotiationTrusted.factory())
                                             .flatMap(service -> service.offer(new TrustedOfferBuilder()
                                                 .sessionId(sessionId)
+                                                .candidateSeq(candidateSeq)
                                                 .offerorName(offerorName)
                                                 .receiverName(receiverName)
                                                 .validAfter(offer.validAfter())
@@ -157,6 +164,7 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
                                             .using(HttpJsonContractNegotiationTrusted.factory())
                                             .flatMap(service -> service.reject(new TrustedRejectionBuilder()
                                                 .sessionId(sessionId)
+                                                .candidateSeq(candidateSeq)
                                                 .rejectedAt(Instant.now())
                                                 .build()));
                                     }
@@ -206,10 +214,16 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
 
                         final var expirationDelay = Duration.between(offer.validUntil(), offer.validAfter());
                         handler0.setExpirationTask(expirationDelay, () -> {
-                            if (handlerMap.remove(key) != null && logger.isWarnEnabled()) {
-                                logger.warn("HTTP/JSON contract negotiator " +
-                                    "session expired; counter-party never " +
-                                    "responded to {}", offer);
+                            if (handlerMap.remove(key) != null) {
+                                handler.onExpiry(new TrustedSessionCandidateBuilder()
+                                    .seq(offer.candidateSeq())
+                                    .offerorName(offer.offerorName())
+                                    .receiverName(offer.receiverName())
+                                    .validAfter(offer.validAfter())
+                                    .validUntil(offer.validUntil())
+                                    .contracts(offer.contractsAsDtos())
+                                    .createdAt(offer.offeredAt())
+                                    .build());
                             }
                         });
                     })
@@ -247,6 +261,11 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
         @Override
         public synchronized void onReject(final TrustedSessionCandidate candidate) {
             handler.onReject(candidate);
+        }
+
+        @Override
+        public void onExpiry(final TrustedSessionCandidate candidate) {
+            handler.onExpiry(candidate);
         }
     }
 }

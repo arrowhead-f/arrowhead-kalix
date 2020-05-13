@@ -15,6 +15,8 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 @DtoEqualsHashCode
 @DtoToString
 public interface TrustedSessionCandidate {
+    long seq();
+
     String offerorName();
 
     String receiverName();

@@ -6,6 +6,7 @@ import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
 
 import java.time.Instant;
+import java.util.Optional;
 
 import static se.arkalix.dto.DtoEncoding.JSON;
 
@@ -15,6 +16,8 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 @DtoToString
 public interface TrustedRejection {
     long sessionId();
+
+    Optional<Long> candidateSeq();
 
     Instant rejectedAt();
 }

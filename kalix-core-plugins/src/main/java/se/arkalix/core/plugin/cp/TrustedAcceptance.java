@@ -22,9 +22,20 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 @DtoToString
 public interface TrustedAcceptance {
     /**
-     * The session identifier associated with the accepted offer.
+     * Identifies the {@link TrustedSession session} containing the accepted
+     * candidate offer.
      */
     long sessionId();
+
+    /**
+     * Identifies the {@link TrustedSession#candidate() session candidate}
+     * being accepted.
+     * <p>
+     * If the accepted session would change before this message arrives, then
+     * this identifier will no longer match the session candidate identifier
+     * and this acceptance fails.
+     */
+    long candidateSeq();
 
     /**
      * The instant at which the offer was accepted.

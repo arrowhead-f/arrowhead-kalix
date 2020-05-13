@@ -17,6 +17,8 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 public interface TrustedOffer {
     long sessionId();
 
+    long candidateSeq();
+
     String offerorName();
 
     String receiverName();
