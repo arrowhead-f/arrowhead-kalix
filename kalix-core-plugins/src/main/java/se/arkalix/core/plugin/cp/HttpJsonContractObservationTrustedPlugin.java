@@ -28,11 +28,11 @@ import java.util.*;
  *
  *     // Collect the plugin's facade.
  *     final var observer = system.pluginFacadeOf(HttpJsonContractObservationTrustedPlugin.class)
- *         .map(facade -> (ArContractObservationTrustedPluginFacade) facade)
- *         .orElseThrow(() -> new IllegalStateException("Contract negotiation observation facade not available"));
+ *         .map(facade -&gt; (ArContractObservationTrustedPluginFacade) facade)
+ *         .orElseThrow(() -&gt; new IllegalStateException("Contract negotiation observation facade not available"));
  *
  *     // React to observed events.
- *     observer.observe(session -> System.out.println(session));
+ *     observer.observe(session -&gt; System.out.println(session));
  * </pre>
  * Use of this plugin requires that another plugin is available that performs
  * service resolution, such as the {@link

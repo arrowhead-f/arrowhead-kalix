@@ -67,8 +67,8 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
      *         .plugins(new HttpJsonEventSubscriberPlugin())
      *         .build();
      *     system.pluginFacadeOf(HttpJsonEventSubscriberPlugin.class)
-     *         .map(facade -> (ArEventSubscriberPluginFacade))
-     *         .ifPresent(facade -> {...});
+     *         .map(facade -&gt; (ArEventSubscriberPluginFacade) facade)
+     *         .ifPresent(facade -&gt; {...});
      * </pre>
      *
      * @param topic   Topic, or "eventType", that must be matched by
@@ -98,8 +98,8 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
      *         .plugins(new HttpJsonEventSubscriberPlugin())
      *         .build();
      *     system.pluginFacadeOf(HttpJsonEventSubscriberPlugin.class)
-     *         .map(facade -> (ArEventSubscriberPluginFacade))
-     *         .ifPresent(facade -> {...});
+     *         .map(facade -&gt; (ArEventSubscriberPluginFacade) facade)
+     *         .ifPresent(facade -&gt; {...});
      * </pre>
      *
      * @param topic    Topic, or "eventType", that must be matched by
@@ -135,8 +135,8 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
      *         .plugins(new HttpJsonEventSubscriberPlugin())
      *         .build();
      *     system.pluginFacadeOf(HttpJsonEventSubscriberPlugin.class)
-     *         .map(facade -> (ArEventSubscriberPluginFacade))
-     *         .ifPresent(facade -> {...});
+     *         .map(facade -&gt; (ArEventSubscriberPluginFacade) facade)
+     *         .ifPresent(facade -&gt; {...});
      * </pre>
      *
      * @param topic     Topic, or "eventType", that must be matched by
@@ -171,8 +171,8 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
      *         .plugins(new HttpJsonEventSubscriberPlugin())
      *         .build();
      *     system.pluginFacadeOf(HttpJsonEventSubscriberPlugin.class)
-     *         .map(facade -> (ArEventSubscriberPluginFacade))
-     *         .ifPresent(facade -> {...});
+     *         .map(facade -&gt; (ArEventSubscriberPluginFacade) facade)
+     *         .ifPresent(facade -&gt; {...});
      * </pre>
      *
      * @param topic     Topic, or "eventType", that must be matched by
@@ -214,8 +214,8 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
      *         .plugins(new HttpJsonEventSubscriberPlugin())
      *         .build();
      *     system.pluginFacadeOf(HttpJsonEventSubscriberPlugin.class)
-     *         .map(facade -> (ArEventSubscriberPluginFacade))
-     *         .ifPresent(facade -> {...});
+     *         .map(facade -&gt; (ArEventSubscriberPluginFacade) facade)
+     *         .ifPresent(facade -&gt; {...});
      * </pre>
      *
      * @param subscription Subscription to register.

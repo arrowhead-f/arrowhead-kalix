@@ -33,8 +33,8 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  *     // Collect the plugin's facade.
  *     final var negotiator = system.pluginFacadeOf(HttpJsonContractNegotiationTrustedPlugin.class)
- *         .map(facade -> (ArContractNegotiationTrustedPluginFacade) facade)
- *         .orElseThrow(() -> new IllegalStateException("Negotiator facade not available"));
+ *         .map(facade -&gt; (ArContractNegotiationTrustedPluginFacade) facade)
+ *         .orElseThrow(() -&gt; new IllegalStateException("Negotiator facade not available"));
  *
  *     // Send a negotiation offer to some relevant party and register response handlers.
  *     negotiator.offer(someOffer, new ArTrustedNegotiationHandler() {
@@ -48,7 +48,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *             System.out.println("Received counter-offer " + candidate);
  *             System.out.println("Rejecting counter-offer ...");
  *             responder.reject()
- *                 .ifSuccess(ignored -> System.out.println("Rejected counter-offer"))
+ *                 .ifSuccess(ignored -&gt; System.out.println("Rejected counter-offer"))
  *                 .onFailure(Throwable::printStackTrace);
  *         }
  *
