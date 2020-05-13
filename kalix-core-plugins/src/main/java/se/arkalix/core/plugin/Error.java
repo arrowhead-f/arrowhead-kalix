@@ -3,6 +3,7 @@ package se.arkalix.core.plugin;
 import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoToString;
+import se.arkalix.dto.DtoWritableAs;
 import se.arkalix.dto.json.JsonName;
 import se.arkalix.net.http.client.HttpClientResponseException;
 
@@ -13,6 +14,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
  * cannot be fulfilled.
  */
 @DtoReadableAs(JSON)
+@DtoWritableAs(JSON)
 @DtoEqualsHashCode
 @DtoToString
 public interface Error {
