@@ -154,9 +154,9 @@ public class HttpClientRequest implements HttpBodySender<HttpClientRequest> {
      *
      * @param name  Name of query parameter. Case sensitive.
      * @param value Desired parameter value.
-     * @return Query parameter value, if a corresponding parameter name exists.
+     * @return This request.
      */
-    public HttpClientRequest queryParameter(final String name, final CharSequence value) {
+    public HttpClientRequest queryParameter(final String name, final Object value) {
         final var list = new ArrayList<String>(1);
         list.add(value.toString());
         queryParameters.put(name, list);

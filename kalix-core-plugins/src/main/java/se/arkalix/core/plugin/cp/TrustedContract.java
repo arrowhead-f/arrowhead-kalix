@@ -14,8 +14,8 @@ import static se.arkalix.dto.DtoEncoding.JSON;
  * <p>
  * A contract template is a legal text where certain portions of the text must
  * be substituted for concrete values for it to become an actual contract. This
- * type names such a template and specifies the the values to be inserted into
- * the text.
+ * type names such a template and specifies values to be inserted into the
+ * text at designated locations.
  * <p>
  * Instances of this type are trusted in the sense that they either (1) come
  * from trusted sources or (2) will be sent to systems that trust their senders.
@@ -31,7 +31,7 @@ public interface TrustedContract {
     String templateName();
 
     /**
-     * Concrete template parameter values.
+     * Concrete template parameter name/value pairs.
      */
     Map<String, String> arguments();
 }

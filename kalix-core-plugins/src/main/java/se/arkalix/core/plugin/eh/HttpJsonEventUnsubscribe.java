@@ -6,6 +6,7 @@ import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
+import se.arkalix.internal.core.plugin.HttpJsonServices;
 import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
@@ -15,7 +16,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 
-import static se.arkalix.internal.core.plugin.HttpJsonServices.unwrap;
 import static se.arkalix.descriptor.EncodingDescriptor.JSON;
 import static se.arkalix.descriptor.TransportDescriptor.HTTP;
 import static se.arkalix.net.http.HttpMethod.DELETE;
@@ -49,8 +49,8 @@ public class HttpJsonEventUnsubscribe implements ArConsumer, ArEventUnsubscribe 
             .queryParameter("event_type", topic)
             .queryParameter("system_name", subscriberName)
             .queryParameter("address", hostname)
-            .queryParameter("port", Integer.toString(port)))
-            .flatMap(response -> unwrap(response, null));
+            .queryParameter("port", port))
+            .flatMap(HttpJsonServices::unwrap);
     }
 
     @Override

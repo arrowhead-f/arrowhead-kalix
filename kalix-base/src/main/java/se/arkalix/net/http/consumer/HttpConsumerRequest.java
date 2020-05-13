@@ -191,9 +191,9 @@ public class HttpConsumerRequest implements HttpBodySender<HttpConsumerRequest> 
      *
      * @param name  Name of query parameter. Case sensitive.
      * @param value Desired parameter value.
-     * @return Query parameter value, if a corresponding parameter name exists.
+     * @return This request.
      */
-    public HttpConsumerRequest queryParameter(final String name, final CharSequence value) {
+    public HttpConsumerRequest queryParameter(final String name, final Object value) {
         request.queryParameter(name, value);
         return this;
     }

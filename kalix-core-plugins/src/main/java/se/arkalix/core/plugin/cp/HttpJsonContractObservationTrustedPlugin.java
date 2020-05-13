@@ -13,6 +13,31 @@ import se.arkalix.util.concurrent.Future;
 
 import java.util.*;
 
+/**
+ * A HTTP/JSON {@link Plugin plugin} that observes contract negotiation updates.
+ * <p>
+ * The plugin can be used as in following example:
+ * <pre>
+ *     // Provide plugin to created system.
+ *     final var system = new ArSystem.Builder()
+ *         .identity(identity)
+ *         .trustStore(trustStore)
+ *         .plugins(HttpJsonCloudPlugin.viaServiceRegistryAt(srSocketAddress),
+ *             new HttpJsonContractObservationTrustedPlugin())
+ *         .build();
+ *
+ *     // Collect the plugin's facade.
+ *     final var observer = system.pluginFacadeOf(HttpJsonContractObservationTrustedPlugin.class)
+ *         .map(facade -> (ArContractObservationTrustedPluginFacade) facade)
+ *         .orElseThrow(() -> new IllegalStateException("Contract negotiation observation facade not available"));
+ *
+ *     // React to observed events.
+ *     observer.observe(session -> System.out.println(session));
+ * </pre>
+ * Use of this plugin requires that another plugin is available that performs
+ * service resolution, such as the {@link
+ * se.arkalix.core.plugin.HttpJsonCloudPlugin HttpJsonCloudPlugin}.
+ */
 @SuppressWarnings("unused")
 public class HttpJsonContractObservationTrustedPlugin implements Plugin {
     private static final Logger logger = LoggerFactory.getLogger(HttpJsonContractObservationTrustedPlugin.class);
@@ -33,6 +58,17 @@ public class HttpJsonContractObservationTrustedPlugin implements Plugin {
         }
         final var attached = new Attached(system, (ArEventSubscriberPluginFacade) eventSubscriber);
         return attached.subscribe()
+            .ifSuccess(ignored -> {
+                if (logger.isInfoEnabled()) {
+                    logger.info("HTTP/JSON contract observer plugin attached to \"{}\"", system.name());
+                }
+            })
+            .ifFailure(Throwable.class, throwable -> {
+                if (logger.isErrorEnabled()) {
+                    logger.error("HTTP/JSON contract observer plugin " +
+                        "failed to attached to \"" + system.name() + "\"", throwable);
+                }
+            })
             .pass(attached);
     }
 
@@ -51,7 +87,7 @@ public class HttpJsonContractObservationTrustedPlugin implements Plugin {
 
         public Future<?> subscribe() {
             return eventSubscriber
-                .subscribe(ArContractProxyConstants.TOPIC_SESSION_UPDATE, (metadata, data) -> {
+                .subscribe(ArContractNegotiationConstants.TOPIC_SESSION_UPDATE, (metadata, data) -> {
                     final long sessionId;
                     try {
                         final var colonIndex = data.indexOf(':');
@@ -90,13 +126,17 @@ public class HttpJsonContractObservationTrustedPlugin implements Plugin {
 
                     system.consume()
                         .using(HttpJsonContractNegotiationTrustedSession.factory())
-                        .flatMap(service -> service.getByNamesAndId(offerorName, receiverName, sessionId))
+                        .flatMap(service -> service.getByNamesAndId(offerorName, receiverName, sessionId)
+                            .map(optionalSession -> optionalSession.orElseThrow(() -> new IllegalStateException("" +
+                                "Advertised session [data=" + data +
+                                ", metadata=" + metadata + "] not available " +
+                                "via service \"" + service.service().name() +
+                                "\"; cannot present session update to " +
+                                "negotiation observers"))))
                         .ifSuccess(session -> {
-                            final var status = session.status();
-                            final var candidate = session.candidate();
                             for (final var observer : observers) {
                                 try {
-                                    observer.onUpdate(status, candidate);
+                                    observer.onUpdate(session);
                                 }
                                 catch (final Throwable throwable) {
                                     logger.error("HTTP/JSON contract " +
@@ -105,7 +145,10 @@ public class HttpJsonContractObservationTrustedPlugin implements Plugin {
                                         "subscriber " + observer, throwable);
                                 }
                             }
-                        });
+                        })
+                        .onFailure(throwable -> logger.error("" +
+                            "HTTP/JSON contract observer caught unexpected " +
+                            "exception while trying to query session update", throwable));
                 })
                 .ifSuccess(handle -> {
                     synchronized (this) {
@@ -124,6 +167,18 @@ public class HttpJsonContractObservationTrustedPlugin implements Plugin {
             synchronized (this) {
                 eventSubscriptionHandle.unsubscribe();
                 eventSubscriptionHandle = null;
+            }
+            if (logger.isInfoEnabled()) {
+                logger.info("HTTP/JSON contract observer plugin detached " +
+                    "from \"{}\"", system.name());
+            }
+        }
+
+        @Override
+        public void onDetach(final Throwable cause) {
+            if (logger.isErrorEnabled()) {
+                logger.error("HTTP/JSON contract observer plugin forcibly " +
+                    "detached from \"" + system.name() + "\"", cause);
             }
         }
 

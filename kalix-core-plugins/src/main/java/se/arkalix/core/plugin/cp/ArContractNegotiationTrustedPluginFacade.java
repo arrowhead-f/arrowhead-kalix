@@ -51,7 +51,7 @@ public interface ArContractNegotiationTrustedPluginFacade extends PluginFacade {
         offer(
             offerorName,
             receiverName,
-            ArContractProxyConstants.DEFAULT_OFFER_VALIDITY_PERIOD,
+            ArContractNegotiationConstants.DEFAULT_OFFER_VALIDITY_PERIOD,
             contracts,
             handler);
     }
@@ -81,6 +81,7 @@ public interface ArContractNegotiationTrustedPluginFacade extends PluginFacade {
         final var now = Instant.now();
         offer(new TrustedOfferBuilder()
             .sessionId(RANDOM.nextLong())
+            .offerSeq(0)
             .offerorName(offerorName)
             .receiverName(receiverName)
             .validAfter(now)

@@ -6,6 +6,7 @@ import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
+import se.arkalix.internal.core.plugin.HttpJsonServices;
 import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
@@ -15,7 +16,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 
-import static se.arkalix.internal.core.plugin.HttpJsonServices.unwrap;
 import static se.arkalix.descriptor.EncodingDescriptor.JSON;
 import static se.arkalix.descriptor.TransportDescriptor.HTTP;
 import static se.arkalix.net.http.HttpMethod.POST;
@@ -47,7 +47,7 @@ public class HttpJsonEventSubscribe implements ArConsumer, ArEventSubscribe {
             .method(POST)
             .uri(service().uri())
             .body(subscription))
-            .flatMap(response -> unwrap(response, null));
+            .flatMap(HttpJsonServices::unwrap);
     }
 
     @Override

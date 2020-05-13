@@ -10,8 +10,7 @@ import java.time.Instant;
 import static se.arkalix.dto.DtoEncoding.JSON;
 
 /**
- * An acceptance of an offer to enter into one or more legally binding
- * contacts.
+ * An acceptance of an offer to enter into one or more legally binding contacts.
  * <p>
  * Instances of this type are trusted in the sense that they either (1) come
  * from trusted sources or (2) will be sent to systems that trust their senders.
@@ -23,19 +22,19 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 public interface TrustedAcceptance {
     /**
      * Identifies the {@link TrustedSession session} containing the accepted
-     * candidate offer.
+     * offer.
      */
     long sessionId();
 
     /**
-     * Identifies the {@link TrustedSession#candidate() session candidate}
-     * being accepted.
+     * Identifies the {@link TrustedSession#offer() session offer} being
+     * accepted.
      * <p>
      * If the accepted session would change before this message arrives, then
-     * this identifier will no longer match the session candidate identifier
+     * this number will no longer match the session candidate sequence number
      * and this acceptance fails.
      */
-    long candidateSeq();
+    long offerSeq();
 
     /**
      * The instant at which the offer was accepted.

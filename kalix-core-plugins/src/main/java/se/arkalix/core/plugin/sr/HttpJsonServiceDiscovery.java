@@ -2,6 +2,7 @@ package se.arkalix.core.plugin.sr;
 
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
+import se.arkalix.internal.core.plugin.HttpJsonServices;
 import se.arkalix.internal.core.plugin.Paths;
 import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.consumer.HttpConsumer;
@@ -60,7 +61,7 @@ public class HttpJsonServiceDiscovery implements ArServiceDiscovery {
                 .method(POST)
                 .uri(uriRegister)
                 .body(registration))
-            .flatMap(response -> unwrap(response, null));
+            .flatMap(HttpJsonServices::unwrap);
     }
 
     @Override
@@ -78,6 +79,6 @@ public class HttpJsonServiceDiscovery implements ArServiceDiscovery {
                 .queryParameter("system_name", systemName)
                 .queryParameter("address", hostname)
                 .queryParameter("port", Integer.toString(port)))
-            .flatMap(response -> unwrap(response, null));
+            .flatMap(HttpJsonServices::unwrap);
     }
 }

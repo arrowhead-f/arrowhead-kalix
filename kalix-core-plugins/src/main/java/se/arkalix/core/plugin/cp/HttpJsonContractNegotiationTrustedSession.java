@@ -19,9 +19,13 @@ import java.util.Optional;
 
 import static se.arkalix.descriptor.EncodingDescriptor.JSON;
 import static se.arkalix.descriptor.TransportDescriptor.HTTP;
-import static se.arkalix.internal.core.plugin.HttpJsonServices.unwrap;
+import static se.arkalix.internal.core.plugin.HttpJsonServices.unwrapOptional;
 import static se.arkalix.net.http.HttpMethod.GET;
 
+/**
+ * A remote {@link HttpJsonContractNegotiationTrustedSession} service that is
+ * communicated with via HTTP/JSON in either secure or insecure mode.
+ */
 public class HttpJsonContractNegotiationTrustedSession implements ArConsumer, ArContractNegotiationTrustedSession {
     private static final Factory factory = new Factory();
 
@@ -46,15 +50,18 @@ public class HttpJsonContractNegotiationTrustedSession implements ArConsumer, Ar
     }
 
     @Override
-    public Future<TrustedSessionDto> getByNamesAndId(
-        final String offerorName,
-        final String receiverName,
+    public Future<Optional<TrustedSessionDto>> getByNamesAndId(
+        final String name1,
+        final String name2,
         final long id)
     {
         return consumer.send(new HttpConsumerRequest()
             .method(GET)
-            .uri(uriGet + "?offeror=" + offerorName + "&receiver=" + receiverName + "&id=" + id))
-            .flatMap(response -> unwrap(response, null));
+            .uri(uriGet)
+            .queryParameter("name1", name1)
+            .queryParameter("name2", name2)
+            .queryParameter("id", "" + id))
+            .flatMap(response -> unwrapOptional(response, TrustedSessionDto.class));
     }
 
     private static class Factory implements ArConsumerFactory<HttpJsonContractNegotiationTrustedSession> {

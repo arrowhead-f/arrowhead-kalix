@@ -6,6 +6,7 @@ import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
+import se.arkalix.internal.core.plugin.HttpJsonServices;
 import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
@@ -47,7 +48,7 @@ public class HttpJsonEventPublish implements ArConsumer, ArEventPublish {
             .method(POST)
             .uri(service().uri())
             .body(event))
-            .flatMap(response -> unwrap(response, null));
+            .flatMap(HttpJsonServices::unwrap);
     }
 
     @Override
