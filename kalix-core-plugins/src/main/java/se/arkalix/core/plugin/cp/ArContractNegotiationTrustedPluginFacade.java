@@ -2,7 +2,6 @@ package se.arkalix.core.plugin.cp;
 
 import se.arkalix.plugin.PluginFacade;
 
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -14,62 +13,31 @@ import java.util.List;
 @SuppressWarnings("unused")
 public interface ArContractNegotiationTrustedPluginFacade extends PluginFacade {
     /**
-     * Random generator used for producing negotiation session identifiers.
-     */
-    SecureRandom RANDOM = new SecureRandom();
-
-    /**
-     * Sends negotiation {@code offer} and registers negotiation {@code
-     * handler}.
+     * Starts new contract negotiation by making given {@code offer} and then
+     * uses provided negotiation {@code handler} to handle any response from
+     * the party receiving the offer.
      *
      * @param offer   Contract offer to make.
      * @param handler Handler used to track and react to any acceptance,
      *                rejection or counter-offers made by the party receiving
      *                the offer.
      */
-    void offer(TrustedOfferDto offer, ArTrustedNegotiationHandler handler);
+    void offer(TrustedContractOfferDto offer, ArTrustedNegotiationHandler handler);
 
     /**
-     * Sends negotiation offer and registers negotiation {@code handler}.
+     * Starts new contract negotiation by making the described offer and then
+     * uses provided negotiation {@code handler} to handle any response from
+     * the party receiving the offer.
      *
-     * @param offerorName  Name of offer sender. This is not the name of the
-     *                     system making the offer, but the name of a
-     *                     certificate owned by the system receiving the offer
-     *                     message.
-     * @param receiverName Name of offer receiver.
-     * @param contracts    Offered contracts.
-     * @param handler      Handler used to track and react to any acceptance,
-     *                     rejection or counter-offers made by the party
-     *                     receiving the offer.
-     */
-    default void offer(
-        final String offerorName,
-        final String receiverName,
-        final List<TrustedContractDto> contracts,
-        final ArTrustedNegotiationHandler handler)
-    {
-        offer(
-            offerorName,
-            receiverName,
-            ArContractNegotiationConstants.DEFAULT_OFFER_VALIDITY_PERIOD,
-            contracts,
-            handler);
-    }
-
-    /**
-     * Sends negotiation offer and registers negotiation {@code handler}.
-     *
-     * @param offerorName  Name of offer sender. This is not the name of the
-     *                     system making the offer, but the name of a
-     *                     certificate owned by the system receiving the offer
-     *                     message.
+     * @param offerorName  Name of offer sender.
      * @param receiverName Name of offer receiver.
      * @param validFor     The duration from the current time for which the
-     *                     offer remains valid.
+     *                     offer is to remain valid.
      * @param contracts    Offered contracts.
      * @param handler      Handler used to track and react to any acceptance,
      *                     rejection or counter-offers made by the party
      *                     receiving the offer.
+     * @see se.arkalix.core.plugin.cp Package documentation for details about names
      */
     default void offer(
         final String offerorName,
@@ -79,9 +47,7 @@ public interface ArContractNegotiationTrustedPluginFacade extends PluginFacade {
         final ArTrustedNegotiationHandler handler)
     {
         final var now = Instant.now();
-        offer(new TrustedOfferBuilder()
-            .sessionId(RANDOM.nextLong())
-            .offerSeq(0)
+        offer(new TrustedContractOfferBuilder()
             .offerorName(offerorName)
             .receiverName(receiverName)
             .validAfter(now)

@@ -1,5 +1,6 @@
 package se.arkalix.core.plugin.cp;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -7,13 +8,10 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * A limited version of {@link TrustedOffer} useful when information about
- * the negotiating parties can be inferred.
- * <p>
- * Instances of this type are trusted in the sense that they either (1) come
- * from trusted sources or (2) will be sent to systems that trust their senders.
+ * A contract counter-offer useful when important details about the negotiation
+ * in question can be inferred.
  */
-public class TrustedCounterOffer {
+public class SimplifiedContractCounterOffer {
     private final Instant validAfter;
     private final Instant validUntil;
     private final List<TrustedContractDto> contracts;
@@ -25,7 +23,7 @@ public class TrustedCounterOffer {
      * @param contracts Offered contracts.
      * @return New counter-offer.
      */
-    public static TrustedCounterOffer from(final TrustedContractDto... contracts) {
+    public static SimplifiedContractCounterOffer from(final TrustedContractDto... contracts) {
         return new Builder()
             .contracts(contracts)
             .build();
@@ -37,19 +35,21 @@ public class TrustedCounterOffer {
      * @param contracts Offered contracts.
      * @return New counter-offer.
      */
-    public static TrustedCounterOffer from(final List<TrustedContractDto> contracts) {
+    public static SimplifiedContractCounterOffer from(final List<TrustedContractDto> contracts) {
         return new Builder()
             .contracts(contracts)
             .build();
     }
 
-    private TrustedCounterOffer(final Builder builder) {
+    private SimplifiedContractCounterOffer(final Builder builder) {
         offeredAt = Instant.now();
         validAfter = Objects.requireNonNullElse(builder.validAfter, offeredAt);
-        validUntil = Objects.requireNonNullElseGet(builder.validUntil, () ->
-            validAfter.plus(ArContractNegotiationConstants.DEFAULT_OFFER_VALIDITY_PERIOD));
-        contracts = builder.contracts == null || builder.contracts.size() == 0 ? Collections.emptyList() : Collections.unmodifiableList(builder.contracts);
-
+        validUntil = Objects.requireNonNull(builder.validUntil, "Expected validUntil");
+        Objects.requireNonNull(builder.contracts, "Expected contracts");
+        if (builder.contracts.isEmpty()) {
+            throw new IllegalArgumentException("Expected contracts.size() > 0");
+        }
+        contracts = Collections.unmodifiableList(builder.contracts);
     }
 
     /**
@@ -67,6 +67,13 @@ public class TrustedCounterOffer {
     }
 
     /**
+     * Duration until this counter-offer can no longer be accepted or rejected.
+     */
+    public Duration expiresIn() {
+        return Duration.between(Instant.now(), validUntil);
+    }
+
+    /**
      * Offered contracts.
      */
     public List<TrustedContractDto> contracts() {
@@ -81,7 +88,7 @@ public class TrustedCounterOffer {
     }
 
     /**
-     * Builder useful for creating {@link TrustedCounterOffer} instances.
+     * Builder useful for creating {@link SimplifiedContractCounterOffer} instances.
      */
     @SuppressWarnings("unused")
     public static class Builder {
@@ -104,7 +111,27 @@ public class TrustedCounterOffer {
 
         /**
          * Sets instant after which the created counter-offer can no longer be
-         * accepted or rejected.
+         * accepted or rejected by adding given {@code duration} to whatever
+         * time was provided to {@link #validAfter()}. <b>Must be specified.</b>
+         * <p>
+         * If no time has been provided to {@link #validAfter()} when this
+         * method is called, it is automatically set to the current time.
+         *
+         * @param duration The amount of time for which the receiver of this
+         *                 counter-offer can accept, counter or reject it.
+         * @return This builder.
+         */
+        public Builder validFor(final Duration duration) {
+            if (validAfter == null) {
+                validAfter = Instant.now();
+            }
+            this.validUntil = duration != null ? validAfter.plus(duration) : null;
+            return this;
+        }
+
+        /**
+         * Sets instant after which the created counter-offer can no longer be
+         * accepted or rejected. <b>Must be specified.</b>
          *
          * @param validUntil Instant after which the created counter-offer can
          *                   no longer be accepted or rejected.
@@ -116,7 +143,7 @@ public class TrustedCounterOffer {
         }
 
         /**
-         * Sets offered contracts.
+         * Sets offered contracts. <b>At least one must be specified.</b>
          *
          * @param contracts Offered contracts.
          * @return This builder.
@@ -127,7 +154,7 @@ public class TrustedCounterOffer {
         }
 
         /**
-         * Sets offered contracts.
+         * Sets offered contracts. <b>At least one must be specified.</b>
          *
          * @param contracts Offered contracts.
          * @return This builder.
@@ -138,12 +165,12 @@ public class TrustedCounterOffer {
         }
 
         /**
-         * Finalizes construction of {@link TrustedCounterOffer}.
+         * Finalizes construction of {@link SimplifiedContractCounterOffer}.
          *
-         * @return New {@link TrustedCounterOffer}.
+         * @return New {@link SimplifiedContractCounterOffer}.
          */
-        public TrustedCounterOffer build() {
-            return new TrustedCounterOffer(this);
+        public SimplifiedContractCounterOffer build() {
+            return new SimplifiedContractCounterOffer(this);
         }
     }
 }

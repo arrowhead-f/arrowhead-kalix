@@ -11,5 +11,5 @@ public interface ArTrustedNegotiationObserver {
      *
      * @param session Updated negotiation session.
      */
-    void onUpdate(final TrustedSessionDto session);
+    void onUpdate(final TrustedContractSessionDto session);
 }

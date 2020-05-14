@@ -31,6 +31,7 @@ public class HttpJsonContractNegotiationTrusted implements ArConsumer, ArContrac
 
     private final HttpConsumer consumer;
     private final String uriAccept;
+    private final String uriCounterOffer;
     private final String uriOffer;
     private final String uriReject;
 
@@ -38,6 +39,7 @@ public class HttpJsonContractNegotiationTrusted implements ArConsumer, ArContrac
         this.consumer = Objects.requireNonNull(consumer, "Expected consumer");
         final var basePath = consumer.service().uri();
         uriAccept = Paths.combine(basePath, "acceptances");
+        uriCounterOffer = Paths.combine(basePath, "counter-offers");
         uriOffer = Paths.combine(basePath, "offers");
         uriReject = Paths.combine(basePath, "rejections");
     }
@@ -55,7 +57,7 @@ public class HttpJsonContractNegotiationTrusted implements ArConsumer, ArContrac
     }
 
     @Override
-    public Future<?> accept(final TrustedAcceptanceDto acceptance) {
+    public Future<?> accept(final TrustedContractAcceptanceDto acceptance) {
         return consumer.send(new HttpConsumerRequest()
             .method(POST)
             .uri(uriAccept)
@@ -64,16 +66,52 @@ public class HttpJsonContractNegotiationTrusted implements ArConsumer, ArContrac
     }
 
     @Override
-    public Future<?> offer(final TrustedOfferDto offer) {
+    public Future<Long> offer(final TrustedContractOfferDto offer) {
         return consumer.send(new HttpConsumerRequest()
             .method(POST)
             .uri(uriOffer)
             .body(offer))
+            .flatMapResult(result -> {
+                if (result.isFailure()) {
+                    return Future.failure(result.fault());
+                }
+                final var response = result.value();
+                final var optionalLocation = response.header("location");
+                if (optionalLocation.isEmpty()) {
+                    return Future.failure(response.reject("No location " +
+                        "header in response; cannot determine session id"));
+                }
+                final var location = optionalLocation.get();
+                final var idOffset = location.lastIndexOf('/', location.length() - 2);
+                if (idOffset == -1) {
+                    return Future.failure(response.reject("No valid URI in " +
+                        "location header; cannot determine session id"));
+                }
+                final long sessionId;
+                try {
+                    sessionId = Long.parseLong(location, idOffset, location.length(), 10);
+                }
+                catch (final NumberFormatException exception) {
+                    return Future.failure(response.reject("Last segment of " +
+                        "location header does not contain a number; cannot " +
+                        "determine session id"));
+                }
+                return HttpJsonServices.unwrap(response)
+                    .pass(sessionId);
+            });
+    }
+
+    @Override
+    public Future<?> counterOffer(final TrustedContractCounterOfferDto counterOffer) {
+        return consumer.send(new HttpConsumerRequest()
+            .method(POST)
+            .uri(uriCounterOffer)
+            .body(counterOffer))
             .flatMap(HttpJsonServices::unwrap);
     }
 
     @Override
-    public Future<?> reject(final TrustedRejectionDto rejection) {
+    public Future<?> reject(final TrustedContractRejectionDto rejection) {
         return consumer.send(new HttpConsumerRequest()
             .method(POST)
             .uri(uriReject)

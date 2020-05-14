@@ -14,18 +14,18 @@ public interface ArTrustedNegotiationHandler {
      * The negotiation session in question must be considered permanently
      * closed when this method is invoked.
      *
-     * @param candidate Accepted offer.
+     * @param session Session containing accepted offer.
      */
-    void onAccept(TrustedSessionOffer candidate);
+    void onAccept(TrustedContractSessionDto session);
 
     /**
      * Called to notify about a counter-offer being received by a party that
      * previously received a contract offer.
      *
-     * @param candidate Counter-offer.
-     * @param responder Object useful for reacting to the counter-offer.
+     * @param session   Session containing counter-offer.
+     * @param responder Object useful for responding to the counter-offer.
      */
-    void onOffer(TrustedSessionOffer candidate, ArTrustedNegotiationResponder responder);
+    void onOffer(TrustedContractSessionDto session, ArTrustedNegotiationResponder responder);
 
     /**
      * Called to indicate that a previously made contract offer was rejected by
@@ -34,9 +34,9 @@ public interface ArTrustedNegotiationHandler {
      * The negotiation session in question must be considered permanently
      * closed when this method is invoked.
      *
-     * @param candidate Rejected offer.
+     * @param session Session containing rejected offer.
      */
-    void onReject(TrustedSessionOffer candidate);
+    void onReject(TrustedContractSessionDto session);
 
     /**
      * Called to indicate that a previously made or received contract offer
@@ -45,11 +45,11 @@ public interface ArTrustedNegotiationHandler {
      * The negotiation session in question must be considered permanently
      * closed when this method is invoked.
      *
-     * @param candidate Expired offer.
+     * @param session Session containing expired offer.
      */
-    default void onExpiry(final TrustedSessionOffer candidate) {
+    default void onExpiry(TrustedContractSessionDto session) {
         final var logger = LoggerFactory.getLogger(getClass());
-        logger.warn("Contract negotiation session expired: {}", candidate);
+        logger.warn("Contract negotiation session expired: {}", session);
     }
 
     /**

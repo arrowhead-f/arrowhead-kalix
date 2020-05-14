@@ -5,11 +5,12 @@ import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
 
+import java.time.Instant;
+
 import static se.arkalix.dto.DtoEncoding.JSON;
 
 /**
- * The state associated with an on-going or previously closed negotiation
- * session.
+ * An acceptance of an offer to enter into one or more legally binding contacts.
  * <p>
  * Instances of this type are trusted in the sense that they either (1) come
  * from trusted sources or (2) will be sent to systems that trust their senders.
@@ -18,20 +19,15 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 @DtoWritableAs(JSON)
 @DtoEqualsHashCode
 @DtoToString
-public interface TrustedSession {
+public interface TrustedContractAcceptance {
     /**
-     * Session identifier, uniquely identifying this session in combination
-     * with the names of the two parties using it to negotiate.
+     * Identifies the {@link TrustedContractSession session} containing the
+     * accepted offer.
      */
-    long id();
+    long sessionId();
 
     /**
-     * The last {@link TrustedOffer offer} submitted to the session.
+     * The instant at which the offer was accepted.
      */
-    TrustedSessionOffer offer();
-
-    /**
-     * The status of the session.
-     */
-    TrustedSessionStatus status();
+    Instant acceptedAt();
 }

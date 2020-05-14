@@ -5,17 +5,19 @@ import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static se.arkalix.dto.DtoEncoding.JSON;
 
 /**
  * A concrete offer for two parties to enter into a legally binding contract.
  * <p>
- * Each offer creates or updates a so-called <i>negotiation {@link
- * TrustedSession session}</i>, which contains all data currently associated
- * with an on-going or previously closed negotiation.
+ * Each offer creates a so-called <i>negotiation {@link
+ * TrustedContractSession session}</i>, which contains all data currently
+ * associated with an on-going or previously closed negotiation.
  * <p>
  * Instances of this type are trusted in the sense that they either (1) come
  * from trusted sources or (2) will be sent to systems that trust their senders.
@@ -24,26 +26,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 @DtoWritableAs(JSON)
 @DtoEqualsHashCode
 @DtoToString
-public interface TrustedOffer {
-    /**
-     * Identifies the negotiation {@link TrustedSession session} associated
-     * with this offer. Each such session is uniquely identified by the names
-     * of the negotiating parties and this number, which should be selected
-     * randomly.
-     */
-    long sessionId();
-
-    /**
-     * A number incremented each time a negotiation session is updated without
-     * being accepted or rejected.
-     * <p>
-     * If this offer is meant to create a new session, it should be zero. If it
-     * is expected to update an existing session by replacing its {@link
-     * TrustedSession#offer() offer}, it must be equal to the previous {@link
-     * TrustedSessionOffer#offerSeq() offer sequence number} plus one.
-     */
-    long offerSeq();
-
+public interface TrustedContractOffer {
     /**
      * Name of offer sender.
      * <p>
@@ -67,6 +50,13 @@ public interface TrustedOffer {
      * Instant after which this offer can no longer be accepted or rejected.
      */
     Instant validUntil();
+
+    /**
+     * Duration until this offer expires.
+     */
+    default Duration expiresIn() {
+        return Duration.between(Instant.now(), validUntil());
+    }
 
     /**
      * Offered contracts.

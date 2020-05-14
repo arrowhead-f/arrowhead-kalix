@@ -12,7 +12,6 @@ import se.arkalix.plugin.PluginFacade;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.concurrent.Schedulers;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -113,24 +112,14 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
             return eventSubscriber
                 .subscribe(ArContractNegotiationConstants.TOPIC_SESSION_UPDATE, (metadata, data) -> {
                     final long sessionId;
-                    final long candidateSeq;
                     try {
-                        final var colonIndex = data.indexOf(':');
-                        if (colonIndex == -1) {
-                            throw new IllegalStateException("Expected event " +
-                                "data to consist of two colon-separated " +
-                                "numbers (<sessionId>:<candidateSeq>); no " +
-                                "colon (:) found in data");
-                        }
-                        sessionId = Long.parseLong(data, 0, colonIndex, 10);
-                        candidateSeq = Long.parseLong(data, colonIndex + 1, data.length(), 10);
+                        sessionId = Long.parseLong(data);
                     }
                     catch (final Throwable throwable) {
                         logger.warn("HTTP/JSON contract negotiator received " +
-                            "contract event with invalid session and " +
-                            "candidate identifiers; cannot process event " +
-                            "[data=" + data + ", metadata=" + metadata +
-                            "]", throwable);
+                            "contract event with an invalid session " +
+                            "identifier; cannot process event [data=" + data +
+                            ", metadata=" + metadata + "]", throwable);
                         return;
                     }
 
@@ -170,63 +159,44 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
                                 "\"; cannot present session update to " +
                                 "negotiation handler"))))
                         .ifSuccess(session -> {
-                            final var candidate = session.offer();
                             switch (session.status()) {
                             case OFFERING:
-                                final var expirationDelay = Duration.between(
-                                    candidate.validUntil(),
-                                    candidate.validAfter());
-                                handler.setExpirationTask(expirationDelay, () -> {
-                                    if (handlerMap.remove(handlerKey) != null) {
-                                        handler.onExpiry(candidate);
-                                    }
-                                });
-
-                                handler.onOffer(candidate, new ArTrustedNegotiationResponder() {
+                                handler.onOffer(session, new ArTrustedNegotiationResponder() {
                                     @Override
                                     public Future<?> accept() {
-                                        handlerMap.remove(handlerKey);
+                                        handler.close();
                                         return system.consume()
                                             .using(HttpJsonContractNegotiationTrusted.factory())
-                                            .flatMap(service -> service.accept(new TrustedAcceptanceBuilder()
+                                            .flatMap(service -> service.accept(new TrustedContractAcceptanceBuilder()
                                                 .sessionId(sessionId)
-                                                .offerSeq(candidateSeq)
                                                 .acceptedAt(Instant.now())
                                                 .build()));
                                     }
 
                                     @Override
-                                    public Future<?> offer(final TrustedCounterOffer offer) {
-                                        final var expirationDelay = Duration.between(
-                                            offer.validUntil(),
-                                            offer.validAfter());
-                                        handler.setExpirationTask(expirationDelay, () -> {
-                                            if (handlerMap.remove(handlerKey) != null) {
-                                                handler.onExpiry(candidate);
-                                            }
-                                        });
+                                    public Future<?> offer(final SimplifiedContractCounterOffer offer) {
+                                        final var counterOffer = new TrustedContractCounterOfferBuilder()
+                                            .sessionId(sessionId)
+                                            .offerorName(offerorName)
+                                            .receiverName(receiverName)
+                                            .validAfter(offer.validAfter())
+                                            .validUntil(offer.validUntil())
+                                            .contracts(offer.contracts())
+                                            .offeredAt(offer.offeredAt())
+                                            .build();
+                                        handler.refresh(counterOffer);
                                         return system.consume()
                                             .using(HttpJsonContractNegotiationTrusted.factory())
-                                            .flatMap(service -> service.offer(new TrustedOfferBuilder()
-                                                .sessionId(sessionId)
-                                                .offerSeq(candidateSeq)
-                                                .offerorName(offerorName)
-                                                .receiverName(receiverName)
-                                                .validAfter(offer.validAfter())
-                                                .validUntil(offer.validUntil())
-                                                .contracts(offer.contracts())
-                                                .offeredAt(offer.offeredAt())
-                                                .build()));
+                                            .flatMap(service -> service.counterOffer(counterOffer));
                                     }
 
                                     @Override
                                     public Future<?> reject() {
-                                        handlerMap.remove(handlerKey);
+                                        handler.close();
                                         return system.consume()
                                             .using(HttpJsonContractNegotiationTrusted.factory())
-                                            .flatMap(service -> service.reject(new TrustedRejectionBuilder()
+                                            .flatMap(service -> service.reject(new TrustedContractRejectionBuilder()
                                                 .sessionId(sessionId)
-                                                .offerSeq(candidateSeq)
                                                 .rejectedAt(Instant.now())
                                                 .build()));
                                     }
@@ -234,11 +204,11 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
                                 break;
 
                             case ACCEPTED:
-                                handler.onAccept(candidate);
+                                handler.onAccept(session);
                                 break;
 
                             case REJECTED:
-                                handler.onReject(candidate);
+                                handler.onReject(session);
                                 break;
                             }
                         })
@@ -278,69 +248,142 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
 
         private class Facade implements ArContractNegotiationTrustedPluginFacade {
             @Override
-            public void offer(final TrustedOfferDto offer, final ArTrustedNegotiationHandler handler) {
+            public void offer(final TrustedContractOfferDto offer, final ArTrustedNegotiationHandler handler) {
                 system.consume()
                     .using(HttpJsonContractNegotiationTrusted.factory())
                     .flatMap(service -> service.offer(offer))
-                    .ifSuccess(ignored -> {
-                        final var key = new HandlerKey(offer.offerorName(), offer.receiverName(), offer.sessionId());
-                        final var handler0 = new Handler(handler);
-                        handlerMap.put(key, handler0);
-
-                        final var expirationDelay = Duration.between(offer.validUntil(), offer.validAfter());
-                        handler0.setExpirationTask(expirationDelay, () -> {
-                            if (handlerMap.remove(key) != null) {
-                                handler.onExpiry(new TrustedSessionOfferBuilder()
-                                    .offerSeq(offer.offerSeq())
-                                    .offerorName(offer.offerorName())
-                                    .receiverName(offer.receiverName())
-                                    .validAfter(offer.validAfter())
-                                    .validUntil(offer.validUntil())
-                                    .contracts(offer.contractsAsDtos())
-                                    .createdAt(offer.offeredAt())
-                                    .build());
-                            }
-                        });
+                    .ifSuccess(sessionId -> {
+                        final var key = new HandlerKey(offer.offerorName(), offer.receiverName(), sessionId);
+                        handlerMap.put(key, new Handler(offer, sessionId, handler, () -> handlerMap.remove(key)));
                     })
                     .onFailure(handler::onFault);
             }
         }
     }
 
-    private static class Handler implements ArTrustedNegotiationHandler {
+    private static class Handler {
         private final ArTrustedNegotiationHandler handler;
+        private final Runnable closeTask;
 
-        private Future<?> expirationTask = null;
+        private Future<?> expirationFuture;
 
-        private Handler(final ArTrustedNegotiationHandler handler) {
-            this.handler = handler;
+        private Handler(
+            final TrustedContractOfferDto offer,
+            final long sessionId,
+            final ArTrustedNegotiationHandler handler,
+            final Runnable closeTask)
+        {
+            this.handler = Objects.requireNonNull(handler, "Expected handler");
+            this.closeTask = Objects.requireNonNull(closeTask, "Expected closeTask");
+            expirationFuture = Schedulers.fixed().schedule(offer.expiresIn(), () -> {
+                closeTask.run();
+                onExpiry(new TrustedContractSessionBuilder()
+                    .id(sessionId)
+                    .offer(offer)
+                    .status(ContractSessionStatus.EXPIRED)
+                    .build());
+            });
         }
 
-        public synchronized void setExpirationTask(final Duration delay, final Runnable task) {
-            if (expirationTask != null) {
-                expirationTask.cancel();
+        public synchronized void onAccept(final TrustedContractSessionDto session) {
+            if (expirationFuture != null) {
+                expirationFuture.cancel();
+                expirationFuture = null;
             }
-            expirationTask = Schedulers.fixed().schedule(delay, task);
+            try {
+                handler.onAccept(session);
+            }
+            catch (final Throwable throwable) {
+                logger.error("Negotiation handler unexpectedly threw " +
+                    "exception while handling acceptance event", throwable);
+            }
         }
 
-        @Override
-        public synchronized void onAccept(final TrustedSessionOffer candidate) {
-            handler.onAccept(candidate);
+        public synchronized void onOffer(final TrustedContractSessionDto session,
+                                         final ArTrustedNegotiationResponder responder)
+        {
+            if (expirationFuture != null) {
+                expirationFuture.cancel();
+            }
+            expirationFuture = Schedulers.fixed().schedule(session.offer().expiresIn(), () -> {
+                closeTask.run();
+                onExpiry(new TrustedContractSessionBuilder()
+                    .id(session.id())
+                    .offer(session.offer())
+                    .status(ContractSessionStatus.EXPIRED)
+                    .build());
+            });
+            try {
+                handler.onOffer(session, responder);
+            }
+            catch (final Throwable throwable) {
+                logger.error("Negotiation handler unexpectedly threw " +
+                    "exception while handling offer event", throwable);
+            }
         }
 
-        @Override
-        public synchronized void onOffer(final TrustedSessionOffer candidate, final ArTrustedNegotiationResponder responder) {
-            handler.onOffer(candidate, responder);
+        public synchronized void onReject(final TrustedContractSessionDto session) {
+            if (expirationFuture != null) {
+                expirationFuture.cancel();
+                expirationFuture = null;
+            }
+            try {
+                handler.onReject(session);
+            }
+            catch (final Throwable throwable) {
+                logger.error("Negotiation handler unexpectedly threw " +
+                    "exception while handling rejection event", throwable);
+            }
         }
 
-        @Override
-        public synchronized void onReject(final TrustedSessionOffer candidate) {
-            handler.onReject(candidate);
+        private synchronized void onExpiry(final TrustedContractSessionDto session) {
+            try {
+                handler.onExpiry(session);
+            }
+            catch (final Throwable throwable) {
+                logger.error("Negotiation handler unexpectedly threw " +
+                    "exception while handling expiration event", throwable);
+            }
         }
 
-        @Override
-        public void onExpiry(final TrustedSessionOffer candidate) {
-            handler.onExpiry(candidate);
+        public synchronized void onFault(final Throwable throwable0) {
+            try {
+                handler.onFault(throwable0);
+            }
+            catch (final Throwable throwable1) {
+                throwable1.addSuppressed(throwable0);
+                logger.error("Negotiation handler unexpectedly threw " +
+                    "exception while handling another exception", throwable1);
+            }
+        }
+
+        public synchronized void refresh(final TrustedContractCounterOfferDto counterOffer) {
+            if (expirationFuture != null) {
+                expirationFuture.cancel();
+            }
+            expirationFuture = Schedulers.fixed().schedule(counterOffer.expiresIn(), () -> {
+                closeTask.run();
+                onExpiry(new TrustedContractSessionBuilder()
+                    .id(counterOffer.sessionId())
+                    .offer(new TrustedContractOfferBuilder()
+                        .offerorName(counterOffer.offerorName())
+                        .receiverName(counterOffer.receiverName())
+                        .validAfter(counterOffer.validAfter())
+                        .validUntil(counterOffer.validUntil())
+                        .contracts(counterOffer.contractsAsDtos())
+                        .offeredAt(counterOffer.offeredAt())
+                        .build())
+                    .status(ContractSessionStatus.EXPIRED)
+                    .build());
+            });
+        }
+
+        public synchronized void close() {
+            if (expirationFuture != null) {
+                expirationFuture.cancel();
+                expirationFuture = null;
+            }
+            closeTask.run();
         }
     }
 

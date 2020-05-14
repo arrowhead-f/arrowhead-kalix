@@ -50,7 +50,7 @@ public class HttpJsonContractNegotiationTrustedSession implements ArConsumer, Ar
     }
 
     @Override
-    public Future<Optional<TrustedSessionDto>> getByNamesAndId(
+    public Future<Optional<TrustedContractSessionDto>> getByNamesAndId(
         final String name1,
         final String name2,
         final long id)
@@ -61,7 +61,7 @@ public class HttpJsonContractNegotiationTrustedSession implements ArConsumer, Ar
             .queryParameter("name1", name1)
             .queryParameter("name2", name2)
             .queryParameter("id", "" + id))
-            .flatMap(response -> unwrapOptional(response, TrustedSessionDto.class));
+            .flatMap(response -> unwrapOptional(response, TrustedContractSessionDto.class));
     }
 
     private static class Factory implements ArConsumerFactory<HttpJsonContractNegotiationTrustedSession> {
