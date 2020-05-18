@@ -28,6 +28,16 @@ public interface TrustedContractRejection {
     long negotiationId();
 
     /**
+     * Name of party rejecting identified offer.
+     */
+    String rejectorName();
+
+    /**
+     * Name of party originally making the accepted offer.
+     */
+    String offerorName();
+
+    /**
      * The instant at which the offer was rejected.
      */
     Instant rejectedAt();

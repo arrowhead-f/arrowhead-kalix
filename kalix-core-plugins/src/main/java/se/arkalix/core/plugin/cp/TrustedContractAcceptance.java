@@ -28,6 +28,16 @@ public interface TrustedContractAcceptance {
     long negotiationId();
 
     /**
+     * Name of party accepting identified offer.
+     */
+    String acceptorName();
+
+    /**
+     * Name of party originally making the accepted offer.
+     */
+    String offerorName();
+
+    /**
      * The instant at which the offer was accepted.
      */
     Instant acceptedAt();
