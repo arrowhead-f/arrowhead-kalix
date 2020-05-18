@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.ArSystem;
 import se.arkalix.core.plugin.eh.ArEventSubscriberPluginFacade;
-import se.arkalix.core.plugin.eh.ArEventSubscriptionHandle;
+import se.arkalix.core.plugin.eh.EventSubscriptionHandle;
 import se.arkalix.core.plugin.eh.HttpJsonEventSubscriberPlugin;
 import se.arkalix.plugin.Plugin;
 import se.arkalix.plugin.PluginAttached;
@@ -39,8 +39,8 @@ import java.util.*;
  * se.arkalix.core.plugin.HttpJsonCloudPlugin HttpJsonCloudPlugin}.
  */
 @SuppressWarnings("unused")
-public class HttpJsonContractObservationTrustedPlugin implements Plugin {
-    private static final Logger logger = LoggerFactory.getLogger(HttpJsonContractObservationTrustedPlugin.class);
+public class HttpJsonTrustedContractObserverPlugin implements ArTrustedContractObserverPlugin {
+    private static final Logger logger = LoggerFactory.getLogger(HttpJsonTrustedContractObserverPlugin.class);
 
     @Override
     public Set<Class<? extends Plugin>> dependencies() {
@@ -76,9 +76,9 @@ public class HttpJsonContractObservationTrustedPlugin implements Plugin {
         private final Facade facade = new Facade();
         private final ArSystem system;
         private final ArEventSubscriberPluginFacade eventSubscriber;
-        private final Set<ArTrustedNegotiationObserver> observers = Collections.synchronizedSet(new HashSet<>());
+        private final Set<TrustedContractObserverHandler> observers = Collections.synchronizedSet(new HashSet<>());
 
-        private ArEventSubscriptionHandle eventSubscriptionHandle = null;
+        private EventSubscriptionHandle eventSubscriptionHandle = null;
 
         private Attached(final ArSystem system, final ArEventSubscriberPluginFacade eventSubscriber) {
             this.system = Objects.requireNonNull(system, "Expected system");
@@ -87,17 +87,17 @@ public class HttpJsonContractObservationTrustedPlugin implements Plugin {
 
         public Future<?> subscribe() {
             return eventSubscriber
-                .subscribe(ArContractNegotiationConstants.TOPIC_SESSION_UPDATE, (metadata, data) -> {
-                    final long sessionId;
+                .subscribe(ContractNegotiationConstants.TOPIC_UPDATE, (metadata, data) -> {
+                    final long negotiationId;
                     try {
                         final var colonIndex = data.indexOf(':');
                         if (colonIndex == -1) {
                             throw new IllegalStateException("Expected event " +
                                 "data to consist of two colon-separated " +
-                                "numbers (<sessionId>:<candidateSeq>); no " +
+                                "numbers (<negotiationId>:<candidateSeq>); no " +
                                 "colon (:) found in data");
                         }
-                        sessionId = Long.parseLong(data, 0, colonIndex, 10);
+                        negotiationId = Long.parseLong(data, 0, colonIndex, 10);
                     }
                     catch (final Throwable throwable) {
                         logger.warn("HTTP/JSON contract observer received " +
@@ -112,7 +112,7 @@ public class HttpJsonContractObservationTrustedPlugin implements Plugin {
                     if (offerorName == null) {
                         logger.warn("HTTP/JSON contract observer received " +
                             "contract event without a named offeror; " +
-                            "cannot process event [sessionId={}, metadata={}]", data, metadata);
+                            "cannot process event [negotiationId={}, metadata={}]", data, metadata);
                         return;
                     }
 
@@ -120,13 +120,13 @@ public class HttpJsonContractObservationTrustedPlugin implements Plugin {
                     if (receiverName == null) {
                         logger.warn("HTTP/JSON contract observer received " +
                             "contract event without a named receiver; " +
-                            "cannot process event [sessionId={}, metadata={}]", data, metadata);
+                            "cannot process event [negotiationId={}, metadata={}]", data, metadata);
                         return;
                     }
 
                     system.consume()
-                        .using(HttpJsonContractNegotiationTrustedSession.factory())
-                        .flatMap(service -> service.getByNamesAndId(offerorName, receiverName, sessionId)
+                        .using(HttpJsonTrustedContractObservationService.factory())
+                        .flatMap(service -> service.getByNamesAndId(offerorName, receiverName, negotiationId)
                             .map(optionalSession -> optionalSession.orElseThrow(() -> new IllegalStateException("" +
                                 "Advertised session [data=" + data +
                                 ", metadata=" + metadata + "] not available " +
@@ -182,9 +182,9 @@ public class HttpJsonContractObservationTrustedPlugin implements Plugin {
             }
         }
 
-        private class Facade implements ArContractObservationTrustedPluginFacade {
+        private class Facade implements ArTrustedContractObserverPluginFacade {
             @Override
-            public void observe(final ArTrustedNegotiationObserver observer) {
+            public void observe(final TrustedContractObserverHandler observer) {
                 observers.add(observer);
             }
         }

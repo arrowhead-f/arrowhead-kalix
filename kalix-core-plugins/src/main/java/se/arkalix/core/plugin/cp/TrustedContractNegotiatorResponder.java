@@ -6,7 +6,7 @@ import se.arkalix.util.concurrent.Future;
  * Some object useful for responding to a {@link TrustedContractOffer contract offer}.
  */
 @SuppressWarnings("unused")
-public interface ArTrustedNegotiationResponder {
+public interface TrustedContractNegotiatorResponder {
     /**
      * Accept {@link TrustedContractOffer contract offer}.
      *

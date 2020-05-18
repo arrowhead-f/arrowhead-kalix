@@ -6,9 +6,9 @@ import se.arkalix.util.concurrent.Future;
 /**
  * Represents an Arrowhead event subscription cancellation service.
  */
-public interface ArEventUnsubscribe {
+public interface ArEventUnsubscribeService {
     /**
-     * Sends request for a {@link ArEventSubscribe subscription} to be
+     * Sends request for a {@link ArEventSubscribeService subscription} to be
      * cancelled.
      *
      * @param topic          The subscription
@@ -26,7 +26,7 @@ public interface ArEventUnsubscribe {
     Future<?> unsubscribe(String topic, String subscriberName, String hostname, int port);
 
     /**
-     * Sends request for a {@link ArEventSubscribe subscription} to be
+     * Sends request for a {@link ArEventSubscribeService subscription} to be
      * cancelled.
      *
      * @param topic      The subscription

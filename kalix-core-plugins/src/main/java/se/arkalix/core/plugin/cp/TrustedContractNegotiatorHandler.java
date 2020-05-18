@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
  * Handler used to receive and react to different kinds of contract negotiation
  * events.
  */
-public interface ArTrustedNegotiationHandler {
+public interface TrustedContractNegotiatorHandler {
     /**
      * Called to indicate that a previously made contract offer was accepted by
      * its receiver.
@@ -16,7 +16,7 @@ public interface ArTrustedNegotiationHandler {
      *
      * @param session Session containing accepted offer.
      */
-    void onAccept(TrustedContractSessionDto session);
+    void onAccept(TrustedContractNegotiationDto session);
 
     /**
      * Called to notify about a counter-offer being received by a party that
@@ -25,7 +25,7 @@ public interface ArTrustedNegotiationHandler {
      * @param session   Session containing counter-offer.
      * @param responder Object useful for responding to the counter-offer.
      */
-    void onOffer(TrustedContractSessionDto session, ArTrustedNegotiationResponder responder);
+    void onOffer(TrustedContractNegotiationDto session, TrustedContractNegotiatorResponder responder);
 
     /**
      * Called to indicate that a previously made contract offer was rejected by
@@ -36,7 +36,7 @@ public interface ArTrustedNegotiationHandler {
      *
      * @param session Session containing rejected offer.
      */
-    void onReject(TrustedContractSessionDto session);
+    void onReject(TrustedContractNegotiationDto session);
 
     /**
      * Called to indicate that a previously made or received contract offer
@@ -47,7 +47,7 @@ public interface ArTrustedNegotiationHandler {
      *
      * @param session Session containing expired offer.
      */
-    default void onExpiry(TrustedContractSessionDto session) {
+    default void onExpiry(TrustedContractNegotiationDto session) {
         final var logger = LoggerFactory.getLogger(getClass());
         logger.warn("Contract negotiation session expired: {}", session);
     }

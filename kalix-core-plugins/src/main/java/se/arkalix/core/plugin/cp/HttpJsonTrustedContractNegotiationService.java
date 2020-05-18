@@ -23,10 +23,10 @@ import static se.arkalix.descriptor.TransportDescriptor.HTTP;
 import static se.arkalix.net.http.HttpMethod.POST;
 
 /**
- * A remote {@link ArContractNegotiationTrusted} service that is communicated
+ * A remote {@link ArTrustedContractNegotiationService} service that is communicated
  * with via HTTP/JSON in either secure or insecure mode.
  */
-public class HttpJsonContractNegotiationTrusted implements ArConsumer, ArContractNegotiationTrusted {
+public class HttpJsonTrustedContractNegotiationService implements ArConsumer, ArTrustedContractNegotiationService {
     private static final Factory factory = new Factory();
 
     private final HttpConsumer consumer;
@@ -35,7 +35,7 @@ public class HttpJsonContractNegotiationTrusted implements ArConsumer, ArContrac
     private final String uriOffer;
     private final String uriReject;
 
-    private HttpJsonContractNegotiationTrusted(final HttpConsumer consumer) {
+    private HttpJsonTrustedContractNegotiationService(final HttpConsumer consumer) {
         this.consumer = Objects.requireNonNull(consumer, "Expected consumer");
         final var basePath = consumer.service().uri();
         uriAccept = Paths.combine(basePath, "acceptances");
@@ -47,7 +47,7 @@ public class HttpJsonContractNegotiationTrusted implements ArConsumer, ArContrac
     /**
      * @return Consumer {@link ArConsumerFactory factory class}.
      */
-    public static ArConsumerFactory<HttpJsonContractNegotiationTrusted> factory() {
+    public static ArConsumerFactory<HttpJsonTrustedContractNegotiationService> factory() {
         return factory;
     }
 
@@ -87,9 +87,9 @@ public class HttpJsonContractNegotiationTrusted implements ArConsumer, ArContrac
                     return Future.failure(response.reject("No valid URI in " +
                         "location header; cannot determine session id"));
                 }
-                final long sessionId;
+                final long negotiationId;
                 try {
-                    sessionId = Long.parseLong(location, idOffset, location.length(), 10);
+                    negotiationId = Long.parseLong(location, idOffset, location.length(), 10);
                 }
                 catch (final NumberFormatException exception) {
                     return Future.failure(response.reject("Last segment of " +
@@ -97,7 +97,7 @@ public class HttpJsonContractNegotiationTrusted implements ArConsumer, ArContrac
                         "determine session id"));
                 }
                 return HttpJsonServices.unwrap(response)
-                    .pass(sessionId);
+                    .pass(negotiationId);
             });
     }
 
@@ -119,10 +119,10 @@ public class HttpJsonContractNegotiationTrusted implements ArConsumer, ArContrac
             .flatMap(HttpJsonServices::unwrap);
     }
 
-    private static class Factory implements ArConsumerFactory<HttpJsonContractNegotiationTrusted> {
+    private static class Factory implements ArConsumerFactory<HttpJsonTrustedContractNegotiationService> {
         @Override
         public Optional<String> serviceName() {
-            return Optional.of("contract-negotiation-trusted");
+            return Optional.of("trusted-contract-negotiation");
         }
 
         @Override
@@ -136,13 +136,13 @@ public class HttpJsonContractNegotiationTrusted implements ArConsumer, ArContrac
         }
 
         @Override
-        public HttpJsonContractNegotiationTrusted create(
+        public HttpJsonTrustedContractNegotiationService create(
             final ArSystem system,
             final ServiceDescription service,
             final Collection<EncodingDescriptor> encodings) throws Exception
         {
             final var consumer = new HttpConsumer(HttpClient.from(system), service, encodings);
-            return new HttpJsonContractNegotiationTrusted(consumer);
+            return new HttpJsonTrustedContractNegotiationService(consumer);
         }
     }
 }

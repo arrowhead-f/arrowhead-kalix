@@ -6,7 +6,6 @@ import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
 
 import java.time.Instant;
-import java.util.Optional;
 
 import static se.arkalix.dto.DtoEncoding.JSON;
 
@@ -20,12 +19,13 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 @DtoWritableAs(JSON)
 @DtoEqualsHashCode
 @DtoToString
+@SuppressWarnings("unused")
 public interface TrustedContractRejection {
     /**
-     * Identifies the {@link TrustedContractSession session} containing the
-     * rejected offer.
+     * Identifies the {@link TrustedContractNegotiation negotiation session}
+     * containing the rejected offer.
      */
-    long sessionId();
+    long negotiationId();
 
     /**
      * The instant at which the offer was rejected.

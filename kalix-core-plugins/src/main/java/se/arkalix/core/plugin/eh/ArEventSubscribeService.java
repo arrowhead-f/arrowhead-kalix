@@ -5,7 +5,7 @@ import se.arkalix.util.concurrent.Future;
 /**
  * Represents an Arrowhead event subscription service.
  */
-public interface ArEventSubscribe {
+public interface ArEventSubscribeService {
     /**
      * Sends given {@code subscription} request.
      *

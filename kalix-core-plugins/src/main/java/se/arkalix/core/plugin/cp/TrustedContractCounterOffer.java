@@ -8,7 +8,6 @@ import se.arkalix.dto.DtoWritableAs;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 import static se.arkalix.dto.DtoEncoding.JSON;
 
@@ -16,7 +15,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
  * An offer countering a previously received such.
  * <p>
  * Each counter-offer updates a so-called <i>negotiation {@link
- * TrustedContractSession session}</i>, which contains all data currently
+ * TrustedContractNegotiation session}</i>, which contains all data currently
  * associated with an on-going or previously closed negotiation.
  * <p>
  * Instances of this type are trusted in the sense that they either (1) come
@@ -28,10 +27,10 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 @DtoToString
 public interface TrustedContractCounterOffer {
     /**
-     * Identifies the {@link TrustedContractSession session} containing the
-     * countered offer.
+     * Identifies the {@link TrustedContractNegotiation negotiation session}
+     * containing the countered offer.
      */
-    long sessionId();
+    long negotiationId();
 
     /**
      * Name of offer sender.

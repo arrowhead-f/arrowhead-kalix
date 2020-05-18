@@ -29,7 +29,7 @@ import static se.arkalix.descriptor.EncodingDescriptor.JSON;
  * HTTP/JSON event subscriber plugin.
  * <p>
  * This plugin helps manage subscriptions for events using the {@link
- * HttpJsonEventSubscribe} and {@link HttpJsonEventUnsubscribe} services. It
+ * HttpJsonEventSubscribeService} and {@link HttpJsonEventUnsubscribeService} services. It
  * assumes that only one version of each of these services are available to the
  * {@link ArSystem} it attaches to, and uses them to register and deregister
  * event subscriptions.
@@ -45,183 +45,13 @@ import static se.arkalix.descriptor.EncodingDescriptor.JSON;
  * of any subscribing systems.
  */
 @SuppressWarnings({"unused", "UnusedReturnValue"})
-public class HttpJsonEventSubscriberPlugin implements Plugin {
+public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
     private static final Logger logger = LoggerFactory.getLogger(HttpJsonEventSubscriberPlugin.class);
 
-    private final ArrayList<ArEventSubscription> defaultSubscriptions = new ArrayList<>();
+    private final ArrayList<EventSubscription> defaultSubscriptions = new ArrayList<>();
 
-    /**
-     * Registers new default event subscription.
-     * <p>
-     * The default event subscriptions added to this plugin are added to each
-     * system it is {@link #attachTo(ArSystem, Map) attached} to. For this
-     * reason, these subscriptions cannot be cancelled in any other way than
-     * {@link ArSystem#shutdown() shutting down} the systems this plugin is
-     * attached to. If wanting to create subscriptions that are more readily
-     * cancellable, use the {@link ArSystem#pluginFacadeOf(Class)} method and
-     * cast its successful result to {@link ArEventSubscriberPluginFacade},
-     * like so:
-     * <pre>
-     *     var system = new System.Builder()
-     *         (...)
-     *         .plugins(new HttpJsonEventSubscriberPlugin())
-     *         .build();
-     *     system.pluginFacadeOf(HttpJsonEventSubscriberPlugin.class)
-     *         .map(facade -&gt; (ArEventSubscriberPluginFacade) facade)
-     *         .ifPresent(facade -&gt; {...});
-     * </pre>
-     *
-     * @param topic   Topic, or "eventType", that must be matched by
-     *                received events. Topics are case insensitive and can
-     *                only be subscribed to once.
-     * @param handler Handler to receive matching events.
-     * @return Future completed when subscription is registered.
-     */
-    public HttpJsonEventSubscriberPlugin subscribe(final String topic, final ArEventSubscriptionHandler handler) {
-        return subscribe(topic, null, null, handler);
-    }
-
-    /**
-     * Registers new default event subscription.
-     * <p>
-     * The default event subscriptions added to this plugin are added to each
-     * system it is {@link #attachTo(ArSystem, Map) attached} to. For this
-     * reason, these subscriptions cannot be cancelled in any other way than
-     * {@link ArSystem#shutdown() shutting down} the systems this plugin is
-     * attached to. If wanting to create subscriptions that are more readily
-     * cancellable, use the {@link ArSystem#pluginFacadeOf(Class)} method and
-     * cast its successful result to {@link ArEventSubscriberPluginFacade},
-     * like so:
-     * <pre>
-     *     var system = new System.Builder()
-     *         (...)
-     *         .plugins(new HttpJsonEventSubscriberPlugin())
-     *         .build();
-     *     system.pluginFacadeOf(HttpJsonEventSubscriberPlugin.class)
-     *         .map(facade -&gt; (ArEventSubscriberPluginFacade) facade)
-     *         .ifPresent(facade -&gt; {...});
-     * </pre>
-     *
-     * @param topic    Topic, or "eventType", that must be matched by
-     *                 received events. Topics are case insensitive and can
-     *                 only be subscribed to once.
-     * @param metadata Metadata pairs that must be matched by received
-     *                 events.
-     * @param handler  Handler to receive matching events.
-     * @return Future completed when subscription is registered.
-     */
-    public HttpJsonEventSubscriberPlugin subscribe(
-        final String topic,
-        final Map<String, String> metadata,
-        final ArEventSubscriptionHandler handler)
-    {
-        return subscribe(topic, metadata, null, handler);
-    }
-
-    /**
-     * Registers new default event subscription.
-     * <p>
-     * The default event subscriptions added to this plugin are added to each
-     * system it is {@link #attachTo(ArSystem, Map) attached} to. For this
-     * reason, these subscriptions cannot be cancelled in any other way than
-     * {@link ArSystem#shutdown() shutting down} the systems this plugin is
-     * attached to. If wanting to create subscriptions that are more readily
-     * cancellable, use the {@link ArSystem#pluginFacadeOf(Class)} method and
-     * cast its successful result to {@link ArEventSubscriberPluginFacade},
-     * like so:
-     * <pre>
-     *     var system = new System.Builder()
-     *         (...)
-     *         .plugins(new HttpJsonEventSubscriberPlugin())
-     *         .build();
-     *     system.pluginFacadeOf(HttpJsonEventSubscriberPlugin.class)
-     *         .map(facade -&gt; (ArEventSubscriberPluginFacade) facade)
-     *         .ifPresent(facade -&gt; {...});
-     * </pre>
-     *
-     * @param topic     Topic, or "eventType", that must be matched by
-     *                  received events. Topics are case insensitive and
-     *                  can only be subscribed to once.
-     * @param providers Event providers to receive events from.
-     * @param handler   Handler to receive matching events.
-     * @return Future completed when subscription is registered.
-     */
-    public HttpJsonEventSubscriberPlugin subscribe(
-        final String topic,
-        final Collection<ProviderDescription> providers,
-        final ArEventSubscriptionHandler handler)
-    {
-        return subscribe(topic, null, providers, handler);
-    }
-
-    /**
-     * Registers new default event subscription.
-     * <p>
-     * The default event subscriptions added to this plugin are added to each
-     * system it is {@link #attachTo(ArSystem, Map) attached} to. For this
-     * reason, these subscriptions cannot be cancelled in any other way than
-     * {@link ArSystem#shutdown() shutting down} the systems this plugin is
-     * attached to. If wanting to create subscriptions that are more readily
-     * cancellable, use the {@link ArSystem#pluginFacadeOf(Class)} method and
-     * cast its successful result to {@link ArEventSubscriberPluginFacade},
-     * like so:
-     * <pre>
-     *     var system = new System.Builder()
-     *         (...)
-     *         .plugins(new HttpJsonEventSubscriberPlugin())
-     *         .build();
-     *     system.pluginFacadeOf(HttpJsonEventSubscriberPlugin.class)
-     *         .map(facade -&gt; (ArEventSubscriberPluginFacade) facade)
-     *         .ifPresent(facade -&gt; {...});
-     * </pre>
-     *
-     * @param topic     Topic, or "eventType", that must be matched by
-     *                  received events. Topics are case insensitive and
-     *                  can only be subscribed to once.
-     * @param metadata  Metadata pairs that must be matched by received
-     *                  events.
-     * @param providers Event providers to receive events from.
-     * @param handler   Handler to receive matching events.
-     * @return Future completed when subscription is registered.
-     */
-    public HttpJsonEventSubscriberPlugin subscribe(
-        final String topic,
-        final Map<String, String> metadata,
-        final Collection<ProviderDescription> providers,
-        final ArEventSubscriptionHandler handler)
-    {
-        return subscribe(new ArEventSubscription()
-            .topic(topic)
-            .metadata(metadata)
-            .providers(providers)
-            .handler(handler));
-    }
-
-    /**
-     * Registers new default event subscription.
-     * <p>
-     * The default event subscriptions added to this plugin are added to each
-     * system it is {@link #attachTo(ArSystem, Map) attached} to. For this
-     * reason, these subscriptions cannot be cancelled in any other way than
-     * {@link ArSystem#shutdown() shutting down} the systems this plugin is
-     * attached to. If wanting to create subscriptions that are more readily
-     * cancellable, use the {@link ArSystem#pluginFacadeOf(Class)} method and
-     * cast its successful result to {@link ArEventSubscriberPluginFacade},
-     * like so:
-     * <pre>
-     *     var system = new System.Builder()
-     *         (...)
-     *         .plugins(new HttpJsonEventSubscriberPlugin())
-     *         .build();
-     *     system.pluginFacadeOf(HttpJsonEventSubscriberPlugin.class)
-     *         .map(facade -&gt; (ArEventSubscriberPluginFacade) facade)
-     *         .ifPresent(facade -&gt; {...});
-     * </pre>
-     *
-     * @param subscription Subscription to register.
-     * @return This builder.
-     */
-    public HttpJsonEventSubscriberPlugin subscribe(final ArEventSubscription subscription) {
+    @Override
+    public HttpJsonEventSubscriberPlugin subscribe(final EventSubscription subscription) {
         defaultSubscriptions.add(subscription);
         return this;
     }
@@ -242,7 +72,7 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
         private final ConcurrentHashMap<String, Topic> nameToTopic = new ConcurrentHashMap<>();
         private final AtomicBoolean isDetached = new AtomicBoolean(false);
 
-        Attached(final ArSystem system, final ArrayList<ArEventSubscription> defaultSubscriptions) {
+        Attached(final ArSystem system, final ArrayList<EventSubscription> defaultSubscriptions) {
             logger.info("HTTP/JSON event subscriber attaching to system \"{}\" ...", system.name());
 
             this.system = system;
@@ -250,7 +80,7 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
             this.basePath = "/events/" + this.system.name();
 
             system.consume()
-                .using(HttpJsonEventSubscribe.factory())
+                .using(HttpJsonEventSubscribeService.factory())
                 .flatMap(eventSubscribe -> {
                     if (logger.isInfoEnabled()) {
                         final var service = eventSubscribe.service();
@@ -324,7 +154,7 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
                 });
         }
 
-        private Future<ArEventSubscriptionHandle> subscribe(final ArEventSubscription subscription) {
+        private Future<EventSubscriptionHandle> subscribe(final EventSubscription subscription) {
             if (isDetached.get()) {
                 throw new IllegalStateException("Plugin \"" +
                     HttpJsonEventSubscriberPlugin.class +
@@ -338,7 +168,7 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
                 .toLowerCase();
 
             final var isUnsubscribed = new AtomicBoolean(false);
-            final var handle = new AtomicReference<ArEventSubscriptionHandle>(null);
+            final var handle = new AtomicReference<EventSubscriptionHandle>(null);
             nameToTopic.compute(topicName, (topicName0, topic) -> {
                 if (topic == null) {
                     topic = new Topic(topicName0, this::unsubscribe);
@@ -359,13 +189,13 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
                 "\"{}\" to topic \"{}\" ...", system.name(), topicName);
 
             return system.consume()
-                .using(HttpJsonEventSubscribe.factory())
+                .using(HttpJsonEventSubscribeService.factory())
                 .flatMap(eventSubscribe -> eventSubscribe.subscribe(request)
                     .flatMapCatch(ErrorException.class, fault -> {
                         final var error = fault.error();
                         if ("INVALID_PARAMETER".equals(error.type())) {
                             return system.consume()
-                                .using(HttpJsonEventUnsubscribe.factory())
+                                .using(HttpJsonEventUnsubscribeService.factory())
                                 .flatMap(eventUnsubscribe -> eventUnsubscribe
                                     .unsubscribe(topicName, system))
                                 .flatMap(ignored -> eventSubscribe.subscribe(request))
@@ -379,7 +209,7 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
                                 "subscribe system \"{}\" to topic \"{}\"",
                             system.name(), topicName);
                     }
-                    return (ArEventSubscriptionHandle) handle.get();
+                    return (EventSubscriptionHandle) handle.get();
                 })
                 .ifFailure(Throwable.class, fault -> {
                     if (logger.isWarnEnabled()) {
@@ -396,7 +226,7 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
                 "system \"{}\" from topic \"{}\" ...", system.name(), topic);
 
             system.consume()
-                .using(HttpJsonEventUnsubscribe.factory())
+                .using(HttpJsonEventUnsubscribeService.factory())
                 .flatMap(eventUnsubscribe -> eventUnsubscribe.unsubscribe(topic, system))
                 .ifSuccess(ignored -> logger.info("HTTP/JSON event " +
                     "subscriber unsubscribed system \"{}\" from topic " +
@@ -420,7 +250,7 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
             }
 
             system.consume()
-                .using(HttpJsonEventUnsubscribe.factory())
+                .using(HttpJsonEventUnsubscribeService.factory())
                 .ifSuccess(consumer -> {
                     for (final var topicName : nameToTopic.keySet()) {
                         unsubscribe(topicName);
@@ -440,7 +270,7 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
 
         private class Facade implements ArEventSubscriberPluginFacade {
             @Override
-            public Future<ArEventSubscriptionHandle> subscribe(final ArEventSubscription subscription) {
+            public Future<EventSubscriptionHandle> subscribe(final EventSubscription subscription) {
                 return Attached.this.subscribe(subscription);
             }
         }
@@ -473,7 +303,7 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
             }
         }
 
-        public ArEventSubscriptionHandle register(final ArEventSubscription subscription) {
+        public EventSubscriptionHandle register(final EventSubscription subscription) {
             final var handle = new Handle(subscription, this::remove);
             handles.add(handle);
             return handle;
@@ -488,15 +318,15 @@ public class HttpJsonEventSubscriberPlugin implements Plugin {
         }
     }
 
-    private static class Handle implements ArEventSubscriptionHandle {
-        private final ArEventSubscriptionHandler handler;
+    private static class Handle implements EventSubscriptionHandle {
+        private final EventSubscriptionHandler handler;
         private final Map<String, String> metadata;
         private final Set<ProviderDescription> providers;
         private final Consumer<Handle> onUnsubscribe;
         private final AtomicBoolean isUnsubscribed = new AtomicBoolean(false);
 
         private Handle(
-            final ArEventSubscription subscription,
+            final EventSubscription subscription,
             final Consumer<Handle> onUnsubscribe)
         {
             Objects.requireNonNull(subscription, "Expected subscription");

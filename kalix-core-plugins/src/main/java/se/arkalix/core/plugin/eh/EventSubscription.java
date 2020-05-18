@@ -7,17 +7,17 @@ import se.arkalix.description.ProviderDescription;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class ArEventSubscription {
+public class EventSubscription {
     private String topic;
     private Map<String, String> metadata;
     private Set<ProviderDescription> providers;
-    private ArEventSubscriptionHandler handler;
+    private EventSubscriptionHandler handler;
 
     public Optional<String> topic() {
         return Optional.ofNullable(topic);
     }
 
-    public ArEventSubscription topic(final String topic) {
+    public EventSubscription topic(final String topic) {
         this.topic = topic != null ? topic.toLowerCase() : null;
         return this;
     }
@@ -29,17 +29,17 @@ public class ArEventSubscription {
         return metadata;
     }
 
-    public ArEventSubscription metadata(final Map<String, String> metadata) {
+    public EventSubscription metadata(final Map<String, String> metadata) {
         this.metadata = metadata;
         return this;
     }
 
-    public ArEventSubscription metadata(final String key, final String value) {
+    public EventSubscription metadata(final String key, final String value) {
         metadata().put(key, value);
         return this;
     }
 
-    public ArEventSubscription provider(final ProviderDescription provider) {
+    public EventSubscription provider(final ProviderDescription provider) {
         providers().add(provider);
         return this;
     }
@@ -51,20 +51,20 @@ public class ArEventSubscription {
         return providers;
     }
 
-    public ArEventSubscription providers(final Collection<ProviderDescription> providers) {
+    public EventSubscription providers(final Collection<ProviderDescription> providers) {
         this.providers = providers != null ? new HashSet<>(providers) : null;
         return this;
     }
 
-    public ArEventSubscription providers(final ProviderDescription... providers) {
+    public EventSubscription providers(final ProviderDescription... providers) {
         return providers(Arrays.asList(providers));
     }
 
-    public Optional<ArEventSubscriptionHandler> handler() {
+    public Optional<EventSubscriptionHandler> handler() {
         return Optional.ofNullable(handler);
     }
 
-    public ArEventSubscription handler(final ArEventSubscriptionHandler handler) {
+    public EventSubscription handler(final EventSubscriptionHandler handler) {
         this.handler = handler;
         return this;
     }
@@ -84,7 +84,7 @@ public class ArEventSubscription {
 
     @Override
     public String toString() {
-        return "ArEventSubscription{" +
+        return "EventSubscription{" +
             "topic='" + topic + '\'' +
             ", metadata=" + metadata +
             ", providers=" + providers +

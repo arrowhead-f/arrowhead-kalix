@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.ArSystem;
 import se.arkalix.core.plugin.eh.ArEventSubscriberPluginFacade;
-import se.arkalix.core.plugin.eh.ArEventSubscriptionHandle;
+import se.arkalix.core.plugin.eh.EventSubscriptionHandle;
 import se.arkalix.core.plugin.eh.HttpJsonEventSubscriberPlugin;
 import se.arkalix.plugin.Plugin;
 import se.arkalix.plugin.PluginAttached;
@@ -62,8 +62,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * se.arkalix.core.plugin.HttpJsonCloudPlugin HttpJsonCloudPlugin}.
  */
 @SuppressWarnings("unused")
-public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
-    private static final Logger logger = LoggerFactory.getLogger(HttpJsonContractNegotiationTrustedPlugin.class);
+public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContractNegotiatorPlugin {
+    private static final Logger logger = LoggerFactory.getLogger(HttpJsonTrustedContractNegotiatorPlugin.class);
 
     @Override
     public Set<Class<? extends Plugin>> dependencies() {
@@ -101,7 +101,7 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
         private final ArEventSubscriberPluginFacade eventSubscriber;
         private final Map<HandlerKey, Handler> handlerMap = new ConcurrentHashMap<>();
 
-        private ArEventSubscriptionHandle eventSubscriptionHandle = null;
+        private EventSubscriptionHandle eventSubscriptionHandle = null;
 
         private Attached(final ArSystem system, final ArEventSubscriberPluginFacade eventSubscriber) {
             this.system = Objects.requireNonNull(system, "Expected system");
@@ -110,10 +110,10 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
 
         public Future<?> subscribe() {
             return eventSubscriber
-                .subscribe(ArContractNegotiationConstants.TOPIC_SESSION_UPDATE, (metadata, data) -> {
-                    final long sessionId;
+                .subscribe(ContractNegotiationConstants.TOPIC_UPDATE, (metadata, data) -> {
+                    final long negotiationId;
                     try {
-                        sessionId = Long.parseLong(data);
+                        negotiationId = Long.parseLong(data);
                     }
                     catch (final Throwable throwable) {
                         logger.warn("HTTP/JSON contract negotiator received " +
@@ -139,7 +139,7 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
                         return;
                     }
 
-                    final var handlerKey = new HandlerKey(offerorName, receiverName, sessionId);
+                    final var handlerKey = new HandlerKey(offerorName, receiverName, negotiationId);
                     final var handler = handlerMap.get(handlerKey);
                     if (handler == null) {
                         logger.trace("HTTP/JSON contract negotiator received " +
@@ -150,8 +150,8 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
                     }
 
                     system.consume()
-                        .using(HttpJsonContractNegotiationTrustedSession.factory())
-                        .flatMap(service -> service.getByNamesAndId(offerorName, receiverName, sessionId)
+                        .using(HttpJsonTrustedContractObservationService.factory())
+                        .flatMap(service -> service.getByNamesAndId(offerorName, receiverName, negotiationId)
                             .map(optionalSession -> optionalSession.orElseThrow(() -> new IllegalStateException("" +
                                 "Advertised session [data=" + data +
                                 ", metadata=" + metadata + "] not available " +
@@ -161,14 +161,14 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
                         .ifSuccess(session -> {
                             switch (session.status()) {
                             case OFFERING:
-                                handler.onOffer(session, new ArTrustedNegotiationResponder() {
+                                handler.onOffer(session, new TrustedContractNegotiatorResponder() {
                                     @Override
                                     public Future<?> accept() {
                                         handler.close();
                                         return system.consume()
-                                            .using(HttpJsonContractNegotiationTrusted.factory())
+                                            .using(HttpJsonTrustedContractNegotiationService.factory())
                                             .flatMap(service -> service.accept(new TrustedContractAcceptanceBuilder()
-                                                .sessionId(sessionId)
+                                                .negotiationId(negotiationId)
                                                 .acceptedAt(Instant.now())
                                                 .build()));
                                     }
@@ -176,7 +176,7 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
                                     @Override
                                     public Future<?> offer(final SimplifiedContractCounterOffer offer) {
                                         final var counterOffer = new TrustedContractCounterOfferBuilder()
-                                            .sessionId(sessionId)
+                                            .negotiationId(negotiationId)
                                             .offerorName(offerorName)
                                             .receiverName(receiverName)
                                             .validAfter(offer.validAfter())
@@ -186,7 +186,7 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
                                             .build();
                                         handler.refresh(counterOffer);
                                         return system.consume()
-                                            .using(HttpJsonContractNegotiationTrusted.factory())
+                                            .using(HttpJsonTrustedContractNegotiationService.factory())
                                             .flatMap(service -> service.counterOffer(counterOffer));
                                     }
 
@@ -194,9 +194,9 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
                                     public Future<?> reject() {
                                         handler.close();
                                         return system.consume()
-                                            .using(HttpJsonContractNegotiationTrusted.factory())
+                                            .using(HttpJsonTrustedContractNegotiationService.factory())
                                             .flatMap(service -> service.reject(new TrustedContractRejectionBuilder()
-                                                .sessionId(sessionId)
+                                                .negotiationId(negotiationId)
                                                 .rejectedAt(Instant.now())
                                                 .build()));
                                     }
@@ -246,15 +246,15 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
             }
         }
 
-        private class Facade implements ArContractNegotiationTrustedPluginFacade {
+        private class Facade implements ArTrustedContractNegotiatorPluginFacade {
             @Override
-            public void offer(final TrustedContractOfferDto offer, final ArTrustedNegotiationHandler handler) {
+            public void offer(final TrustedContractOfferDto offer, final TrustedContractNegotiatorHandler handler) {
                 system.consume()
-                    .using(HttpJsonContractNegotiationTrusted.factory())
+                    .using(HttpJsonTrustedContractNegotiationService.factory())
                     .flatMap(service -> service.offer(offer))
-                    .ifSuccess(sessionId -> {
-                        final var key = new HandlerKey(offer.offerorName(), offer.receiverName(), sessionId);
-                        handlerMap.put(key, new Handler(offer, sessionId, handler, () -> handlerMap.remove(key)));
+                    .ifSuccess(negotiationId -> {
+                        final var key = new HandlerKey(offer.offerorName(), offer.receiverName(), negotiationId);
+                        handlerMap.put(key, new Handler(offer, negotiationId, handler, () -> handlerMap.remove(key)));
                     })
                     .onFailure(handler::onFault);
             }
@@ -262,30 +262,30 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
     }
 
     private static class Handler {
-        private final ArTrustedNegotiationHandler handler;
+        private final TrustedContractNegotiatorHandler handler;
         private final Runnable closeTask;
 
         private Future<?> expirationFuture;
 
         private Handler(
             final TrustedContractOfferDto offer,
-            final long sessionId,
-            final ArTrustedNegotiationHandler handler,
+            final long negotiationId,
+            final TrustedContractNegotiatorHandler handler,
             final Runnable closeTask)
         {
             this.handler = Objects.requireNonNull(handler, "Expected handler");
             this.closeTask = Objects.requireNonNull(closeTask, "Expected closeTask");
             expirationFuture = Schedulers.fixed().schedule(offer.expiresIn(), () -> {
                 closeTask.run();
-                onExpiry(new TrustedContractSessionBuilder()
-                    .id(sessionId)
+                onExpiry(new TrustedContractNegotiationBuilder()
+                    .id(negotiationId)
                     .offer(offer)
-                    .status(ContractSessionStatus.EXPIRED)
+                    .status(ContractNegotiationStatus.EXPIRED)
                     .build());
             });
         }
 
-        public synchronized void onAccept(final TrustedContractSessionDto session) {
+        public synchronized void onAccept(final TrustedContractNegotiationDto session) {
             if (expirationFuture != null) {
                 expirationFuture.cancel();
                 expirationFuture = null;
@@ -299,18 +299,18 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
             }
         }
 
-        public synchronized void onOffer(final TrustedContractSessionDto session,
-                                         final ArTrustedNegotiationResponder responder)
+        public synchronized void onOffer(final TrustedContractNegotiationDto session,
+                                         final TrustedContractNegotiatorResponder responder)
         {
             if (expirationFuture != null) {
                 expirationFuture.cancel();
             }
             expirationFuture = Schedulers.fixed().schedule(session.offer().expiresIn(), () -> {
                 closeTask.run();
-                onExpiry(new TrustedContractSessionBuilder()
+                onExpiry(new TrustedContractNegotiationBuilder()
                     .id(session.id())
                     .offer(session.offer())
-                    .status(ContractSessionStatus.EXPIRED)
+                    .status(ContractNegotiationStatus.EXPIRED)
                     .build());
             });
             try {
@@ -322,7 +322,7 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
             }
         }
 
-        public synchronized void onReject(final TrustedContractSessionDto session) {
+        public synchronized void onReject(final TrustedContractNegotiationDto session) {
             if (expirationFuture != null) {
                 expirationFuture.cancel();
                 expirationFuture = null;
@@ -336,7 +336,7 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
             }
         }
 
-        private synchronized void onExpiry(final TrustedContractSessionDto session) {
+        private synchronized void onExpiry(final TrustedContractNegotiationDto session) {
             try {
                 handler.onExpiry(session);
             }
@@ -363,8 +363,8 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
             }
             expirationFuture = Schedulers.fixed().schedule(counterOffer.expiresIn(), () -> {
                 closeTask.run();
-                onExpiry(new TrustedContractSessionBuilder()
-                    .id(counterOffer.sessionId())
+                onExpiry(new TrustedContractNegotiationBuilder()
+                    .id(counterOffer.negotiationId())
                     .offer(new TrustedContractOfferBuilder()
                         .offerorName(counterOffer.offerorName())
                         .receiverName(counterOffer.receiverName())
@@ -373,7 +373,7 @@ public class HttpJsonContractNegotiationTrustedPlugin implements Plugin {
                         .contracts(counterOffer.contractsAsDtos())
                         .offeredAt(counterOffer.offeredAt())
                         .build())
-                    .status(ContractSessionStatus.EXPIRED)
+                    .status(ContractNegotiationStatus.EXPIRED)
                     .build());
             });
         }

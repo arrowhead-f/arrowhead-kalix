@@ -21,23 +21,23 @@ import static se.arkalix.descriptor.TransportDescriptor.HTTP;
 import static se.arkalix.net.http.HttpMethod.DELETE;
 
 /**
- * A remote {@link ArEventUnsubscribe} service that is communicated with via
+ * A remote {@link ArEventUnsubscribeService} service that is communicated with via
  * HTTP/JSON in either secure or insecure mode.
  */
 @SuppressWarnings("unused")
-public class HttpJsonEventUnsubscribe implements ArConsumer, ArEventUnsubscribe {
+public class HttpJsonEventUnsubscribeService implements ArConsumer, ArEventUnsubscribeService {
     private static final Factory factory = new Factory();
 
     private final HttpConsumer consumer;
 
-    private HttpJsonEventUnsubscribe(final HttpConsumer consumer) {
+    private HttpJsonEventUnsubscribeService(final HttpConsumer consumer) {
         this.consumer = consumer;
     }
 
     /**
      * @return Consumer {@link ArConsumerFactory factory class}.
      */
-    public static ArConsumerFactory<HttpJsonEventUnsubscribe> factory() {
+    public static ArConsumerFactory<HttpJsonEventUnsubscribeService> factory() {
         return factory;
     }
 
@@ -58,7 +58,7 @@ public class HttpJsonEventUnsubscribe implements ArConsumer, ArEventUnsubscribe 
         return consumer.service();
     }
 
-    private static class Factory implements ArConsumerFactory<HttpJsonEventUnsubscribe> {
+    private static class Factory implements ArConsumerFactory<HttpJsonEventUnsubscribeService> {
         @Override
         public Optional<String> serviceName() {
             return Optional.of("event-unsubscribe");
@@ -75,12 +75,12 @@ public class HttpJsonEventUnsubscribe implements ArConsumer, ArEventUnsubscribe 
         }
 
         @Override
-        public HttpJsonEventUnsubscribe create(
+        public HttpJsonEventUnsubscribeService create(
             final ArSystem system,
             final ServiceDescription service,
             final Collection<EncodingDescriptor> encodings) throws Exception
         {
-            return new HttpJsonEventUnsubscribe(new HttpConsumer(HttpClient.from(system), service, encodings));
+            return new HttpJsonEventUnsubscribeService(new HttpConsumer(HttpClient.from(system), service, encodings));
         }
     }
 }

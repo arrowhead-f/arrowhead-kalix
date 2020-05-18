@@ -21,32 +21,32 @@ import static se.arkalix.descriptor.TransportDescriptor.HTTP;
 import static se.arkalix.net.http.HttpMethod.POST;
 
 /**
- * A remote {@link ArEventSubscribe} service that is communicated with via
+ * A remote {@link ArEventPublishService} service that is communicated with via
  * HTTP/JSON in either secure or insecure mode.
  */
 @SuppressWarnings("unused")
-public class HttpJsonEventSubscribe implements ArConsumer, ArEventSubscribe {
+public class HttpJsonEventPublishService implements ArConsumer, ArEventPublishService {
     private static final Factory factory = new Factory();
 
     private final HttpConsumer consumer;
 
-    private HttpJsonEventSubscribe(final HttpConsumer consumer) {
+    private HttpJsonEventPublishService(final HttpConsumer consumer) {
         this.consumer = consumer;
     }
 
     /**
      * @return Consumer {@link ArConsumerFactory factory class}.
      */
-    public static ArConsumerFactory<HttpJsonEventSubscribe> factory() {
+    public static ArConsumerFactory<HttpJsonEventPublishService> factory() {
         return factory;
     }
 
     @Override
-    public Future<?> subscribe(final EventSubscriptionRequestDto subscription) {
+    public Future<?> publish(final EventOutgoingDto event) {
         return consumer.send(new HttpConsumerRequest()
             .method(POST)
             .uri(service().uri())
-            .body(subscription))
+            .body(event))
             .flatMap(HttpJsonServices::unwrap);
     }
 
@@ -55,10 +55,10 @@ public class HttpJsonEventSubscribe implements ArConsumer, ArEventSubscribe {
         return consumer.service();
     }
 
-    private static class Factory implements ArConsumerFactory<HttpJsonEventSubscribe> {
+    private static class Factory implements ArConsumerFactory<HttpJsonEventPublishService> {
         @Override
         public Optional<String> serviceName() {
-            return Optional.of("event-subscribe");
+            return Optional.of("event-publish");
         }
 
         @Override
@@ -72,12 +72,12 @@ public class HttpJsonEventSubscribe implements ArConsumer, ArEventSubscribe {
         }
 
         @Override
-        public HttpJsonEventSubscribe create(
+        public HttpJsonEventPublishService create(
             final ArSystem system,
             final ServiceDescription service,
             final Collection<EncodingDescriptor> encodings) throws Exception
         {
-            return new HttpJsonEventSubscribe(new HttpConsumer(HttpClient.from(system), service, encodings));
+            return new HttpJsonEventPublishService(new HttpConsumer(HttpClient.from(system), service, encodings));
         }
     }
 }

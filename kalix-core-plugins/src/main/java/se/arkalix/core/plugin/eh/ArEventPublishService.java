@@ -12,7 +12,7 @@ import java.util.Map;
  * Represents an Arrowhead event publishing service.
  */
 @SuppressWarnings("unused")
-public interface ArEventPublish {
+public interface ArEventPublishService {
     /**
      * Publishes given {@code event}.
      *

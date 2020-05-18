@@ -7,11 +7,11 @@ import se.arkalix.plugin.PluginFacade;
  * observed.
  */
 @SuppressWarnings("unused")
-public interface ArContractObservationTrustedPluginFacade extends PluginFacade {
+public interface ArTrustedContractObserverPluginFacade extends PluginFacade {
     /**
      * Registers observer to receive contract negotiation updates.
      *
      * @param observer Observer to register.
      */
-    void observe(final ArTrustedNegotiationObserver observer);
+    void observe(final TrustedContractObserverHandler observer);
 }

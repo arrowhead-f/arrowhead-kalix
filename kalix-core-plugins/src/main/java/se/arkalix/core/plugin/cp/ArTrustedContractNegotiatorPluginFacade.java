@@ -11,7 +11,7 @@ import java.util.List;
  * out with state management support.
  */
 @SuppressWarnings("unused")
-public interface ArContractNegotiationTrustedPluginFacade extends PluginFacade {
+public interface ArTrustedContractNegotiatorPluginFacade extends PluginFacade {
     /**
      * Starts new contract negotiation by making given {@code offer} and then
      * uses provided negotiation {@code handler} to handle any response from
@@ -22,7 +22,7 @@ public interface ArContractNegotiationTrustedPluginFacade extends PluginFacade {
      *                rejection or counter-offers made by the party receiving
      *                the offer.
      */
-    void offer(TrustedContractOfferDto offer, ArTrustedNegotiationHandler handler);
+    void offer(TrustedContractOfferDto offer, TrustedContractNegotiatorHandler handler);
 
     /**
      * Starts new contract negotiation by making the described offer and then
@@ -44,7 +44,7 @@ public interface ArContractNegotiationTrustedPluginFacade extends PluginFacade {
         final String receiverName,
         final Duration validFor,
         final List<TrustedContractDto> contracts,
-        final ArTrustedNegotiationHandler handler)
+        final TrustedContractNegotiatorHandler handler)
     {
         final var now = Instant.now();
         offer(new TrustedContractOfferBuilder()

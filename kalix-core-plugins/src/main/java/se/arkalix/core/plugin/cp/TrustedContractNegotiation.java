@@ -18,10 +18,10 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 @DtoWritableAs(JSON)
 @DtoEqualsHashCode
 @DtoToString
-public interface TrustedContractSession {
+public interface TrustedContractNegotiation {
     /**
-     * Session identifier, uniquely identifying this session in combination
-     * with the names of the two parties using it to negotiate.
+     * Negotiation identifier, uniquely identifying this negotiation session in
+     * combination with the names of the two parties using it to negotiate.
      */
     long id();
 
@@ -31,7 +31,7 @@ public interface TrustedContractSession {
     TrustedContractOffer offer();
 
     /**
-     * The current state of the session.
+     * The current state of this negotiation session.
      */
-    ContractSessionStatus status();
+    ContractNegotiationStatus status();
 }

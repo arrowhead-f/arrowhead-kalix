@@ -24,6 +24,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 @DtoWritableAs(JSON)
 @DtoEqualsHashCode
 @DtoToString
+@SuppressWarnings("unused")
 public interface TrustedContract {
     /**
      * Parameterized template.

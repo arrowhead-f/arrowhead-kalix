@@ -12,13 +12,13 @@ import static se.arkalix.internal.core.plugin.HttpJsonServices.unwrap;
 import static se.arkalix.net.http.HttpMethod.POST;
 
 /**
- * A remote {@link ArOrchestration} service that is communicated with via
+ * A remote {@link ArOrchestrationService} service that is communicated with via
  * HTTP/JSON in either secure or insecure mode.
  */
-public class HttpJsonOrchestration implements ArConsumer, ArOrchestration {
+public class HttpJsonOrchestrationService implements ArConsumer, ArOrchestrationService {
     private final HttpConsumer consumer;
 
-    public HttpJsonOrchestration(final HttpConsumer consumer) {
+    public HttpJsonOrchestrationService(final HttpConsumer consumer) {
         this.consumer = Objects.requireNonNull(consumer, "Expected consumer");
     }
 

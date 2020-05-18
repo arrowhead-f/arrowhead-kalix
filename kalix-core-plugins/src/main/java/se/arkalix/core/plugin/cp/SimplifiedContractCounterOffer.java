@@ -11,6 +11,7 @@ import java.util.Objects;
  * A contract counter-offer useful when important details about the negotiation
  * in question can be inferred.
  */
+@SuppressWarnings("unused")
 public class SimplifiedContractCounterOffer {
     private final Instant validAfter;
     private final Instant validUntil;

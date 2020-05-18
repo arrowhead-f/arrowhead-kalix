@@ -3,9 +3,9 @@ package se.arkalix.core.plugin.eh;
 import se.arkalix.util.annotation.ThreadSafe;
 
 /**
- * Handle useful for managing a registered {@link ArEventSubscription}.
+ * Handle useful for managing a registered {@link EventSubscription}.
  */
-public interface ArEventSubscriptionHandle {
+public interface EventSubscriptionHandle {
     /**
      * Causes represented subscription to be cancelled, if active.
      * <p>

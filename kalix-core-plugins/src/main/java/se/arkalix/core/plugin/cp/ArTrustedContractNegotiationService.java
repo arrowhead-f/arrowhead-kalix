@@ -12,9 +12,9 @@ import java.time.Instant;
  * alter the messages sent to them.
  */
 @SuppressWarnings("unused")
-public interface ArContractNegotiationTrusted {
+public interface ArTrustedContractNegotiationService {
     /**
-     * Accepts {@link TrustedContractSession#offer() contract offer} identified
+     * Accepts {@link TrustedContractNegotiation#offer() contract offer} identified
      * by given {@code acceptance}.
      *
      * @param acceptance Identifies accepted session offer.
@@ -23,16 +23,16 @@ public interface ArContractNegotiationTrusted {
     Future<?> accept(TrustedContractAcceptanceDto acceptance);
 
     /**
-     * Accepts {@link TrustedContractSession#offer() contract offer} identified
+     * Accepts {@link TrustedContractNegotiation#offer() contract offer} identified
      * by given session identifier.
      *
-     * @param sessionId Identifies negotiation session the accepted offer is
+     * @param negotiationId Identifies negotiation session the accepted offer is
      *                  part of.
      * @return Future completed successfully only if acceptance succeeds.
      */
-    default Future<?> accept(final long sessionId) {
+    default Future<?> accept(final long negotiationId) {
         return accept(new TrustedContractAcceptanceBuilder()
-            .sessionId(sessionId)
+            .negotiationId(negotiationId)
             .acceptedAt(Instant.now())
             .build());
     }
@@ -56,7 +56,7 @@ public interface ArContractNegotiationTrusted {
     Future<?> counterOffer(TrustedContractCounterOfferDto counterOffer);
 
     /**
-     * Rejects {@link TrustedContractSession#offer() contract offer} identified
+     * Rejects {@link TrustedContractNegotiation#offer() contract offer} identified
      * by given {@code rejection}.
      *
      * @param rejection Identifies rejected session offer.
@@ -65,16 +65,16 @@ public interface ArContractNegotiationTrusted {
     Future<?> reject(TrustedContractRejectionDto rejection);
 
     /**
-     * Rejects {@link TrustedContractSession#offer() contract offer} identified
+     * Rejects {@link TrustedContractNegotiation#offer() contract offer} identified
      * by given session identifier.
      *
-     * @param sessionId Identifies negotiation session the rejected offer is
+     * @param negotiationId Identifies negotiation session the rejected offer is
      *                  part of.
      * @return Future completed successfully only if rejection succeeds.
      */
-    default Future<?> reject(final long sessionId) {
+    default Future<?> reject(final long negotiationId) {
         return reject(new TrustedContractRejectionBuilder()
-            .sessionId(sessionId)
+            .negotiationId(negotiationId)
             .rejectedAt(Instant.now())
             .build());
     }

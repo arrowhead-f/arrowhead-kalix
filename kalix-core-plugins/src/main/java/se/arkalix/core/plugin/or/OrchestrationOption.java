@@ -8,7 +8,7 @@ import java.util.Objects;
  * An {@link OrchestrationQuery orchestration query} option.
  * <p>
  * Options like the ones listed below may be used to affect the behavior of an
- * {@link ArOrchestration orchestration service} while it handles {@link
+ * {@link ArOrchestrationService orchestration service} while it handles {@link
  * OrchestrationQuery orchestration queries}.
  */
 public final class OrchestrationOption {

@@ -6,7 +6,7 @@ import se.arkalix.util.concurrent.Future;
 /**
  * Represents an Arrowhead orchestration service.
  */
-public interface ArOrchestration extends ArConsumer {
+public interface ArOrchestrationService extends ArConsumer {
     /**
      * Queries orchestration service for services that should be consumed.
      *

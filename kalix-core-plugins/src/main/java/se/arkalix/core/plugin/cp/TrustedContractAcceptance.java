@@ -19,12 +19,13 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 @DtoWritableAs(JSON)
 @DtoEqualsHashCode
 @DtoToString
+@SuppressWarnings("unused")
 public interface TrustedContractAcceptance {
     /**
-     * Identifies the {@link TrustedContractSession session} containing the
-     * accepted offer.
+     * Identifies the {@link TrustedContractNegotiation negotiation session}
+     * containing the accepted offer.
      */
-    long sessionId();
+    long negotiationId();
 
     /**
      * The instant at which the offer was accepted.

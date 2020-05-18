@@ -16,7 +16,7 @@
  * learned. This means that they must be established some other way before this
  * package can be meaningfully used.
  *
- * @see se.arkalix.core.plugin.cp.ArContractNegotiationTrusted ArContractNegotiationTrusted
- * @see se.arkalix.core.plugin.cp.ArContractNegotiationTrustedSession ArContractNegotiationTrustedSession
+ * @see se.arkalix.core.plugin.cp.ArTrustedContractNegotiationService ArTrustedContractNegotiationService
+ * @see se.arkalix.core.plugin.cp.ArTrustedContractObservationService ArTrustedContractObservationService
  */
 package se.arkalix.core.plugin.cp;

@@ -4,11 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.ArService;
 import se.arkalix.ArSystem;
-import se.arkalix.core.plugin.or.ArOrchestrationStrategy;
-import se.arkalix.core.plugin.or.HttpJsonOrchestration;
+import se.arkalix.core.plugin.or.OrchestrationStrategy;
+import se.arkalix.core.plugin.or.HttpJsonOrchestrationService;
 import se.arkalix.core.plugin.or.OrchestrationOption;
 import se.arkalix.core.plugin.or.OrchestrationQueryBuilder;
-import se.arkalix.core.plugin.sr.HttpJsonServiceDiscovery;
+import se.arkalix.core.plugin.sr.HttpJsonServiceDiscoveryService;
 import se.arkalix.core.plugin.sr.ServiceQueryBuilder;
 import se.arkalix.core.plugin.sr.ServiceRegistration;
 import se.arkalix.description.ProviderDescription;
@@ -63,14 +63,14 @@ public class HttpJsonCloudPlugin implements Plugin {
 
     private final InetSocketAddress serviceRegistrySocketAddress;
     private final String serviceDiscoveryBasePath;
-    private final ArOrchestrationStrategy orchestrationStrategy;
+    private final OrchestrationStrategy orchestrationStrategy;
 
     private HttpJsonCloudPlugin(final Builder builder) {
         serviceDiscoveryBasePath = Objects.requireNonNullElse(builder.serviceDiscoveryBasePath, "/serviceregistry");
         serviceRegistrySocketAddress = Objects.requireNonNull(builder.serviceRegistrySocketAddress,
             "Expected serviceRegistrySocketAddress");
         orchestrationStrategy = Objects.requireNonNullElse(builder.orchestrationStrategy,
-            ArOrchestrationStrategy.STORED_THEN_DYNAMIC);
+            OrchestrationStrategy.STORED_THEN_DYNAMIC);
     }
 
     /**
@@ -110,10 +110,10 @@ public class HttpJsonCloudPlugin implements Plugin {
         private final HttpClient client;
 
         private final Object serviceDiscoveryLock = new Object();
-        private FutureAnnouncement<HttpJsonServiceDiscovery> serviceDiscoveryAnnouncement = null;
+        private FutureAnnouncement<HttpJsonServiceDiscoveryService> serviceDiscoveryAnnouncement = null;
 
         private final Object orchestrationLock = new Object();
-        private FutureAnnouncement<HttpJsonOrchestration> orchestrationAnnouncement = null;
+        private FutureAnnouncement<HttpJsonOrchestrationService> orchestrationAnnouncement = null;
 
         private final Object authorizationKeyLock = new Object();
         private FutureAnnouncement<PublicKey> authorizationKeyAnnouncement = null;
@@ -253,7 +253,7 @@ public class HttpJsonCloudPlugin implements Plugin {
             throw new IllegalStateException("Unsupported orchestration strategy: " + orchestrationStrategy);
         }
 
-        private Future<HttpJsonServiceDiscovery> requestServiceDiscovery() {
+        private Future<HttpJsonServiceDiscoveryService> requestServiceDiscovery() {
             synchronized (serviceDiscoveryLock) {
                 if (serviceDiscoveryAnnouncement == null) {
                     if (logger.isInfoEnabled()) {
@@ -295,7 +295,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                                 provider = new ProviderDescription("service_registry", serviceRegistrySocketAddress);
                             }
 
-                            final var serviceDiscovery = new HttpJsonServiceDiscovery(client,
+                            final var serviceDiscovery = new HttpJsonServiceDiscoveryService(client,
                                 new ServiceDescription.Builder()
                                     .name("service-discovery")
                                     .provider(provider)
@@ -395,7 +395,7 @@ public class HttpJsonCloudPlugin implements Plugin {
             }
         }
 
-        private Future<HttpJsonOrchestration> requestOrchestration() {
+        private Future<HttpJsonOrchestrationService> requestOrchestration() {
             synchronized (orchestrationLock) {
                 if (orchestrationAnnouncement == null) {
                     if (logger.isInfoEnabled()) {
@@ -420,7 +420,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                                     "No orchestration service available; cannot " +
                                     "request orchestration rules"));
                             }
-                            final var orchestration = new HttpJsonOrchestration(new HttpConsumer(
+                            final var orchestration = new HttpJsonOrchestrationService(new HttpConsumer(
                                 client,
                                 services.get(0).toServiceDescription(),
                                 Collections.singleton(EncodingDescriptor.JSON)));
@@ -485,7 +485,7 @@ public class HttpJsonCloudPlugin implements Plugin {
     public static class Builder {
         private String serviceDiscoveryBasePath;
         private InetSocketAddress serviceRegistrySocketAddress;
-        private ArOrchestrationStrategy orchestrationStrategy;
+        private OrchestrationStrategy orchestrationStrategy;
 
         /**
          * Sets base path, or <i>service URI</i>, of the service discovery
@@ -518,14 +518,14 @@ public class HttpJsonCloudPlugin implements Plugin {
         }
 
         /**
-         * Sets {@link ArOrchestrationStrategy orchestration strategy} to use
+         * Sets {@link OrchestrationStrategy orchestration strategy} to use
          * when {@link se.arkalix.ArSystem#consume() resolving what services}
          * to consume.
          *
          * @param orchestrationStrategy Desired orchestration strategy.
          * @return This builder.
          */
-        public Builder orchestrationStrategy(final ArOrchestrationStrategy orchestrationStrategy) {
+        public Builder orchestrationStrategy(final OrchestrationStrategy orchestrationStrategy) {
             this.orchestrationStrategy = orchestrationStrategy;
             return this;
         }

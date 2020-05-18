@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
  * Represents an Arrowhead service discovery service.
  */
 @SuppressWarnings("unused")
-public interface ArServiceDiscovery extends ArConsumer {
+public interface ArServiceDiscoveryService extends ArConsumer {
     /**
      * Queries registry for certain service definitions.
      *

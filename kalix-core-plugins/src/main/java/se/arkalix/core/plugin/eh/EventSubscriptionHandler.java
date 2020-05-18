@@ -7,7 +7,7 @@ import java.util.Map;
  * publishing systems and a required set of metadata parameters.
  */
 @FunctionalInterface
-public interface ArEventSubscriptionHandler {
+public interface EventSubscriptionHandler {
     /**
      * Called to notify this handler about the availability of a matching
      * event.

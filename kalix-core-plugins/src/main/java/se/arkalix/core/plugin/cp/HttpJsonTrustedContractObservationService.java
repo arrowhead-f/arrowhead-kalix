@@ -23,16 +23,16 @@ import static se.arkalix.internal.core.plugin.HttpJsonServices.unwrapOptional;
 import static se.arkalix.net.http.HttpMethod.GET;
 
 /**
- * A remote {@link HttpJsonContractNegotiationTrustedSession} service that is
+ * A remote {@link HttpJsonTrustedContractObservationService} service that is
  * communicated with via HTTP/JSON in either secure or insecure mode.
  */
-public class HttpJsonContractNegotiationTrustedSession implements ArConsumer, ArContractNegotiationTrustedSession {
+public class HttpJsonTrustedContractObservationService implements ArConsumer, ArTrustedContractObservationService {
     private static final Factory factory = new Factory();
 
     private final HttpConsumer consumer;
     private final String uriGet;
 
-    private HttpJsonContractNegotiationTrustedSession(final HttpConsumer consumer) {
+    private HttpJsonTrustedContractObservationService(final HttpConsumer consumer) {
         this.consumer = Objects.requireNonNull(consumer, "Expected consumer");
         uriGet = Paths.combine(consumer.service().uri(), "sessions");
     }
@@ -40,7 +40,7 @@ public class HttpJsonContractNegotiationTrustedSession implements ArConsumer, Ar
     /**
      * @return Consumer {@link ArConsumerFactory factory class}.
      */
-    public static ArConsumerFactory<HttpJsonContractNegotiationTrustedSession> factory() {
+    public static ArConsumerFactory<HttpJsonTrustedContractObservationService> factory() {
         return factory;
     }
 
@@ -50,7 +50,7 @@ public class HttpJsonContractNegotiationTrustedSession implements ArConsumer, Ar
     }
 
     @Override
-    public Future<Optional<TrustedContractSessionDto>> getByNamesAndId(
+    public Future<Optional<TrustedContractNegotiationDto>> getByNamesAndId(
         final String name1,
         final String name2,
         final long id)
@@ -61,13 +61,13 @@ public class HttpJsonContractNegotiationTrustedSession implements ArConsumer, Ar
             .queryParameter("name1", name1)
             .queryParameter("name2", name2)
             .queryParameter("id", "" + id))
-            .flatMap(response -> unwrapOptional(response, TrustedContractSessionDto.class));
+            .flatMap(response -> unwrapOptional(response, TrustedContractNegotiationDto.class));
     }
 
-    private static class Factory implements ArConsumerFactory<HttpJsonContractNegotiationTrustedSession> {
+    private static class Factory implements ArConsumerFactory<HttpJsonTrustedContractObservationService> {
         @Override
         public Optional<String> serviceName() {
-            return Optional.of("contract-negotiation-trusted-session");
+            return Optional.of("trusted-contract-observation");
         }
 
         @Override
@@ -81,13 +81,13 @@ public class HttpJsonContractNegotiationTrustedSession implements ArConsumer, Ar
         }
 
         @Override
-        public HttpJsonContractNegotiationTrustedSession create(
+        public HttpJsonTrustedContractObservationService create(
             final ArSystem system,
             final ServiceDescription service,
             final Collection<EncodingDescriptor> encodings) throws Exception
         {
             final var consumer = new HttpConsumer(HttpClient.from(system), service, encodings);
-            return new HttpJsonContractNegotiationTrustedSession(consumer);
+            return new HttpJsonTrustedContractObservationService(consumer);
         }
     }
 }

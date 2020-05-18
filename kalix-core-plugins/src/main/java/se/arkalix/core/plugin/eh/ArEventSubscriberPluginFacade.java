@@ -22,7 +22,7 @@ public interface ArEventSubscriberPluginFacade extends PluginFacade {
      * @param handler Handler to receive matching events.
      * @return Future completed when subscription is registered.
      */
-    default Future<ArEventSubscriptionHandle> subscribe(final String topic, final ArEventSubscriptionHandler handler) {
+    default Future<EventSubscriptionHandle> subscribe(final String topic, final EventSubscriptionHandler handler) {
         return subscribe(topic, null, null, handler);
     }
 
@@ -37,10 +37,10 @@ public interface ArEventSubscriberPluginFacade extends PluginFacade {
      * @param handler  Handler to receive matching events.
      * @return Future completed when subscription is registered.
      */
-    default Future<ArEventSubscriptionHandle> subscribe(
+    default Future<EventSubscriptionHandle> subscribe(
         final String topic,
         final Map<String, String> metadata,
-        final ArEventSubscriptionHandler handler)
+        final EventSubscriptionHandler handler)
     {
         return subscribe(topic, metadata, null, handler);
     }
@@ -55,10 +55,10 @@ public interface ArEventSubscriberPluginFacade extends PluginFacade {
      * @param handler   Handler to receive matching events.
      * @return Future completed when subscription is registered.
      */
-    default Future<ArEventSubscriptionHandle> subscribe(
+    default Future<EventSubscriptionHandle> subscribe(
         final String topic,
         final Collection<ProviderDescription> providers,
-        final ArEventSubscriptionHandler handler)
+        final EventSubscriptionHandler handler)
     {
         return subscribe(topic, null, providers, handler);
     }
@@ -75,13 +75,13 @@ public interface ArEventSubscriberPluginFacade extends PluginFacade {
      * @param handler   Handler to receive matching events.
      * @return Future completed when subscription is registered.
      */
-    default Future<ArEventSubscriptionHandle> subscribe(
+    default Future<EventSubscriptionHandle> subscribe(
         final String topic,
         final Map<String, String> metadata,
         final Collection<ProviderDescription> providers,
-        final ArEventSubscriptionHandler handler)
+        final EventSubscriptionHandler handler)
     {
-        return subscribe(new ArEventSubscription()
+        return subscribe(new EventSubscription()
             .topic(topic)
             .metadata(metadata)
             .providers(providers)
@@ -94,5 +94,5 @@ public interface ArEventSubscriberPluginFacade extends PluginFacade {
      * @param subscription Subscription to register.
      * @return This builder.
      */
-    Future<ArEventSubscriptionHandle> subscribe(final ArEventSubscription subscription);
+    Future<EventSubscriptionHandle> subscribe(final EventSubscription subscription);
 }

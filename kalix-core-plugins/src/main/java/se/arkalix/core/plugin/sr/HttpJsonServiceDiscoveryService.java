@@ -17,17 +17,17 @@ import static se.arkalix.net.http.HttpMethod.DELETE;
 import static se.arkalix.net.http.HttpMethod.POST;
 
 /**
- * A remote {@link ArServiceDiscovery} service that is communicated with via
+ * A remote {@link ArServiceDiscoveryService} service that is communicated with via
  * HTTP/JSON in either secure or insecure mode.
  */
-public class HttpJsonServiceDiscovery implements ArServiceDiscovery {
+public class HttpJsonServiceDiscoveryService implements ArServiceDiscoveryService {
     private final HttpConsumer consumer;
 
     private final String uriQuery;
     private final String uriRegister;
     private final String uriUnregister;
 
-    public HttpJsonServiceDiscovery(final HttpClient client, final ServiceDescription service) {
+    public HttpJsonServiceDiscoveryService(final HttpClient client, final ServiceDescription service) {
         Objects.requireNonNull(client, "Expected client");
         Objects.requireNonNull(service, "Expected service");
 
