@@ -12,11 +12,11 @@ import java.util.List;
 import static se.arkalix.dto.DtoEncoding.JSON;
 
 /**
- * An offer countering a previously received such.
+ * An {@link TrustedContractOffer offer} countering a previously received such.
  * <p>
- * Each counter-offer updates a so-called <i>negotiation {@link
- * TrustedContractNegotiation session}</i>, which contains all data currently
- * associated with an on-going or previously closed negotiation.
+ * Each counter-offer updates a so-called {@link TrustedContractNegotiation
+ * negotiation session}, which contains all data currently associated with an
+ * on-going or previously closed negotiation.
  * <p>
  * Instances of this type are trusted in the sense that they either (1) come
  * from trusted sources or (2) will be sent to systems that trust their senders.
@@ -25,7 +25,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 @DtoWritableAs(JSON)
 @DtoEqualsHashCode
 @DtoToString
-public interface TrustedContractCounterOffer {
+public interface TrustedContractCounterOffer extends TrustedContractOffer {
     /**
      * Identifies the {@link TrustedContractNegotiation negotiation session}
      * containing the countered offer.
@@ -37,6 +37,7 @@ public interface TrustedContractCounterOffer {
      *
      * @see se.arkalix.core.plugin.cp Package documentation for details about names
      */
+    @Override
     String offerorName();
 
     /**
@@ -44,32 +45,30 @@ public interface TrustedContractCounterOffer {
      *
      * @see se.arkalix.core.plugin.cp Package documentation for details about names
      */
+    @Override
     String receiverName();
 
     /**
      * Instant after which this offer becomes acceptable.
      */
+    @Override
     Instant validAfter();
 
     /**
      * Instant after which this offer can no longer be accepted or rejected.
      */
+    @Override
     Instant validUntil();
-
-    /**
-     * Duration until this counter-offer can no longer be accepted or rejected.
-     */
-    default Duration expiresIn() {
-        return Duration.between(Instant.now(), validUntil());
-    }
 
     /**
      * Offered contracts.
      */
+    @Override
     List<TrustedContract> contracts();
 
     /**
      * Time at which this offer was created.
      */
+    @Override
     Instant offeredAt();
 }

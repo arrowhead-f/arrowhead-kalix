@@ -14,9 +14,9 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 /**
  * A concrete offer for two parties to enter into a legally binding contract.
  * <p>
- * Each offer creates a so-called <i>negotiation {@link
- * TrustedContractNegotiation session}</i>, which contains all data currently
- * associated with an on-going or previously closed negotiation.
+ * Each offer updates a so-called {@link TrustedContractNegotiation
+ * negotiation session}, which contains all data currently associated with an
+ * on-going or previously closed negotiation.
  * <p>
  * Instances of this type are trusted in the sense that they either (1) come
  * from trusted sources or (2) will be sent to systems that trust their senders.
