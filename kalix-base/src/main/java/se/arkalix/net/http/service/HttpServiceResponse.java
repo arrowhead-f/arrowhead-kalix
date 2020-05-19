@@ -7,6 +7,8 @@ import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.HttpVersion;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -29,6 +31,40 @@ public interface HttpServiceResponse extends HttpBodySender<HttpServiceResponse>
      * @see DtoWritableAs @DtoWritableAs
      */
     HttpServiceResponse body(final DtoWritable data);
+
+    /**
+     * Sets outgoing HTTP body, replacing any previously set such.
+     * <p>
+     * The provided array of writable data transfer objects are scheduled for
+     * encoding and transmission to the receiver of the body. Please refer to
+     * the Javadoc for the {@code @DtoWritableAs} annotation for more
+     * information about writable data transfer objects.
+     *
+     * @param data Data transfer objects to send to receiver of the body.
+     * @return This.
+     * @throws NullPointerException If {@code encoding} or {@code body} is
+     *                              {@code null}.
+     * @see DtoWritableAs @DtoWritableAs
+     */
+    default HttpServiceResponse body(final DtoWritable... data) {
+        return body(Arrays.asList(data));
+    }
+
+    /**
+     * Sets outgoing HTTP body, replacing any previously set such.
+     * <p>
+     * The provided list of writable data transfer objects are scheduled for
+     * encoding and transmission to the receiver of the body. Please refer to
+     * the Javadoc for the {@code @DtoWritableAs} annotation for more
+     * information about writable data transfer objects.
+     *
+     * @param data Data transfer objects to send to receiver of the body.
+     * @return This.
+     * @throws NullPointerException If {@code encoding} or {@code body} is
+     *                              {@code null}.
+     * @see DtoWritableAs @DtoWritableAs
+     */
+    HttpServiceResponse body(final List<DtoWritable> data);
 
     /**
      * Removes all currently set headers.
