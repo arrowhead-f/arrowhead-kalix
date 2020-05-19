@@ -337,17 +337,6 @@ public class DtoPropertyFactory {
         var writable = element.getAnnotation(DtoWritableAs.class);
 
         if (readable == null && writable == null) {
-            if (element instanceof TypeElement) {
-                element = elementUtils.getTypeElement(((TypeElement) element).getQualifiedName());
-            }
-            else {
-                element = elementUtils.getTypeElement(elementUtils.getName(type.toString()));
-            }
-            readable = element.getAnnotation(DtoReadableAs.class);
-            writable = element.getAnnotation(DtoWritableAs.class);
-        }
-
-        if (readable == null && writable == null) {
             if (element.getSimpleName().toString().endsWith(DtoTarget.DATA_SUFFIX)) {
                 throw new DtoException(method, "Generated DTO classes may " +
                     "not be used in interfaces annotated with @DtoReadableAs " +
@@ -359,7 +348,9 @@ public class DtoPropertyFactory {
             }
             throw new DtoException(method, "Invalid getter return type; " +
                 "please refer to the `se.arkalix.dto` package documentation " +
-                "for a complete list of supported return types");
+                "for a complete list of supported return types (type: " + type
+                + "/" + element.asType() + ", annotations: " +
+                elementUtils.getAllAnnotationMirrors(element) + ")");
         }
 
         final var readableEncodings = readable != null ? readable.value() : new DtoEncoding[0];
