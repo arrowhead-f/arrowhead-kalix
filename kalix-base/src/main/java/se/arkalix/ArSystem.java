@@ -24,6 +24,7 @@ import se.arkalix.util.concurrent.Schedulers;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -47,6 +48,7 @@ public class ArSystem {
     private final ArServiceCache consumedServices;
     private final ProviderDescription description;
     private final Set<ArServer> servers = new HashSet<>();
+    private final Semaphore serversLock = new Semaphore(1);
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 
     private Map<Class<? extends Plugin>, PluginFacade> pluginClassToFacade = null;
@@ -288,29 +290,33 @@ public class ArSystem {
             return Future.failure(cannotProvideServiceShuttingDownException());
         }
 
-        synchronized (servers) {
+        serversLock.acquireUninterruptibly();
+        try {
             for (final var server : servers) {
                 if (server.canProvide(service)) {
                     return server.provide(service);
                 }
             }
-        }
 
-        final var serverConstructor = ArServerRegistry.get(service.getClass())
-            .orElseThrow(() -> new IllegalArgumentException("" +
-                "No Arrowhead server exists for services of type \"" +
-                service.getClass() + "\""));
+            final var serverConstructor = ArServerRegistry.get(service.getClass())
+                .orElseThrow(() -> new IllegalArgumentException("" +
+                    "No Arrowhead server exists for services of type \"" +
+                    service.getClass() + "\""));
 
-        return serverConstructor.create(this, pluginNotifier)
-            .flatMap(server -> {
-                if (isShuttingDown.get()) {
-                    return server.close().fail(cannotProvideServiceShuttingDownException());
-                }
-                synchronized (servers) {
+            return serverConstructor.create(this, pluginNotifier)
+                .flatMap(server -> {
+                    if (isShuttingDown.get()) {
+                        return server.close().fail(cannotProvideServiceShuttingDownException());
+                    }
                     servers.add(server);
-                }
-                return server.provide(service);
-            });
+                    return server.provide(service);
+                })
+                .always(ignored -> serversLock.release());
+        }
+        catch (final Throwable throwable) {
+            serversLock.release();
+            throw throwable;
+        }
     }
 
     private Throwable cannotProvideServiceShuttingDownException() {
@@ -324,10 +330,14 @@ public class ArSystem {
      */
     @ThreadSafe
     public Stream<ServiceDescription> providedServices() {
-        synchronized (servers) {
+        serversLock.acquireUninterruptibly();
+        try {
             return servers.stream()
                 .flatMap(server -> server.providedServices()
                     .map(ArServiceHandle::description));
+        }
+        finally {
+            serversLock.release();
         }
     }
 
@@ -370,15 +380,19 @@ public class ArSystem {
             return Future.done();
         }
         scheduler.removeShutdownListener(schedulerShutdownListener);
-        synchronized (servers) {
+        serversLock.acquireUninterruptibly();
+        try {
             return Futures.serialize(servers.stream().map(ArServer::close))
                 .mapResult(result -> {
                     pluginNotifier.onDetach();
-                    synchronized (servers) {
-                        servers.clear();
-                    }
+                    servers.clear();
                     return result;
-                });
+                })
+                .always(ignored -> serversLock.release());
+        }
+        catch (final Throwable throwable) {
+            serversLock.release();
+            throw throwable;
         }
     }
 
