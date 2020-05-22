@@ -65,6 +65,8 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
     }
 
     private static class Attached implements PluginAttached {
+        private final Facade facade = new Facade();
+
         private final String basePath;
         private final ArSystem system;
         private final SystemDetailsDto subscriber;
@@ -235,6 +237,11 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
                     "subscriber failed to unsubscribe system \"" +
                     system.name() + "\" from topic \"" + topic +
                     "\"", fault));
+        }
+
+        @Override
+        public Optional<PluginFacade> facade() {
+            return Optional.of(facade);
         }
 
         @Override

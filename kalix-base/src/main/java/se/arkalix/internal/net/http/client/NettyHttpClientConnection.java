@@ -28,7 +28,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
-import java.util.concurrent.CancellationException;
 import java.util.function.Consumer;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
@@ -123,7 +122,7 @@ public class NettyHttpClientConnection implements HttpClientConnection {
         final var version = convert(request.version().orElse(HttpVersion.HTTP_11));
 
         final var remoteSocketAddress = remoteSocketAddress();
-        headers.set(HOST, remoteSocketAddress.getAddress().getHostAddress() + ":" + remoteSocketAddress.getPort());
+        headers.set(HOST, remoteSocketAddress.getHostString() + ":" + remoteSocketAddress.getPort());
         HttpUtil.setKeepAlive(headers, version, !isClosing);
 
         final ByteBuf content;

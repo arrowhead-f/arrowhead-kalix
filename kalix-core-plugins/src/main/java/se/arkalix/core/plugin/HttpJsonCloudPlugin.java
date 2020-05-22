@@ -211,7 +211,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                 .flatMap(serviceDiscovery -> serviceDiscovery.unregister(
                     service.name(),
                     provider.name(),
-                    providerSocketAddress.getAddress().getHostAddress(),
+                    providerSocketAddress.getHostString(),
                     providerSocketAddress.getPort()))
                 .onResult(result -> {
                     if (result.isSuccess()) {
