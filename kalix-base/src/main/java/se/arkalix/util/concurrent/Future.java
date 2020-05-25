@@ -248,7 +248,7 @@ public interface Future<V> {
      * Future}.
      * @throws NullPointerException If {@code consumer} is {@code null}.
      */
-    default Future<V> ifSuccess(final ThrowingConsumer<? super V> consumer) {
+    default Future<V> ifSuccess(final ThrowingConsumer<V> consumer) {
         Objects.requireNonNull(consumer, "Expected consumer");
         final var source = this;
         return new Future<>() {
@@ -347,7 +347,7 @@ public interface Future<V> {
      * Future}.
      * @throws NullPointerException If {@code consumer} is {@code null}.
      */
-    default Future<V> always(final ThrowingConsumer<Result<? super V>> consumer) {
+    default Future<V> always(final ThrowingConsumer<Result<V>> consumer) {
         Objects.requireNonNull(consumer, "Expected consumer");
         final var source = this;
         return new Future<>() {
@@ -1423,10 +1423,11 @@ public interface Future<V> {
      */
     default V await() throws InterruptedException {
         final var result = new AtomicReference<Result<V>>();
-        final var waiter = this;
         onResult(result0 -> {
             result.set(result0);
-            waiter.notify();
+            synchronized (Future.this) {
+                Future.this.notify();
+            }
         });
         synchronized (this) {
             while (true) {
@@ -1460,10 +1461,11 @@ public interface Future<V> {
      */
     default V await(final Duration timeout) throws InterruptedException, TimeoutException {
         final var result = new AtomicReference<Result<V>>();
-        final var waiter = this;
         onResult(result0 -> {
             result.set(result0);
-            waiter.notify();
+            synchronized (Future.this) {
+                Future.this.notify();
+            }
         });
         var timeoutNanos = timeout.toNanos();
         var last = System.nanoTime();

@@ -20,7 +20,6 @@ import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.concurrent.Schedulers;
 
-import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -76,11 +75,6 @@ public class HttpServer implements ArServer {
         catch (final Throwable throwable) {
             return Future.failure(throwable);
         }
-    }
-
-    @Override
-    public InetSocketAddress localSocketAddress() {
-        return (InetSocketAddress) channel.localAddress();
     }
 
     @Override

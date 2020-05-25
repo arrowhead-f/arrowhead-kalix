@@ -52,7 +52,7 @@ class FutureFailure<V> implements FutureProgress<V> {
     }
 
     @Override
-    public Future<V> ifSuccess(final ThrowingConsumer<? super V> consumer) {
+    public Future<V> ifSuccess(final ThrowingConsumer<V> consumer) {
         Objects.requireNonNull(consumer, "Expected consumer");
         // Does nothing.
         return this;
@@ -74,7 +74,7 @@ class FutureFailure<V> implements FutureProgress<V> {
     }
 
     @Override
-    public Future<V> always(final ThrowingConsumer<Result<? super V>> consumer) {
+    public Future<V> always(final ThrowingConsumer<Result<V>> consumer) {
         Objects.requireNonNull(consumer, "Expected consumer");
         try {
             consumer.accept(Result.failure(fault));

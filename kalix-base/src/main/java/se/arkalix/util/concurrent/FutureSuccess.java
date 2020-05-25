@@ -7,7 +7,6 @@ import se.arkalix.util.function.ThrowingFunction;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 /**
@@ -54,7 +53,7 @@ class FutureSuccess<V> implements FutureProgress<V> {
     }
 
     @Override
-    public Future<V> ifSuccess(final ThrowingConsumer<? super V> consumer) {
+    public Future<V> ifSuccess(final ThrowingConsumer<V> consumer) {
         Objects.requireNonNull(consumer, "Expected consumer");
         try {
             consumer.accept(value);
@@ -72,7 +71,7 @@ class FutureSuccess<V> implements FutureProgress<V> {
     }
 
     @Override
-    public Future<V> always(final ThrowingConsumer<Result<? super V>> consumer) {
+    public Future<V> always(final ThrowingConsumer<Result<V>> consumer) {
         Objects.requireNonNull(consumer, "Expected consumer");
         try {
             consumer.accept(Result.success(value));

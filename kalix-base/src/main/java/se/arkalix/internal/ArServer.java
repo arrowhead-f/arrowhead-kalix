@@ -19,8 +19,12 @@ import java.util.stream.Stream;
  */
 @Internal
 public interface ArServer {
-    InetSocketAddress localSocketAddress();
-
+    /**
+     * Tests whether this server can provide the given service.
+     *
+     * @param service Tested service.
+     * @return {@code true} only if this server can provide the given service.
+     */
     boolean canProvide(ArService service);
 
     /**

@@ -9,8 +9,8 @@ import java.util.function.Consumer;
 
 @Internal
 public class FutureCompletion<V> implements Future<V> {
-    private AtomicReference<Consumer<Boolean>> cancelFunction = new AtomicReference<>(null);
-    private AtomicReference<Consumer<Result<V>>> consumer = new AtomicReference<>(null);
+    private final AtomicReference<Consumer<Boolean>> cancelFunction = new AtomicReference<>(null);
+    private final AtomicReference<Consumer<Result<V>>> consumer = new AtomicReference<>(null);
 
     public void complete(final Result<V> result) {
         final var consumer = this.consumer.getAndSet(null);
