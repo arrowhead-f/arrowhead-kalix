@@ -76,26 +76,14 @@ public class NettyHttpClientConnectionHandler extends NettySimpleChannelInboundH
     @Override
     protected void channelRead0(final ChannelHandlerContext ctx, final HttpObject msg) {
         if (msg instanceof HttpResponse) {
-            handleResponseHead(ctx, (HttpResponse) msg);
+            readResponse(ctx, (HttpResponse) msg);
         }
         if (msg instanceof HttpContent) {
-            handleResponseContent((HttpContent) msg);
+            readContent(ctx,(HttpContent) msg);
         }
     }
 
-    @Override
-    public void channelReadComplete(final ChannelHandlerContext ctx) {
-        ctx.flush();
-        if (body != null) {
-            body.finish();
-            body = null;
-        }
-        if (connection != null && connection.isClosing()) {
-            ctx.close();
-        }
-    }
-
-    private void handleResponseHead(final ChannelHandlerContext ctx, final HttpResponse response) {
+    private void readResponse(final ChannelHandlerContext ctx, final HttpResponse response) {
         // TODO: Enable and check size restrictions.
 
         final var clientResponseBody = new NettyHttpBodyReceiver(ctx.alloc(), response.headers());
@@ -106,7 +94,7 @@ public class NettyHttpClientConnectionHandler extends NettySimpleChannelInboundH
         connection.onResponseResult(Result.success(clientResponse));
     }
 
-    private void handleResponseContent(final HttpContent content) {
+    private void readContent(final ChannelHandlerContext ctx, final HttpContent content) {
         if (body == null) {
             return;
         }
@@ -114,6 +102,9 @@ public class NettyHttpClientConnectionHandler extends NettySimpleChannelInboundH
         if (content instanceof LastHttpContent) {
             body.finish((LastHttpContent) content);
             body = null;
+            if (connection != null && connection.isClosing()) {
+                ctx.close();
+            }
         }
     }
 
@@ -128,7 +119,7 @@ public class NettyHttpClientConnectionHandler extends NettySimpleChannelInboundH
             body = null;
             return;
         }
-        if (connection.onResponseResult(Result.failure(cause))) {
+        if (connection != null && connection.onResponseResult(Result.failure(cause))) {
             return;
         }
         ctx.fireExceptionCaught(cause);
@@ -148,7 +139,7 @@ public class NettyHttpClientConnectionHandler extends NettySimpleChannelInboundH
                         body.tryAbort(exception);
                         body = null;
                     }
-                    else {
+                    else if (connection != null) {
                         connection.onResponseResult(Result.failure(exception));
                     }
                 }

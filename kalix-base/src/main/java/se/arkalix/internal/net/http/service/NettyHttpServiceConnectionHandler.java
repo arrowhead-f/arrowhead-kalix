@@ -213,11 +213,6 @@ public class NettyHttpServiceConnectionHandler extends NettySimpleChannelInbound
     }
 
     @Override
-    public void channelReadComplete(final ChannelHandlerContext ctx) {
-        ctx.flush();
-    }
-
-    @Override
     public void exceptionCaught(final ChannelHandlerContext ctx, Throwable cause) {
         try {
             if (body != null && body.tryAbort(cause)) {
