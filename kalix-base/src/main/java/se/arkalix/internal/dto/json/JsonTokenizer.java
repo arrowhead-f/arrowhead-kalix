@@ -111,6 +111,7 @@ public final class JsonTokenizer {
         discardWhitespace();
 
         if (source.readableBytes() == 0) {
+            saveCandidateAsError("Unexpected end of object");
             return false;
         }
         var b = source.peekByte();
@@ -147,6 +148,7 @@ public final class JsonTokenizer {
             discardWhitespace();
 
             if (source.readableBytes() == 0) {
+                saveCandidateAsError("Unexpected end of object");
                 return false;
             }
             b = source.peekByte();
@@ -169,6 +171,7 @@ public final class JsonTokenizer {
         discardWhitespace();
 
         if (source.readableBytes() == 0) {
+            saveCandidateAsError("Unexpected end of array");
             return false;
         }
         byte b = source.peekByte();
@@ -211,16 +214,17 @@ public final class JsonTokenizer {
             }
             if (b == '\\') {
                 if (source.readableBytes() == 0) {
-                    return false;
+                    break;
                 }
                 if (source.readByte() == 'u') {
                     if (source.readableBytes() < 4) {
-                        return false;
+                        break;
                     }
                     source.skipBytes(4);
                 }
             }
         }
+        saveCandidateAsError("Unexpected end of string");
         return false;
     }
 
