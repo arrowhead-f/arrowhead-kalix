@@ -19,11 +19,10 @@ public interface TrustedContractNegotiatorHandler {
     void onAccept(TrustedContractNegotiationDto session);
 
     /**
-     * Called to notify about a counter-offer being received by a party that
-     * previously received a contract offer.
+     * Called to notify about a new offer or counter-offer being received.
      *
-     * @param session   Session containing counter-offer.
-     * @param responder Object useful for responding to the counter-offer.
+     * @param session   Session containing the received offer or counter-offer.
+     * @param responder Object useful for responding to the received offer.
      */
     void onOffer(TrustedContractNegotiationDto session, TrustedContractNegotiatorResponder responder);
 

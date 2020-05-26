@@ -15,6 +15,7 @@ import se.arkalix.util.concurrent.Schedulers;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 /**
  * A HTTP/JSON {@link Plugin plugin} that helps manage the sending and
@@ -99,7 +100,9 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
         private final Facade facade = new Facade();
         private final ArSystem system;
         private final ArEventSubscriberPluginFacade eventSubscriber;
-        private final Map<HandlerKey, Handler> handlerMap = new ConcurrentHashMap<>();
+        private final Map<HandlerKey, Handler> handlerKeyToHandler = new ConcurrentHashMap<>();
+        private final Map<String, Supplier<TrustedContractNegotiatorHandler>> receiverNameToHandlerFactory =
+            new ConcurrentHashMap<>();
 
         private EventSubscriptionHandle eventSubscriptionHandle = null;
 
@@ -140,13 +143,20 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                     }
 
                     final var handlerKey = new HandlerKey(offerorName, receiverName, negotiationId);
-                    final var handler = handlerMap.get(handlerKey);
+                    final var handler = handlerKeyToHandler.get(handlerKey);
+                    final Supplier<TrustedContractNegotiatorHandler> handlerFactory;
                     if (handler == null) {
-                        logger.trace("HTTP/JSON contract negotiator received " +
-                            "contract event identifying session not relevant " +
-                            "to this system; ignoring event [data={}, " +
-                            "metadata={}]", data, metadata);
-                        return;
+                        handlerFactory = receiverNameToHandlerFactory.get(receiverName);
+                        if (handlerFactory == null) {
+                            logger.trace("HTTP/JSON contract negotiator received " +
+                                "contract event identifying session not relevant " +
+                                "to this system; ignoring event [data={}, " +
+                                "metadata={}]", data, metadata);
+                            return;
+                        }
+                    }
+                    else {
+                        handlerFactory = null;
                     }
 
                     system.consume()
@@ -159,12 +169,21 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                                 "\"; cannot present session update to " +
                                 "negotiation handler"))))
                         .ifSuccess(session -> {
+                            final Handler handler0;
+                            if (handlerFactory != null) {
+                                handler0 = new Handler(session.offer(), negotiationId, handlerFactory.get(),
+                                    () -> handlerKeyToHandler.remove(handlerKey));
+                                handlerKeyToHandler.put(handlerKey, handler0);
+                            }
+                            else {
+                                handler0 = handler;
+                            }
                             switch (session.status()) {
                             case OFFERING:
-                                handler.onOffer(session, new TrustedContractNegotiatorResponder() {
+                                handler0.onOffer(session, new TrustedContractNegotiatorResponder() {
                                     @Override
                                     public Future<?> accept() {
-                                        handler.close();
+                                        handler0.close();
                                         return system.consume()
                                             .using(HttpJsonTrustedContractNegotiationService.factory())
                                             .flatMap(service -> service.accept(new TrustedContractAcceptanceBuilder()
@@ -184,7 +203,7 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                                             .contracts(offer.contracts())
                                             .offeredAt(offer.offeredAt())
                                             .build();
-                                        handler.refresh(counterOffer);
+                                        handler0.refresh(counterOffer);
                                         return system.consume()
                                             .using(HttpJsonTrustedContractNegotiationService.factory())
                                             .flatMap(service -> service.counterOffer(counterOffer));
@@ -192,7 +211,7 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
 
                                     @Override
                                     public Future<?> reject() {
-                                        handler.close();
+                                        handler0.close();
                                         return system.consume()
                                             .using(HttpJsonTrustedContractNegotiationService.factory())
                                             .flatMap(service -> service.reject(new TrustedContractRejectionBuilder()
@@ -204,15 +223,24 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                                 break;
 
                             case ACCEPTED:
-                                handler.onAccept(session);
+                                handler0.onAccept(session);
                                 break;
 
                             case REJECTED:
-                                handler.onReject(session);
+                                handler0.onReject(session);
                                 break;
                             }
                         })
-                        .onFailure(handler::onFault);
+                        .onFailure(fault -> {
+                            if (handler != null) {
+                                handler.onFault(fault);
+                            }
+                            else if (logger.isWarnEnabled()) {
+                                logger.warn("Failed to resolve negotiation " +
+                                    "session [data=" + data + ", metadata=" +
+                                    metadata + "]", fault);
+                            }
+                        });
                 })
                 .ifSuccess(handle -> {
                     synchronized (this) {
@@ -248,13 +276,21 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
 
         private class Facade implements ArTrustedContractNegotiatorPluginFacade {
             @Override
+            public void listen(
+                final String receiverName,
+                final Supplier<TrustedContractNegotiatorHandler> handlerFactory)
+            {
+                receiverNameToHandlerFactory.put(receiverName, handlerFactory);
+            }
+
+            @Override
             public void offer(final TrustedContractOfferDto offer, final TrustedContractNegotiatorHandler handler) {
                 system.consume()
                     .using(HttpJsonTrustedContractNegotiationService.factory())
                     .flatMap(service -> service.offer(offer))
                     .ifSuccess(negotiationId -> {
                         final var key = new HandlerKey(offer.offerorName(), offer.receiverName(), negotiationId);
-                        handlerMap.put(key, new Handler(offer, negotiationId, handler, () -> handlerMap.remove(key)));
+                        handlerKeyToHandler.put(key, new Handler(offer, negotiationId, handler, () -> handlerKeyToHandler.remove(key)));
                     })
                     .onFailure(handler::onFault);
             }

@@ -5,6 +5,7 @@ import se.arkalix.plugin.PluginFacade;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * {@link PluginFacade Facade} allowing for contract negotiations to be carried
@@ -12,6 +13,21 @@ import java.util.List;
  */
 @SuppressWarnings("unused")
 public interface ArTrustedContractNegotiatorPluginFacade extends PluginFacade {
+    /**
+     * Listens for incoming contract offers to a certain receiver.
+     * <p>
+     * More specifically, this method sets the factory method invoked to create
+     * a new negotiation handler whenever an offer is received that is not
+     * associated with an existing negotiation session. If no factory method is
+     * set, such offers are ignored.
+     *
+     * @param receiverName   Name of offer receiver.
+     * @param handlerFactory Function called to create a new negotiation handler
+     *                       every time a contract offer not associated with an
+     *                       existing negotiation session is received.
+     */
+    void listen(final String receiverName, Supplier<TrustedContractNegotiatorHandler> handlerFactory);
+
     /**
      * Starts new contract negotiation by making given {@code offer} and then
      * uses provided negotiation {@code handler} to handle any response from
