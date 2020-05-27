@@ -22,12 +22,7 @@ public class HttpClientResponseRejectedException extends HttpClientResponseExcep
      * @param response Human-readable description of issue.
      */
     public HttpClientResponseRejectedException(final HttpClientResponse response) {
-        super(response.request(), "[" +
-            response.request().method().map(Object::toString).orElse("X") + " " +
-            response.request().uri().orElse("X") +
-            " -> " +
-            response.status().text() +
-            "]");
+        super(response.request(), "-> [" + response.status().text() + "]");
         this.response = response;
     }
 
@@ -38,12 +33,7 @@ public class HttpClientResponseRejectedException extends HttpClientResponseExcep
      * @param message Human-readable description of issue.
      */
     public HttpClientResponseRejectedException(final HttpClientResponse response, final String message) {
-        super(response.request(), "[" +
-            response.request().method().map(Object::toString).orElse("X") + " " +
-            response.request().uri().orElse("X") +
-            " -> " +
-            response.status().text() +
-            "] " + message);
+        super(response.request(), "-> [" + response.status().text() + "] " + message);
         this.response = response;
     }
 
