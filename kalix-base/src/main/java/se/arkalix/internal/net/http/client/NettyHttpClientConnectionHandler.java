@@ -134,13 +134,12 @@ public class NettyHttpClientConnectionHandler extends NettySimpleChannelInboundH
                     futureConnection.setResult(Result.failure(new HttpClientConnectionException("Timeout exceeded")));
                 }
                 else {
-                    final var exception = new HttpClientResponseException("Incoming response body timed out");
                     if (body != null) {
-                        body.tryAbort(exception);
+                        body.tryAbort(new HttpClientResponseException("Incoming response body timed out"));
                         body = null;
                     }
-                    else if (connection != null) {
-                        connection.onResponseResult(Result.failure(exception));
+                    else if (connection != null && connection.isExpectingResponseResult()) {
+                        connection.onResponseResult(Result.failure(new HttpClientResponseException("Incoming response body timed out")));
                     }
                 }
             }

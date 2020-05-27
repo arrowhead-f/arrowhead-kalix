@@ -185,6 +185,10 @@ public class NettyHttpClientConnection implements HttpClientConnection {
         return adapt(channel.close());
     }
 
+    public boolean isExpectingResponseResult() {
+        return !pendingResponseQueue.isEmpty();
+    }
+
     public boolean onResponseResult(final Result<HttpClientResponse> result) {
         final var pendingResponse = pendingResponseQueue.poll();
         if (pendingResponse == null) {
