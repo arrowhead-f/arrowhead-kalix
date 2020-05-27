@@ -128,6 +128,11 @@ public interface HttpClientResponse extends HttpBodyReceiver {
     }
 
     /**
+     * @return The request that produced this response.
+     */
+    HttpClientRequest request();
+
+    /**
      * @return Response status.
      */
     HttpStatus status();

@@ -165,7 +165,7 @@ public class HttpJsonCloudPlugin implements Plugin {
             return requestServiceDiscovery()
                 .flatMap(serviceDiscovery -> serviceDiscovery
                     .register(registration)
-                    .flatMapCatch(ErrorException.class, fault -> {
+                    .flatMapCatch(ErrorResponseException.class, fault -> {
                         final var error = fault.error();
                         if ("INVALID_PARAMETER".equals(error.type())) {
                             return serviceDiscovery.unregister(

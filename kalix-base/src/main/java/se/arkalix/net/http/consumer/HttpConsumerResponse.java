@@ -6,6 +6,7 @@ import se.arkalix.dto.DtoReadable;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.HttpVersion;
+import se.arkalix.net.http.client.HttpClientRequest;
 import se.arkalix.net.http.client.HttpClientResponse;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.concurrent.FutureProgress;
@@ -144,6 +145,18 @@ public class HttpConsumerResponse implements HttpClientResponse {
     @Override
     public HttpHeaders headers() {
         return response.headers();
+    }
+
+    /**
+     * Gets the {@link HttpConsumerRequest#asClientRequest() client request}
+     * associated with the {@link HttpConsumerRequest} that caused this
+     * response to be retrieved.
+     *
+     * @return Client request associated with this response.
+     */
+    @Override
+    public HttpClientRequest request() {
+        return response.request();
     }
 
     @Override

@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.ArSystem;
 import se.arkalix.core.plugin.CloudException;
-import se.arkalix.core.plugin.ErrorException;
+import se.arkalix.core.plugin.ErrorResponseException;
 import se.arkalix.core.plugin.SystemDetails;
 import se.arkalix.core.plugin.SystemDetailsDto;
 import se.arkalix.description.ProviderDescription;
@@ -193,7 +193,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
             return system.consume()
                 .using(HttpJsonEventSubscribeService.factory())
                 .flatMap(eventSubscribe -> eventSubscribe.subscribe(request)
-                    .flatMapCatch(ErrorException.class, fault -> {
+                    .flatMapCatch(ErrorResponseException.class, fault -> {
                         final var error = fault.error();
                         if ("INVALID_PARAMETER".equals(error.type())) {
                             return system.consume()

@@ -1,18 +1,21 @@
 package se.arkalix.internal.net.http.client;
 
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpObject;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.arkalix.internal.net.http.NettyHttpBodyReceiver;
 import se.arkalix.internal.net.NettySimpleChannelInboundHandler;
+import se.arkalix.internal.net.http.NettyHttpBodyReceiver;
 import se.arkalix.net.http.client.HttpClientConnectionException;
 import se.arkalix.net.http.client.HttpClientResponseException;
 import se.arkalix.util.Result;
 import se.arkalix.util.annotation.Internal;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.*;
-import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.timeout.IdleState;
-import io.netty.handler.timeout.IdleStateEvent;
 
 import java.util.Objects;
 
@@ -79,7 +82,7 @@ public class NettyHttpClientConnectionHandler extends NettySimpleChannelInboundH
             readResponse(ctx, (HttpResponse) msg);
         }
         if (msg instanceof HttpContent) {
-            readContent(ctx,(HttpContent) msg);
+            readContent(ctx, (HttpContent) msg);
         }
     }
 
@@ -87,7 +90,10 @@ public class NettyHttpClientConnectionHandler extends NettySimpleChannelInboundH
         // TODO: Enable and check size restrictions.
 
         final var clientResponseBody = new NettyHttpBodyReceiver(ctx.alloc(), response.headers());
-        final var clientResponse = new NettyHttpClientResponse(clientResponseBody, response);
+        final var clientResponse = new NettyHttpClientResponse(
+            connection.pendingResponseRequest(),
+            clientResponseBody,
+            response);
 
         this.body = clientResponseBody;
 
@@ -135,11 +141,14 @@ public class NettyHttpClientConnectionHandler extends NettySimpleChannelInboundH
                 }
                 else {
                     if (body != null) {
-                        body.tryAbort(new HttpClientResponseException("Incoming response body timed out"));
+                        body.tryAbort(new HttpClientResponseException(
+                            connection.pendingResponseRequest(), "Incoming response body timed out"));
                         body = null;
                     }
                     else if (connection != null && connection.isExpectingResponseResult()) {
-                        connection.onResponseResult(Result.failure(new HttpClientResponseException("Incoming response body timed out")));
+                        connection.onResponseResult(Result.failure(new HttpClientResponseException(
+                            connection.pendingResponseRequest(),
+                            "Incoming response body timed out")));
                     }
                 }
             }

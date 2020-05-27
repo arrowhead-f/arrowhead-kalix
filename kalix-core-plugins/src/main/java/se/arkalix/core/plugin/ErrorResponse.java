@@ -5,6 +5,7 @@ import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
 import se.arkalix.dto.json.JsonName;
+import se.arkalix.net.http.client.HttpClientRequest;
 import se.arkalix.net.http.client.HttpClientResponseException;
 
 import static se.arkalix.dto.DtoEncoding.JSON;
@@ -17,7 +18,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 @DtoWritableAs(JSON)
 @DtoEqualsHashCode
 @DtoToString
-public interface Error {
+public interface ErrorResponse {
     /**
      * Human-readable description of error.
      */
@@ -35,11 +36,4 @@ public interface Error {
      */
     @JsonName("exceptionType")
     String type();
-
-    /**
-     * @return This error as a {@link HttpClientResponseException}.
-     */
-    default ErrorException toException() {
-        return new ErrorException(this);
-    }
 }

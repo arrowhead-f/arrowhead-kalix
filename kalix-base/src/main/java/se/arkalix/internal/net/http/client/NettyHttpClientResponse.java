@@ -6,6 +6,7 @@ import se.arkalix.internal.net.http.NettyHttpBodyReceiver;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.HttpVersion;
+import se.arkalix.net.http.client.HttpClientRequest;
 import se.arkalix.net.http.client.HttpClientResponse;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.FutureProgress;
@@ -20,6 +21,7 @@ import static se.arkalix.internal.net.http.NettyHttpConverters.convert;
 
 @Internal
 public class NettyHttpClientResponse implements HttpClientResponse {
+    private final HttpClientRequest request;
     private final NettyHttpBodyReceiver body;
     private final HttpResponse response;
 
@@ -27,7 +29,12 @@ public class NettyHttpClientResponse implements HttpClientResponse {
     private HttpStatus status = null;
     private HttpVersion version = null;
 
-    public NettyHttpClientResponse(final NettyHttpBodyReceiver body, final HttpResponse response) {
+    public NettyHttpClientResponse(
+        final HttpClientRequest request,
+        final NettyHttpBodyReceiver body,
+        final HttpResponse response)
+    {
+        this.request = Objects.requireNonNull(request, "Expected request");
         this.body = Objects.requireNonNull(body, "Expected body");
         this.response = Objects.requireNonNull(response, "Expected response");
     }
@@ -71,6 +78,11 @@ public class NettyHttpClientResponse implements HttpClientResponse {
             headers = new HttpHeaders(response.headers());
         }
         return headers;
+    }
+
+    @Override
+    public HttpClientRequest request() {
+        return request;
     }
 
     @Override

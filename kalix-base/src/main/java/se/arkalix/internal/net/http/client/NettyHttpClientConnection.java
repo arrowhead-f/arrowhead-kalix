@@ -91,7 +91,7 @@ public class NettyHttpClientConnection implements HttpClientConnection {
         catch (final Throwable throwable) {
             return Future.failure(throwable);
         }
-        final var pendingResponse = new FutureResponse();
+        final var pendingResponse = new FutureResponse(request);
         pendingResponseQueue.add(pendingResponse);
         return pendingResponse;
     }
@@ -199,10 +199,24 @@ public class NettyHttpClientConnection implements HttpClientConnection {
         return pendingResponse.setResult(result);
     }
 
+    public HttpClientRequest pendingResponseRequest() {
+        final var futureResponse = pendingResponseQueue.peek();
+        if (futureResponse == null) {
+            throw new IllegalStateException("No pending response");
+        }
+        return futureResponse.request();
+    }
+
     private static class FutureResponse implements Future<HttpClientResponse> {
+        private final HttpClientRequest request;
+
         private Consumer<Result<HttpClientResponse>> consumer = null;
         private boolean isDone = false;
         private Result<HttpClientResponse> pendingResult = null;
+
+        private FutureResponse(final HttpClientRequest request) {
+            this.request = Objects.requireNonNull(request, "Expected request");
+        }
 
         @Override
         public void onResult(final Consumer<Result<HttpClientResponse>> consumer) {
@@ -225,6 +239,10 @@ public class NettyHttpClientConnection implements HttpClientConnection {
         @Override
         public void cancel(final boolean mayInterruptIfRunning) {
             isDone = true;
+        }
+
+        public HttpClientRequest request() {
+            return request;
         }
 
         public boolean setResult(final Result<HttpClientResponse> result) {
