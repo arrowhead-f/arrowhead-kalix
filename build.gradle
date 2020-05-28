@@ -79,9 +79,6 @@ subprojects {
         javadoc {
             exclude '**/internal/**'
         }
-        sourcesJar {
-            exclude '**/internal/**'
-        }
         publishing {
             publications {
                 mavenJava(MavenPublication) {

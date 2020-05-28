@@ -1,10 +1,8 @@
-package se.arkalix.internal.util.concurrent;
+package se.arkalix.util.concurrent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.util.Result;
-import se.arkalix.util.annotation.Internal;
-import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.function.ThrowingSupplier;
 
 import java.util.Objects;
@@ -14,31 +12,46 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-@Internal
-public class FutureSynchronizer<V> {
+/**
+ * Forces submitted {@link Future futures} to execute one after the other.
+ * <p>
+ * Synchronization using instances of this class is only relevant when multiple
+ * threads may cause asynchronous actions to be triggered in parallel that must
+ * be executed in order.
+ */
+public class FutureSynchronizer {
     private static final Logger logger = LoggerFactory.getLogger(FutureSynchronizer.class);
 
-    private final Queue<Task<V>> queue = new ConcurrentLinkedQueue<>();
+    private final Queue<Task<?>> queue = new ConcurrentLinkedQueue<>();
     private final AtomicBoolean isExecuting = new AtomicBoolean(false);
 
-    public Future<V> execute(final ThrowingSupplier<Future<V>> supplier) {
+    /**
+     * Submits new task for synchronous evaluation.
+     *
+     * @param supplier Function supplying {@link Future} to be executed
+     *                 synchronously.
+     * @param <V>      Value type of supplied {@link Future}.
+     * @return New {@link Future} that completes with result of {@link Future}
+     * supplied via given {@code supplier} function.
+     */
+    public <V> Future<V> submit(final ThrowingSupplier<Future<V>> supplier) {
         final var task = new Task<>(supplier);
         queue.add(task);
         if (!isExecuting.getAndSet(true)) {
-            return next(queue)
+            return execute()
                 .always(result -> isExecuting.set(false))
                 .flatMap(ignored -> task);
         }
         return task;
     }
 
-    private static <V> Future<?> next(final Queue<Task<V>> queue) {
+    private Future<?> execute() {
         final var task0 = queue.poll();
         if (task0 == null) {
             return Future.done();
         }
         return task0.run()
-            .always(ignored -> next(queue));
+            .always(ignored -> execute());
     }
 
     private static class Task<V> implements Future<V> {

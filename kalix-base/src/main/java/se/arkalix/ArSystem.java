@@ -7,7 +7,7 @@ import se.arkalix.description.ServiceDescription;
 import se.arkalix.internal.ArServer;
 import se.arkalix.internal.ArServerRegistry;
 import se.arkalix.internal.plugin.PluginNotifier;
-import se.arkalix.internal.util.concurrent.FutureSynchronizer;
+import se.arkalix.util.concurrent.FutureSynchronizer;
 import se.arkalix.internal.util.concurrent.NettyScheduler;
 import se.arkalix.plugin.Plugin;
 import se.arkalix.plugin.PluginFacade;
@@ -48,7 +48,7 @@ public class ArSystem {
     private final ArServiceCache consumedServices;
     private final ProviderDescription description;
     private final Set<ArServer> servers = new HashSet<>();
-    private final FutureSynchronizer<ArServiceHandle> serviceSynchronizer = new FutureSynchronizer<>();
+    private final FutureSynchronizer serviceProvisionSynchronizer = new FutureSynchronizer();
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 
     private Map<Class<? extends Plugin>, PluginFacade> pluginClassToFacade = null;
@@ -290,7 +290,7 @@ public class ArSystem {
             return Future.failure(cannotProvideServiceShuttingDownException(service));
         }
 
-        return serviceSynchronizer.execute(() -> {
+        return serviceProvisionSynchronizer.submit(() -> {
             synchronized (servers) {
                 for (final var server : servers) {
                     if (server.canProvide(service)) {
@@ -306,8 +306,7 @@ public class ArSystem {
                 .create(this, pluginNotifier)
                 .flatMap(server -> {
                     if (isShuttingDown.get()) {
-                        return server.close().<ArServiceHandle>fail(
-                            cannotProvideServiceShuttingDownException(service));
+                        return server.close().fail(cannotProvideServiceShuttingDownException(service));
                     }
                     synchronized (servers) {
                         servers.add(server);

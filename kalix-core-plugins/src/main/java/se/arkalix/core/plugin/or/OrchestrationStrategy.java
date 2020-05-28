@@ -2,19 +2,18 @@ package se.arkalix.core.plugin.or;
 
 import se.arkalix.core.plugin.ServiceConsumable;
 
+import java.util.List;
+import java.util.Objects;
+
 /**
  * Enumerates the different kind of strategies that can be used when querying
  * an {@link ArOrchestrationService orchestration service} for {@link
  * ServiceConsumable services to consume}.
- * <p>
- * TODO: This enum needs to be replaced or complemented with some kind of
- * configurator that leaves more room for being very specific about
- * orchestration details (such as if inter-cloud orchestration is allowed or
- * not). The existing enum flags could probably be replaced with constants
- * containing default configurations representing the same strategies as
- * employed if using their current enum equivalents.
  */
-public enum OrchestrationStrategy {
+@SuppressWarnings("unused")
+public class OrchestrationStrategy {
+    private final List<OrchestrationRequest> requests;
+
     /**
      * Only request predefined orchestration rules.
      * <p>
@@ -25,7 +24,8 @@ public enum OrchestrationStrategy {
      * orchestration rules associated with the requesting {@link
      * se.arkalix.ArSystem system}, which are returned if available.
      */
-    STORED_ONLY,
+    public static final OrchestrationStrategy STORED_ONLY = new OrchestrationStrategy(
+        new OrchestrationRequest());
 
     /**
      * First request predefined orchestration rules, then request dynamic
@@ -37,7 +37,12 @@ public enum OrchestrationStrategy {
      * ArOrchestrationService orchestration service} to be contacted, a dynamic
      * orchestration attempt is made afterwards.
      */
-    STORED_THEN_DYNAMIC,
+    public static final OrchestrationStrategy STORED_THEN_DYNAMIC = new OrchestrationStrategy(
+        new OrchestrationRequest(),
+        new OrchestrationRequest()
+            .isDynamic(true)
+            .option(OrchestrationOption.OVERRIDE_STORE, true)
+            .option(OrchestrationOption.PING_PROVIDERS, true));
 
     /**
      * Only request dynamic orchestration rules.
@@ -45,5 +50,38 @@ public enum OrchestrationStrategy {
      * When used, the {@link ArOrchestrationService orchestration service} in question
      * is asked directly for explicitly specified services to consume.
      */
-    DYNAMIC_ONLY,
+    public static final OrchestrationStrategy DYNAMIC_ONLY = new OrchestrationStrategy(
+        new OrchestrationRequest()
+            .isDynamic(true)
+            .option(OrchestrationOption.OVERRIDE_STORE, true)
+            .option(OrchestrationOption.PING_PROVIDERS, true));
+
+    /**
+     * Creates new orchestration strategy, which entails attempting the given
+     * orchestration requests in order until a matching service is found.
+     *
+     * @param requests Requests to attempt.
+     */
+    public OrchestrationStrategy(final OrchestrationRequest... requests) {
+        this(List.of(requests));
+    }
+
+    /**
+     * Creates new orchestration strategy, which entails attempting the given
+     * orchestration requests in order until a matching service is found.
+     *
+     * @param requests Requests to attempt.
+     */
+    public OrchestrationStrategy(final List<OrchestrationRequest> requests) {
+        this.requests = Objects.requireNonNull(requests, "Expected requests");
+    }
+
+    /**
+     * Orchestration strategy requests to attempt.
+     *
+     * @return Requests.
+     */
+    public List<OrchestrationRequest> requests() {
+        return requests;
+    }
 }
