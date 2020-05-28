@@ -400,4 +400,13 @@ class FutureResult<V> implements FutureProgress<V> {
     public V await(final Duration timeout) {
         return result.valueOrThrow();
     }
+
+    @Override
+    public String toString() {
+        return "Future{" +
+            (result.isSuccess()
+                ? "value=" + result.value()
+                : "fault=" + result.fault()) +
+            '}';
+    }
 }

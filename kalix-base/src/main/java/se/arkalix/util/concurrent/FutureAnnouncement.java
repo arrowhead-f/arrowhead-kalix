@@ -5,6 +5,7 @@ import se.arkalix.util.Result;
 import se.arkalix.util.annotation.ThreadSafe;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -54,8 +55,18 @@ public class FutureAnnouncement<V> {
      *                              tasks are allowed to complete. This
      *                              parameter may be ignored.
      */
-    void cancel(final boolean mayInterruptIfRunning) {
+    public void cancel(final boolean mayInterruptIfRunning) {
         future.cancel(mayInterruptIfRunning);
+    }
+
+    /**
+     * Gets the result of this {@code FutureAnnouncement} if it already is
+     * available.
+     *
+     * @return Result of this {@code FutureAnnouncement}, if available.
+     */
+    public synchronized Optional<Result<V>> resultIfAvailable() {
+        return Optional.ofNullable(result);
     }
 
     /**
@@ -79,7 +90,7 @@ public class FutureAnnouncement<V> {
             if (result != null) {
                 return Future.of(result);
             }
-            completion = new FutureCompletion<V>();
+            completion = new FutureCompletion<>();
             subscribers.add(completion);
         }
         completion.setCancelFunction(ignored -> {

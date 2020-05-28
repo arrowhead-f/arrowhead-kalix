@@ -14,7 +14,7 @@ import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.internal.security.identity.X509Keys;
-import se.arkalix.util.concurrent.FutureSynchronizer;
+import se.arkalix.util.concurrent.*;
 import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.plugin.Plugin;
@@ -25,9 +25,6 @@ import se.arkalix.security.access.AccessByToken;
 import se.arkalix.security.identity.SystemIdentity;
 import se.arkalix.security.identity.UnsupportedKeyAlgorithm;
 import se.arkalix.util.Result;
-import se.arkalix.util.concurrent.Future;
-import se.arkalix.util.concurrent.FutureAnnouncement;
-import se.arkalix.util.concurrent.Futures;
 
 import javax.net.ssl.SSLException;
 import java.net.InetSocketAddress;
@@ -106,7 +103,6 @@ public class HttpJsonCloudPlugin implements Plugin {
     }
 
     private class Attached implements PluginAttached {
-        private final FutureSynchronizer futureSynchronizer = new FutureSynchronizer();
         private final ArSystem system;
         private final SystemDetailsDto systemDetails;
         private final HttpClient client;
@@ -144,8 +140,8 @@ public class HttpJsonCloudPlugin implements Plugin {
         public Future<?> onServicePrepared(final ArService service) {
             final var accessPolicy = service.accessPolicy();
             if (accessPolicy instanceof AccessByToken) {
-                return futureSynchronizer.submit(() -> requestAuthorizationKey()
-                    .ifSuccess(((AccessByToken) accessPolicy)::authorizationKey));
+                 return requestAuthorizationKey()
+                    .ifSuccess(((AccessByToken) accessPolicy)::authorizationKey);
             }
             return Future.done();
         }
@@ -160,7 +156,7 @@ public class HttpJsonCloudPlugin implements Plugin {
             final var providerSocketAddress = provider.socketAddress();
             final var registration = ServiceRegistration.from(service);
 
-            return futureSynchronizer.submit(() -> requestServiceDiscovery()
+            return requestServiceDiscovery()
                 .flatMap(serviceDiscovery -> serviceDiscovery
                     .register(registration)
                     .flatMapCatch(ErrorResponseException.class, fault -> {
@@ -194,7 +190,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                             }
                         }
                         return result;
-                    })));
+                    }));
         }
 
         @Override
@@ -205,12 +201,12 @@ public class HttpJsonCloudPlugin implements Plugin {
             }
             final var provider = service.provider();
             final var providerSocketAddress = provider.socketAddress();
-            futureSynchronizer.submit(() -> requestServiceDiscovery()
+            requestServiceDiscovery()
                 .flatMap(serviceDiscovery -> serviceDiscovery.unregister(
                     service.name(),
                     provider.name(),
                     providerSocketAddress.getHostString(),
-                    providerSocketAddress.getPort())))
+                    providerSocketAddress.getPort()))
                 .onResult(result -> {
                     if (result.isSuccess()) {
                         if (logger.isInfoEnabled()) {
@@ -232,7 +228,7 @@ public class HttpJsonCloudPlugin implements Plugin {
 
         @Override
         public Future<Collection<ServiceDescription>> onServiceQueried(final ServiceQuery query) {
-            return futureSynchronizer.submit(() -> Futures.flatReducePlain(
+            return Futures.flatReducePlain(
                 orchestrationStrategy.requests(),
                 new ArrayList<>(),
                 (services, request) -> {
@@ -245,10 +241,10 @@ public class HttpJsonCloudPlugin implements Plugin {
                             .stream()
                             .map(ServiceConsumable::toServiceDescription)
                             .collect(Collectors.toUnmodifiableList()));
-                }));
+                });
         }
 
-        private Future<HttpJsonServiceDiscoveryService> requestServiceDiscovery() {
+        private synchronized Future<HttpJsonServiceDiscoveryService> requestServiceDiscovery() {
             if (serviceDiscoveryAnnouncement == null) {
                 if (logger.isInfoEnabled()) {
                     logger.info("HTTP/JSON cloud plugin connecting to " +
@@ -320,7 +316,7 @@ public class HttpJsonCloudPlugin implements Plugin {
             return serviceDiscoveryAnnouncement.subscribe();
         }
 
-        private Future<PublicKey> requestAuthorizationKey() {
+        private synchronized Future<PublicKey> requestAuthorizationKey() {
             if (authorizationKeyAnnouncement == null) {
                 if (logger.isInfoEnabled()) {
                     logger.info("HTTP/JSON cloud plugin requesting authorization key ...");
@@ -386,7 +382,7 @@ public class HttpJsonCloudPlugin implements Plugin {
             return authorizationKeyAnnouncement.subscribe();
         }
 
-        private Future<HttpJsonOrchestrationService> requestOrchestration() {
+        private synchronized Future<HttpJsonOrchestrationService> requestOrchestration() {
             if (orchestrationAnnouncement == null) {
                 if (logger.isInfoEnabled()) {
                     logger.info("HTTP/JSON cloud plugin connecting to " +

@@ -7,7 +7,6 @@ import se.arkalix.description.ServiceDescription;
 import se.arkalix.internal.ArServer;
 import se.arkalix.internal.ArServerRegistry;
 import se.arkalix.internal.plugin.PluginNotifier;
-import se.arkalix.util.concurrent.FutureSynchronizer;
 import se.arkalix.internal.util.concurrent.NettyScheduler;
 import se.arkalix.plugin.Plugin;
 import se.arkalix.plugin.PluginFacade;
@@ -17,17 +16,14 @@ import se.arkalix.security.identity.OwnedIdentity;
 import se.arkalix.security.identity.SystemIdentity;
 import se.arkalix.security.identity.TrustStore;
 import se.arkalix.util.annotation.ThreadSafe;
-import se.arkalix.util.concurrent.Future;
-import se.arkalix.util.concurrent.Futures;
-import se.arkalix.util.concurrent.SchedulerShutdownListener;
-import se.arkalix.util.concurrent.Schedulers;
+import se.arkalix.util.concurrent.*;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * An Arrowhead Framework (AHF) system.
@@ -46,9 +42,9 @@ public class ArSystem {
     private final PluginNotifier pluginNotifier;
 
     private final ArServiceCache consumedServices;
+    private final Map<Class<? extends ArService>, FutureAnnouncement<ArServer>> servers = new ConcurrentHashMap<>();
+
     private final ProviderDescription description;
-    private final Set<ArServer> servers = new HashSet<>();
-    private final FutureSynchronizer serviceProvisionSynchronizer = new FutureSynchronizer();
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 
     private Map<Class<? extends Plugin>, PluginFacade> pluginClassToFacade = null;
@@ -287,38 +283,19 @@ public class ArSystem {
         Objects.requireNonNull(service, "Expected service");
 
         if (isShuttingDown.get()) {
-            return Future.failure(cannotProvideServiceShuttingDownException(service));
+            return Future.failure(new IllegalStateException("System is shutting down; cannot " +
+                "provide service \"" + service.name() + "\""));
         }
 
-        return serviceProvisionSynchronizer.submit(() -> {
-            synchronized (servers) {
-                for (final var server : servers) {
-                    if (server.canProvide(service)) {
-                        return server.provide(service);
-                    }
-                }
-            }
-            return ArServerRegistry.get(service.getClass())
-                .orElseThrow(() -> new IllegalArgumentException("" +
-                    "No Arrowhead server exists for services of type \"" +
-                    service.getClass() + "\"; cannot provide service \"" +
-                    service.name() + "\""))
-                .create(this, pluginNotifier)
-                .flatMap(server -> {
-                    if (isShuttingDown.get()) {
-                        return server.close().fail(cannotProvideServiceShuttingDownException(service));
-                    }
-                    synchronized (servers) {
-                        servers.add(server);
-                    }
-                    return server.provide(service);
-                });
-        });
-    }
-
-    private Throwable cannotProvideServiceShuttingDownException(final ArService service) {
-        return new IllegalStateException("System is shutting down; cannot " +
-            "provide service \"" + service.name() + "\"");
+        return servers.computeIfAbsent(service.getClass(), (class_) -> ArServerRegistry.get(class_)
+            .orElseThrow(() -> new IllegalArgumentException("" +
+                "No Arrowhead server exists for services of type \"" +
+                service.getClass() + "\"; cannot provide service \"" +
+                service.name() + "\""))
+            .create(this, pluginNotifier)
+            .toAnnouncement())
+            .subscribe()
+            .flatMap(server -> server.provide(service));
     }
 
     /**
@@ -327,15 +304,24 @@ public class ArSystem {
      * @return Stream of service descriptions.
      */
     @ThreadSafe
-    public Stream<ServiceDescription> providedServices() {
-        if (isShuttingDown.get()) {
-            return Stream.empty();
+    public Collection<ServiceDescription> providedServices() {
+        final var providedServices = new ArrayList<ServiceDescription>();
+        for (final var entry : servers.entrySet()) {
+            final var announcement = entry.getValue();
+            final var optional = announcement.resultIfAvailable();
+            if (optional.isEmpty()) {
+                continue;
+            }
+            final var result = optional.get();
+            if (result.isFailure()) {
+                continue;
+            }
+            final var server = result.value();
+            server.providedServices()
+                .map(ArServiceHandle::description)
+                .forEach(providedServices::add);
         }
-        synchronized (servers) {
-            return servers.stream()
-                .flatMap(server -> server.providedServices()
-                    .map(ArServiceHandle::description));
-        }
+        return providedServices;
     }
 
     /**
@@ -377,16 +363,33 @@ public class ArSystem {
             return Future.done();
         }
         scheduler.removeShutdownListener(schedulerShutdownListener);
-        synchronized (servers) {
-            return Futures.serialize(servers.stream().map(ArServer::close))
-                .mapResult(result -> {
-                    pluginNotifier.onDetach();
-                    synchronized (servers) {
-                        servers.clear();
-                    }
-                    return result;
-                });
+
+        final var closingServers = new ArrayList<Future<?>>();
+
+        for (final var entry : servers.entrySet()) {
+            final var announcement = entry.getValue();
+            final var optional = announcement.resultIfAvailable();
+            if (optional.isEmpty()) {
+                announcement.cancel(true);
+                continue;
+            }
+            final var result = optional.get();
+            if (result.isFailure()) {
+                logger.warn("Could not shut down " + entry.getKey() +
+                    " server; it never started due to the following " +
+                    "exception", result.fault());
+                continue;
+            }
+            final var server = result.value();
+            closingServers.add(server.close());
         }
+
+        return Futures.serialize(closingServers)
+            .mapResult(result -> {
+                pluginNotifier.onDetach();
+                servers.clear();
+                return result;
+            });
     }
 
     /**

@@ -1,5 +1,6 @@
 package se.arkalix.util;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -27,12 +28,12 @@ public class Result<V> {
 
     private final boolean isSuccess;
     private final V value;
-    private final Throwable throwable;
+    private final Throwable fault;
 
-    private Result(final boolean isSuccess, final V value, final Throwable throwable) {
+    private Result(final boolean isSuccess, final V value, final Throwable fault) {
         this.isSuccess = isSuccess;
         this.value = value;
-        this.throwable = throwable;
+        this.fault = fault;
     }
 
     /**
@@ -55,7 +56,7 @@ public class Result<V> {
      * @return New {@code Result}.
      */
     public static <V> Result<V> failure(final Throwable throwable) {
-        return new Result<>(false, null, throwable);
+        return new Result<>(false, null, Objects.requireNonNull(throwable));
     }
 
     /**
@@ -87,7 +88,7 @@ public class Result<V> {
      * {@code null} otherwise.
      */
     public Throwable fault() {
-        return throwable;
+        return fault;
     }
 
     /**
@@ -175,5 +176,28 @@ public class Result<V> {
             return mapper.apply(value());
         }
         return failure(fault());
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) { return true; }
+        if (o == null || getClass() != o.getClass()) { return false; }
+        final Result<?> result = (Result<?>) o;
+        return isSuccess == result.isSuccess && (isSuccess
+            ? Objects.equals(value, result.value)
+            : Objects.equals(fault, result.fault));
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(isSuccess, isSuccess ? value : fault);
+    }
+
+    @Override
+    public String toString() {
+        return "Result{" + (isSuccess
+            ? "value=" + value
+            : "fault=" + fault) +
+            '}';
     }
 }

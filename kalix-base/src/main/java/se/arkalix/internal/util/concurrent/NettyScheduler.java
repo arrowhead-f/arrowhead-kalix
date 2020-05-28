@@ -15,14 +15,9 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.util.annotation.Internal;
-import se.arkalix.util.concurrent.SchedulerShutdownListener;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Internal
 public final class NettyScheduler extends AbstractScheduler {
@@ -31,9 +26,6 @@ public final class NettyScheduler extends AbstractScheduler {
     private final EventLoopGroup eventLoopGroup;
     private final Class<? extends SocketChannel> socketChannelClass;
     private final Class<? extends ServerSocketChannel> serverSocketChannelClass;
-
-    private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
-    private final Set<SchedulerShutdownListener> shutdownListeners = new HashSet<>();
 
     public NettyScheduler() {
         final var threadFactory = new NettyThreadFactory();
@@ -88,19 +80,10 @@ public final class NettyScheduler extends AbstractScheduler {
 
     @Override
     public void shutdown() {
-        if (isShuttingDown.getAndSet(true)) {
+        if (super.isShuttingDown()) {
             throw new IllegalStateException("Already shutting down");
         }
-
-        for (final var listener : shutdownListeners) {
-            try {
-                listener.onShutdown(this);
-            }
-            catch (final Throwable throwable) {
-                logger.error("Unexpected shutdown listener exception caught", throwable);
-            }
-        }
-
+        notifyShutdownListeners();
         eventLoopGroup
             .schedule(this::shutdownNow, 200, TimeUnit.MILLISECONDS)
             .addListener(future -> {
@@ -125,21 +108,7 @@ public final class NettyScheduler extends AbstractScheduler {
 
     @Override
     public boolean isShuttingDown() {
-        return isShuttingDown.get() || eventLoopGroup.isShuttingDown();
+        return super.isShuttingDown() || eventLoopGroup.isShuttingDown();
     }
 
-    @Override
-    public void addShutdownListener(final SchedulerShutdownListener listener) {
-        if (isShuttingDown.get()) {
-            throw new IllegalStateException("Already shutting down");
-        }
-        shutdownListeners.add(listener);
-    }
-
-    @Override
-    public void removeShutdownListener(final SchedulerShutdownListener listener) {
-        if (!isShuttingDown.get()) {
-            shutdownListeners.remove(listener);
-        }
-    }
 }

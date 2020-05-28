@@ -286,4 +286,9 @@ class FutureSuccess<V> implements FutureProgress<V> {
     public V await(final Duration timeout) {
         return value;
     }
+
+    @Override
+    public String toString() {
+        return "Future{value=" + value + '}';
+    }
 }

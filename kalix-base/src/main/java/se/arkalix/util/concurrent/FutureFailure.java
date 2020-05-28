@@ -335,4 +335,9 @@ class FutureFailure<V> implements FutureProgress<V> {
     private <E extends Throwable> void throwFault() throws E {
         throw (E) fault;
     }
+
+    @Override
+    public String toString() {
+        return "Future{fault=" + fault + '}';
+    }
 }
