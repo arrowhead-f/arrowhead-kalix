@@ -7,7 +7,6 @@ import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.concurrent.Scheduler;
 import se.arkalix.util.concurrent.SchedulerShutdownListener;
-import se.arkalix.util.function.ThrowingSupplier;
 
 import java.time.Duration;
 import java.util.HashSet;
@@ -200,12 +199,14 @@ abstract class AbstractScheduler implements Scheduler {
     }
 
     protected void notifyShutdownListeners() {
-        for (final var listener : shutdownListeners) {
-            try {
-                listener.onShutdown(this);
-            }
-            catch (final Throwable throwable) {
-                logger.error("Unexpected shutdown listener exception caught", throwable);
+        synchronized (shutdownListeners) {
+            for (final var listener : shutdownListeners) {
+                try {
+                    listener.onShutdown(this);
+                }
+                catch (final Throwable throwable) {
+                    logger.error("Unexpected shutdown listener exception caught", throwable);
+                }
             }
         }
     }
@@ -215,7 +216,9 @@ abstract class AbstractScheduler implements Scheduler {
         if (isShuttingDown.get()) {
             throw new IllegalStateException("Already shutting down");
         }
-        shutdownListeners.add(listener);
+        synchronized (shutdownListeners) {
+            shutdownListeners.add(listener);
+        }
     }
 
     @Override
@@ -223,6 +226,8 @@ abstract class AbstractScheduler implements Scheduler {
         if (isShuttingDown.get()) {
             throw new IllegalStateException("Already shutting down");
         }
-        shutdownListeners.remove(listener);
+        synchronized (shutdownListeners) {
+            shutdownListeners.remove(listener);
+        }
     }
 }
