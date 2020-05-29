@@ -9,9 +9,9 @@ import se.arkalix.util.concurrent.Scheduler;
 import se.arkalix.util.concurrent.SchedulerShutdownListener;
 
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -21,7 +21,7 @@ abstract class AbstractScheduler implements Scheduler {
     private static final Logger logger = LoggerFactory.getLogger(AbstractScheduler.class);
 
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
-    private final Set<SchedulerShutdownListener> shutdownListeners = new HashSet<>();
+    private final Set<SchedulerShutdownListener> shutdownListeners = new CopyOnWriteArraySet<>();
 
     protected abstract ScheduledExecutorService executor();
 
@@ -199,14 +199,12 @@ abstract class AbstractScheduler implements Scheduler {
     }
 
     protected void notifyShutdownListeners() {
-        synchronized (shutdownListeners) {
-            for (final var listener : shutdownListeners) {
-                try {
-                    listener.onShutdown(this);
-                }
-                catch (final Throwable throwable) {
-                    logger.error("Unexpected shutdown listener exception caught", throwable);
-                }
+        for (final var listener : shutdownListeners) {
+            try {
+                listener.onShutdown(this);
+            }
+            catch (final Throwable throwable) {
+                logger.error("Unexpected shutdown listener exception caught", throwable);
             }
         }
     }
@@ -216,9 +214,7 @@ abstract class AbstractScheduler implements Scheduler {
         if (isShuttingDown.get()) {
             throw new IllegalStateException("Already shutting down");
         }
-        synchronized (shutdownListeners) {
-            shutdownListeners.add(listener);
-        }
+        shutdownListeners.add(listener);
     }
 
     @Override
@@ -226,8 +222,6 @@ abstract class AbstractScheduler implements Scheduler {
         if (isShuttingDown.get()) {
             throw new IllegalStateException("Already shutting down");
         }
-        synchronized (shutdownListeners) {
-            shutdownListeners.remove(listener);
-        }
+        shutdownListeners.remove(listener);
     }
 }
