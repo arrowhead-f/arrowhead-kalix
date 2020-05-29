@@ -107,9 +107,10 @@ public class HttpJsonCloudPlugin implements Plugin {
         private final SystemDetailsDto systemDetails;
         private final HttpClient client;
 
-        private FutureAnnouncement<HttpJsonServiceDiscoveryService> serviceDiscoveryAnnouncement = null;
-        private FutureAnnouncement<HttpJsonOrchestrationService> orchestrationAnnouncement = null;
         private FutureAnnouncement<PublicKey> authorizationKeyAnnouncement = null;
+        private FutureAnnouncement<HttpJsonOrchestrationService> orchestrationAnnouncement = null;
+        private FutureAnnouncement<Collection<ServiceDescription>> orchestrationPlainStoreQueryAnnouncement = null;
+        private FutureAnnouncement<HttpJsonServiceDiscoveryService> serviceDiscoveryAnnouncement = null;
 
         Attached(final ArSystem system) throws SSLException {
             this.system = Objects.requireNonNull(system, "Expected system");
@@ -140,7 +141,7 @@ public class HttpJsonCloudPlugin implements Plugin {
         public Future<?> onServicePrepared(final ArService service) {
             final var accessPolicy = service.accessPolicy();
             if (accessPolicy instanceof AccessByToken) {
-                 return requestAuthorizationKey()
+                return requestAuthorizationKey()
                     .ifSuccess(((AccessByToken) accessPolicy)::authorizationKey);
             }
             return Future.done();
@@ -229,9 +230,28 @@ public class HttpJsonCloudPlugin implements Plugin {
         @Override
         public Future<Collection<ServiceDescription>> onServiceQueried(final ServiceQuery query) {
             return Futures.flatReducePlain(
-                orchestrationStrategy.requests(),
+                orchestrationStrategy.patterns(),
                 new ArrayList<>(),
                 (services, request) -> {
+                    if (request.isPlainStorePattern()) {
+                        synchronized (this) {
+                            if (orchestrationPlainStoreQueryAnnouncement == null) {
+                                orchestrationPlainStoreQueryAnnouncement = requestOrchestration()
+                                    .flatMap(orchestration -> orchestration.query(request.toQuery(systemDetails, null)))
+                                    .map(queryResult -> (Collection<ServiceDescription>) queryResult.services()
+                                        .stream()
+                                        .map(ServiceConsumable::toServiceDescription)
+                                        .collect(Collectors.toUnmodifiableList()))
+                                    .always(ignored -> {
+                                        synchronized (this) {
+                                            orchestrationPlainStoreQueryAnnouncement = null;
+                                        }
+                                    })
+                                    .toAnnouncement();
+                            }
+                            return orchestrationPlainStoreQueryAnnouncement.subscribe();
+                        }
+                    }
                     if (services.stream().anyMatch(query::matches)) {
                         return Future.success(services);
                     }

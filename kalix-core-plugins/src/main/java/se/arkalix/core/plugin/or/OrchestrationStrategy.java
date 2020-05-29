@@ -12,7 +12,7 @@ import java.util.Objects;
  */
 @SuppressWarnings("unused")
 public class OrchestrationStrategy {
-    private final List<OrchestrationRequest> requests;
+    private final List<OrchestrationPattern> patterns;
 
     /**
      * Only request predefined orchestration rules.
@@ -25,7 +25,7 @@ public class OrchestrationStrategy {
      * se.arkalix.ArSystem system}, which are returned if available.
      */
     public static final OrchestrationStrategy STORED_ONLY = new OrchestrationStrategy(
-        new OrchestrationRequest());
+        new OrchestrationPattern());
 
     /**
      * First request predefined orchestration rules, then request dynamic
@@ -38,8 +38,8 @@ public class OrchestrationStrategy {
      * orchestration attempt is made afterwards.
      */
     public static final OrchestrationStrategy STORED_THEN_DYNAMIC = new OrchestrationStrategy(
-        new OrchestrationRequest(),
-        new OrchestrationRequest()
+        new OrchestrationPattern(),
+        new OrchestrationPattern()
             .isDynamic(true)
             .option(OrchestrationOption.OVERRIDE_STORE, true)
             .option(OrchestrationOption.PING_PROVIDERS, true));
@@ -51,7 +51,7 @@ public class OrchestrationStrategy {
      * is asked directly for explicitly specified services to consume.
      */
     public static final OrchestrationStrategy DYNAMIC_ONLY = new OrchestrationStrategy(
-        new OrchestrationRequest()
+        new OrchestrationPattern()
             .isDynamic(true)
             .option(OrchestrationOption.OVERRIDE_STORE, true)
             .option(OrchestrationOption.PING_PROVIDERS, true));
@@ -60,20 +60,20 @@ public class OrchestrationStrategy {
      * Creates new orchestration strategy, which entails attempting the given
      * orchestration requests in order until a matching service is found.
      *
-     * @param requests Requests to attempt.
+     * @param patterns Requests to attempt.
      */
-    public OrchestrationStrategy(final OrchestrationRequest... requests) {
-        this(List.of(requests));
+    public OrchestrationStrategy(final OrchestrationPattern... patterns) {
+        this(List.of(patterns));
     }
 
     /**
      * Creates new orchestration strategy, which entails attempting the given
      * orchestration requests in order until a matching service is found.
      *
-     * @param requests Requests to attempt.
+     * @param patterns Requests to attempt.
      */
-    public OrchestrationStrategy(final List<OrchestrationRequest> requests) {
-        this.requests = Objects.requireNonNull(requests, "Expected requests");
+    public OrchestrationStrategy(final List<OrchestrationPattern> patterns) {
+        this.patterns = Objects.requireNonNull(patterns, "Expected requests");
     }
 
     /**
@@ -81,7 +81,7 @@ public class OrchestrationStrategy {
      *
      * @return Requests.
      */
-    public List<OrchestrationRequest> requests() {
-        return requests;
+    public List<OrchestrationPattern> patterns() {
+        return patterns;
     }
 }
