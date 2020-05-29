@@ -76,6 +76,9 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
                     return Future.failure(result.fault());
                 }
                 final var response = result.value();
+                if (!response.status().isSuccess()) {
+                    return Future.failure(response.reject());
+                }
                 final var optionalLocation = response.header("location");
                 if (optionalLocation.isEmpty()) {
                     return Future.failure(response.reject("No location " +
