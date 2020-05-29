@@ -71,8 +71,8 @@ public class HttpJsonCloudPlugin implements Plugin {
     }
 
     /**
-     * Creates new HTTP/JSON cloud plugin that tries to make its systems enter
-     * a certain local cloud via the service registry system available at the
+     * Creates new HTTP/JSON cloud plugin that tries to make its systems join a
+     * certain local cloud via the service registry system available at the
      * specified {@code socketAddress}.
      * <p>
      * If more control over the behavior of the core integrator is desired,
@@ -82,7 +82,7 @@ public class HttpJsonCloudPlugin implements Plugin {
      *                      system to use for entering local cloud.
      * @return New core integrator.
      */
-    public static HttpJsonCloudPlugin viaServiceRegistryAt(final InetSocketAddress socketAddress) {
+    public static HttpJsonCloudPlugin joinViaServiceRegistryAt(final InetSocketAddress socketAddress) {
         return new HttpJsonCloudPlugin.Builder()
             .serviceRegistrySocketAddress(socketAddress)
             .build();
