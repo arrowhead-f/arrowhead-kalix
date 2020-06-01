@@ -12,6 +12,7 @@ import se.arkalix.internal.net.http.NettyHttpBodyReceiver;
 import se.arkalix.internal.net.NettySimpleChannelInboundHandler;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.service.HttpServiceRequestException;
+import se.arkalix.query.ServiceNotFoundException;
 import se.arkalix.security.access.AccessTokenException;
 import se.arkalix.util.annotation.Internal;
 import io.netty.buffer.Unpooled;
@@ -115,6 +116,9 @@ public class NettyHttpServiceConnectionHandler extends NettySimpleChannelInbound
                         logger.warn("Incoming request could not be processed", fault);
                     }
                     sendEmptyResponseAndCleanup(ctx, BAD_REQUEST, false);
+                }
+                else if (fault instanceof ServiceNotFoundException) {
+                    sendEmptyResponseAndCleanup(ctx, NOT_FOUND, false);
                 }
                 else {
                     logAndSendInternalServerError(ctx, "handling", fault);

@@ -432,6 +432,12 @@ public class ArSystem {
         return isShuttingDown.get() || scheduler.isShuttingDown();
     }
 
+    @Override
+    @ThreadSafe
+    public String toString() {
+        return description.toString();
+    }
+
     /**
      * Builder useful for creating instances of the {@link ArSystem}
      * class.
