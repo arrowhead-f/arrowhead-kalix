@@ -467,4 +467,19 @@ public class ServiceQuery {
 
         return service.security().isSecure() == isSecure();
     }
+
+    @Override
+    public String toString() {
+        return "ServiceQuery{" +
+            "consumer=" + consumer +
+            ", resolver=" + resolver +
+            ", name='" + name + '\'' +
+            ", encodings=" + encodings +
+            ", transports=" + transports +
+            ", metadata=" + metadata +
+            ", version=" + version +
+            ", versionMax=" + versionMax +
+            ", versionMin=" + versionMin +
+            '}';
+    }
 }
