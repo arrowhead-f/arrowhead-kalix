@@ -18,4 +18,14 @@ public class HttpClientException extends RuntimeException {
     public HttpClientException(final String message) {
         super(message, null, true, false); // Disable stack trace.
     }
+
+    /**
+     * Creates new HTTP client exception with given message.
+     *
+     * @param message Human-readable description of issue.
+     * @param cause   Exception causing this exception to be thrown.
+     */
+    public HttpClientException(final String message, final Throwable cause) {
+        super(message, cause, true, false); // Disable stack trace.
+    }
 }

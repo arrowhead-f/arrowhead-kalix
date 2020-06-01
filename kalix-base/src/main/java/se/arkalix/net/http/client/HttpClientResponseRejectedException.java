@@ -19,7 +19,7 @@ public class HttpClientResponseRejectedException extends HttpClientResponseExcep
     /**
      * Creates new HTTP response rejection exception from given response.
      *
-     * @param response Human-readable description of issue.
+     * @param response Response not containing the expected result.
      */
     public HttpClientResponseRejectedException(final HttpClientResponse response) {
         super(response.request(), "-> [" + response.status().text() + "]");
@@ -30,10 +30,29 @@ public class HttpClientResponseRejectedException extends HttpClientResponseExcep
      * Creates new HTTP response rejection exception from given response and
      * message.
      *
-     * @param message Human-readable description of issue.
+     * @param response Response not containing the expected result.
+     * @param message  Human-readable description of issue.
      */
     public HttpClientResponseRejectedException(final HttpClientResponse response, final String message) {
         super(response.request(), "-> [" + response.status().text() + "] " + message);
+        this.response = response;
+    }
+
+    /**
+     * Creates new HTTP response rejection exception from given response and
+     * message.
+     *
+     * @param response Response not containing the expected result.
+     * @param message  Human-readable description of issue.
+     * @param cause    Exception thrown due to response not containing expected
+     *                 result.
+     */
+    public HttpClientResponseRejectedException(
+        final HttpClientResponse response,
+        final String message,
+        final Throwable cause)
+    {
+        super(response.request(), message, cause);
         this.response = response;
     }
 

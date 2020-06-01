@@ -86,6 +86,20 @@ public interface HttpClientResponse extends HttpBodyReceiver {
     }
 
     /**
+     * Creates an exception containing this response and a description of why
+     * it was rejected.
+     *
+     * @param reason Description of what expectations this response fails to
+     *               fulfill.
+     * @param cause  Exception thrown due to this response not fulfilling some
+     *               arbitrary requirement.
+     * @return Exception wrapping this response.
+     */
+    default HttpClientResponseRejectedException reject(final String reason, final Throwable cause) {
+        return new HttpClientResponseRejectedException(this, reason, cause);
+    }
+
+    /**
      * Returns a {@code Future} that contains the exception returned by
      * {@link #reject()}, if its status code is not in the range 200-299.
      * Otherwise a successful future containing {@code null} is returned.

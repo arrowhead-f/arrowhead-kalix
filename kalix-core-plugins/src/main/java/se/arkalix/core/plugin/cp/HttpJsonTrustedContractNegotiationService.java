@@ -82,7 +82,7 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
                 final var optionalLocation = response.header("location");
                 if (optionalLocation.isEmpty()) {
                     return Future.failure(response.reject("No location " +
-                        "header in response; cannot determine session id"));
+                        "header in response; cannot determine negotiation id"));
                 }
                 var location = optionalLocation.get();
                 if (location.charAt(location.length() - 1) == '/') {
@@ -91,16 +91,16 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
                 final var idOffset = location.lastIndexOf('/');
                 if (idOffset == -1) {
                     return Future.failure(response.reject("No valid URI in " +
-                        "location header; cannot determine session id"));
+                        "location header; cannot determine negotiation id"));
                 }
                 final long negotiationId;
                 try {
-                    negotiationId = Long.parseLong(location, idOffset, location.length(), 10);
+                    negotiationId = Long.parseLong(location, idOffset + 1, location.length(), 10);
                 }
                 catch (final NumberFormatException exception) {
                     return Future.failure(response.reject("Last segment of " +
                         "location header does not contain a number; cannot " +
-                        "determine session id"));
+                        "determine negotiation id", exception));
                 }
                 return HttpJsonServices.unwrap(response)
                     .pass(negotiationId);

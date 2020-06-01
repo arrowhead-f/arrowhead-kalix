@@ -21,7 +21,22 @@ public class HttpClientResponseException extends HttpClientException {
      * @param message Human-readable description of issue.
      */
     public HttpClientResponseException(final HttpClientRequest request, final String message) {
-        super("[" + request.method().map(Object::toString).orElse("X") + " " + request.uri().orElse("X") + "] " + message);
+        super("[" + request.method().map(Object::toString).orElse("X") + " " +
+            request.uri().orElse("X") + "] " + message);
+        this.request = request;
+    }
+
+    /**
+     * Creates new HTTP response exception with given message an cause.
+     *
+     * @param request Request that could not be fulfilled due to the condition
+     *                described by this exception occurring.
+     * @param message Human-readable description of issue.
+     * @param cause   Exception causing this exception to be thrown.
+     */
+    public HttpClientResponseException(final HttpClientRequest request, final String message, final Throwable cause) {
+        super("[" + request.method().map(Object::toString).orElse("X") + " " +
+            request.uri().orElse("X") + "] " + message, cause);
         this.request = request;
     }
 
