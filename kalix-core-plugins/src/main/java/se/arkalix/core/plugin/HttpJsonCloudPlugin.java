@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import se.arkalix.ArService;
 import se.arkalix.ArSystem;
 import se.arkalix.core.plugin.or.HttpJsonOrchestrationService;
+import se.arkalix.core.plugin.or.OrchestrationPattern;
 import se.arkalix.core.plugin.or.OrchestrationStrategy;
 import se.arkalix.core.plugin.sr.HttpJsonServiceDiscoveryService;
 import se.arkalix.core.plugin.sr.ServiceQueryBuilder;
@@ -229,38 +230,53 @@ public class HttpJsonCloudPlugin implements Plugin {
 
         @Override
         public Future<Collection<ServiceDescription>> onServiceQueried(final ServiceQuery query) {
-            return Futures.flatReducePlain(
-                orchestrationStrategy.patterns(),
-                new ArrayList<>(),
-                (services, request) -> {
-                    if (request.isPlainStorePattern()) {
-                        synchronized (this) {
-                            if (orchestrationPlainStoreQueryAnnouncement == null) {
-                                orchestrationPlainStoreQueryAnnouncement = requestOrchestration()
-                                    .flatMap(orchestration -> orchestration.query(request.toQuery(systemDetails, null)))
-                                    .map(queryResult -> (Collection<ServiceDescription>) queryResult.services()
-                                        .stream()
-                                        .map(ServiceConsumable::toServiceDescription)
-                                        .collect(Collectors.toUnmodifiableList()))
-                                    .always(ignored -> {
-                                        synchronized (this) {
-                                            orchestrationPlainStoreQueryAnnouncement = null;
-                                        }
-                                    })
-                                    .toAnnouncement();
-                            }
-                            return orchestrationPlainStoreQueryAnnouncement.subscribe();
+            return Futures.flatReducePlain(orchestrationStrategy.patterns(), new ArrayList<>(), (services, pattern) -> {
+                if (pattern.isPlainStorePattern()) {
+                    synchronized (this) {
+                        if (orchestrationPlainStoreQueryAnnouncement == null) {
+                            orchestrationPlainStoreQueryAnnouncement = executeOrchestrationQueryUsing(null, pattern)
+                                .always(ignored -> {
+                                    synchronized (this) {
+                                        orchestrationPlainStoreQueryAnnouncement = null;
+                                    }
+                                })
+                                .toAnnouncement();
                         }
+                        return orchestrationPlainStoreQueryAnnouncement.subscribe();
                     }
-                    if (services.stream().anyMatch(query::matches)) {
-                        return Future.success(services);
+                }
+                if (services.stream().anyMatch(query::matches)) {
+                    return Future.success(services);
+                }
+                return executeOrchestrationQueryUsing(query, pattern);
+            });
+        }
+
+        private Future<Collection<ServiceDescription>> executeOrchestrationQueryUsing(
+            final ServiceQuery query,
+            final OrchestrationPattern pattern)
+        {
+            Objects.requireNonNull(pattern, "Expected pattern");
+
+            final var isTraceEnabled = logger.isTraceEnabled();
+
+            return requestOrchestration()
+                .ifSuccess(ignored -> {
+                    if (isTraceEnabled) {
+                        logger.trace("HTTP/JSON cloud plugin is about to " +
+                            "execute {} ...", query);
                     }
-                    return requestOrchestration()
-                        .flatMap(orchestration -> orchestration.query(request.toQuery(systemDetails, query)))
-                        .map(queryResult -> queryResult.services()
-                            .stream()
-                            .map(ServiceConsumable::toServiceDescription)
-                            .collect(Collectors.toUnmodifiableList()));
+                })
+                .flatMap(orchestration -> orchestration.query(pattern.toQuery(systemDetails, query)))
+                .map(queryResult -> {
+                    final var services = queryResult.services()
+                        .stream()
+                        .map(ServiceConsumable::toServiceDescription)
+                        .collect(Collectors.toUnmodifiableList());
+                    if (isTraceEnabled) {
+                        logger.trace("HTTP/JSON cloud plugin received {}", services);
+                    }
+                    return services;
                 });
         }
 

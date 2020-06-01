@@ -234,19 +234,50 @@ public class ArSystem {
     }
 
     private Future<Set<ServiceDescription>> query(final ServiceQuery query) {
+        final var isTraceEnabled = logger.isTraceEnabled();
+
+        if (isTraceEnabled) {
+            logger.trace("Executing given {} ...", query);
+        }
+
         final var matchingServices = consumedServices.getAll()
             .filter(query::matches)
             .collect(Collectors.toUnmodifiableSet());
 
+        if (isTraceEnabled) {
+            logger.trace("Resolved the following from service cache: {}", matchingServices);
+        }
+
         if (!matchingServices.isEmpty()) {
+            if (isTraceEnabled) {
+                logger.trace("Service cache contained at least one service " +
+                    "matching the given query");
+            }
             return Future.success(matchingServices);
         }
 
+        if (isTraceEnabled) {
+            logger.trace("Service cache did not contain any service " +
+                "matching the given query, delegating query to plugins ...");
+        }
         return pluginNotifier.onServiceQueried(query)
-            .ifSuccess(consumedServices::update)
+            .ifSuccess(services -> {
+                if (isTraceEnabled) {
+                    logger.trace("Retrieved the following entries from " +
+                        "plugins, which will be used to update the service " +
+                        "cache: {}", services);
+                }
+                consumedServices.update(services);
+            })
             .map(services -> services.stream()
                 .filter(query::matches)
-                .collect(Collectors.toUnmodifiableSet()));
+                .collect(Collectors.toUnmodifiableSet()))
+            .ifSuccess(services -> {
+                if (isTraceEnabled) {
+                    logger.trace("The following entries matched the given " +
+                        "query: {}", services);
+                }
+            });
     }
 
     /**
