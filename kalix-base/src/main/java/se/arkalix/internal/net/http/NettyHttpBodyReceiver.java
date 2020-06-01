@@ -78,10 +78,6 @@ public class NettyHttpBodyReceiver implements HttpBodyReceiver {
         body.append(content);
     }
 
-    public void finish() {
-        finish(null);
-    }
-
     public void finish(final LastHttpContent lastContent) {
         if (isAborted || isFinished || !isBodyRequested) {
             return;
