@@ -34,7 +34,7 @@ public class HttpJsonTrustedContractObservationService implements ArConsumer, Ar
 
     private HttpJsonTrustedContractObservationService(final HttpConsumer consumer) {
         this.consumer = Objects.requireNonNull(consumer, "Expected consumer");
-        uriGet = Paths.combine(consumer.service().uri(), "sessions");
+        uriGet = Paths.combine(consumer.service().uri(), "negotiations");
     }
 
     /**
