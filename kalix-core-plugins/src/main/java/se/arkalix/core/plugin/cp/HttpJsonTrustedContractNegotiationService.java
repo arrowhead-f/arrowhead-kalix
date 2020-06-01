@@ -84,8 +84,11 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
                     return Future.failure(response.reject("No location " +
                         "header in response; cannot determine session id"));
                 }
-                final var location = optionalLocation.get();
-                final var idOffset = location.lastIndexOf('/', location.length() - 2);
+                var location = optionalLocation.get();
+                if (location.charAt(location.length() - 1) == '/') {
+                    location = location.substring(0, location.length() - 1);
+                }
+                final var idOffset = location.lastIndexOf('/');
                 if (idOffset == -1) {
                     return Future.failure(response.reject("No valid URI in " +
                         "location header; cannot determine session id"));
