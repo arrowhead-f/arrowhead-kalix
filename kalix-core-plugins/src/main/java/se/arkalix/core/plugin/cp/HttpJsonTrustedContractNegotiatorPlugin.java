@@ -423,6 +423,8 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                                 .using(HttpJsonTrustedContractNegotiationService.factory())
                                 .flatMap(service -> service.accept(new TrustedContractAcceptanceBuilder()
                                     .negotiationId(negotiationId)
+                                    .offerorName(offerorName)
+                                    .acceptorName(receiverName)
                                     .acceptedAt(Instant.now())
                                     .build()));
                         }
@@ -455,6 +457,8 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                                 .using(HttpJsonTrustedContractNegotiationService.factory())
                                 .flatMap(service -> service.reject(new TrustedContractRejectionBuilder()
                                     .negotiationId(negotiationId)
+                                    .offerorName(offerorName)
+                                    .rejectorName(receiverName)
                                     .rejectedAt(Instant.now())
                                     .build()));
                         }
