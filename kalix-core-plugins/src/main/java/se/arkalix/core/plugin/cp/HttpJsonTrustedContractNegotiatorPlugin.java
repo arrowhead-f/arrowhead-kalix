@@ -393,12 +393,10 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                 return false;
             }
             switch (status.toUpperCase()) {
-            case "OFFERING":
-                return this.offerorName.equals(receiverName) && this.receiverName.equals(offerorName);
-
             case "ACCEPTED":
+            case "OFFERING":
             case "REJECTED":
-                return this.offerorName.equals(offerorName) && this.receiverName.equals(receiverName);
+                return this.offerorName.equals(receiverName) && this.receiverName.equals(offerorName);
 
             default:
                 return false;
@@ -433,8 +431,8 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                         public Future<?> offer(final SimplifiedContractCounterOffer offer) {
                             final var counterOffer = new TrustedContractCounterOfferBuilder()
                                 .negotiationId(negotiationId)
-                                .offerorName(offerorName)
-                                .receiverName(receiverName)
+                                .offerorName(receiverName)
+                                .receiverName(offerorName)
                                 .validAfter(offer.validAfter())
                                 .validUntil(offer.validUntil())
                                 .contracts(offer.contracts())
