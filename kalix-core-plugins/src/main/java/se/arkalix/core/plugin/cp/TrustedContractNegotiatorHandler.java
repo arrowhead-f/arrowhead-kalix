@@ -14,17 +14,18 @@ public interface TrustedContractNegotiatorHandler {
      * The negotiation session in question must be considered permanently
      * closed when this method is invoked.
      *
-     * @param session Session containing accepted offer.
+     * @param negotiation Session containing accepted offer.
      */
-    void onAccept(TrustedContractNegotiationDto session);
+    void onAccept(TrustedContractNegotiationDto negotiation);
 
     /**
      * Called to notify about a new offer or counter-offer being received.
      *
-     * @param session   Session containing the received offer or counter-offer.
-     * @param responder Object useful for responding to the received offer.
+     * @param negotiation Session containing the received offer or
+     *                    counter-offer.
+     * @param responder   Object useful for responding to the received offer.
      */
-    void onOffer(TrustedContractNegotiationDto session, TrustedContractNegotiatorResponder responder);
+    void onOffer(TrustedContractNegotiationDto negotiation, TrustedContractNegotiatorResponder responder);
 
     /**
      * Called to indicate that a previously made contract offer was rejected by
@@ -33,9 +34,9 @@ public interface TrustedContractNegotiatorHandler {
      * The negotiation session in question must be considered permanently
      * closed when this method is invoked.
      *
-     * @param session Session containing rejected offer.
+     * @param negotiation Session containing rejected offer.
      */
-    void onReject(TrustedContractNegotiationDto session);
+    void onReject(TrustedContractNegotiationDto negotiation);
 
     /**
      * Called to indicate that a previously made or received contract offer
@@ -43,12 +44,10 @@ public interface TrustedContractNegotiatorHandler {
      * <p>
      * The negotiation session in question must be considered permanently
      * closed when this method is invoked.
-     *
-     * @param session Session containing expired offer.
      */
-    default void onExpiry(TrustedContractNegotiationDto session) {
+    default void onExpiry() {
         final var logger = LoggerFactory.getLogger(getClass());
-        logger.warn("Contract negotiation session expired: {}", session);
+        logger.warn("Contract negotiation session expired: {}", this);
     }
 
     /**
