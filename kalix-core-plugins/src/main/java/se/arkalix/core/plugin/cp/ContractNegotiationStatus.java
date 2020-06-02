@@ -3,6 +3,7 @@ package se.arkalix.core.plugin.cp;
 /**
  * Enumerates the different states a contract negotiation session can be in.
  */
+@SuppressWarnings("unused")
 public enum ContractNegotiationStatus {
     /**
      * Session is still active.

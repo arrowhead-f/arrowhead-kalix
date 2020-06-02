@@ -147,15 +147,15 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                         return;
                     }
 
-                    final var action = metadata.get("action");
-                    if (action == null) {
+                    final var status = metadata.get("status");
+                    if (status == null) {
                         logger.warn("HTTP/JSON contract negotiator received " +
-                            "contract event without a stated action; " +
-                            "cannot process event [data={}, metadata={}]", data, metadata);
+                            "contract event without a status; cannot " +
+                            "process event [data={}, metadata={}]", data, metadata);
                         return;
                     }
 
-                    if (!expectedEvents.tryToHandle(offerorName, receiverName, negotiationId, action)) {
+                    if (!expectedEvents.tryToHandle(offerorName, receiverName, negotiationId, status)) {
                         logger.debug("HTTP/JSON contract negotiator " +
                             "received contract event that does name an " +
                             "expected offeror, receiver, negotiation " +
@@ -235,12 +235,12 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
             final String offerorName,
             final String receiverName,
             final long negotiationId,
-            final String action)
+            final String status)
         {
             final var it = expectedEvents.iterator();
             while (it.hasNext()) {
                 final var expectedEvent = it.next();
-                if (expectedEvent.matches(offerorName, receiverName, negotiationId, action)) {
+                if (expectedEvent.matches(offerorName, receiverName, negotiationId, status)) {
                     if (expectedEvent.isToBeRemovedWhenMatched()) {
                         it.remove();
                     }
@@ -251,8 +251,8 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                                 .orElseThrow(() -> new IllegalStateException("" +
                                     "Advertised negotiation [offeror=" +
                                     offerorName + ", receiver=" + receiverName +
-                                    ", id=" + negotiationId + ", action=" +
-                                    action + "] not available via service \"" +
+                                    ", id=" + negotiationId + ", status=" +
+                                    status + "] not available via service \"" +
                                     service.service().name() + "\"; cannot " +
                                     "present negotiation update to " +
                                     "negotiation handler"))))
@@ -261,7 +261,7 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                         .onFailure(fault -> logger.error("Failed to handle " +
                             "negotiation [offeror=" + offerorName + ", " +
                             "receiver=" + receiverName + ", id=" +
-                            negotiationId + ", action=" + action + "]", fault));
+                            negotiationId + ", status=" + status + "]", fault));
                     return true;
                 }
             }
@@ -274,7 +274,7 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
             final String offerorName,
             final String receiverName,
             final long negotiationId,
-            final String action);
+            final String status);
 
         boolean isToBeRemovedWhenMatched();
 
@@ -301,9 +301,9 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
             final String offerorName,
             final String receiverName,
             final long negotiationId,
-            final String action)
+            final String status)
         {
-            return this.receiverName.equals(receiverName) && "offer".equalsIgnoreCase(action);
+            return this.receiverName.equals(receiverName) && "OFFERING".equalsIgnoreCase(status);
         }
 
         @Override
@@ -387,17 +387,17 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
             final String offerorName,
             final String receiverName,
             final long negotiationId,
-            final String action)
+            final String status)
         {
             if (isExpired.get() || this.negotiationId != negotiationId) {
                 return false;
             }
-            switch (action.toLowerCase()) {
-            case "offer":
+            switch (status.toUpperCase()) {
+            case "OFFERING":
                 return this.offerorName.equals(receiverName) && this.receiverName.equals(offerorName);
 
-            case "accept":
-            case "reject":
+            case "ACCEPTED":
+            case "REJECTED":
                 return this.offerorName.equals(offerorName) && this.receiverName.equals(receiverName);
 
             default:
