@@ -342,12 +342,11 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                     "already expired; " + negotiation);
             }
 
-            final var expectedResponseToOffer = new ExpectedResponseToOffer(system, handlerFactory.get(),
-                negotiation.offer().offerorName(), receiverName, negotiation.id(), expiresIn);
-
-            expectedResponseToOffer.handle(negotiation);
-
-            return Future.success(Optional.of(expectedResponseToOffer));
+            return new ExpectedResponseToOffer(
+                system, handlerFactory.get(),
+                negotiation.offer().offerorName(), receiverName, negotiation.id(),
+                expiresIn)
+                .handle(negotiation);
         }
 
         @Override
