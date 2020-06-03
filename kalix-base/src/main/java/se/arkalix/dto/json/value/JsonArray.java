@@ -14,7 +14,7 @@ import java.util.*;
 import static se.arkalix.dto.DtoEncoding.JSON;
 
 /**
- * A JSON array.
+ * JSON array.
  *
  * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
  */

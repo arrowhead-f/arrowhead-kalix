@@ -16,7 +16,7 @@ import java.util.Objects;
 import static se.arkalix.dto.DtoEncoding.JSON;
 
 /**
- * JSON number.
+ * JSON string.
  *
  * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
  */
