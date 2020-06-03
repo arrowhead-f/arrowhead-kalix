@@ -37,20 +37,20 @@ import java.util.function.Supplier;
  *         .build();
  *
  *     // Collect the plugin's facade.
- *     final var negotiator = system.pluginFacadeOf(HttpJsonContractNegotiationTrustedPlugin.class)
- *         .map(facade -&gt; (ArContractNegotiationTrustedPluginFacade) facade)
+ *     final var negotiator = system.pluginFacadeOf(HttpJsonTrustedContractNegotiatorPlugin.class)
+ *         .map(facade -&gt; (ArTrustedContractNegotiatorPluginFacade) facade)
  *         .orElseThrow(() -&gt; new IllegalStateException("Negotiator facade not available"));
  *
  *     // Send a negotiation offer to some relevant party and register response handlers.
  *     negotiator.offer(someOffer, new ArTrustedNegotiationHandler() {
  *         &#64;Override
- *         public void onAccept(final TrustedSessionCandidate candidate) {
- *             System.out.println("Accepted " + candidate);
+ *         public void onAccept(final TrustedContractNegotiationDto negotiation) {
+ *             System.out.println("Accepted offer in " + negotiation);
  *         }
  *
  *         &#64;Override
- *         public void onOffer(final TrustedSessionCandidate candidate, final ArTrustedNegotiationResponder responder) {
- *             System.out.println("Received counter-offer " + candidate);
+ *         public void onOffer(final TrustedContractNegotiationDto negotiation, final TrustedContractNegotiatorResponder responder) {
+ *             System.out.println("Received counter-offer in " + negotiation);
  *             System.out.println("Rejecting counter-offer ...");
  *             responder.reject()
  *                 .ifSuccess(ignored -&gt; System.out.println("Rejected counter-offer"))
@@ -58,8 +58,8 @@ import java.util.function.Supplier;
  *         }
  *
  *         &#64;Override
- *         public void onReject(final TrustedSessionCandidate candidate) {
- *             System.out.println("Rejected " + candidate);
+ *         public void onReject(final TrustedContractNegotiationDto negotiation) {
+ *             System.out.println("Rejected offer in " + negotiation);
  *         }
  *     });
  * </pre>
@@ -340,12 +340,13 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
     private static class ExpectedResponseToOffer implements ExpectedEvent {
         private final ArSystem system;
         private final TrustedContractNegotiatorHandler handler;
-        private final String offerorName;
-        private final String receiverName;
         private final long negotiationId;
 
         private final AtomicReference<Future<?>> expirationFuture;
         private final AtomicBoolean isExpired = new AtomicBoolean(false);
+
+        private String offerorName;
+        private String receiverName;
 
         private ExpectedResponseToOffer(
             final ArSystem system,
@@ -357,12 +358,13 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
         {
             this.system = Objects.requireNonNull(system, "Expected system");
             this.handler = Objects.requireNonNull(handler, "Expected handler");
-            this.offerorName = Objects.requireNonNull(offerorName, "Expected offerorName");
-            this.receiverName = Objects.requireNonNull(receiverName, "Expected receiverName");
             this.negotiationId = negotiationId;
             Objects.requireNonNull(expiresIn, "Expected expiresIn");
 
             expirationFuture = new AtomicReference<>(Schedulers.fixed().schedule(expiresIn, this::expire));
+
+            this.offerorName = Objects.requireNonNull(offerorName, "Expected offerorName");
+            this.receiverName = Objects.requireNonNull(receiverName, "Expected receiverName");
         }
 
         public void expire() {
@@ -375,8 +377,11 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
             }
         }
 
-        public void refresh(final Duration expiresIn) {
-            final var future = expirationFuture.getAndSet(Schedulers.fixed().schedule(expiresIn, this::expire));
+        public void refresh(final TrustedContractCounterOffer offer) {
+            offerorName = offer.offerorName();
+            receiverName = offer.receiverName();
+
+            final var future = expirationFuture.getAndSet(Schedulers.fixed().schedule(offer.expiresIn(), this::expire));
             if (future != null) {
                 future.cancel();
             }
@@ -393,10 +398,12 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                 return false;
             }
             switch (status.toUpperCase()) {
-            case "ACCEPTED":
             case "OFFERING":
-            case "REJECTED":
                 return this.offerorName.equals(receiverName) && this.receiverName.equals(offerorName);
+
+            case "ACCEPTED":
+            case "REJECTED":
+                return this.offerorName.equals(offerorName) && this.receiverName.equals(receiverName);
 
             default:
                 return false;
@@ -420,9 +427,9 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                             return system.consume()
                                 .using(HttpJsonTrustedContractNegotiationService.factory())
                                 .flatMap(service -> service.accept(new TrustedContractAcceptanceBuilder()
-                                    .negotiationId(negotiationId)
-                                    .offerorName(offerorName)
-                                    .acceptorName(receiverName)
+                                    .negotiationId(negotiation.id())
+                                    .offerorName(negotiation.offer().offerorName())
+                                    .acceptorName(negotiation.offer().receiverName())
                                     .acceptedAt(Instant.now())
                                     .build()));
                         }
@@ -430,9 +437,9 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                         @Override
                         public Future<?> offer(final SimplifiedContractCounterOffer offer) {
                             final var counterOffer = new TrustedContractCounterOfferBuilder()
-                                .negotiationId(negotiationId)
-                                .offerorName(receiverName)
-                                .receiverName(offerorName)
+                                .negotiationId(negotiation.id())
+                                .offerorName(negotiation.offer().receiverName())
+                                .receiverName(negotiation.offer().offerorName())
                                 .validAfter(offer.validAfter())
                                 .validUntil(offer.validUntil())
                                 .contracts(offer.contracts())
@@ -442,7 +449,7 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                                 .using(HttpJsonTrustedContractNegotiationService.factory())
                                 .flatMap(service -> service.counterOffer(counterOffer))
                                 .ifSuccess(ignored -> {
-                                    ExpectedResponseToOffer.this.refresh(counterOffer.expiresIn());
+                                    refresh(counterOffer);
                                     future.complete(Result.success(Optional.of(ExpectedResponseToOffer.this)));
                                 })
                                 .ifFailure(Throwable.class, ignored ->
@@ -454,9 +461,9 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                             return system.consume()
                                 .using(HttpJsonTrustedContractNegotiationService.factory())
                                 .flatMap(service -> service.reject(new TrustedContractRejectionBuilder()
-                                    .negotiationId(negotiationId)
-                                    .offerorName(offerorName)
-                                    .rejectorName(receiverName)
+                                    .negotiationId(negotiation.id())
+                                    .offerorName(negotiation.offer().offerorName())
+                                    .rejectorName(negotiation.offer().receiverName())
                                     .rejectedAt(Instant.now())
                                     .build()));
                         }

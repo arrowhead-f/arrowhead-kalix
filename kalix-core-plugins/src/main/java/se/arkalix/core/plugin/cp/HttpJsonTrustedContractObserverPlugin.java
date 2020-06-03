@@ -90,37 +90,29 @@ public class HttpJsonTrustedContractObserverPlugin implements ArTrustedContractO
                 .subscribe(ContractNegotiationConstants.TOPIC_UPDATE, (metadata, data) -> {
                     final long negotiationId;
                     try {
-                        final var colonIndex = data.indexOf(':');
-                        if (colonIndex == -1) {
-                            throw new IllegalStateException("Expected event " +
-                                "data to consist of two colon-separated " +
-                                "numbers (<negotiationId>:<candidateSeq>); no " +
-                                "colon (:) found in data");
-                        }
-                        negotiationId = Long.parseLong(data, 0, colonIndex, 10);
+                        negotiationId = Long.parseLong(data);
                     }
                     catch (final Throwable throwable) {
-                        logger.warn("HTTP/JSON contract observer received " +
-                            "contract event with invalid session and " +
-                            "candidate identifiers; cannot process event " +
-                            "[data=" + data + ", metadata=" + metadata +
-                            "]", throwable);
+                        logger.warn("HTTP/JSON contract negotiator received " +
+                            "contract event with an invalid session " +
+                            "identifier; cannot process event [data=" + data +
+                            ", metadata=" + metadata + "]", throwable);
                         return;
                     }
 
                     final var offerorName = metadata.get("offeror");
                     if (offerorName == null) {
-                        logger.warn("HTTP/JSON contract observer received " +
+                        logger.warn("HTTP/JSON contract negotiator received " +
                             "contract event without a named offeror; " +
-                            "cannot process event [negotiationId={}, metadata={}]", data, metadata);
+                            "cannot process event [data={}, metadata={}]", data, metadata);
                         return;
                     }
 
                     final var receiverName = metadata.get("receiver");
                     if (receiverName == null) {
-                        logger.warn("HTTP/JSON contract observer received " +
+                        logger.warn("HTTP/JSON contract negotiator received " +
                             "contract event without a named receiver; " +
-                            "cannot process event [negotiationId={}, metadata={}]", data, metadata);
+                            "cannot process event [data={}, metadata={}]", data, metadata);
                         return;
                     }
 
