@@ -19,6 +19,7 @@ import se.arkalix.util.concurrent.Futures;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -48,7 +49,7 @@ import static se.arkalix.descriptor.EncodingDescriptor.JSON;
 public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
     private static final Logger logger = LoggerFactory.getLogger(HttpJsonEventSubscriberPlugin.class);
 
-    private final ArrayList<EventSubscription> defaultSubscriptions = new ArrayList<>();
+    private final List<EventSubscription> defaultSubscriptions = new CopyOnWriteArrayList<>();
 
     @Override
     public HttpJsonEventSubscriberPlugin subscribe(final EventSubscription subscription) {
@@ -74,7 +75,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
         private final ConcurrentHashMap<String, Topic> nameToTopic = new ConcurrentHashMap<>();
         private final AtomicBoolean isDetached = new AtomicBoolean(false);
 
-        Attached(final ArSystem system, final ArrayList<EventSubscription> defaultSubscriptions) {
+        Attached(final ArSystem system, final List<EventSubscription> defaultSubscriptions) {
             logger.info("HTTP/JSON event subscriber attaching to system \"{}\" ...", system.name());
 
             this.system = system;
