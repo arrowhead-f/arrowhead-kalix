@@ -228,6 +228,7 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
         }
 
         public void add(final ExpectedEvent expectedEvent) {
+            logger.trace("Adding {}", expectedEvent);
             expectedEvents.add(expectedEvent);
         }
 
@@ -237,12 +238,22 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
             final long negotiationId,
             final String status)
         {
+            if (logger.isTraceEnabled()) {
+                logger.trace("Trying to handle event [offeror={}, receiver={}, negotiationId={}, status={}]",
+                    offerorName, receiverName, negotiationId, status);
+            }
             final var it = expectedEvents.iterator();
             while (it.hasNext()) {
                 final var expectedEvent = it.next();
                 if (expectedEvent.matches(offerorName, receiverName, negotiationId, status)) {
+                    if (logger.isTraceEnabled()) {
+                        logger.trace("Matched {}", expectedEvent);
+                    }
                     if (expectedEvent.isToBeRemovedWhenMatched()) {
                         it.remove();
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("Removed expected event");
+                        }
                     }
                     system.consume()
                         .using(HttpJsonTrustedContractObservationService.factory())
@@ -257,13 +268,16 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                                     "present negotiation update to " +
                                     "negotiation handler"))))
                         .flatMap(expectedEvent::handle)
-                        .ifSuccess(optionalNewExpectedEvent -> optionalNewExpectedEvent.ifPresent(expectedEvents::add))
+                        .ifSuccess(optionalNewExpectedEvent -> optionalNewExpectedEvent.ifPresent(this::add))
                         .onFailure(fault -> logger.error("Failed to handle " +
                             "negotiation [offeror=" + offerorName + ", " +
                             "receiver=" + receiverName + ", id=" +
                             negotiationId + ", status=" + status + "]", fault));
                     return true;
                 }
+            }
+            if (logger.isTraceEnabled()) {
+                logger.trace("No expected event matched handled event");
             }
             return false;
         }
@@ -334,6 +348,15 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
             expectedResponseToOffer.handle(negotiation);
 
             return Future.success(Optional.of(expectedResponseToOffer));
+        }
+
+        @Override
+        public String toString() {
+            return "ExpectedOfferForReceiver{" +
+                "system=" + system +
+                ", receiverName='" + receiverName + '\'' +
+                ", handlerFactory=" + handlerFactory +
+                '}';
         }
     }
 
@@ -483,6 +506,19 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                 handler.onFault(throwable);
             }
             return Future.success(Optional.empty());
+        }
+
+        @Override
+        public String toString() {
+            return "ExpectedResponseToOffer{" +
+                "system=" + system +
+                ", handler=" + handler +
+                ", negotiationId=" + negotiationId +
+                ", expirationFuture=" + expirationFuture +
+                ", isExpired=" + isExpired +
+                ", offerorName='" + offerorName + '\'' +
+                ", receiverName='" + receiverName + '\'' +
+                '}';
         }
     }
 }
