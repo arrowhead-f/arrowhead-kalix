@@ -389,7 +389,14 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
             this.receiverName = Objects.requireNonNull(receiverName, "Expected receiverName");
         }
 
-        public void expire() {
+        private void close() {
+            final var future = expirationFuture.getAndSet(null);
+            if (future != null) {
+                future.cancel();
+            }
+        }
+
+        private void expire() {
             isExpired.set(true);
             try {
                 handler.onExpiry();
@@ -399,7 +406,7 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
             }
         }
 
-        public void refresh(final TrustedContractCounterOffer offer) {
+        private void refresh(final TrustedContractCounterOffer offer) {
             offerorName = offer.offerorName();
             receiverName = offer.receiverName();
 
@@ -453,7 +460,8 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                                     .offerorName(negotiation.offer().offerorName())
                                     .acceptorName(negotiation.offer().receiverName())
                                     .acceptedAt(Instant.now())
-                                    .build()));
+                                    .build()))
+                                .ifSuccess(ignored -> close());
                         }
 
                         @Override
@@ -487,7 +495,8 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                                     .offerorName(negotiation.offer().offerorName())
                                     .rejectorName(negotiation.offer().receiverName())
                                     .rejectedAt(Instant.now())
-                                    .build()));
+                                    .build()))
+                                .ifSuccess(ignored -> close());
                         }
                     });
                     return future;
