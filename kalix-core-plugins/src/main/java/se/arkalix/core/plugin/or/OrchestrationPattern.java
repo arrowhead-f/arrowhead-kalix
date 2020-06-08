@@ -12,42 +12,60 @@ import java.util.*;
  */
 @SuppressWarnings("unused")
 public class OrchestrationPattern {
-    private boolean isDynamic = false;
+    private boolean isIncludingService = true;
     private List<ServiceProviderDto> providers;
     private Map<OrchestrationOption, Boolean> options;
 
     /**
-     * Whether or not to use dynamic orchestration, which means that the
-     * service requested is explicitly asked for.
-     *
-     * @return {@code true} only if dynamic orchestration is to be used.
+     * Use {@link #isIncludingService()} instead.
      */
+    @Deprecated(since = "0.4.2")
     public boolean isDynamic() {
-        return isDynamic;
+        return isIncludingService;
     }
 
     /**
-     * Sets whether ot not dynamic orchestration is to be used, which means
-     * that requested services are explicitly asked for.
+     * Whether or not the specific service requested is to be included in
+     * orchestration requests. Defaults to {@code true}.
      *
-     * @param isDynamic {@code true} if dynamic orchestration is to be used.
+     * @return {@code true} only if dynamic orchestration is to be used.
+     */
+    public boolean isIncludingService() {
+        return isIncludingService;
+    }
+
+    /**
+     * Use {@link #isIncludingService(boolean)} instead.
+     */
+    @Deprecated(since = "0.4.2")
+    public OrchestrationPattern isDynamic(final boolean isDynamic) {
+        this.isIncludingService = isDynamic;
+        return this;
+    }
+
+    /**
+     * Sets whether or not the specific service requested is to be included in
+     * orchestration requests. Defaults to {@code true}.
+     *
+     * @param isIncludingService {@code true} if requested services are to be
+     *                           included in orchestration requests.
      * @return This pattern.
      */
-    public OrchestrationPattern isDynamic(final boolean isDynamic) {
-        this.isDynamic = isDynamic;
+    public OrchestrationPattern isIncludingService(final boolean isIncludingService) {
+        this.isIncludingService = isIncludingService;
         return this;
     }
 
     /**
      * Whether or not this matches the so-called plain storage pattern, which
-     * is non-dynamic, has no provider preference and no options. The pattern
-     * will result in queries where all orchestration store rules are requested
-     * for the requesting system.
+     * does not include the requested services, has no provider preference and
+     * no options. The pattern will result in queries where all orchestration
+     * store rules are requested for the requesting system.
      *
      * @return {@code true} only if plain storage orchestration is to be used.
      */
     public boolean isPlainStorePattern() {
-        return !isDynamic && (providers == null || providers.isEmpty()) && (options == null || options.isEmpty());
+        return !isIncludingService && (providers == null || providers.isEmpty()) && (options == null || options.isEmpty());
     }
 
     /**
@@ -128,7 +146,7 @@ public class OrchestrationPattern {
      * @return New orchestration query.
      */
     public OrchestrationQueryDto toQuery(final SystemDetailsDto requester, final ServiceQuery service) {
-        final var useService = isDynamic && service != null;
+        final var useService = isIncludingService && service != null;
         final Map<OrchestrationOption, Boolean> options0;
         if (useService && !service.metadata().isEmpty() && !options.get(OrchestrationOption.METADATA_SEARCH)) {
             options0 = new HashMap<>(options);

@@ -25,7 +25,8 @@ public class OrchestrationStrategy {
      * se.arkalix.ArSystem system}, which are returned if available.
      */
     public static final OrchestrationStrategy STORED_ONLY = new OrchestrationStrategy(
-        new OrchestrationPattern());
+        new OrchestrationPattern()
+            .isIncludingService(false));
 
     /**
      * First request predefined orchestration rules, then request dynamic
@@ -38,9 +39,9 @@ public class OrchestrationStrategy {
      * orchestration attempt is made afterwards.
      */
     public static final OrchestrationStrategy STORED_THEN_DYNAMIC = new OrchestrationStrategy(
-        new OrchestrationPattern(),
         new OrchestrationPattern()
-            .isDynamic(true)
+            .isIncludingService(false),
+        new OrchestrationPattern()
             .option(OrchestrationOption.OVERRIDE_STORE, true)
             .option(OrchestrationOption.PING_PROVIDERS, true));
 
@@ -52,7 +53,6 @@ public class OrchestrationStrategy {
      */
     public static final OrchestrationStrategy DYNAMIC_ONLY = new OrchestrationStrategy(
         new OrchestrationPattern()
-            .isDynamic(true)
             .option(OrchestrationOption.OVERRIDE_STORE, true)
             .option(OrchestrationOption.PING_PROVIDERS, true));
 
