@@ -47,7 +47,7 @@ public class OrchestrationPattern {
      * @return {@code true} only if plain storage orchestration is to be used.
      */
     public boolean isPlainStorePattern() {
-        return !isDynamic && providers == null || providers.isEmpty() && options == null || options.isEmpty();
+        return !isDynamic && (providers == null || providers.isEmpty()) && (options == null || options.isEmpty());
     }
 
     /**
