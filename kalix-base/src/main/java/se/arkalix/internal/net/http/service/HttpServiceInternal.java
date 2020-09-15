@@ -14,6 +14,7 @@ import java.util.*;
 @Internal
 public class HttpServiceInternal {
     private final AccessPolicy accessPolicy;
+    private final String basePath;
     private final ServiceDescription description;
     private final List<EncodingDescriptor> encodings;
     private final HttpRouteSequence[] routeSequences;
@@ -34,6 +35,7 @@ public class HttpServiceInternal {
                 "not end with a forward slash (/) unless it is the root " +
                 "path \"/\"");
         }
+        this.basePath = !Objects.equals(basePath, "/") ? basePath : null;
 
         encodings = service.encodings();
         if (encodings.size() == 0) {
@@ -55,11 +57,10 @@ public class HttpServiceInternal {
     }
 
     /**
-     * @return Base path that the paths of all requests targeted at this
-     * service.
+     * @return Base path of all endpoints provided by this service, if any.
      */
-    public String basePath() {
-        return description.uri();
+    public Optional<String> basePath() {
+        return Optional.ofNullable(basePath);
     }
 
     /**
@@ -94,7 +95,7 @@ public class HttpServiceInternal {
      */
     public Future<?> handle(final HttpServiceRequest request, final HttpServiceResponse response) {
         final var task = new HttpRouteTask.Builder()
-            .basePath(basePath())
+            .basePath(basePath)
             .request(request)
             .response(response)
             .build();

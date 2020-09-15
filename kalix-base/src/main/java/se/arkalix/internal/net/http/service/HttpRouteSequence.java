@@ -70,7 +70,7 @@ public class HttpRouteSequence {
                                     .map(Object::toString)
                                     .orElse("<?>") +
                                 ' ' +
-                                task.basePath() +
+                                task.basePath().orElse("") +
                                 route.pattern()
                                     .map(Object::toString)
                                     .orElse("") +

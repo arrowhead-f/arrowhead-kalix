@@ -1,6 +1,7 @@
 package se.arkalix.net.http.service;
 
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Keeps track of state related to an incoming HTTP request.
@@ -11,17 +12,26 @@ public class HttpRouteTask {
     private final HttpServiceResponse response;
 
     private HttpRouteTask(final Builder builder) {
-        basePath = Objects.requireNonNull(builder.basePath, "Expected basePath");
+        basePath = builder.basePath;
         request = Objects.requireNonNull(builder.request, "Expected request");
         response = Objects.requireNonNull(builder.response, "Expected response");
     }
 
     /**
      * @return The {@link HttpService#basePath(String) base path} of the
-     * {@link HttpService} for which this task was created.
+     * {@link HttpService} for which this task was created, if any.
      */
-    public String basePath() {
-        return basePath;
+    public Optional<String> basePath() {
+        return Optional.ofNullable(basePath);
+    }
+
+    /**
+     * @return The byte length of the {@link HttpService#basePath(String) base
+     * path} of the {@link HttpService} for which this task was created, or 0
+     * if no base path was specified.
+     */
+    public int basePathLengthOrZero() {
+        return basePath != null ? basePath.length() : 0;
     }
 
     /**

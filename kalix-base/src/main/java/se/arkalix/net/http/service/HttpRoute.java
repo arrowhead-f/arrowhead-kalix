@@ -60,7 +60,7 @@ public class HttpRoute implements HttpRoutable {
         if (method != null && !method.equals(task.request().method())) {
             return false;
         }
-        return pattern == null || pattern.match(task.request().path(), task.basePath().length(), pathParameters);
+        return pattern == null || pattern.match(task.request().path(), task.basePathLengthOrZero(), pathParameters);
     }
 
     /**

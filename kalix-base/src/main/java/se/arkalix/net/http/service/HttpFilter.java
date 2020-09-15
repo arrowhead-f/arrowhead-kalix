@@ -89,7 +89,7 @@ public class HttpFilter implements HttpRoutable {
             final List<String> pathParameters;
             if (pattern != null) {
                 pathParameters = new ArrayList<>(pattern.nParameters());
-                if (!pattern.match(task.request().path(), task.basePath().length(), pathParameters)) {
+                if (!pattern.match(task.request().path(), task.basePathLengthOrZero(), pathParameters)) {
                     break mismatch;
                 }
             }

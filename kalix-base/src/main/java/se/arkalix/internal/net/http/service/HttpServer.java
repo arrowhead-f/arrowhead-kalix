@@ -114,22 +114,22 @@ public class HttpServer implements ArServer {
                 return Future.failure(result0.fault());
             }
             final var httpService = new HttpServiceInternal(system, (HttpService) service);
-            final var basePath = httpService.basePath();
+            final var key = httpService.basePath().orElse("/");
 
-            final var existingService = services.putIfAbsent(basePath, httpService);
+            final var existingService = services.putIfAbsent(key, httpService);
             if (existingService != null) {
                 return Future.failure(new IllegalStateException("Base path " +
-                    "(qualifier) \"" + basePath + "\" already in use by  \"" +
+                    "(qualifier) \"" + key + "\" already in use by  \"" +
                     existingService.name() + "\"; cannot provide service \"" +
                     httpService.name() + "\""));
             }
 
             if (isShuttingDown.get()) {
-                services.remove(basePath);
+                services.remove(key);
                 return Future.failure(cannotProvideServiceShuttingDownException(null));
             }
 
-            final var handle = new ServiceHandle(httpService, basePath);
+            final var handle = new ServiceHandle(httpService, key);
 
             return pluginNotifier.onServiceProvided(httpService.description())
                 .mapResult(result1 -> {
@@ -161,7 +161,7 @@ public class HttpServer implements ArServer {
     private Optional<HttpServiceInternal> getServiceByPath(final String path) {
         for (final var entry : services.entrySet()) {
             final var service = entry.getValue();
-            if (path.startsWith(service.basePath())) {
+            if (service.basePath().map(path::startsWith).orElse(true)) {
                 return Optional.of(service);
             }
         }
@@ -184,11 +184,11 @@ public class HttpServer implements ArServer {
     private class ServiceHandle implements ArServiceHandle {
         private final HttpServiceInternal httpService;
         private final AtomicBoolean isDismissed = new AtomicBoolean(false);
-        private final String basePath;
+        private final String key;
 
-        public ServiceHandle(final HttpServiceInternal httpService, final String basePath) {
+        public ServiceHandle(final HttpServiceInternal httpService, final String key) {
             this.httpService = httpService;
-            this.basePath = basePath;
+            this.key = key;
         }
 
         @Override
@@ -200,7 +200,7 @@ public class HttpServer implements ArServer {
         public void dismiss() {
             if (!isDismissed.getAndSet(true)) {
                 pluginNotifier.onServiceDismissed(description());
-                services.remove(basePath);
+                services.remove(key);
                 synchronized (handles) {
                     handles.remove(this);
                 }
