@@ -3,7 +3,7 @@ plugins {
 }
 
 ext {
-    versionJavaPoet = '1.12.1'
+    versionJavaPoet = '1.13.0'
 }
 
 dependencies {
