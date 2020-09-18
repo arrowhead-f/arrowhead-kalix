@@ -8,6 +8,14 @@ import org.slf4j.LoggerFactory;
  */
 public interface TrustedContractNegotiatorHandler {
     /**
+     * Called to notify about a contract offer being assigned a negotiation
+     * identifier and being sent to its intended receiver.
+     *
+     * @param negotiationId Identifier assigned to negotiation.
+     */
+    default void onSubmit(long negotiationId) {}
+
+    /**
      * Called to indicate that a previously made contract offer was accepted by
      * its receiver.
      * <p>

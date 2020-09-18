@@ -209,11 +209,12 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                 system.consume()
                     .using(HttpJsonTrustedContractNegotiationService.factory())
                     .flatMap(service -> service.offer(offer))
-                    .ifSuccess(negotiationId ->
+                    .ifSuccess(negotiationId -> {
+                        handler.onSubmit(negotiationId);
                         expectedEvents.add(new ExpectedResponseToOffer(
                             system, handler,
-                            offer.offerorName(), offer.receiverName(), negotiationId,
-                            offer.expiresIn())))
+                            offer.offerorName(), offer.receiverName(), negotiationId, offer.expiresIn()));
+                    })
                     .onFailure(handler::onFault);
             }
         }
