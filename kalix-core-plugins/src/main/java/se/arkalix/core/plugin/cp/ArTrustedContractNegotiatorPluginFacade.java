@@ -1,6 +1,7 @@
 package se.arkalix.core.plugin.cp;
 
 import se.arkalix.plugin.PluginFacade;
+import se.arkalix.util.concurrent.Future;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -37,8 +38,11 @@ public interface ArTrustedContractNegotiatorPluginFacade extends PluginFacade {
      * @param handler Handler used to track and react to any acceptance,
      *                rejection or counter-offers made by the party receiving
      *                the offer.
+     * @return Future completed successfully with a unique negotiation
+     * identifier if the offer could be submitted to its intended receiver, or
+     * a proxy acting for it.
      */
-    void offer(TrustedContractOfferDto offer, TrustedContractNegotiatorHandler handler);
+    Future<Long> offer(TrustedContractOfferDto offer, TrustedContractNegotiatorHandler handler);
 
     /**
      * Starts new contract negotiation by making the described offer and then
@@ -53,9 +57,12 @@ public interface ArTrustedContractNegotiatorPluginFacade extends PluginFacade {
      * @param handler      Handler used to track and react to any acceptance,
      *                     rejection or counter-offers made by the party
      *                     receiving the offer.
+     * @return Future completed successfully with a unique negotiation
+     * identifier if the offer could be submitted to its intended receiver, or
+     * a proxy acting for it.
      * @see se.arkalix.core.plugin.cp Package documentation for details about names
      */
-    default void offer(
+    default Future<Long> offer(
         final String offerorName,
         final String receiverName,
         final Duration validFor,
@@ -63,7 +70,7 @@ public interface ArTrustedContractNegotiatorPluginFacade extends PluginFacade {
         final TrustedContractNegotiatorHandler handler)
     {
         final var now = Instant.now();
-        offer(new TrustedContractOfferBuilder()
+        return offer(new TrustedContractOfferBuilder()
             .offerorName(offerorName)
             .receiverName(receiverName)
             .validAfter(now)

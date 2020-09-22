@@ -205,17 +205,13 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
             }
 
             @Override
-            public void offer(final TrustedContractOfferDto offer, final TrustedContractNegotiatorHandler handler) {
-                system.consume()
+            public Future<Long> offer(final TrustedContractOfferDto offer, final TrustedContractNegotiatorHandler handler) {
+                return system.consume()
                     .using(HttpJsonTrustedContractNegotiationService.factory())
                     .flatMap(service -> service.offer(offer))
-                    .ifSuccess(negotiationId -> {
-                        handler.onSubmit(negotiationId);
-                        expectedEvents.add(new ExpectedResponseToOffer(
-                            system, handler,
-                            offer.offerorName(), offer.receiverName(), negotiationId, offer.expiresIn()));
-                    })
-                    .onFailure(handler::onFault);
+                    .ifSuccess(negotiationId -> expectedEvents.add(new ExpectedResponseToOffer(
+                        system, handler,
+                        offer.offerorName(), offer.receiverName(), negotiationId, offer.expiresIn())));
             }
         }
     }
@@ -400,10 +396,10 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
         private void expire() {
             isExpired.set(true);
             try {
-                handler.onExpiry();
+                handler.onExpiry(negotiationId);
             }
             catch (final Throwable throwable) {
-                handler.onFault(throwable);
+                handler.onFault(negotiationId, throwable);
             }
         }
 
@@ -512,7 +508,7 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                 }
             }
             catch (final Throwable throwable) {
-                handler.onFault(throwable);
+                handler.onFault(negotiationId, throwable);
             }
             return Future.success(Optional.empty());
         }

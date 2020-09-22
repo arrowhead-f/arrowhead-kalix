@@ -8,14 +8,6 @@ import org.slf4j.LoggerFactory;
  */
 public interface TrustedContractNegotiatorHandler {
     /**
-     * Called to notify about a contract offer being assigned a negotiation
-     * identifier and being sent to its intended receiver.
-     *
-     * @param negotiationId Identifier assigned to negotiation.
-     */
-    default void onSubmit(long negotiationId) {}
-
-    /**
      * Called to indicate that a previously made contract offer was accepted by
      * its receiver.
      * <p>
@@ -53,9 +45,9 @@ public interface TrustedContractNegotiatorHandler {
      * The negotiation session in question must be considered permanently
      * closed when this method is invoked.
      */
-    default void onExpiry() {
+    default void onExpiry(final long negotiationId) {
         final var logger = LoggerFactory.getLogger(getClass());
-        logger.warn("Contract negotiation session expired: {}", this);
+        logger.warn("Contract negotiation #{} expired: {}", negotiationId, this);
     }
 
     /**
@@ -67,9 +59,9 @@ public interface TrustedContractNegotiatorHandler {
      *
      * @param throwable Exception preventing offer submission.
      */
-    default void onFault(final Throwable throwable) {
+    default void onFault(final long negotiationId, final Throwable throwable) {
         final var logger = LoggerFactory.getLogger(getClass());
-        logger.error("Contract negotiation failed due to an unexpected " +
-            "exception being thrown", throwable);
+        logger.error("Contract negotiation #" + negotiationId + " failed " +
+            "due to an unexpected exception being thrown", throwable);
     }
 }
