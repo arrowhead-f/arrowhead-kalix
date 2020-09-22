@@ -87,7 +87,7 @@ public class HttpConsumerRequest implements HttpBodySender<HttpConsumerRequest> 
     }
 
     @Override
-    public HttpConsumerRequest body(final DtoEncoding encoding, final List<DtoWritable> data) {
+    public <L extends List<? extends DtoWritable>> HttpConsumerRequest body(final DtoEncoding encoding, L data) {
         request.body(encoding, data);
         return this;
     }

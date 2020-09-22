@@ -5,7 +5,6 @@ import se.arkalix.dto.DtoWritable;
 import se.arkalix.dto.DtoWritableAs;
 
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -63,7 +62,7 @@ public interface HttpBodySender<Self> {
      * @see DtoWritableAs @DtoWritableAs
      */
     default Self body(final DtoEncoding encoding, final DtoWritable... data) {
-        return body(encoding, Arrays.asList(data));
+        return body(encoding, List.of(data));
     }
 
     /**
@@ -81,7 +80,7 @@ public interface HttpBodySender<Self> {
      *                              {@code null}.
      * @see DtoWritableAs @DtoWritableAs
      */
-    Self body(final DtoEncoding encoding, final List<DtoWritable> data);
+    <L extends List<? extends DtoWritable>> Self body(final DtoEncoding encoding, final L data);
 
     /**
      * Sets outgoing HTTP body, replacing any previously set such.

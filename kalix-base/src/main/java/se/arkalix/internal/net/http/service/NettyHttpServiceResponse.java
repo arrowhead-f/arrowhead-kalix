@@ -144,7 +144,7 @@ public class NettyHttpServiceResponse implements HttpServiceResponse {
     }
 
     @Override
-    public HttpServiceResponse body(final DtoEncoding encoding, final List<DtoWritable> data) {
+    public <L extends List<? extends DtoWritable>> HttpServiceResponse body(final DtoEncoding encoding, L data) {
         dtoEncoding = encoding;
         body = data;
         return this;
