@@ -62,7 +62,11 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
         final ArSystem system,
         final Map<Class<? extends Plugin>, PluginFacade> dependencies)
     {
-        return Future.success(new Attached(system, defaultSubscriptions));
+        logger.info("HTTP/JSON event subscriber attaching to system \"{}\" ...", system.name());
+
+        final var pluginAttached = new Attached(system);
+        return pluginAttached.registerEventReceiver(defaultSubscriptions)
+            .pass(pluginAttached);
     }
 
     private static class Attached implements PluginAttached {
@@ -75,14 +79,14 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
         private final ConcurrentHashMap<String, Topic> nameToTopic = new ConcurrentHashMap<>();
         private final AtomicBoolean isDetached = new AtomicBoolean(false);
 
-        Attached(final ArSystem system, final List<EventSubscription> defaultSubscriptions) {
-            logger.info("HTTP/JSON event subscriber attaching to system \"{}\" ...", system.name());
-
+        Attached(final ArSystem system) {
             this.system = system;
             this.subscriber = SystemDetails.from(this.system);
-            this.basePath = "/events/" + this.system.name();
+            this.basePath = "/events/" + system.name();
+        }
 
-            system.consume()
+        private Future<?> registerEventReceiver(final List<EventSubscription> defaultSubscriptions) {
+            return system.consume()
                 .using(HttpJsonEventSubscribeService.factory())
                 .flatMap(eventSubscribe -> {
                     if (logger.isInfoEnabled()) {
@@ -96,7 +100,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
 
                     final var service = new HttpService()
                         .name("event-subscriber")
-                        .basePath(this.basePath)
+                        .basePath(basePath)
                         .accessPolicy(AccessPolicy.whitelist(eventSubscribe.service().provider().name()))
                         .encodings(JSON)
 
@@ -149,7 +153,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
                             "subscriptions", system.name());
                     }
                 })
-                .onFailure(fault -> {
+                .ifFailure(Throwable.class, fault -> {
                     if (logger.isErrorEnabled()) {
                         logger.error("HTTP/JSON event subscriber failed " +
                             "to attach to system \"" + system.name() + "\"", fault);
