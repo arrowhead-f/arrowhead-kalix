@@ -82,7 +82,7 @@ public class HttpConsumerRequest implements HttpBodySender<HttpConsumerRequest> 
      *                              {@code null}.
      * @see DtoWritableAs @DtoWritableAs
      */
-    public HttpConsumerRequest body(final List<DtoWritable> data) {
+    public <L extends List<? extends DtoWritable>> HttpConsumerRequest body(final L data) {
         return body(null, data);
     }
 
