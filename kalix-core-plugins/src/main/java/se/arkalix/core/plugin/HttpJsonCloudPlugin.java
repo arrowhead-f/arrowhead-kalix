@@ -15,7 +15,6 @@ import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.internal.security.identity.X509Keys;
-import se.arkalix.util.concurrent.*;
 import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.plugin.Plugin;
@@ -26,16 +25,21 @@ import se.arkalix.security.access.AccessByToken;
 import se.arkalix.security.identity.SystemIdentity;
 import se.arkalix.security.identity.UnsupportedKeyAlgorithm;
 import se.arkalix.util.Result;
+import se.arkalix.util.concurrent.Future;
+import se.arkalix.util.concurrent.FutureAnnouncement;
+import se.arkalix.util.concurrent.Futures;
 
 import javax.net.ssl.SSLException;
 import java.net.InetSocketAddress;
 import java.security.PublicKey;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static se.arkalix.descriptor.SecurityDescriptor.CERTIFICATE;
 import static se.arkalix.descriptor.SecurityDescriptor.NOT_SECURE;
 import static se.arkalix.descriptor.TransportDescriptor.HTTP;
+import static se.arkalix.util.concurrent.Future.done;
 
 /**
  * HTTP/JSON cloud plugin.
@@ -59,11 +63,13 @@ import static se.arkalix.descriptor.TransportDescriptor.HTTP;
 public class HttpJsonCloudPlugin implements Plugin {
     private static final Logger logger = LoggerFactory.getLogger(HttpJsonCloudPlugin.class);
 
+    private final Predicate<ServiceDescription> serviceRegistrationPredicate;
     private final InetSocketAddress serviceRegistrySocketAddress;
     private final String serviceDiscoveryBasePath;
     private final OrchestrationStrategy orchestrationStrategy;
 
     private HttpJsonCloudPlugin(final Builder builder) {
+        serviceRegistrationPredicate = Objects.requireNonNullElse(builder.serviceRegistrationPredicate, service -> true);
         serviceDiscoveryBasePath = Objects.requireNonNullElse(builder.serviceDiscoveryBasePath, "/serviceregistry");
         serviceRegistrySocketAddress = Objects.requireNonNull(builder.serviceRegistrySocketAddress,
             "Expected serviceRegistrySocketAddress");
@@ -145,11 +151,19 @@ public class HttpJsonCloudPlugin implements Plugin {
                 return requestAuthorizationKey()
                     .ifSuccess(((AccessByToken) accessPolicy)::authorizationKey);
             }
-            return Future.done();
+            return done();
         }
 
         @Override
         public Future<?> onServiceProvided(final ServiceDescription service) {
+            if (!serviceRegistrationPredicate.test(service)) {
+                if (logger.isInfoEnabled()) {
+                    logger.info("HTTP/JSON cloud ignoring to register \"{}\" " +
+                        "provided by \"{}\"; the service failed to pass the " +
+                        "service registration predicate ", service.name(), system.name());
+                }
+                return done();
+            }
             if (logger.isInfoEnabled()) {
                 logger.info("HTTP/JSON cloud plugin registering \"{}\" " +
                     "provided by \"{}\" ...", service.name(), system.name());
@@ -473,6 +487,7 @@ public class HttpJsonCloudPlugin implements Plugin {
     @SuppressWarnings("unused")
     public static class Builder {
         private String serviceDiscoveryBasePath;
+        private Predicate<ServiceDescription> serviceRegistrationPredicate;
         private InetSocketAddress serviceRegistrySocketAddress;
         private OrchestrationStrategy orchestrationStrategy;
 
@@ -489,6 +504,20 @@ public class HttpJsonCloudPlugin implements Plugin {
          */
         public Builder serviceDiscoveryBasePath(final String serviceDiscoveryBasePath) {
             this.serviceDiscoveryBasePath = serviceDiscoveryBasePath;
+            return this;
+        }
+
+        /**
+         * Sets predicate function, used to test each {@link ArService service}
+         * to be provided by the {@link ArSystem system} using this {@link
+         * Plugin plugin}. Only services causing the predicate to yield {@code
+         * true} are registered with the local cloud service registry.
+         *
+         * @param serviceRegistrationPredicate Service registration predicate.
+         * @return This builder.
+         */
+        public Builder serviceRegistrationPredicate(final Predicate<ServiceDescription> serviceRegistrationPredicate) {
+            this.serviceRegistrationPredicate = serviceRegistrationPredicate;
             return this;
         }
 
