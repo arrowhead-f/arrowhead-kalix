@@ -217,6 +217,10 @@ public final class JsonToken {
         return YearMonth.parse(readStringRaw(source));
     }
 
+    public ZonedDateTime readZonedDateTime(final BinaryReader source) {
+        return ZonedDateTime.parse(readStringRaw(source));
+    }
+
     public ZonedDateTime readZonedDateTimeNumber(final BinaryReader source) {
         return ZonedDateTime.ofInstant(readInstantNumber(source), ZoneOffset.UTC);
     }
