@@ -169,7 +169,10 @@ public class HttpServer implements ArServer {
         if (isShuttingDown.getAndSet(true)) {
             return Future.done();
         }
-        providedServices().forEach(ArServiceHandle::dismiss);
+        for (final var handle : handles) {
+            handle.dismiss();
+        }
+        handles.clear();
         return adapt(channel.close());
     }
 
@@ -193,8 +196,10 @@ public class HttpServer implements ArServer {
             if (!isDismissed.getAndSet(true)) {
                 pluginNotifier.onServiceDismissed(description());
                 services.remove(key);
-                synchronized (handles) {
-                    handles.remove(this);
+                if (!isShuttingDown.get()) {
+                    synchronized (handles) {
+                        handles.remove(this);
+                    }
                 }
             }
         }
