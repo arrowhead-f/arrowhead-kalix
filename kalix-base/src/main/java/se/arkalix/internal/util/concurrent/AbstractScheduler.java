@@ -45,7 +45,7 @@ abstract class AbstractScheduler implements Scheduler {
                 }
                 adapter.complete(result);
             });
-            adapter.setCancelFunction(future::cancel);
+            adapter.setCancelCallback(future::cancel);
             return adapter;
         }
         catch (final Throwable throwable) {
@@ -67,7 +67,7 @@ abstract class AbstractScheduler implements Scheduler {
                 }
                 adapter.complete(result);
             });
-            adapter.setCancelFunction(future::cancel);
+            adapter.setCancelCallback(future::cancel);
             return adapter;
         }
         catch (final Throwable throwable) {
@@ -90,7 +90,7 @@ abstract class AbstractScheduler implements Scheduler {
                 }
                 adapter.complete(result0);
             });
-            adapter.setCancelFunction(future::cancel);
+            adapter.setCancelCallback(future::cancel);
             return adapter;
         }
         catch (final Throwable throwable) {
@@ -113,7 +113,7 @@ abstract class AbstractScheduler implements Scheduler {
                 }
                 adapter.complete(result0);
             }, delay.toMillis(), TimeUnit.MILLISECONDS);
-            adapter.setCancelFunction(future::cancel);
+            adapter.setCancelCallback(future::cancel);
             return adapter;
         }
         catch (final Throwable throwable) {
@@ -135,7 +135,7 @@ abstract class AbstractScheduler implements Scheduler {
                 }
                 adapter.complete(result0);
             }, delay.toMillis(), TimeUnit.MILLISECONDS);
-            adapter.setCancelFunction(future::cancel);
+            adapter.setCancelCallback(future::cancel);
             return adapter;
         }
         catch (final Throwable throwable) {
@@ -156,7 +156,7 @@ abstract class AbstractScheduler implements Scheduler {
                     adapter.cancel(false);
                 }
             }, initialDelay.toMillis(), rate.toMillis(), TimeUnit.MILLISECONDS);
-            adapter.setCancelFunction(future::cancel);
+            adapter.setCancelCallback(future::cancel);
             return adapter;
         }
         catch (final Throwable throwable) {
@@ -177,7 +177,7 @@ abstract class AbstractScheduler implements Scheduler {
                     adapter.cancel(false);
                 }
             }, initalDelay.toMillis(), delay.toMillis(), TimeUnit.MILLISECONDS);
-            adapter.setCancelFunction(future::cancel);
+            adapter.setCancelCallback(future::cancel);
             return adapter;
         }
         catch (final Throwable throwable) {

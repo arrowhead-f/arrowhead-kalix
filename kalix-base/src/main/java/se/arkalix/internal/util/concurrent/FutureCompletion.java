@@ -8,22 +8,39 @@ import java.util.function.Consumer;
 
 @Internal
 public class FutureCompletion<V> implements Future<V> {
-    private Consumer<Boolean> cancelFunction = null;
+    private Consumer<Boolean> cancelCallback = null;
     private Consumer<Result<V>> consumer = null;
     private Result<V> result = null;
 
+    private boolean isCancelled = false;
+    private boolean isCompleted = false;
+
+    public synchronized boolean isCancelled() {
+        return isCancelled;
+    }
+
+    public synchronized boolean isCompleted() {
+        return isCompleted;
+    }
+
     public synchronized void complete(final Result<V> result) {
+        if (isCompleted) {
+            throw new IllegalStateException("Already completed");
+        }
         if (consumer != null) {
             consumer.accept(result);
             consumer = null;
         }
-        else {
+        else if (!isCancelled) {
             this.result = result;
         }
+        isCompleted = true;
     }
 
-    public synchronized void setCancelFunction(final Consumer<Boolean> cancelFunction) {
-        this.cancelFunction = cancelFunction;
+    public synchronized void setCancelCallback(final Consumer<Boolean> cancelCallback) {
+        if (!isCancelled) {
+            this.cancelCallback = cancelCallback;
+        }
     }
 
     @Override
@@ -31,19 +48,21 @@ public class FutureCompletion<V> implements Future<V> {
         if (result != null) {
             consumer.accept(result);
             result = null;
+            isCompleted = true;
         }
-        else {
+        else if (!isCancelled) {
             this.consumer = consumer;
         }
     }
 
     @Override
     public synchronized void cancel(final boolean mayInterruptIfRunning) {
-        if (cancelFunction != null) {
-            cancelFunction.accept(mayInterruptIfRunning);
-            cancelFunction = null;
+        if (cancelCallback != null) {
+            cancelCallback.accept(mayInterruptIfRunning);
+            cancelCallback = null;
         }
         consumer = null;
         result = null;
+        isCancelled = true;
     }
 }

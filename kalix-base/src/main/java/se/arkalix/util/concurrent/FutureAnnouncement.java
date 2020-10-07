@@ -93,7 +93,7 @@ public class FutureAnnouncement<V> {
             completion = new FutureCompletion<>();
             subscribers.add(completion);
         }
-        completion.setCancelFunction(ignored -> {
+        completion.setCancelCallback(ignored -> {
             synchronized (this) {
                 subscribers.remove(completion);
             }
