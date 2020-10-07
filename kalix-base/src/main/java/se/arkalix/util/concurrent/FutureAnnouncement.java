@@ -25,12 +25,14 @@ public class FutureAnnouncement<V> {
     private final Set<FutureCompletion<V>> subscribers = new HashSet<>();
 
     private Result<V> result = null;
+    private boolean isAnnouncing = false;
 
     FutureAnnouncement(final Future<V> future) {
         this.future = future;
         future.onResult(result -> {
             synchronized (this) {
                 this.result = result;
+                isAnnouncing = true;
                 for (final var subscriber : subscribers) {
                     subscriber.complete(result);
                 }
@@ -91,13 +93,15 @@ public class FutureAnnouncement<V> {
                 return Future.of(result);
             }
             completion = new FutureCompletion<>();
+            completion.setCancelCallback(ignored -> {
+                synchronized (this) {
+                    if (!isAnnouncing) {
+                        subscribers.remove(completion);
+                    }
+                }
+            });
             subscribers.add(completion);
         }
-        completion.setCancelCallback(ignored -> {
-            synchronized (this) {
-                subscribers.remove(completion);
-            }
-        });
         return completion;
     }
 }
