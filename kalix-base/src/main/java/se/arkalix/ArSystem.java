@@ -349,6 +349,7 @@ public class ArSystem {
             }
             final var server = result.value();
             server.providedServices()
+                .stream()
                 .map(ArServiceHandle::description)
                 .forEach(providedServices::add);
         }

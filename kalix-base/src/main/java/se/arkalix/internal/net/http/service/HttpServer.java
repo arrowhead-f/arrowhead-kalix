@@ -23,8 +23,6 @@ import se.arkalix.util.concurrent.Schedulers;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static se.arkalix.internal.util.concurrent.NettyFutures.adapt;
 
@@ -150,11 +148,9 @@ public class HttpServer implements ArServer {
     }
 
     @Override
-    public Stream<ArServiceHandle> providedServices() {
+    public Collection<ArServiceHandle> providedServices() {
         synchronized (handles) {
-            return handles.stream()
-                .collect(Collectors.toUnmodifiableList())
-                .stream();
+            return Collections.unmodifiableCollection(new ArrayList<>(handles));
         }
     }
 
@@ -173,11 +169,7 @@ public class HttpServer implements ArServer {
         if (isShuttingDown.getAndSet(true)) {
             return Future.done();
         }
-        synchronized (handles) {
-            for (final var handle : handles) {
-                handle.dismiss();
-            }
-        }
+        providedServices().forEach(ArServiceHandle::dismiss);
         return adapt(channel.close());
     }
 

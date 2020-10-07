@@ -8,6 +8,7 @@ import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;
 
 import java.net.InetSocketAddress;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,10 +45,10 @@ public interface ArServer {
     Future<ArServiceHandle> provide(ArService service);
 
     /**
-     * @return Stream of handles representing all services currently provided
-     * by this server.
+     * @return Immutable collection of handles representing all services
+     * currently provided by this server.
      */
-    Stream<ArServiceHandle> providedServices();
+    Collection<ArServiceHandle> providedServices();
 
     /**
      * Shuts server down, making it impossible to start it again.
