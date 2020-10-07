@@ -89,6 +89,11 @@ public class HttpPattern implements Comparable<HttpPattern> {
 
         if (nParameters == 0) { // Fast path for patterns without parameters.
             final var px = p1 - offset;
+
+            if (px == 0) { // If px is zero, match pattern if it is "/".
+                return q1 == 1;
+            }
+
             if (isPrefix && px > q1 && pattern.regionMatches(0, path, offset, q1)) {
                 parameters.add(path.substring(q1 - 1));
                 return true;
