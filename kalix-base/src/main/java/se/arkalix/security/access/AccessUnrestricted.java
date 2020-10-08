@@ -20,7 +20,7 @@ import se.arkalix.descriptor.SecurityDescriptor;
  * this class.
  */
 public class AccessUnrestricted implements AccessPolicy {
-    static AccessUnrestricted INSTANCE = new AccessUnrestricted();
+    static final AccessUnrestricted instance = new AccessUnrestricted();
 
     @Override
     public SecurityDescriptor descriptor() {

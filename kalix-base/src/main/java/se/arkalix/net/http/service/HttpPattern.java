@@ -1,6 +1,6 @@
 package se.arkalix.net.http.service;
 
-import se.arkalix.internal.net.http.service.HttpPaths;
+import se.arkalix.internal.net.http.HttpPaths;
 
 import java.util.*;
 

@@ -7,7 +7,6 @@ import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
 import se.arkalix.internal.core.plugin.HttpJsonServices;
-import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
 import se.arkalix.util.concurrent.Future;
@@ -45,7 +44,7 @@ public class HttpJsonEventUnsubscribeService implements ArConsumer, ArEventUnsub
     public Future<?> unsubscribe(final String topic, final String subscriberName, final String hostname, final int port) {
         return consumer.send(new HttpConsumerRequest()
             .method(DELETE)
-            .uri(service().uri())
+            .path(service().uri())
             .queryParameter("event_type", topic)
             .queryParameter("system_name", subscriberName)
             .queryParameter("address", hostname)
@@ -78,9 +77,9 @@ public class HttpJsonEventUnsubscribeService implements ArConsumer, ArEventUnsub
         public HttpJsonEventUnsubscribeService create(
             final ArSystem system,
             final ServiceDescription service,
-            final Collection<EncodingDescriptor> encodings) throws Exception
-        {
-            return new HttpJsonEventUnsubscribeService(new HttpConsumer(HttpClient.from(system), service, encodings));
+            final Collection<EncodingDescriptor> encodings
+        ) {
+            return new HttpJsonEventUnsubscribeService(HttpConsumer.create(system, service, encodings));
         }
     }
 }

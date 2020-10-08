@@ -1,18 +1,12 @@
 package se.arkalix.internal;
 
-import se.arkalix.ArServiceHandle;
 import se.arkalix.ArService;
+import se.arkalix.ArServiceHandle;
 import se.arkalix.ArSystem;
-import se.arkalix.internal.plugin.PluginNotifier;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;
 
-import java.net.InetSocketAddress;
 import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Stream;
 
 /**
  * A server, making an {@link ArSystem} able to provide {@link ArService}s

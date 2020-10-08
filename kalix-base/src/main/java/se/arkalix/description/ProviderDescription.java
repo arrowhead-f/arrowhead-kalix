@@ -1,6 +1,6 @@
 package se.arkalix.description;
 
-import se.arkalix.security.NotSecureException;
+import se.arkalix.security.SecurityDisabled;
 
 import java.net.InetSocketAddress;
 import java.security.PublicKey;
@@ -75,7 +75,7 @@ public class ProviderDescription {
 
     /**
      * @return System public key.
-     * @throws NotSecureException If the system does not have an public key.
+     * @throws SecurityDisabled If the system does not have an public key.
      *                            This will only be the case if the described
      *                            system runs in the <i>insecure</i> {@link
      *                            se.arkalix.security security mode}, which it
@@ -84,7 +84,7 @@ public class ProviderDescription {
      */
     public PublicKey publicKey() {
         if (publicKey == null) {
-            throw new NotSecureException("Not in secure mode");
+            throw new SecurityDisabled("Not in secure mode");
         }
         return publicKey;
     }

@@ -1,70 +1,26 @@
 package se.arkalix.net.http.client;
 
-import io.netty.bootstrap.Bootstrap;
-import io.netty.handler.ssl.ClientAuth;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
 import se.arkalix.ArSystem;
-import se.arkalix.internal.net.http.client.FutureHttpClientConnection;
-import se.arkalix.internal.net.http.client.NettyHttpClientConnectionInitializer;
-import se.arkalix.internal.util.concurrent.NettyScheduler;
-import se.arkalix.security.NotSecureException;
+import se.arkalix.internal.net.http.client.NettyHttpClient;
+import se.arkalix.internal.net.http.consumer.DefaultHttpConsumer;
+import se.arkalix.net.http.HttpIncomingResponse;
+import se.arkalix.net.http.HttpOutgoingRequest;
 import se.arkalix.security.identity.OwnedIdentity;
-import se.arkalix.security.identity.SystemIdentity;
 import se.arkalix.security.identity.TrustStore;
 import se.arkalix.util.annotation.ThreadSafe;
 import se.arkalix.util.concurrent.Future;
-import se.arkalix.util.concurrent.Schedulers;
 
-import javax.net.ssl.SSLException;
 import java.net.InetSocketAddress;
-import java.util.Map;
+import java.security.PrivateKey;
+import java.security.cert.Certificate;
 import java.util.Objects;
-import java.util.WeakHashMap;
-
-import static se.arkalix.internal.util.concurrent.NettyFutures.adapt;
+import java.util.Optional;
 
 /**
  * Client useful for sending HTTP messages via TCP connections to arbitrary
  * remote hosts.
  */
-public class HttpClient {
-    private static final Map<ArSystem, HttpClient> cache = new WeakHashMap<>();
-
-    private static HttpClient http = null;
-    private static HttpClient https = null;
-
-    private final Bootstrap bootstrap;
-    private final InetSocketAddress localSocketAddress;
-    private final SslContext sslContext;
-    private final SystemIdentity identity;
-
-    private HttpClient(final Builder builder) throws SSLException {
-        final var scheduler = (NettyScheduler) Schedulers.fixed();
-        bootstrap = new Bootstrap()
-            .group(scheduler.eventLoopGroup())
-            .channel(scheduler.socketChannelClass());
-        localSocketAddress = builder.localSocketAddress;
-
-        if (builder.isInsecure) {
-            sslContext = null;
-            identity = null;
-        }
-        else {
-            final var sslContextBuilder = SslContextBuilder.forClient()
-                .trustManager(builder.trustStore != null ? builder.trustStore.certificates() : null)
-                .startTls(false);
-
-            if (builder.identity != null) {
-                sslContextBuilder
-                    .keyManager(builder.identity.privateKey(), builder.identity.chain())
-                    .clientAuth(ClientAuth.REQUIRE);
-            }
-            sslContext = sslContextBuilder.build();
-            identity = builder.identity;
-        }
-    }
-
+public interface HttpClient {
     /**
      * Creates new or gets a cached {@code HttpClient} that takes its
      * configuration details from the given Arrowhead {@code system}.
@@ -73,7 +29,7 @@ public class HttpClient {
      * security mode and local network interface as the given system, which
      * makes it suitable for communicating with other systems within the same
      * local cloud. However, for most intents and purposes it is preferable to
-     * use the {@link se.arkalix.net.http.consumer.HttpConsumer HttpConsumer}
+     * use the {@link DefaultHttpConsumer HttpConsumer}
      * class for consuming system services, as it takes care of keeping track
      * of IP addresses, authorization tokens and other relevant details. Such
      * an instance can with advantage be constructed from the successful result
@@ -84,32 +40,10 @@ public class HttpClient {
      *
      * @param system Arrowhead system from which to extract configuration.
      * @return Created or cached client.
-     * @throws SSLException If creating SSL/TLS context from given Arrowhead
-     *                      system fails.
      */
     @ThreadSafe
-    public synchronized static HttpClient from(final ArSystem system) throws SSLException {
-        var client = cache.get(system);
-        if (client != null) {
-            return client;
-        }
-
-        final var builder = new Builder();
-        if (system.isSecure()) {
-            builder
-                .identity(system.identity())
-                .trustStore(system.trustStore());
-        }
-        else {
-            builder.insecure();
-        }
-
-        client = builder
-            .localSocketAddress(new InetSocketAddress(system.localAddress(), 0))
-            .build();
-
-        cache.put(system, client);
-        return client;
+    static HttpClient from(final ArSystem system) {
+        return NettyHttpClient.from(system);
     }
 
     /**
@@ -126,18 +60,8 @@ public class HttpClient {
      * @return New or cached HTTP client.
      */
     @ThreadSafe
-    public synchronized static HttpClient http() {
-        if (http == null) {
-            try {
-                http = new Builder()
-                    .insecure()
-                    .build();
-            }
-            catch (final SSLException exception) {
-                throw new RuntimeException(exception);
-            }
-        }
-        return http;
+    static HttpClient insecure() {
+        return NettyHttpClient.insecure();
     }
 
     /**
@@ -157,41 +81,24 @@ public class HttpClient {
      * @return New or cached HTTPS client.
      */
     @ThreadSafe
-    public synchronized static HttpClient https() throws SSLException {
-        if (https == null) {
-            https = new Builder().build();
-        }
-        return https;
+    static HttpClient secure() {
+        return NettyHttpClient.secure();
     }
 
     /**
-     * @return {@link se.arkalix.security.identity Identity} of the system
-     * owning this client.
-     * @throws NotSecureException If this client was not provided a system
-     *                            identity when created.
+     * Determines whether or not this HTTP client communicates via HTTPS or not.
+     *
+     * @return {@code true} only if this client uses HTTPS.
      */
-    public SystemIdentity identity() {
-        if (identity == null) {
-            throw new NotSecureException("Anonymous HTTP client; no system " +
-                "identity is available");
-        }
-        return identity;
-    }
+    boolean isSecure();
 
     /**
-     * @return {@code true} only if this client has a {@link SystemIdentity},
-     * accessible via the {@link #identity()} method.
+     * Gets the socket address of the network interface configured to be used
+     * by default when making new connections, if any.
+     *
+     * @return Default local socket address, if any.
      */
-    public boolean isIdentifiable() {
-        return identity != null;
-    }
-
-    /**
-     * @return {@code true} only if this client is configured to use HTTPS.
-     */
-    public boolean isSecure() {
-        return sslContext != null;
-    }
+    Optional<InetSocketAddress> localSocketAddress();
 
     /**
      * Creates new {@code HttpClientConnection} for communicating with remote
@@ -203,7 +110,7 @@ public class HttpClient {
      * @throws NullPointerException If {@code remoteSocketAddress} is
      *                              {@code null}.
      */
-    public Future<HttpClientConnection> connect(final InetSocketAddress remoteSocketAddress) {
+    default Future<HttpClientConnection> connect(final InetSocketAddress remoteSocketAddress) {
         return connect(remoteSocketAddress, null);
     }
 
@@ -219,20 +126,10 @@ public class HttpClient {
      * @throws NullPointerException If {@code remoteSocketAddress} is
      *                              {@code null}.
      */
-    public Future<HttpClientConnection> connect(
+    Future<HttpClientConnection> connect(
         final InetSocketAddress remoteSocketAddress,
-        final InetSocketAddress localSocketAddress)
-    {
-        Objects.requireNonNull(remoteSocketAddress, "Expected remoteSocketAddress");
-
-        final var futureConnection = new FutureHttpClientConnection();
-        return adapt(bootstrap.clone()
-            .handler(new NettyHttpClientConnectionInitializer(futureConnection, sslContext))
-            .connect(remoteSocketAddress, localSocketAddress != null
-                ? localSocketAddress
-                : this.localSocketAddress))
-            .flatMap(ignored -> futureConnection);
-    }
+        final InetSocketAddress localSocketAddress
+    );
 
     /**
      * Connects to remote host at {@code remoteSocketAddress}, sends
@@ -245,12 +142,12 @@ public class HttpClient {
      * @throws NullPointerException If {@code remoteSocketAddress} or
      *                              {@code request} is {@code null}.
      */
-    public Future<HttpClientResponse> send(
+    default Future<HttpIncomingResponse> send(
         final InetSocketAddress remoteSocketAddress,
-        final HttpClientRequest request)
-    {
+        final HttpClientRequest request
+    ) {
         Objects.requireNonNull(request, "Expected request");
-        return connect(remoteSocketAddress)
+        return connect(remoteSocketAddress, localSocketAddress().orElse(null))
             .flatMap(connection -> connection.sendAndClose(request));
     }
 
@@ -258,11 +155,8 @@ public class HttpClient {
      * Builder useful for creating {@link HttpClient} instances.
      */
     @SuppressWarnings("UnusedReturnValue")
-    public static class Builder {
-        private InetSocketAddress localSocketAddress;
-        private OwnedIdentity identity;
-        private TrustStore trustStore;
-        private boolean isInsecure = false;
+    class Builder {
+        private final NettyHttpClient.Builder inner = new NettyHttpClient.Builder();
 
         /**
          * Ensures that the identified local network interface is used by
@@ -273,26 +167,50 @@ public class HttpClient {
          * @return This builder.
          */
         public final Builder localSocketAddress(final InetSocketAddress socketAddress) {
-            this.localSocketAddress = socketAddress;
+            inner.localSocketAddress(socketAddress);
             return this;
         }
 
         /**
-         * Sets owned identity to use for representing created HTTP clients.
+         * Sets owned certificate chain and corresponding private key to use
+         * for representing created HTTP clients from given owned identity
+         * object.
          * <p>
          * If {@link #insecure() insecure mode} is <i>not</i> enabled and no
-         * identity is provided, client authentication is disabled for created
-         * HTTP clients, making them unsuitable for communicating with
-         * Arrowhead systems. The clients may, however, be used for
-         * communicating with arbitrary HTTP servers that do not require client
-         * authentication.
+         * identity is provided, HTTPS is still enabled. However, client
+         * authentication is disabled for created clients, making them
+         * unsuitable for communicating with Arrowhead systems. The clients
+         * may, however, be used for communicating with arbitrary HTTP servers
+         * that do not require client authentication.
          *
          * @param identity Owned identity to use.
          * @return This builder.
          * @see se.arkalix.security Arrowhead Security
          */
         public final Builder identity(final OwnedIdentity identity) {
-            this.identity = identity;
+            return identity(identity.chain(), identity.privateKey());
+        }
+
+        /**
+         * Sets owned certificate chain and corresponding private key to use
+         * for representing created HTTP clients.
+         * <p>
+         * If {@link #insecure() insecure mode} is <i>not</i> enabled and no
+         * identity is provided, HTTPS is still enabled. However, client
+         * authentication is disabled for created clients, making them
+         * unsuitable for communicating with Arrowhead systems. The clients
+         * may, however, be used for communicating with arbitrary HTTP servers
+         * that do not require client authentication.
+         *
+         * @param certificateChain Certificate chain to be used by created
+         *                         clients.
+         * @param privateKey       Private key associated with the certificate
+         *                         at index 0 in the given certificate chain.
+         * @return This builder.
+         * @see se.arkalix.security Arrowhead Security
+         */
+        public final Builder identity(final Certificate[] certificateChain, final PrivateKey privateKey) {
+            inner.identity(certificateChain, privateKey);
             return this;
         }
 
@@ -310,7 +228,25 @@ public class HttpClient {
          * @see se.arkalix.security Arrowhead Security
          */
         public final Builder trustStore(final TrustStore trustStore) {
-            this.trustStore = trustStore;
+            return trustStore(trustStore.certificates());
+        }
+
+        /**
+         * Sets trust store to use for determining what systems are trusted to
+         * be communicated with by created HTTP clients.
+         * <p>
+         * If {@link #insecure() insecure mode} is <i>not</i> enabled and no
+         * trust store is provided, the default system trust store is used
+         * instead. This is typically suitable if wanting to communicate with
+         * regular HTTP servers over HTTPS.
+         *
+         * @param trustedCertificates Certificates to make up trust store used
+         *                            by created clients.
+         * @return This builder.
+         * @see se.arkalix.security Arrowhead Security
+         */
+        public final Builder trustStore(final Certificate[] trustedCertificates) {
+            inner.trustStore(trustedCertificates);
             return this;
         }
 
@@ -325,15 +261,15 @@ public class HttpClient {
          * @see se.arkalix.security Arrowhead Security
          */
         public final Builder insecure() {
-            this.isInsecure = true;
+            inner.insecure();
             return this;
         }
 
         /**
          * @return New {@link HttpClient}.
          */
-        public HttpClient build() throws SSLException {
-            return new HttpClient(this);
+        public HttpClient build() {
+            return new NettyHttpClient(inner);
         }
     }
 }

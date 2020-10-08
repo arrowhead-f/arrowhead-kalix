@@ -12,7 +12,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 public class TestX509Names {
     @ParameterizedTest
     @MethodSource("validDistinguishedNameProvider")
-    void shouldExtractCommonNamesCorrectly(final String dn, final String expected) throws Exception {
+    void shouldExtractCommonNamesCorrectly(final String dn, final String expected) {
         final var actual = X509Names.commonNameOf(dn);
         assertEquals(expected, actual.orElse(""));
     }

@@ -1,120 +1,51 @@
 package se.arkalix.net.http.consumer;
 
-import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.net.http.client.HttpClientConnection;
-import se.arkalix.security.NotSecureException;
+import se.arkalix.ArSystem;
+import se.arkalix.net.http.HttpIncomingResponse;
+import se.arkalix.net.http.HttpOutgoingConnection;
+import se.arkalix.security.SecurityDisabled;
+import se.arkalix.security.identity.OwnedIdentity;
 import se.arkalix.security.identity.SystemIdentity;
-import se.arkalix.util.concurrent.Future;
 
-import java.net.InetSocketAddress;
-import java.util.Objects;
+import java.security.cert.Certificate;
 
 /**
- * Connection useful for sending HTTP requests to a {@link se.arkalix consumed
- * service}.
+ * Represents an established HTTP connection used to consume a remote service.
  */
-@SuppressWarnings("unused")
-public class HttpConsumerConnection {
-    private final HttpClientConnection connection;
-    private final EncodingDescriptor encoding;
-    private final SystemIdentity provider;
-    private final String authorization;
-
-    HttpConsumerConnection(
-        final HttpClientConnection connection,
-        final EncodingDescriptor encoding,
-        final SystemIdentity provider,
-        final String authorization)
-    {
-        this.connection = Objects.requireNonNull(connection, "Expected connection");
-        this.encoding = Objects.requireNonNull(encoding, "Expected encoding");
-        this.provider = provider;
-        this.authorization = authorization;
+public interface HttpConsumerConnection extends HttpOutgoingConnection<HttpConsumerRequest, HttpIncomingResponse> {
+    @Override
+    default Certificate[] remoteCertificateChain() {
+        return remoteIdentity().chain();
     }
 
     /**
-     * @return Local network interface bound to this connection.
-     */
-    public InetSocketAddress localSocketAddress() {
-        return connection.localSocketAddress();
-    }
-
-    /**
-     * @return Identity associated with the provider of the consumed service.
-     * @throws NotSecureException If the provider is not running in secure
-     *                            mode.
-     */
-    public SystemIdentity provider() {
-        if (provider == null) {
-            throw new NotSecureException("Not in secure mode");
-        }
-        return provider;
-    }
-
-    /**
-     * @return {@code true} only if this connection can be used to send
-     * requests to the service provider.
-     */
-    public boolean isLive() {
-        return connection.isLive();
-    }
-
-    /**
-     * @return {@code true} only if the provider of the consumed service is
-     * running in secure mode, which implies that the connection is secured via
-     * HTTPS.
-     */
-    public boolean isSecure() {
-        return connection.isSecure();
-    }
-
-    /**
-     * Sends given {@code request} to HTTP service represented by this
-     * {@code HttpClientConnection}.
+     * Gets the Arrowhead system identity of the connected service provider.
      *
-     * @param request HTTP request to send.
-     * @return {@code Future} {@code HttpConsumerResponse}.
+     * @return System identity of service provider.
+     * @throws SecurityDisabled If this connection is not secure.
      */
-    public Future<HttpConsumerResponse> send(final HttpConsumerRequest request) {
-        prepare(request);
-        return connection.send(request.asClientRequest())
-            .map(response -> new HttpConsumerResponse(response, encoding));
+    SystemIdentity remoteIdentity();
+
+    @Override
+    default Certificate[] localCertificateChain() {
+        return localIdentity().chain();
     }
 
     /**
-     * Sends given {@code request} to HTTP service represented by this
-     * {@code HttpClientConnection}, awaits either a response or an error,
-     * closes this connection and then completes the returned {@code Future}
-     * with the resulting response or error.
+     * Gets the Arrowhead system identity of the system that established this
+     * connection.
      *
-     * @param request HTTP request to send.
-     * @return {@code Future} {@code HttpConsumerResponse}.
+     * @return System identity of service consumer.
+     * @throws SecurityDisabled If this connection is not secure.
      */
-    public Future<HttpConsumerResponse> sendAndClose(final HttpConsumerRequest request) {
-        prepare(request);
-        return connection.sendAndClose(request.asClientRequest())
-            .map(response -> new HttpConsumerResponse(response, encoding));
-    }
-
-    private void prepare(final HttpConsumerRequest request) {
-        Objects.requireNonNull(request, "Expected request");
-
-        request.setEncodingIfRequired(() -> encoding.asDtoEncoding().orElseThrow(() ->
-            new IllegalStateException("No DTO support is available for the " +
-                "encoding \"" + encoding + "\"; the request body must be " +
-                "encoded some other way")));
-
-        if (authorization != null) {
-            request.headers().setIfEmpty("authorization", authorization);
-        }
+    default OwnedIdentity localIdentity() {
+        return localSystem().identity();
     }
 
     /**
-     * Attempts to close connection.
+     * Gets the Arrowhead system that established this connection.
      *
-     * @return Future completed when closing is done. Can be safely ignored.
+     * @return Arrowhead system.
      */
-    public Future<?> close() {
-        return connection.close();
-    }
+    ArSystem localSystem();
 }

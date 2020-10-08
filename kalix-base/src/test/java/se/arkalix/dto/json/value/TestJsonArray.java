@@ -27,7 +27,7 @@ public class TestJsonArray {
             arguments(new JsonArray(new JsonNumber(1), new JsonString("x")), "[1,\"x\"]"),
             arguments(new JsonArray(new JsonArray(), new JsonArray(new JsonString("x"))), "[[],[\"x\"]]"),
             arguments(new JsonArray(JsonBoolean.TRUE, JsonBoolean.FALSE), " [ true , false ] "),
-            arguments(new JsonArray(new JsonObject(new JsonPair("x", JsonNull.INSTANCE)), JsonNull.INSTANCE),
+            arguments(new JsonArray(new JsonObject(new JsonPair("x", JsonNull.instance)), JsonNull.instance),
                 "[{\"x\": null}, null]")
         );
     }
@@ -46,8 +46,8 @@ public class TestJsonArray {
             arguments("[1,\"x\"]", new JsonArray(new JsonNumber(1), new JsonString("x"))),
             arguments("[[],[\"x\"]]", new JsonArray(new JsonArray(), new JsonArray(new JsonString("x")))),
             arguments("[true,false]", new JsonArray(JsonBoolean.TRUE, JsonBoolean.FALSE)),
-            arguments("[{\"x\":null},null]", new JsonArray(new JsonObject(new JsonPair("x", JsonNull.INSTANCE)),
-                JsonNull.INSTANCE))
+            arguments("[{\"x\":null},null]", new JsonArray(new JsonObject(new JsonPair("x", JsonNull.instance)),
+                JsonNull.instance))
         );
     }
 }

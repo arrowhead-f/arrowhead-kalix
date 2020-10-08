@@ -3,6 +3,7 @@ package se.arkalix.internal.net.http.service;
 import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
+import se.arkalix.internal.net.http.HttpPaths;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.service.*;
 import se.arkalix.security.access.AccessPolicy;
@@ -12,14 +13,14 @@ import se.arkalix.util.concurrent.Future;
 import java.util.*;
 
 @Internal
-public class HttpServiceInternal {
+public class HttpServerService {
     private final AccessPolicy accessPolicy;
     private final String basePath;
     private final ServiceDescription description;
     private final List<EncodingDescriptor> encodings;
     private final HttpRouteSequence[] routeSequences;
 
-    public HttpServiceInternal(final ArSystem system, final HttpService service) {
+    public HttpServerService(final ArSystem system, final HttpService service) {
         accessPolicy = Objects.requireNonNull(service.accessPolicy(), "Expected accessPolicy");
         description = service.describeAsIfProvidedBy(system);
 

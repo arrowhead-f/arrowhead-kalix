@@ -1,16 +1,19 @@
 package se.arkalix.net.http.consumer;
 
 import se.arkalix.ArConsumer;
+import se.arkalix.ArConsumerFactory;
+import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.descriptor.SecurityDescriptor;
+import se.arkalix.descriptor.TransportDescriptor;
+import se.arkalix.internal.net.http.consumer.DefaultHttpConsumer;
+import se.arkalix.net.http.HttpIncomingResponse;
 import se.arkalix.net.http.client.HttpClient;
-import se.arkalix.security.identity.SystemIdentity;
-import se.arkalix.util.Result;
 import se.arkalix.util.concurrent.Future;
 
 import java.net.InetSocketAddress;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Objects;
 
 import static se.arkalix.descriptor.TransportDescriptor.HTTP;
@@ -23,232 +26,129 @@ import static se.arkalix.descriptor.TransportDescriptor.HTTP;
  * exception that hostnames, encodings, authorization tokens and other
  * details are managed automatically.
  */
-@SuppressWarnings("unused")
-public class HttpConsumer implements ArConsumer {
-    private static final HttpConsumerFactory factory = new HttpConsumerFactory();
-
-    private final HttpClient client;
-    private final ServiceDescription service;
-    private final EncodingDescriptor encoding;
-    private final String authorization;
-
+public interface HttpConsumer extends ArConsumer {
     /**
-     * Creates new consumer configured to support att encodings returned by
-     * {@link EncodingDescriptor#dtoEncodings()}.
+     * Creates new service consumer.
      *
-     * @param client  HTTP client to use for consuming {@code service}.
-     * @param service Service to consume.
-     * @throws NullPointerException     If {@code client} or {@code service} is
+     * @param system  Arrowhead system consuming {@code service}.
+     * @param service Service to be consumed.
+     * @throws NullPointerException     If {@code system} or {@code service} is
      *                                  {@code null}.
-     * @throws IllegalArgumentException If {@code client} is configured to use
-     *                                  HTTPS and the {@link
-     *                                  ServiceDescription#security()} method
-     *                                  of the given {@code service} returns
-     *                                  {@link SecurityDescriptor#NOT_SECURE},
-     *                                  or if {@code client} is configured to
-     *                                  use plain HTTP and the given {@code
-     *                                  service} is secure returns any other
-     *                                  security/access policy than
-     *                                  {@link SecurityDescriptor#NOT_SECURE}.
-     * @throws IllegalStateException    If {@code service} does not support any
-     *                                  interface triplet compatible with the
-     *                                  given {@code client} and any one out of
-     *                                  the default DTO encodings.
+     * @throws IllegalArgumentException If the security modes of {@code system}
+     *                                  and {@code service} do not match (e.g.
+     *                                  the system is secure but the service is
+     *                                  not).
      */
-    public HttpConsumer(final HttpClient client, final ServiceDescription service) {
-        this(client, service, null);
+    static HttpConsumer create(final ArSystem system, final ServiceDescription service) {
+        return create(system, service, null);
     }
 
     /**
-     * Creates new consumer.
+     * Creates new service consumer, limiting itself to a subset of the
+     * encodings supported by {@code service}.
      *
-     * @param client    HTTP client to use for consuming {@code service}.
-     * @param service   Service to consume.
+     * @param system    Arrowhead system consuming {@code service}.
+     * @param service   Service to be consumed.
      * @param encodings Supported request/response encodings. If specified as
      *                  {@code null}, the encodings returned by
-     *                  {@link EncodingDescriptor#dtoEncodings()} are used.
-     * @throws NullPointerException     If {@code client} or {@code service} is
+     *                  {@link EncodingDescriptor#allWithDtoSupport()} are used.
+     * @throws NullPointerException     If {@code system} or {@code service} is
      *                                  {@code null}.
-     * @throws IllegalArgumentException If {@code client} is configured to use
-     *                                  HTTPS and the {@link
-     *                                  ServiceDescription#security()} method
-     *                                  of the given {@code service} returns
-     *                                  {@link SecurityDescriptor#NOT_SECURE},
-     *                                  or if {@code client} is configured to
-     *                                  use plain HTTP and the given {@code
-     *                                  service} is secure returns any other
-     *                                  security/access policy than
-     *                                  {@link SecurityDescriptor#NOT_SECURE}.
-     * @throws IllegalStateException    If {@code service} does not support any
-     *                                  interface triplet compatible with the
-     *                                  given {@code client} and any one out of
-     *                                  the given {@code encodings}.
+     * @throws IllegalArgumentException If the security modes of {@code system}
+     *                                  and {@code service} do not match (e.g.
+     *                                  the system is secure but the service is
+     *                                  not).
      */
-    public HttpConsumer(
-        final HttpClient client,
+    static HttpConsumer create(
+        final ArSystem system,
         final ServiceDescription service,
-        final Collection<EncodingDescriptor> encodings)
-    {
-        this.client = Objects.requireNonNull(client, "Expected client");
-        this.service = Objects.requireNonNull(service, "Expected service");
-
-        final var isSecure = service.security() != SecurityDescriptor.NOT_SECURE;
-
-        if (isSecure != isSecure()) {
-            if (isSecure) {
-                throw new IllegalArgumentException("The provided HttpClient " +
-                    "is configured to run in insecure mode, while the " +
-                    "provided service \"" + service.name() + "\" is not; " +
-                    "cannot consume service");
-            }
-            else {
-                throw new IllegalArgumentException("The provided HttpClient " +
-                    "is configured to run in secure mode, while the " +
-                    "provided service \"" + service.name() + "\" is not; " +
-                    "cannot consume service");
-            }
-        }
-
-        if (isSecure && !client.isIdentifiable()) {
-            throw new IllegalArgumentException("" +
-                "The provided HttpClient is not associated with an owned " +
-                "identity, even though secure mode is enabled; cannot " +
-                "consume service");
-        }
-
-        final var compatibleEntry = service.interfaceTokens()
-            .entrySet()
-            .stream()
-            .filter(entry -> {
-                final var descriptor = entry.getKey();
-                return descriptor.transport() == HTTP &&
-                    descriptor.isSecure() == isSecure &&
-                    encodings.contains(descriptor.encoding());
-            })
-            .sorted((a, b) -> b.getValue().length() - a.getValue().length())
-            .findAny()
-            .orElseThrow(() -> {
-                final var builder = new StringBuilder("The service \"")
-                    .append(service.name())
-                    .append("\" does not support any ")
-                    .append(isSecure ? "secure" : "insecure")
-                    .append(" HTTP interface with any of the encodings [");
-
-                var isFirst = true;
-                for (final var encoding : encodings) {
-                    if (!isFirst) {
-                        builder.append(", ");
-                    }
-                    else {
-                        isFirst = false;
-                    }
-                    builder.append(encoding.name());
-                }
-
-                builder.append("]; cannot consume service");
-
-                return new IllegalStateException(builder.toString());
-            });
-
-        encoding = compatibleEntry.getKey().encoding();
-
-        final var token = compatibleEntry.getValue();
-        authorization = token != null && token.length() > 0
-            ? "Bearer " + token
-            : null;
+        final Collection<EncodingDescriptor> encodings
+    ) {
+        return factory().create(system, service, encodings);
     }
 
     /**
-     * @return Default {@link HttpConsumerFactory}.
-     */
-    public static HttpConsumerFactory factory() {
-        return factory;
-    }
-
-    @Override
-    public ServiceDescription service() {
-        return service;
-    }
-
-    /**
-     * @return {@code true} only if this consumer is configured to run in
-     * secure mode.
-     */
-    public boolean isSecure() {
-        return client.isSecure();
-    }
-
-    /**
-     * Creates new {@code HttpClientConnection} for consuming the service
-     * represented by this consumer.
+     * Gets default {@link Factory}, used to create new {@link HttpConsumer}
+     * instances.
      *
-     * @return {@link Future} completed with a new consumer connection if and
-     * when a TCP connection has been established and any TLS handshake
-     * completed with the service represented by this consumer.
+     * @return Default {@link Factory}.
      */
-    public Future<HttpConsumerConnection> connect() {
+    static Factory factory() {
+        return Factory.instance;
+    }
+
+    /**
+     * Creates new {@code HttpClientConnection} for communicating with the
+     * service associated with this consumer.
+     *
+     * @return Future completed with a new client if and when a TCP connection
+     * has been established to {@code remoteSocketAddress}.
+     */
+    default Future<HttpConsumerConnection> connect() {
         return connect(null);
     }
 
-
     /**
-     * Creates new {@code HttpClientConnection} for consuming the service
-     * represented by this consumer via the specified
-     * {@code localSocketAddress}.
+     * Creates new {@code HttpClientConnection} for communicating with the
+     * service associated with this consumer.
      *
      * @param localSocketAddress Socket address of local network interface to
-     *                           use when communicating with the service
-     *                           provider.
-     * @return {@link Future} completed with a new consumer connection if and
-     * when a TCP connection has been established and any TLS handshake
-     * completed with the service represented by this consumer.
+     *                           use when communicating with remote host.
+     * @return Future completed with a new client if and when a TCP connection
+     * has been established to {@code remoteSocketAddress}.
      */
-    public Future<HttpConsumerConnection> connect(final InetSocketAddress localSocketAddress) {
-        return client.connect(service.provider().socketAddress(), localSocketAddress)
-            .mapResult(result -> {
-                if (result.isFailure()) {
-                    return Result.failure(result.fault());
-                }
-                final var connection = result.value();
-                final SystemIdentity identity;
-                if (isSecure()) {
-                    identity = new SystemIdentity(connection.certificateChain());
-                    if (!Objects.equals(identity.publicKey(), service.provider().publicKey())) {
-                        connection.close();
-                        return Result.failure(new HttpConsumerConnectionException("" +
-                            "The public key known to be associated with the " +
-                            "the consumed system \"" + service.provider().name() +
-                            "\" does not match the public key in the " +
-                            "certificate retrieved when connecting to it; " +
-                            "cannot connect to service"));
-                    }
+    Future<HttpConsumerConnection> connect(final InetSocketAddress localSocketAddress);
 
-                    if (!Objects.equals(client.identity().cloud(), identity.cloud())) {
-                        connection.close();
-                        return Result.failure(new HttpConsumerConnectionException("" +
-                            "The consumed system \"" + service.provider().name() +
-                            "\" does not belong to the same local cloud as " +
-                            "this system; cannot connect to service"));
-                    }
-                }
-                else {
-                    identity = null;
-                }
-                return Result.success(new HttpConsumerConnection(connection, encoding, identity, authorization));
-            });
+    /**
+     * Connects to remote host at {@code remoteSocketAddress}, sends
+     * {@code request}, closes connection and then completes the returned
+     * {@code Future} with the result.
+     *
+     * @param request Request to send.
+     * @return Future completed with the request response or an error.
+     * @throws NullPointerException If {@code remoteSocketAddress} or
+     *                              {@code request} is {@code null}.
+     */
+    default Future<HttpIncomingResponse> send(final HttpConsumerRequest request) {
+        Objects.requireNonNull(request, "Expected request");
+        return connect().flatMap(connection -> connection.sendAndClose(request));
     }
 
     /**
-     * Connects to the system providing the service represented by this
-     * consumer, sends {@code request}, closes connection and then completes
-     * the returned {@code Future} with the result.
+     * Determines whether or not this HTTP client communicates via HTTPS or not.
      *
-     * @param request Request to send.
-     * @return {@link Future} completed with the request response or an error.
-     * @throws NullPointerException If {@code request} is {@code null}.
+     * @return {@code true} only if this client uses HTTPS.
      */
-    public Future<HttpConsumerResponse> send(final HttpConsumerRequest request) {
-        Objects.requireNonNull(request, "Expected request");
-        return connect().flatMap(connection -> connection.sendAndClose(request));
+    boolean isSecure();
+
+    /**
+     * Class used for creating {@link HttpConsumer} instances.
+     * <p>
+     * This class is primarily useful as input to the {@link
+     * se.arkalix.query.ServiceQuery#using(ArConsumerFactory) using()} method
+     * of the {@link se.arkalix.query.ServiceQuery ServiceQuery} class, an
+     * instance of which is returned by the {@link ArSystem#consume()} method.
+     * See the {@link se.arkalix.net.http.consumer package documentation} for
+     * more details about how this class can be used.
+     * <p>
+     * Use the {@link HttpConsumer#factory()} method to get an instance of this
+     * class.
+     */
+    class Factory implements ArConsumerFactory<HttpConsumer> {
+        private static final Factory instance = new Factory();
+
+        @Override
+        public Collection<TransportDescriptor> serviceTransports() {
+            return Collections.singleton(HTTP);
+        }
+
+        @Override
+        public HttpConsumer create(
+            final ArSystem system,
+            final ServiceDescription service,
+            final Collection<EncodingDescriptor> encodings
+        ) {
+            return new DefaultHttpConsumer(system, service, encodings);
+        }
     }
 }

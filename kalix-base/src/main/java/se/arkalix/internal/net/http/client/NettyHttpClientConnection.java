@@ -1,53 +1,220 @@
 package se.arkalix.internal.net.http.client;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import io.netty.channel.DefaultFileRegion;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
-import se.arkalix.dto.DtoWritable;
-import se.arkalix.dto.DtoWriteException;
-import se.arkalix.internal.dto.binary.ByteBufWriter;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import se.arkalix.internal.net.NettyBodyOutgoing;
+import se.arkalix.internal.net.NettySimpleChannelInboundHandler;
 import se.arkalix.internal.net.http.HttpMediaTypes;
-import se.arkalix.net.http.HttpVersion;
+import se.arkalix.internal.net.http.NettyHttpConverters;
+import se.arkalix.internal.util.concurrent.FutureCompletion;
+import se.arkalix.internal.util.concurrent.FutureCompletionUnsafe;
+import se.arkalix.net.http.*;
 import se.arkalix.net.http.client.HttpClientConnection;
+import se.arkalix.net.http.client.HttpClientConnectionException;
 import se.arkalix.net.http.client.HttpClientRequest;
-import se.arkalix.net.http.client.HttpClientResponse;
-import se.arkalix.security.NotSecureException;
+import se.arkalix.security.SecurityDisabled;
+import se.arkalix.util.InternalException;
 import se.arkalix.util.Result;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;
 
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.security.cert.Certificate;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
-import java.util.function.Consumer;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
+import static io.netty.handler.codec.http.HttpHeaderValues.TEXT_PLAIN;
 import static se.arkalix.internal.net.http.NettyHttpConverters.convert;
 import static se.arkalix.internal.util.concurrent.NettyFutures.adapt;
 
 @Internal
-public class NettyHttpClientConnection implements HttpClientConnection {
-    private final Certificate[] certificateChain;
+public class NettyHttpClientConnection
+    extends NettySimpleChannelInboundHandler<HttpObject>
+    implements HttpClientConnection
+{
+    private static final Logger logger = LoggerFactory.getLogger(NettyHttpClientConnection.class);
+
+    private final Queue<FutureRequestResponse> requestResponseQueue = new LinkedList<>();
     private final Channel channel;
-    private final Queue<FutureResponse> pendingResponseQueue = new LinkedList<>();
+    private final SslHandler sslHandler;
+
+    private SSLSession sslSession = null;
+
+    private FutureCompletion<HttpClientConnection> futureConnection;
+    private NettyHttpClientResponse incomingResponse = null;
 
     private boolean isClosing = false;
 
     public NettyHttpClientConnection(
+        final FutureCompletion<HttpClientConnection> futureConnection,
         final Channel channel,
-        final Certificate[] certificateChain)
-    {
+        final SslHandler sslHandler
+    ) {
+        this.futureConnection = Objects.requireNonNull(futureConnection, "Expected futureConnection");
         this.channel = Objects.requireNonNull(channel, "Expected channel");
-        this.certificateChain = certificateChain;
+        this.sslHandler = sslHandler;
+    }
+
+    @Override
+    public void channelActive(final ChannelHandlerContext ctx) throws Exception {
+        if (futureConnection != null) {
+            if (futureConnection.isCancelled()) {
+                futureConnection = null;
+                ctx.close();
+                return;
+            }
+            if (sslHandler != null) {
+                sslHandler.handshakeFuture().addListener(future -> {
+                    Throwable cause;
+                    try {
+                        if (future.isSuccess()) {
+                            sslSession = sslHandler.engine().getSession();
+                            futureConnection.complete(Result.success(this));
+                            futureConnection = null;
+                            return;
+                        }
+                        else {
+                            cause = future.cause();
+                        }
+                    }
+                    catch (final Throwable throwable) {
+                        cause = throwable;
+                    }
+                    if (futureConnection != null) {
+                        futureConnection.complete(Result.failure(cause));
+                        futureConnection = null;
+                    }
+                    else {
+                        if (logger.isWarnEnabled()) {
+                            logger.warn("Failed to complete TLS handshake with remote host", cause);
+                        }
+                    }
+                    ctx.close();
+                });
+            }
+            else {
+                futureConnection.complete(Result.success(this));
+                futureConnection = null;
+            }
+        }
+        super.channelActive(ctx);
+    }
+
+    @Override
+    protected void channelRead0(final ChannelHandlerContext ctx, final HttpObject msg) {
+        if (msg instanceof HttpResponse) {
+            readResponse(ctx, (HttpResponse) msg);
+        }
+        if (msg instanceof HttpContent) {
+            readContent(ctx, (HttpContent) msg);
+        }
+    }
+
+    private void readResponse(final ChannelHandlerContext ctx, final HttpResponse response) {
+        // TODO: Enable and check size restrictions.
+
+        final var futureRequestResponse = requestResponseQueue.poll();
+        if (futureRequestResponse == null) {
+            if (logger.isWarnEnabled()) {
+                logger.warn("Unexpectedly received incoming HTTP response " +
+                    "with status {} from {}", response.status(), remoteSocketAddress());
+            }
+            return;
+        }
+        incomingResponse = new NettyHttpClientResponse(ctx.alloc(), futureRequestResponse.request(), response);
+        futureRequestResponse.complete(Result.success(incomingResponse));
+    }
+
+
+    private void readContent(final ChannelHandlerContext ctx, final HttpContent content) {
+        if (incomingResponse == null) {
+            return;
+        }
+        incomingResponse.append(content);
+        if (content instanceof LastHttpContent) {
+            incomingResponse.headers().unwrap().add(((LastHttpContent) content).trailingHeaders());
+            incomingResponse.finish();
+            incomingResponse = null;
+            if (isClosing && requestResponseQueue.isEmpty()) {
+                ctx.close();
+            }
+        }
+    }
+
+    @Override
+    public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
+        if (futureConnection != null) {
+            futureConnection.complete(Result.failure(cause));
+            futureConnection = null;
+            return;
+        }
+        if (incomingResponse != null && incomingResponse.tryAbort(cause)) {
+            incomingResponse = null;
+            return;
+        }
+        if (requestResponseQueue.size() > 0) {
+            requestResponseQueue.remove().complete(Result.failure(cause));
+            return;
+        }
+        ctx.fireExceptionCaught(cause);
+    }
+
+    @Override
+    public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) {
+        if (!(evt instanceof IdleStateEvent)) {
+            return;
+        }
+        try {
+            final var idleStateEvent = (IdleStateEvent) evt;
+            if (idleStateEvent.state() != IdleState.READER_IDLE) {
+                return;
+            }
+            if (futureConnection != null) {
+                futureConnection.complete(Result.failure(new HttpClientConnectionException("Timeout exceeded")));
+                futureConnection = null;
+                return;
+            }
+            if (incomingResponse != null) {
+                incomingResponse.tryAbort(new HttpOutgoingRequestException(incomingResponse.request(), "Incoming response body timed out"));
+                incomingResponse = null;
+                return;
+            }
+            if (requestResponseQueue.size() > 0) {
+                final var pendingResponse = requestResponseQueue.remove();
+                pendingResponse.complete(Result.failure(
+                    new HttpOutgoingRequestException(incomingResponse.request(), "Incoming response timed out")));
+            }
+        }
+        finally {
+            ctx.close();
+        }
+    }
+
+    @Override
+    public Certificate[] remoteCertificateChain() {
+        if (sslHandler == null) {
+            throw new SecurityDisabled("Not running in secure mode; remote certificate chain not available");
+        }
+        if (sslSession == null) {
+            throw new InternalException("remoteCertificateChain() called before SSL handshake completed");
+        }
+        try {
+            return sslSession.getPeerCertificates();
+        }
+        catch (final SSLPeerUnverifiedException exception) {
+            throw new InternalException("remoteCertificateChain() called before SSL handshake completed", exception);
+        }
     }
 
     @Override
@@ -56,21 +223,24 @@ public class NettyHttpClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public InetSocketAddress localSocketAddress() {
-        return (InetSocketAddress) channel.localAddress();
+    public Certificate[] localCertificateChain() {
+        if (sslHandler == null) {
+            throw new SecurityDisabled("Not running in secure mode; local certificate chain not available");
+        }
+        if (sslSession == null) {
+            throw new InternalException("localCertificateChain() called before SSL handshake completed");
+        }
+        try {
+            return sslSession.getPeerCertificates();
+        }
+        catch (final SSLPeerUnverifiedException exception) {
+            throw new InternalException("localCertificateChain() called before SSL handshake completed", exception);
+        }
     }
 
     @Override
-    public Certificate[] certificateChain() {
-        if (certificateChain == null) {
-            throw new NotSecureException("Connection not secured; " +
-                "no certificates are available");
-        }
-        return certificateChain;
-    }
-
-    public boolean isClosing() {
-        return isClosing && pendingResponseQueue.size() == 0;
+    public InetSocketAddress localSocketAddress() {
+        return (InetSocketAddress) channel.localAddress();
     }
 
     @Override
@@ -80,104 +250,82 @@ public class NettyHttpClientConnection implements HttpClientConnection {
 
     @Override
     public boolean isSecure() {
-        return certificateChain != null;
+        return sslHandler != null;
     }
 
     @Override
-    public Future<HttpClientResponse> send(final HttpClientRequest request) {
+    public Future<HttpIncomingResponse> send(final HttpClientRequest request) {
+        return send(request, false);
+    }
+
+    @Override
+    public Future<HttpIncomingResponse> sendAndClose(final HttpClientRequest request) {
+        return send(request, true);
+    }
+
+    private Future<HttpIncomingResponse> send(final HttpClientRequest request, final boolean close) {
         try {
-            writeRequestToChannel(request);
+            if (isClosing) {
+                throw new HttpOutgoingRequestException(request, "Client is closing; cannot send request");
+            }
+            isClosing = close;
+
+            final var method = request.method()
+                .orElseThrow(() -> new IllegalArgumentException("Expected method in client request"));
+
+            final var path = request.path()
+                .orElseThrow(() -> new IllegalArgumentException("Expected path in client request"));
+
+            final var queryStringEncoder = new QueryStringEncoder(path);
+            for (final var entry : request.queryParameters().entrySet()) {
+                final var name = entry.getKey();
+                for (final var value : entry.getValue()) {
+                    queryStringEncoder.addParam(name, value);
+                }
+            }
+            final var uri = queryStringEncoder.toString();
+
+            final var nettyVersion = request.version()
+                .map(NettyHttpConverters::convert)
+                .orElse(io.netty.handler.codec.http.HttpVersion.HTTP_1_1);
+            final var nettyMethod = convert(method);
+            final var nettyHeaders = request.headers().unwrap();
+
+            final var host = (InetSocketAddress) channel.remoteAddress();
+            nettyHeaders.set(HOST, host.getHostString() + ":" + host.getPort());
+
+            HttpUtil.setKeepAlive(nettyHeaders, nettyVersion, !close);
+
+            if (!nettyHeaders.contains(CONTENT_TYPE)) {
+                final var encoding = request.encoding().orElse(null);
+                if (encoding == null) {
+                    nettyHeaders.set(CONTENT_TYPE, TEXT_PLAIN + ";charset=" + request.charset()
+                        .orElse(StandardCharsets.UTF_8)
+                        .name()
+                        .toLowerCase());
+                }
+                else {
+                    nettyHeaders.set(CONTENT_TYPE, HttpMediaTypes.toMediaType(encoding));
+                }
+            }
+
+            final var body = NettyBodyOutgoing.from(request, channel.alloc(), null);
+
+            if (!nettyHeaders.contains(CONTENT_LENGTH)) {
+                nettyHeaders.set(CONTENT_LENGTH, Long.toString(body.length()));
+            }
+
+            channel.write(new DefaultHttpRequest(nettyVersion, nettyMethod, uri, nettyHeaders));
+            body.writeTo(channel);
+            channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+
+            final var futureRequestResponse = new FutureRequestResponse(request);
+            requestResponseQueue.add(futureRequestResponse);
+            return futureRequestResponse;
         }
         catch (final Throwable throwable) {
             return Future.failure(throwable);
         }
-        final var pendingResponse = new FutureResponse(request);
-        pendingResponseQueue.add(pendingResponse);
-        return pendingResponse;
-    }
-
-    @Override
-    public Future<HttpClientResponse> sendAndClose(final HttpClientRequest request) {
-        isClosing = true;
-        return send(request);
-    }
-
-    @SuppressWarnings("unchecked")
-    private void writeRequestToChannel(final HttpClientRequest request) throws DtoWriteException, IOException {
-        final var body = request.body().orElse(null);
-        final var headers = request.headers().unwrap();
-        final var method = convert(request.method().orElseThrow(() -> new IllegalArgumentException("Expected method")));
-
-        final var queryStringEncoder = new QueryStringEncoder(request.uri()
-            .orElseThrow(() -> new IllegalArgumentException("Expected uri")));
-
-        for (final var entry : request.queryParameters().entrySet()) {
-            final var name = entry.getKey();
-            for (final var value : entry.getValue()) {
-                queryStringEncoder.addParam(name, value);
-            }
-        }
-
-        final var uri = queryStringEncoder.toString();
-        final var version = convert(request.version().orElse(HttpVersion.HTTP_11));
-
-        final var remoteSocketAddress = remoteSocketAddress();
-        headers.set(HOST, remoteSocketAddress.getHostString() + ":" + remoteSocketAddress.getPort());
-        HttpUtil.setKeepAlive(headers, version, !isClosing);
-
-        final ByteBuf content;
-        if (body == null) {
-            content = Unpooled.EMPTY_BUFFER;
-        }
-        else if (body instanceof byte[]) {
-            content = Unpooled.wrappedBuffer((byte[]) body);
-        }
-        else if (body instanceof DtoWritable || body instanceof List) {
-            final var contentType = headers.get(CONTENT_TYPE);
-            final var encoding = request.encoding().orElseThrow(() -> new IllegalStateException("" +
-                "DTO body set without encoding being specified"));
-
-            content = channel.alloc().buffer();
-            final var buffer = new ByteBufWriter(content);
-            final var writer = encoding.writer();
-            if (body instanceof DtoWritable) {
-                writer.writeOne((DtoWritable) body, buffer);
-            }
-            else {
-                writer.writeMany((List<DtoWritable>) body, buffer);
-            }
-
-            final var mediaType = HttpMediaTypes.toMediaType(encoding);
-            if (!headers.contains(ACCEPT)) {
-                headers.set(ACCEPT, mediaType);
-            }
-            if (contentType == null || contentType.isBlank()) {
-                headers.set(CONTENT_TYPE, mediaType);
-            }
-        }
-        else if (body instanceof Path) {
-            final var path = (Path) body;
-            final var file = new RandomAccessFile(path.toFile(), "r");
-            final var length = file.length();
-
-            headers.set(CONTENT_LENGTH, length);
-
-            channel.write(new DefaultHttpRequest(version, method, uri, headers));
-            channel.write(new DefaultFileRegion(file.getChannel(), 0, length));
-            channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
-            return;
-        }
-        else if (body instanceof String) {
-            final var charset = HttpUtil.getCharset(headers.get("content-type"), StandardCharsets.UTF_8);
-            content = Unpooled.wrappedBuffer(((String) body).getBytes(charset));
-        }
-        else {
-            throw new IllegalStateException("Invalid response body supplied \"" + body + "\"");
-        }
-        headers.set(CONTENT_LENGTH, content.readableBytes());
-
-        channel.writeAndFlush(new DefaultFullHttpRequest(version, method, uri, content, headers,
-            EmptyHttpHeaders.INSTANCE));
     }
 
     @Override
@@ -185,78 +333,16 @@ public class NettyHttpClientConnection implements HttpClientConnection {
         return adapt(channel.close());
     }
 
-    public boolean isExpectingResponseResult() {
-        return !pendingResponseQueue.isEmpty();
-    }
+    static class FutureRequestResponse extends FutureCompletionUnsafe<HttpIncomingResponse> {
+        private final HttpOutgoingRequest<?> request;
 
-    public boolean onResponseResult(final Result<HttpClientResponse> result) {
-        final var pendingResponse = pendingResponseQueue.poll();
-        if (pendingResponse == null) {
-            throw new IllegalStateException("No pending response available", result.isSuccess()
-                ? null
-                : result.fault());
-        }
-        return pendingResponse.setResult(result);
-    }
-
-    public HttpClientRequest pendingResponseRequest() {
-        final var futureResponse = pendingResponseQueue.peek();
-        if (futureResponse == null) {
-            throw new IllegalStateException("No pending response");
-        }
-        return futureResponse.request();
-    }
-
-    private static class FutureResponse implements Future<HttpClientResponse> {
-        private final HttpClientRequest request;
-
-        private Consumer<Result<HttpClientResponse>> consumer = null;
-        private boolean isDone = false;
-        private Result<HttpClientResponse> pendingResult = null;
-
-        private FutureResponse(final HttpClientRequest request) {
-            this.request = Objects.requireNonNull(request, "Expected request");
+        private FutureRequestResponse(final HttpOutgoingRequest<?> request) {
+            this.request = request;
         }
 
-        @Override
-        public void onResult(final Consumer<Result<HttpClientResponse>> consumer) {
-            if (isDone) {
-                return;
-            }
-            if (pendingResult != null) {
-                consumer.accept(pendingResult);
-                isDone = true;
-            }
-            else {
-                this.consumer = consumer;
-            }
-        }
-
-        /*
-         * Cancelling simply causes the response to be ignored. If not wanting
-         * the response to be received at all the connection must be closed.
-         */
-        @Override
-        public void cancel(final boolean mayInterruptIfRunning) {
-            isDone = true;
-        }
-
-        public HttpClientRequest request() {
+        public HttpOutgoingRequest<?> request() {
             return request;
         }
-
-        public boolean setResult(final Result<HttpClientResponse> result) {
-            if (isDone) {
-                return false;
-            }
-            if (consumer != null) {
-                consumer.accept(result);
-                isDone = true;
-            }
-            else {
-                pendingResult = result;
-            }
-            return true;
-        }
     }
+
 }

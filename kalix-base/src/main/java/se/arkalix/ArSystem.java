@@ -11,7 +11,7 @@ import se.arkalix.internal.util.concurrent.NettyScheduler;
 import se.arkalix.plugin.Plugin;
 import se.arkalix.plugin.PluginFacade;
 import se.arkalix.query.ServiceQuery;
-import se.arkalix.security.NotSecureException;
+import se.arkalix.security.SecurityDisabled;
 import se.arkalix.security.identity.OwnedIdentity;
 import se.arkalix.security.identity.SystemIdentity;
 import se.arkalix.security.identity.TrustStore;
@@ -178,13 +178,13 @@ public class ArSystem {
      * to use.
      *
      * @return The cryptographic identity of this system.
-     * @throws NotSecureException If this system is not running in secure
+     * @throws SecurityDisabled If this system is not running in secure
      *                            mode.
      */
     @ThreadSafe
     public final OwnedIdentity identity() {
         if (!isSecure) {
-            throw new NotSecureException("System \"" + name() + "\" not " +
+            throw new SecurityDisabled("System \"" + name() + "\" not " +
                 "in secure mode");
         }
         return identity;
@@ -195,13 +195,13 @@ public class ArSystem {
      * has been {@link Builder#trustStore(TrustStore)} configured} to use.
      *
      * @return Trust store, which contains certificates trusted by this system.
-     * @throws NotSecureException If this system is not running in secure
+     * @throws SecurityDisabled If this system is not running in secure
      *                            mode.
      */
     @ThreadSafe
     public final TrustStore trustStore() {
         if (!isSecure) {
-            throw new NotSecureException("System \"" + name() + "\" not " +
+            throw new SecurityDisabled("System \"" + name() + "\" not " +
                 "in secure mode");
         }
         return trustStore;

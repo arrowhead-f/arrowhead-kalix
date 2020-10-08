@@ -17,7 +17,7 @@ import java.util.*;
  * class.
  */
 public class AccessByCloudCertificate implements AccessPolicy {
-    static final AccessByCloudCertificate INSTANCE = new AccessByCloudCertificate();
+    static final AccessByCloudCertificate instance = new AccessByCloudCertificate();
 
     private AccessByCloudCertificate() {}
 

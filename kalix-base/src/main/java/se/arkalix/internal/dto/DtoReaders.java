@@ -1,7 +1,6 @@
 package se.arkalix.internal.dto;
 
 import se.arkalix.dto.DtoReadException;
-import se.arkalix.dto.binary.BinaryReader;
 import se.arkalix.util.annotation.Internal;
 
 import java.lang.reflect.InvocationTargetException;

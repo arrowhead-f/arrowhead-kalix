@@ -1,18 +1,39 @@
-package se.arkalix.net.http.client;
+package se.arkalix.net.http;
 
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadable;
-import se.arkalix.net.http.*;
 import se.arkalix.util.concurrent.Future;
 
-import java.util.List;
-import java.util.Optional;
-
 /**
- * An incoming  HTTP response.
+ * An incoming HTTP response.
  */
 @SuppressWarnings("unused")
-public interface HttpClientResponse extends HttpBodyReceiver {
+public interface HttpIncomingResponse extends HttpIncoming {
+    /**
+     * Retrieves the body of this response, if its status code is in the range
+     * 200-299.
+     * <p>
+     * If the body is to be decoded, an attempt will be made to automatically
+     * resolve a supported DTO encoding. If the attempt fails an exception is
+     * thrown.
+     *
+     * @param class_ Class to decode incoming HTTP body into.
+     * @param <R>    Type of {@code class_}.
+     * @return Future completed immediately with an exception if the status
+     * code is outside the success range, or when the incoming HTTP body has
+     * been fully received and decoded into an instance of {@code class_}.
+     * @throws se.arkalix.net.MessageException If resolving a default encoding
+     *                                         failed.
+     * @throws IllegalStateException           If the body has already been
+     *                                         requested.
+     */
+    default <R extends DtoReadable> Future<R> bodyAsIfSuccess(final Class<R> class_) {
+        if (status().isSuccess()) {
+            return bodyAs(class_);
+        }
+        return Future.failure(reject());
+    }
+
     /**
      * Retrieves the body of this response, if its status code is in the range
      * 200-299.
@@ -25,40 +46,12 @@ public interface HttpClientResponse extends HttpBodyReceiver {
      * been fully received and decoded into an instance of {@code class_}.
      * @throws IllegalStateException If the body has already been requested.
      */
-    default <R extends DtoReadable> Future<R> bodyAsClassIfSuccess(
-        final DtoEncoding encoding,
-        final Class<R> class_)
-    {
+    default <R extends DtoReadable> Future<R> bodyAsIfSuccess(final DtoEncoding encoding, final Class<R> class_) {
         if (status().isSuccess()) {
             return bodyAs(encoding, class_);
         }
         return Future.failure(reject());
     }
-
-    /**
-     * Gets a response header value by name.
-     *
-     * @param name Name of header. Case insensitive. Prefer lowercase.
-     * @return Header value, if any.
-     */
-    default Optional<String> header(final CharSequence name) {
-        return headers().get(name);
-    }
-
-    /**
-     * Gets all header values associated with given {@code name}, if any.
-     *
-     * @param name Name of header. Case is ignored. Prefer lowercase.
-     * @return Header values. May be an empty list.
-     */
-    default List<String> headers(final CharSequence name) {
-        return headers().getAll(name);
-    }
-
-    /**
-     * @return Response headers.
-     */
-    HttpHeaders headers();
 
     /**
      * Creates an exception containing this response.
@@ -69,8 +62,8 @@ public interface HttpClientResponse extends HttpBodyReceiver {
      *
      * @return Exception wrapping this response.
      */
-    default HttpClientResponseRejectedException reject() {
-        return new HttpClientResponseRejectedException(this);
+    default HttpIncomingResponseUnexpected reject() {
+        return new HttpIncomingResponseUnexpected(this);
     }
 
     /**
@@ -81,8 +74,8 @@ public interface HttpClientResponse extends HttpBodyReceiver {
      *               fulfill.
      * @return Exception wrapping this response.
      */
-    default HttpClientResponseRejectedException reject(final String reason) {
-        return new HttpClientResponseRejectedException(this, reason);
+    default HttpIncomingResponseUnexpected reject(final String reason) {
+        return new HttpIncomingResponseUnexpected(this, reason);
     }
 
     /**
@@ -95,8 +88,8 @@ public interface HttpClientResponse extends HttpBodyReceiver {
      *               arbitrary requirement.
      * @return Exception wrapping this response.
      */
-    default HttpClientResponseRejectedException reject(final String reason, final Throwable cause) {
-        return new HttpClientResponseRejectedException(this, reason, cause);
+    default HttpIncomingResponseUnexpected reject(final String reason, final Throwable cause) {
+        return new HttpIncomingResponseUnexpected(this, reason, cause);
     }
 
     /**
@@ -107,7 +100,7 @@ public interface HttpClientResponse extends HttpBodyReceiver {
      * This method is primarily intended to be used when receiving messages
      * that contain unexpected status codes and no response body is expected.
      * If a response body <i>is</i> expected, please use
-     * {@link #bodyAsClassIfSuccess(DtoEncoding, Class)} instead. If the
+     * {@link #bodyAsIfSuccess(DtoEncoding, Class)} instead. If the
      * reason behind the rejection requires more explanation, please use
      * {@link #rejectIfNotSuccess(String)} instead.
      *
@@ -128,7 +121,7 @@ public interface HttpClientResponse extends HttpBodyReceiver {
      * This method is primarily intended to be used when receiving messages
      * that contain unexpected status codes and no response body is expected.
      * If a response body <i>is</i> expected, please use
-     * {@link #bodyAsClassIfSuccess(DtoEncoding, Class)} instead.
+     * {@link #bodyAsIfSuccess(DtoEncoding, Class)} instead.
      *
      * @param reason Description of what expectations this request fails to
      *               fulfill.
@@ -144,15 +137,10 @@ public interface HttpClientResponse extends HttpBodyReceiver {
     /**
      * @return The request that produced this response.
      */
-    HttpClientRequest request();
+    HttpOutgoingRequest<?> request();
 
     /**
      * @return Response status.
      */
     HttpStatus status();
-
-    /**
-     * @return Response version.
-     */
-    HttpVersion version();
 }

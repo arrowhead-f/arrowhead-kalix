@@ -52,7 +52,7 @@ public interface AccessPolicy {
      */
     @ThreadSafe
     static AccessPolicy cloud() {
-        return AccessByCloudCertificate.INSTANCE;
+        return AccessByCloudCertificate.instance;
     }
 
     /**
@@ -137,6 +137,6 @@ public interface AccessPolicy {
      */
     @ThreadSafe
     static AccessPolicy unrestricted() {
-        return AccessUnrestricted.INSTANCE;
+        return AccessUnrestricted.instance;
     }
 }

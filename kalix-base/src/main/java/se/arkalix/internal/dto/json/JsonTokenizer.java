@@ -93,7 +93,8 @@ public final class JsonTokenizer {
         case '7':
         case '8':
         case '9':
-            return tokenizeNumber();
+            tokenizeNumber();
+            return true;
 
         case 't': return tokenizeTrue();
         case 'f': return tokenizeFalse();
@@ -228,7 +229,7 @@ public final class JsonTokenizer {
         return false;
     }
 
-    private boolean tokenizeNumber() {
+    private void tokenizeNumber() {
         number:
         while (source.readableBytes() > 0) {
             switch (source.peekByte()) {
@@ -248,7 +249,6 @@ public final class JsonTokenizer {
             }
         }
         collectCandidate(JsonType.NUMBER);
-        return true;
     }
 
     private boolean tokenizeTrue() {

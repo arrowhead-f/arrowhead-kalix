@@ -49,7 +49,7 @@ public class TestJsonWriter {
         return Stream.of(
             arguments("[[]]", List.of(new JsonArray())),
             arguments("[{\"x\":1}]", List.of(new JsonObject(new JsonPair("x", new JsonNumber(1))))),
-            arguments("[[null],[true]]", List.of(new JsonArray(JsonNull.INSTANCE),
+            arguments("[[null],[true]]", List.of(new JsonArray(JsonNull.instance),
                 new JsonArray(JsonBoolean.TRUE)))
         );
     }

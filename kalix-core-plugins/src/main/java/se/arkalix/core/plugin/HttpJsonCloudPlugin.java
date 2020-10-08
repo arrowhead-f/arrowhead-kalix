@@ -29,7 +29,6 @@ import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.concurrent.FutureAnnouncement;
 import se.arkalix.util.concurrent.Futures;
 
-import javax.net.ssl.SSLException;
 import java.net.InetSocketAddress;
 import java.security.PublicKey;
 import java.util.*;
@@ -60,6 +59,7 @@ import static se.arkalix.util.concurrent.Future.done;
  * systems using them, making them inaccessible via the
  * {@link ArSystem#consume()} method.
  */
+@SuppressWarnings("unused")
 public class HttpJsonCloudPlugin implements Plugin {
     private static final Logger logger = LoggerFactory.getLogger(HttpJsonCloudPlugin.class);
 
@@ -103,9 +103,8 @@ public class HttpJsonCloudPlugin implements Plugin {
     @Override
     public Future<PluginAttached> attachTo(
         final ArSystem system,
-        final Map<Class<? extends Plugin>, PluginFacade> dependencies)
-        throws SSLException
-    {
+        final Map<Class<? extends Plugin>, PluginFacade> dependencies
+    ) {
         return Future.success(new Attached(system));
     }
 
@@ -119,7 +118,7 @@ public class HttpJsonCloudPlugin implements Plugin {
         private FutureAnnouncement<Collection<ServiceDescription>> orchestrationPlainStoreQueryAnnouncement = null;
         private FutureAnnouncement<HttpJsonServiceDiscoveryService> serviceDiscoveryAnnouncement = null;
 
-        Attached(final ArSystem system) throws SSLException {
+        Attached(final ArSystem system) {
             this.system = Objects.requireNonNull(system, "Expected system");
             this.systemDetails = SystemDetails.from(system);
             this.client = HttpClient.from(system);
@@ -276,8 +275,8 @@ public class HttpJsonCloudPlugin implements Plugin {
 
         private Future<Collection<ServiceDescription>> executeOrchestrationQueryUsing(
             final ServiceQuery query,
-            final OrchestrationPattern pattern)
-        {
+            final OrchestrationPattern pattern
+        ) {
             Objects.requireNonNull(pattern, "Expected pattern");
 
             final var isTraceEnabled = logger.isTraceEnabled();
@@ -326,7 +325,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                         }
                         final ProviderDescription provider;
                         if (isSecure) {
-                            final var identity = new SystemIdentity(connection.certificateChain());
+                            final var identity = new SystemIdentity(connection.remoteCertificateChain());
                             final var name = identity.name();
                             if (!Objects.equals(name, "service_registry")) {
                                 return Result.failure(new CloudException("" +
@@ -343,7 +342,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                             provider = new ProviderDescription("service_registry", serviceRegistrySocketAddress);
                         }
 
-                        final var serviceDiscovery = new HttpJsonServiceDiscoveryService(client,
+                        final var serviceDiscovery = new HttpJsonServiceDiscoveryService(system,
                             new ServiceDescription.Builder()
                                 .name("service-discovery")
                                 .provider(provider)
@@ -464,8 +463,8 @@ public class HttpJsonCloudPlugin implements Plugin {
                                 "No orchestration service available; cannot " +
                                 "request orchestration rules"));
                         }
-                        final var orchestration = new HttpJsonOrchestrationService(new HttpConsumer(
-                            client,
+                        final var orchestration = new HttpJsonOrchestrationService(HttpConsumer.create(
+                            system,
                             services.get(0).toServiceDescription(),
                             Collections.singleton(EncodingDescriptor.JSON)));
 
