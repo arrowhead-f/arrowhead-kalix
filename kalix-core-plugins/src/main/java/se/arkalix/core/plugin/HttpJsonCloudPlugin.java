@@ -211,6 +211,14 @@ public class HttpJsonCloudPlugin implements Plugin {
 
         @Override
         public void onServiceDismissed(final ServiceDescription service) {
+            if (!serviceRegistrationPredicate.test(service)) {
+                if (logger.isInfoEnabled()) {
+                    logger.info("HTTP/JSON cloud ignoring to unregister \"{}\" " +
+                        "provided by \"{}\"; the service failed to pass the " +
+                        "service registration predicate ", service.name(), system.name());
+                }
+                return;
+            }
             if (logger.isInfoEnabled()) {
                 logger.info("HTTP/JSON cloud plugin unregistering the \"{}\"" +
                     "service provided by the \"{}\" system ...", service.name(), system.name());
