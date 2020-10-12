@@ -2,7 +2,7 @@ package se.arkalix;
 
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.InterfaceDescriptor;
-import se.arkalix.internal.DefaultServiceCache;
+import se.arkalix.internal.DefaultServiceDescriptionCache;
 import se.arkalix.util.annotation.ThreadSafe;
 
 import java.time.Duration;
@@ -16,15 +16,15 @@ import java.util.stream.Stream;
  * whose service registry entries have not yet expired.
  */
 @SuppressWarnings("unused")
-public interface ArServiceCache {
+public interface ArServiceDescriptionCache {
     /**
      * Creates a new service cache that will not hold on to provided service
      * descriptions for longer than a default duration.
      *
      * @return New service cache.
      */
-    static ArServiceCache withDefaultEntryLifetimeLimit() {
-        return new DefaultServiceCache(Duration.ofMinutes(5));
+    static ArServiceDescriptionCache withDefaultEntryLifetimeLimit() {
+        return new DefaultServiceDescriptionCache(Duration.ofMinutes(5));
     }
 
     /**
@@ -39,8 +39,8 @@ public interface ArServiceCache {
      *                           expiration time}.
      * @return New service cache.
      */
-    static ArServiceCache withEntryLifetimeLimit(final Duration entryLifetimeLimit) {
-        return new DefaultServiceCache(entryLifetimeLimit);
+    static ArServiceDescriptionCache withEntryLifetimeLimit(final Duration entryLifetimeLimit) {
+        return new DefaultServiceDescriptionCache(entryLifetimeLimit);
     }
 
     /**
