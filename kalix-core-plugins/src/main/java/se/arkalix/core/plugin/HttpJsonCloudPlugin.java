@@ -10,7 +10,7 @@ import se.arkalix.core.plugin.or.OrchestrationStrategy;
 import se.arkalix.core.plugin.sr.HttpJsonServiceDiscoveryService;
 import se.arkalix.core.plugin.sr.ServiceQueryBuilder;
 import se.arkalix.core.plugin.sr.ServiceRegistration;
-import se.arkalix.description.ProviderDescription;
+import se.arkalix.description.SystemDescription;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.InterfaceDescriptor;
@@ -323,7 +323,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                                 : "not running in secure mode, while this system is")
                                 + "; failed to resolve service discovery service "));
                         }
-                        final ProviderDescription provider;
+                        final SystemDescription provider;
                         if (isSecure) {
                             final var identity = new SystemIdentity(connection.remoteCertificateChain());
                             final var name = identity.name();
@@ -336,10 +336,10 @@ public class HttpJsonCloudPlugin implements Plugin {
                                     "to be \"service_registry\"; failed to " +
                                     "resolve service discovery service "));
                             }
-                            provider = new ProviderDescription(name, serviceRegistrySocketAddress, identity.publicKey());
+                            provider = SystemDescription.from(name, identity.publicKey(), serviceRegistrySocketAddress);
                         }
                         else {
-                            provider = new ProviderDescription("service_registry", serviceRegistrySocketAddress);
+                            provider = SystemDescription.from("service_registry", serviceRegistrySocketAddress);
                         }
 
                         final var serviceDiscovery = new HttpJsonServiceDiscoveryService(system,

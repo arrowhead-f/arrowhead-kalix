@@ -6,7 +6,7 @@ import se.arkalix.ArService;
 import se.arkalix.ArServiceCache;
 import se.arkalix.ArServiceHandle;
 import se.arkalix.ArSystem;
-import se.arkalix.description.ProviderDescription;
+import se.arkalix.description.SystemDescription;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.internal.plugin.PluginNotifier;
 import se.arkalix.plugin.Plugin;
@@ -41,7 +41,7 @@ public class DefaultSystem implements ArSystem {
     private final ArServiceCache consumedServices;
     private final Map<Class<? extends ArService>, FutureAnnouncement<ArServer>> servers = new ConcurrentHashMap<>();
 
-    private final ProviderDescription description;
+    private final SystemDescription description;
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 
     private Map<Class<? extends Plugin>, PluginFacade> pluginClassToFacade = null;
@@ -83,9 +83,9 @@ public class DefaultSystem implements ArSystem {
             name = builder.name;
         }
 
-        description = new ProviderDescription(name, localSocketAddress, isSecure
+        description = SystemDescription.from(name, isSecure
             ? identity.publicKey()
-            : null);
+            : null, localSocketAddress);
 
         consumedServices = Objects.requireNonNullElseGet(builder.serviceCache,
             ArServiceCache::withDefaultEntryLifetimeLimit);
@@ -143,7 +143,7 @@ public class DefaultSystem implements ArSystem {
     }
 
     @Override
-    public ProviderDescription description() {
+    public SystemDescription description() {
         return description;
     }
 

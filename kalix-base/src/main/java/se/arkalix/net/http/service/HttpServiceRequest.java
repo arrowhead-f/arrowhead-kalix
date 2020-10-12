@@ -1,6 +1,6 @@
 package se.arkalix.net.http.service;
 
-import se.arkalix.description.ConsumerDescription;
+import se.arkalix.description.SystemIdentityDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadable;
@@ -96,7 +96,7 @@ public interface HttpServiceRequest extends HttpIncoming {
      *                            this request is not running in {@link
      *                            se.arkalix.security secure mode}.
      */
-    ConsumerDescription consumer();
+    SystemIdentityDescription consumer();
 
     /**
      * @return HTTP version used by request.
@@ -182,7 +182,7 @@ public interface HttpServiceRequest extends HttpIncoming {
             }
 
             @Override
-            public ConsumerDescription consumer() {
+            public SystemIdentityDescription consumer() {
                 return self.consumer();
             }
 

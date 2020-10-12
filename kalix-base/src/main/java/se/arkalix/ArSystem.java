@@ -1,6 +1,6 @@
 package se.arkalix;
 
-import se.arkalix.description.ProviderDescription;
+import se.arkalix.description.SystemDescription;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.internal.DefaultSystem;
 import se.arkalix.plugin.Plugin;
@@ -105,7 +105,7 @@ public interface ArSystem {
      * @return Description of this system.
      */
     @ThreadSafe
-    ProviderDescription description();
+    SystemDescription description();
 
     /**
      * Creates new query useful for resolving services provided by other
