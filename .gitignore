@@ -2,3 +2,10 @@
 .gradle/
 build/
 /gradle*
+
+### Eclipse/STS ###
+*.classpath
+*.factorypath
+*.project
+*.settings
+bin/
