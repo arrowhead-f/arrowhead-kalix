@@ -115,7 +115,7 @@ public class DefaultSystem implements ArSystem {
     }
 
     @Override
-    public InetSocketAddress localSocketAddress() {
+    public InetSocketAddress socketAddress() {
         return localSocketAddress;
     }
 

@@ -13,19 +13,6 @@ import java.util.Objects;
  */
 public interface SystemDescription {
     /**
-     * Creates new Arrowhead provider system description from given system
-     * identity and remote socket address.
-     *
-     * @param identity            Identity of described provider system.
-     * @param remoteSocketAddress Remote socket address of the same system.
-     * @return New provider description.
-     */
-    static SystemDescription from(final SystemIdentity identity, final InetSocketAddress remoteSocketAddress) {
-        Objects.requireNonNull(identity);
-        return new DefaultSystemDescription(identity.name(), identity.publicKey(), remoteSocketAddress);
-    }
-
-    /**
      * Creates new Arrowhead provider system description.
      *
      * @param name                System name.

@@ -110,7 +110,7 @@ public class NettyHttpClient implements HttpClient {
             builder.insecure();
         }
 
-        builder.localSocketAddress(new InetSocketAddress(system.localAddress(), 0));
+        builder.localSocketAddress(new InetSocketAddress(system.address(), 0));
         client = builder.build();
 
         cache.put(system, client);

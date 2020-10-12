@@ -16,32 +16,51 @@ import java.util.stream.Collectors;
  */
 public interface ArService {
     /**
+     * Gets service name.
+     *
      * @return Service name.
      */
     String name();
 
     /**
+     * Gets service URI.
+     *
      * @return Service URI.
      */
     String uri();
 
+    /*
+     * Gets system providing this service.
+     *
+     * @return Application service provider.
+     */
+    // ArSystem provider();
+
     /**
-     * @return Application-level transport protocol through which service is
-     * made available to other systems.
+     * Gets descriptor for application-level transport protocol through which
+     * service is made available to other systems.
+     *
+     * @return Service transport descriptor.
      */
     TransportDescriptor transport();
 
     /**
+     * Gets access policy enforced by this service.
+     *
      * @return Service access policy.
      */
     AccessPolicy accessPolicy();
 
     /**
-     * @return Unmodifiable list of encodings the service can read and write.
+     * Gets encodings the service can read and write.
+     *
+     * @return Unmodifiable list of supported encodings.
      */
     List<EncodingDescriptor> encodings();
 
     /**
+     * Gets service metadata.
+     *
      * @return Unmodifiable map of service metadata.
      */
     Map<String, String> metadata();
@@ -58,14 +77,15 @@ public interface ArService {
     }
 
     /**
+     * Gets service version.
+     *
      * @return Service version.
      */
     int version();
 
     /**
-     * Creates a description of this service.
+     * Creates a new description of this service.
      *
-     * @param system The system owning this service.
      * @return New description.
      */
     default ServiceDescription describeAsIfProvidedBy(final ArSystem system) {

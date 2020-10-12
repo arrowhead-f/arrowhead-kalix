@@ -66,8 +66,8 @@ public interface SystemDetails {
     static SystemDetailsDto from(final ArSystem system) {
         return new SystemDetailsBuilder()
             .name(system.name())
-            .hostname(system.localSocketAddress().getHostString())
-            .port(system.localPort())
+            .hostname(system.socketAddress().getHostString())
+            .port(system.port())
             .publicKeyBase64(system.isSecure()
                 ? Base64.getEncoder().encodeToString(system.identity().publicKey().getEncoded())
                 : null)

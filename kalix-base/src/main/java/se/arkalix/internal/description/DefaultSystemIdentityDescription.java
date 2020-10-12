@@ -9,12 +9,12 @@ import java.net.InetSocketAddress;
 import java.util.Objects;
 
 @Internal
-public class DefaultSystemPeerDescription implements SystemIdentityDescription {
+public class DefaultSystemIdentityDescription implements SystemIdentityDescription {
     private final String name;
     private final SystemIdentity identity;
     private final InetSocketAddress socketAddress;
 
-    public DefaultSystemPeerDescription(
+    public DefaultSystemIdentityDescription(
         final String name,
         final SystemIdentity identity,
         final InetSocketAddress socketAddress

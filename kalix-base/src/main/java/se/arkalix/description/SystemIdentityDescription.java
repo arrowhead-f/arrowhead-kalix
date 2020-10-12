@@ -1,6 +1,6 @@
 package se.arkalix.description;
 
-import se.arkalix.internal.description.DefaultSystemPeerDescription;
+import se.arkalix.internal.description.DefaultSystemIdentityDescription;
 import se.arkalix.security.SecurityDisabled;
 import se.arkalix.security.identity.SystemIdentity;
 
@@ -26,7 +26,7 @@ public interface SystemIdentityDescription extends SystemDescription {
      */
     static SystemIdentityDescription from(final SystemIdentity identity, final InetSocketAddress remoteSocketAddress) {
         Objects.requireNonNull(identity, "Expected identity");
-        return new DefaultSystemPeerDescription(identity.name(), identity, remoteSocketAddress);
+        return new DefaultSystemIdentityDescription(identity.name(), identity, remoteSocketAddress);
     }
 
     /**
@@ -42,7 +42,7 @@ public interface SystemIdentityDescription extends SystemDescription {
      *                              remoteSocketAddress} is {@code null}.
      */
     static SystemIdentityDescription from(final String name, final InetSocketAddress remoteSocketAddress) {
-        return new DefaultSystemPeerDescription(name, null, remoteSocketAddress);
+        return new DefaultSystemIdentityDescription(name, null, remoteSocketAddress);
     }
 
     /**

@@ -64,7 +64,7 @@ public class HttpServer implements ArServer {
                 .handler(new LoggingHandler())
                 .childHandler(new NettyHttpServiceConnectionInitializer(system, server::getServiceByPath, sslContext));
 
-            return adapt(bootstrap.bind(system.localAddress(), system.localPort()))
+            return adapt(bootstrap.bind(system.address(), system.port()))
                 .map(channel -> {
                     server.channel = channel;
                     return server;
