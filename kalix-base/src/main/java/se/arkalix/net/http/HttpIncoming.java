@@ -13,8 +13,10 @@ import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 
 /**
  * An incoming HTTP message.
+ *
+ * @param <Self> Implementing class.
  */
-public interface HttpIncoming extends HttpMessage, MessageIncoming {
+public interface HttpIncoming<Self> extends HttpMessage<Self>, MessageIncoming {
     @Override
     default Optional<Charset> charset() {
         return header(CONTENT_TYPE).flatMap(contentType -> Optional.ofNullable(HttpUtil.getCharset(contentType, null)));

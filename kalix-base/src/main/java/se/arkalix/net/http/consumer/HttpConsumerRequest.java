@@ -3,11 +3,12 @@ package se.arkalix.net.http.consumer;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoWritable;
-import se.arkalix.net.MessageOutgoingWithDefaultEncoding;
+import se.arkalix.net.MessageOutgoingWithImplicitEncoding;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.net.http.HttpOutgoingRequest;
 import se.arkalix.net.http.HttpVersion;
+import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.client.HttpClientRequest;
 import se.arkalix.util.annotation.Internal;
 
@@ -18,11 +19,12 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * The type of request typically recommended for use with {@link HttpConsumer}.
+ * An HTTP request that can be sent to an HTTP server via an {@link
+ * HttpConsumer}.
  */
 @SuppressWarnings("unused")
 public class HttpConsumerRequest
-    implements HttpOutgoingRequest<HttpConsumerRequest>, MessageOutgoingWithDefaultEncoding<HttpConsumerRequest>
+    implements HttpOutgoingRequest<HttpConsumerRequest>, MessageOutgoingWithImplicitEncoding<HttpConsumerRequest>
 {
     private final HttpClientRequest inner = new HttpClientRequest();
 
@@ -120,6 +122,12 @@ public class HttpConsumerRequest
     @Override
     public HttpHeaders headers() {
         return inner.headers();
+    }
+
+    @Override
+    public HttpConsumerRequest clearHeaders() {
+        inner.clearHeaders();
+        return this;
     }
 
     @Override

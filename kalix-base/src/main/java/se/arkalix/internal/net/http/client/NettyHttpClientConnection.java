@@ -18,6 +18,7 @@ import se.arkalix.net.http.*;
 import se.arkalix.net.http.client.HttpClientConnection;
 import se.arkalix.net.http.client.HttpClientConnectionException;
 import se.arkalix.net.http.client.HttpClientRequest;
+import se.arkalix.net.http.client.HttpClientResponse;
 import se.arkalix.security.SecurityDisabled;
 import se.arkalix.util.InternalException;
 import se.arkalix.util.Result;
@@ -132,7 +133,7 @@ public class NettyHttpClientConnection
             }
             return;
         }
-        incomingResponse = new NettyHttpClientResponse(ctx.alloc(), futureRequestResponse.request(), response);
+        incomingResponse = new NettyHttpClientResponse(ctx.alloc(), this, futureRequestResponse.request(), response);
         futureRequestResponse.complete(Result.success(incomingResponse));
     }
 
@@ -254,16 +255,16 @@ public class NettyHttpClientConnection
     }
 
     @Override
-    public Future<HttpIncomingResponse> send(final HttpClientRequest request) {
+    public Future<HttpClientResponse> send(final HttpClientRequest request) {
         return send(request, false);
     }
 
     @Override
-    public Future<HttpIncomingResponse> sendAndClose(final HttpClientRequest request) {
+    public Future<HttpClientResponse> sendAndClose(final HttpClientRequest request) {
         return send(request, true);
     }
 
-    private Future<HttpIncomingResponse> send(final HttpClientRequest request, final boolean close) {
+    private Future<HttpClientResponse> send(final HttpClientRequest request, final boolean close) {
         try {
             if (isClosing) {
                 throw new HttpOutgoingRequestException(request, "Client is closing; cannot send request");
@@ -333,14 +334,14 @@ public class NettyHttpClientConnection
         return adapt(channel.close());
     }
 
-    static class FutureRequestResponse extends FutureCompletionUnsafe<HttpIncomingResponse> {
-        private final HttpOutgoingRequest<?> request;
+    static class FutureRequestResponse extends FutureCompletionUnsafe<HttpClientResponse> {
+        private final HttpClientRequest request;
 
-        private FutureRequestResponse(final HttpOutgoingRequest<?> request) {
+        private FutureRequestResponse(final HttpClientRequest request) {
             this.request = request;
         }
 
-        public HttpOutgoingRequest<?> request() {
+        public HttpClientRequest request() {
             return request;
         }
     }

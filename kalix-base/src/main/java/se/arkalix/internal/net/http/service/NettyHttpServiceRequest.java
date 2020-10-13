@@ -9,6 +9,7 @@ import se.arkalix.internal.net.http.NettyHttpConverters;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.net.http.HttpVersion;
+import se.arkalix.net.http.service.HttpServiceConnection;
 import se.arkalix.net.http.service.HttpServiceRequest;
 import se.arkalix.security.SecurityDisabled;
 import se.arkalix.util.annotation.Internal;
@@ -22,6 +23,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 
 @Internal
 public class NettyHttpServiceRequest extends NettyMessageIncoming implements HttpServiceRequest {
+    private final HttpServiceConnection connection;
     private final QueryStringDecoder queryStringDecoder;
     private final HttpRequest request;
     private final SystemIdentityDescription consumer;
@@ -36,6 +38,7 @@ public class NettyHttpServiceRequest extends NettyMessageIncoming implements Htt
             builder.alloc,
             Objects.requireNonNull(builder.request, "Expected request")
                 .headers().getInt(CONTENT_LENGTH, 0));
+        connection = Objects.requireNonNull(builder.connection, "Expected connection");
         queryStringDecoder = Objects.requireNonNull(builder.queryStringDecoder, "Expected queryStringDecoder");
         request = builder.request;
         consumer = builder.consumer;
@@ -47,6 +50,12 @@ public class NettyHttpServiceRequest extends NettyMessageIncoming implements Htt
             headers = new HttpHeaders(request.headers());
         }
         return headers;
+    }
+
+    @Override
+    public HttpServiceRequest clearHeaders() {
+        request.headers().clear();
+        return this;
     }
 
     @Override
@@ -76,6 +85,11 @@ public class NettyHttpServiceRequest extends NettyMessageIncoming implements Htt
     }
 
     @Override
+    public HttpServiceConnection connection() {
+        return connection;
+    }
+
+    @Override
     public SystemIdentityDescription consumer() {
         if (consumer == null) {
             throw new SecurityDisabled("Not in secure mode; consumer " +
@@ -96,10 +110,16 @@ public class NettyHttpServiceRequest extends NettyMessageIncoming implements Htt
         private ByteBufAllocator alloc;
         private HttpRequest request;
         private SystemIdentityDescription consumer;
+        private HttpServiceConnection connection;
         private QueryStringDecoder queryStringDecoder;
 
         public Builder alloc(final ByteBufAllocator alloc) {
             this.alloc = alloc;
+            return this;
+        }
+
+        public Builder connection(final HttpServiceConnection connection) {
+            this.connection = connection;
             return this;
         }
 

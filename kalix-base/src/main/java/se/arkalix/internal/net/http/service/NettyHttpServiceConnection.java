@@ -1,6 +1,7 @@
 package se.arkalix.internal.net.http.service;
 
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
@@ -19,10 +20,13 @@ import se.arkalix.internal.net.NettySimpleChannelInboundHandler;
 import se.arkalix.internal.net.http.HttpMediaTypes;
 import se.arkalix.internal.net.http.NettyHttpConverters;
 import se.arkalix.net.http.HttpStatus;
+import se.arkalix.net.http.service.HttpServiceConnection;
 import se.arkalix.net.http.service.HttpServiceRequestException;
 import se.arkalix.query.ServiceNotFoundException;
 import se.arkalix.security.access.AccessTokenException;
+import se.arkalix.security.identity.SystemIdentity;
 import se.arkalix.util.annotation.Internal;
+import se.arkalix.util.concurrent.Future;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -34,9 +38,13 @@ import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaderValues.TEXT_PLAIN;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static se.arkalix.internal.net.http.NettyHttpConverters.convert;
+import static se.arkalix.internal.util.concurrent.NettyFutures.adapt;
 
 @Internal
-public class NettyHttpServiceConnection extends NettySimpleChannelInboundHandler<Object> {
+public class NettyHttpServiceConnection
+    extends NettySimpleChannelInboundHandler<Object>
+    implements HttpServiceConnection
+{
     private static final Logger logger = LoggerFactory.getLogger(NettyHttpServiceConnection.class);
 
     private final ArSystem system;
@@ -44,6 +52,7 @@ public class NettyHttpServiceConnection extends NettySimpleChannelInboundHandler
     private final SslHandler sslHandler;
 
     private SystemIdentityDescription consumer = null;
+    private Channel channel = null;
 
     private HttpRequest nettyRequest = null;
     private NettyHttpServiceRequest kalixRequest = null;
@@ -63,6 +72,7 @@ public class NettyHttpServiceConnection extends NettySimpleChannelInboundHandler
 
     @Override
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {
+        channel = ctx.channel();
         if (sslHandler != null) {
             sslHandler.handshakeFuture().addListener(future -> {
                 Throwable cause;
@@ -176,6 +186,7 @@ public class NettyHttpServiceConnection extends NettySimpleChannelInboundHandler
 
         this.kalixRequest = new NettyHttpServiceRequest.Builder()
             .alloc(ctx.alloc())
+            .connection(this)
             .queryStringDecoder(queryStringDecoder)
             .request(nettyRequest)
             .consumer(consumer)
@@ -376,5 +387,40 @@ public class NettyHttpServiceConnection extends NettySimpleChannelInboundHandler
         kalixRequest = null;
         service = null;
         isClosing = false;
+    }
+
+    @Override
+    public SystemIdentity remoteIdentity() {
+        return consumer.identity();
+    }
+
+    @Override
+    public ArSystem localSystem() {
+        return system;
+    }
+
+    @Override
+    public InetSocketAddress remoteSocketAddress() {
+        return (InetSocketAddress) channel.remoteAddress();
+    }
+
+    @Override
+    public InetSocketAddress localSocketAddress() {
+        return (InetSocketAddress) channel.localAddress();
+    }
+
+    @Override
+    public boolean isLive() {
+        return channel.isActive();
+    }
+
+    @Override
+    public boolean isSecure() {
+        return sslHandler != null;
+    }
+
+    @Override
+    public Future<?> close() {
+        return adapt(channel.close());
     }
 }

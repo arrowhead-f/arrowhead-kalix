@@ -7,14 +7,10 @@ import java.net.InetSocketAddress;
 import java.security.cert.Certificate;
 
 /**
- * An HTTP connection through which this application can send requests to a
- * remote host.
- *
- * @param <Request>  Type of HTTP request.
- * @param <Response> Type of HTTP response.
+ * A connection established with a remote peer, allowing for messages to either
+ * be sent to or received from that peer.
  */
-@SuppressWarnings("unused")
-public interface HttpOutgoingConnection<Request extends HttpOutgoingRequest<?>, Response extends HttpIncomingResponse> {
+public interface HttpConnection {
     /**
      * @return Certificate chain associated with host reachable via this
      * connection.
@@ -49,26 +45,6 @@ public interface HttpOutgoingConnection<Request extends HttpOutgoingRequest<?>, 
      * @return {@code true} only if this is an HTTPS connection.
      */
     boolean isSecure();
-
-    /**
-     * Sends given {@code request} to connected remote host, awaits either a
-     * response or an error and then completes the returned {@code Future} with
-     * the resulting response or error.
-     *
-     * @param request HTTP request to send.
-     * @return Future of {@code Response}.
-     */
-    Future<Response> send(final Request request);
-
-    /**
-     * Sends given {@code request} to connected remote host, awaits either a
-     * response or an error, <i>closes this connection</i> and then completes
-     * the returned {@code Future} with the resulting response or error.
-     *
-     * @param request HTTP request to send.
-     * @return Future of {@code Response}.
-     */
-    Future<Response> sendAndClose(final Request request);
 
     /**
      * Attempts to close the connection.

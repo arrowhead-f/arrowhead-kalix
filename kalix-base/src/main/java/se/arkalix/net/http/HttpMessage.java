@@ -7,8 +7,10 @@ import java.util.Optional;
 
 /**
  * An arbitrary HTTP message.
+ *
+ * @param <Self> Implementing class.
  */
-public interface HttpMessage extends Message {
+public interface HttpMessage<Self> extends Message {
     /**
      * Gets value of first header with given {@code name}, if any such.
      *
@@ -33,4 +35,11 @@ public interface HttpMessage extends Message {
      * @return <i>Modifiable</i> map of all request headers.
      */
     HttpHeaders headers();
+
+    /**
+     * Removes all headers from this response.
+     *
+     * @return This response.
+     */
+    Self clearHeaders();
 }

@@ -3,8 +3,6 @@ package se.arkalix.net.http.client;
 import se.arkalix.ArSystem;
 import se.arkalix.internal.net.http.client.NettyHttpClient;
 import se.arkalix.internal.net.http.consumer.DefaultHttpConsumer;
-import se.arkalix.net.http.HttpIncomingResponse;
-import se.arkalix.net.http.HttpOutgoingRequest;
 import se.arkalix.security.identity.OwnedIdentity;
 import se.arkalix.security.identity.TrustStore;
 import se.arkalix.util.annotation.ThreadSafe;
@@ -142,7 +140,7 @@ public interface HttpClient {
      * @throws NullPointerException If {@code remoteSocketAddress} or
      *                              {@code request} is {@code null}.
      */
-    default Future<HttpIncomingResponse> send(
+    default Future<HttpClientResponse> send(
         final InetSocketAddress remoteSocketAddress,
         final HttpClientRequest request
     ) {
@@ -188,7 +186,9 @@ public interface HttpClient {
          * @see se.arkalix.security Arrowhead Security
          */
         public final Builder identity(final OwnedIdentity identity) {
-            return identity(identity.chain(), identity.privateKey());
+            return identity != null
+                ? identity(identity.chain(), identity.privateKey())
+                : identity(null, null);
         }
 
         /**
@@ -228,7 +228,9 @@ public interface HttpClient {
          * @see se.arkalix.security Arrowhead Security
          */
         public final Builder trustStore(final TrustStore trustStore) {
-            return trustStore(trustStore.certificates());
+            return trustStore(trustStore != null
+                ? trustStore.certificates()
+                : null);
         }
 
         /**

@@ -3,7 +3,13 @@ package se.arkalix.internal.net.http.client;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.codec.http.HttpResponse;
 import se.arkalix.internal.net.NettyMessageIncoming;
-import se.arkalix.net.http.*;
+import se.arkalix.net.http.HttpHeaders;
+import se.arkalix.net.http.HttpOutgoingRequest;
+import se.arkalix.net.http.HttpStatus;
+import se.arkalix.net.http.HttpVersion;
+import se.arkalix.net.http.client.HttpClientConnection;
+import se.arkalix.net.http.client.HttpClientRequest;
+import se.arkalix.net.http.client.HttpClientResponse;
 import se.arkalix.util.annotation.Internal;
 
 import java.util.Objects;
@@ -12,8 +18,9 @@ import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static se.arkalix.internal.net.http.NettyHttpConverters.convert;
 
 @Internal
-public class NettyHttpClientResponse extends NettyMessageIncoming implements HttpIncomingResponse {
-    private final HttpOutgoingRequest<?> request;
+public class NettyHttpClientResponse extends NettyMessageIncoming implements HttpClientResponse {
+    private final HttpClientConnection connection;
+    private final HttpClientRequest request;
     private final HttpResponse inner;
 
     private HttpHeaders headers = null;
@@ -22,11 +29,13 @@ public class NettyHttpClientResponse extends NettyMessageIncoming implements Htt
 
     public NettyHttpClientResponse(
         final ByteBufAllocator alloc,
-        final HttpOutgoingRequest<?> request,
+        final HttpClientConnection connection,
+        final HttpClientRequest request,
         final HttpResponse inner
     ) {
         super(alloc, Objects.requireNonNull(inner, "Expected inner")
             .headers().getInt(CONTENT_LENGTH, 0));
+        this.connection = Objects.requireNonNull(connection, "Expected connection");
         this.request = Objects.requireNonNull(request, "Expected request");
         this.inner = inner;
     }
@@ -40,7 +49,13 @@ public class NettyHttpClientResponse extends NettyMessageIncoming implements Htt
     }
 
     @Override
-    public HttpOutgoingRequest<?> request() {
+    public HttpClientResponse clearHeaders() {
+        inner.headers().clear();
+        return this;
+    }
+
+    @Override
+    public HttpClientRequest request() {
         return request;
     }
 
@@ -58,5 +73,10 @@ public class NettyHttpClientResponse extends NettyMessageIncoming implements Htt
             version = convert(inner.protocolVersion());
         }
         return version;
+    }
+
+    @Override
+    public HttpClientConnection connection() {
+        return connection;
     }
 }

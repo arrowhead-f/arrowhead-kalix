@@ -4,10 +4,10 @@ import se.arkalix.ArSystem;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.dto.DtoWritable;
 import se.arkalix.net.MessageEncodingUnsupported;
-import se.arkalix.net.http.HttpIncomingResponse;
 import se.arkalix.net.http.client.HttpClientConnection;
 import se.arkalix.net.http.consumer.HttpConsumerConnection;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
+import se.arkalix.net.http.consumer.HttpConsumerResponse;
 import se.arkalix.security.identity.SystemIdentity;
 import se.arkalix.util.concurrent.Future;
 
@@ -67,15 +67,17 @@ class DefaultHttpConsumerConnection implements HttpConsumerConnection {
     }
 
     @Override
-    public Future<HttpIncomingResponse> send(final HttpConsumerRequest request) {
+    public Future<HttpConsumerResponse> send(final HttpConsumerRequest request) {
         prepare(request);
-        return connection.send(request.unwrap());
+        return connection.send(request.unwrap())
+            .map(response -> new DefaultHttpConsumerResponse(this, request, response));
     }
 
     @Override
-    public Future<HttpIncomingResponse> sendAndClose(final HttpConsumerRequest request) {
+    public Future<HttpConsumerResponse> sendAndClose(final HttpConsumerRequest request) {
         prepare(request);
-        return connection.sendAndClose(request.unwrap());
+        return connection.sendAndClose(request.unwrap())
+            .map(response -> new DefaultHttpConsumerResponse(this, request, response));
     }
 
     @SuppressWarnings("unchecked")

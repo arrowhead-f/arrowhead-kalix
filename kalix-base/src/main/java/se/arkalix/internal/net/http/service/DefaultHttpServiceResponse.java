@@ -36,6 +36,12 @@ public class DefaultHttpServiceResponse
     }
 
     @Override
+    public HttpServiceResponse clearHeaders() {
+        headers.clear();
+        return this;
+    }
+
+    @Override
     public Optional<HttpStatus> status() {
         return Optional.ofNullable(status);
     }

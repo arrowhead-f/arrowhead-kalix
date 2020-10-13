@@ -7,7 +7,6 @@ import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
 import se.arkalix.internal.net.http.consumer.DefaultHttpConsumer;
-import se.arkalix.net.http.HttpIncomingResponse;
 import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.util.concurrent.Future;
 
@@ -24,7 +23,7 @@ import static se.arkalix.descriptor.TransportDescriptor.HTTP;
  * <p>
  * This class provides similar functionality to {@link HttpClient}, with the
  * exception that hostnames, encodings, authorization tokens and other
- * details are managed automatically.
+ * details may be managed automatically.
  */
 public interface HttpConsumer extends ArConsumer {
     /**
@@ -109,7 +108,7 @@ public interface HttpConsumer extends ArConsumer {
      * @throws NullPointerException If {@code remoteSocketAddress} or
      *                              {@code request} is {@code null}.
      */
-    default Future<HttpIncomingResponse> send(final HttpConsumerRequest request) {
+    default Future<HttpConsumerResponse> send(final HttpConsumerRequest request) {
         Objects.requireNonNull(request, "Expected request");
         return connect().flatMap(connection -> connection.sendAndClose(request));
     }

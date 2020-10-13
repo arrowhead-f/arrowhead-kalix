@@ -6,9 +6,11 @@ import se.arkalix.util.concurrent.Future;
 
 /**
  * An incoming HTTP response.
+ *
+ * @param <Self> Implementing class.
  */
 @SuppressWarnings("unused")
-public interface HttpIncomingResponse extends HttpIncoming {
+public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<?>> extends HttpIncoming<Self> {
     /**
      * Retrieves the body of this response, if its status code is in the range
      * 200-299.
@@ -135,11 +137,15 @@ public interface HttpIncomingResponse extends HttpIncoming {
     }
 
     /**
-     * @return The request that produced this response.
+     * Gets request that was responded to with this message.
+     *
+     * @return Original response request.
      */
-    HttpOutgoingRequest<?> request();
+    Request request();
 
     /**
+     * Gets HTTP status code associated with this response.
+     *
      * @return Response status.
      */
     HttpStatus status();

@@ -10,7 +10,7 @@ import se.arkalix.net.http.HttpVersion;
 import java.util.*;
 
 /**
- * The type of request typically recommended for use with {@link HttpClient}.
+ * An HTTP request that can be sent to an HTTP server via an {@link HttpClient}.
  */
 public class HttpClientRequest
     extends DefaultMessageOutgoing<HttpClientRequest>
@@ -81,6 +81,12 @@ public class HttpClientRequest
     @Override
     public HttpHeaders headers() {
         return headers;
+    }
+
+    @Override
+    public HttpClientRequest clearHeaders() {
+        headers.clear();
+        return this;
     }
 
     @Override

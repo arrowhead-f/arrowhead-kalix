@@ -15,7 +15,7 @@ import java.util.List;
  *
  * @param <Self> Implementing class.
  */
-public interface MessageOutgoingWithDefaultEncoding<Self> extends MessageOutgoing<Self> {
+public interface MessageOutgoingWithImplicitEncoding<Self> extends MessageOutgoing<Self> {
     /**
      * Sets outgoing message body, replacing any previously set such.
      * <p>

@@ -1,51 +1,28 @@
 package se.arkalix.net.http.consumer;
 
-import se.arkalix.ArSystem;
-import se.arkalix.net.http.HttpIncomingResponse;
-import se.arkalix.net.http.HttpOutgoingConnection;
-import se.arkalix.security.SecurityDisabled;
-import se.arkalix.security.identity.OwnedIdentity;
-import se.arkalix.security.identity.SystemIdentity;
-
-import java.security.cert.Certificate;
+import se.arkalix.net.http.HttpConnectionWithArSystem;
+import se.arkalix.util.concurrent.Future;
 
 /**
- * Represents an established HTTP connection used to consume a remote service.
+ * Represents an established HTTP connection useful for consuming a remote
+ * Arrowhead service.
  */
-public interface HttpConsumerConnection extends HttpOutgoingConnection<HttpConsumerRequest, HttpIncomingResponse> {
-    @Override
-    default Certificate[] remoteCertificateChain() {
-        return remoteIdentity().chain();
-    }
+public interface HttpConsumerConnection extends HttpConnectionWithArSystem {
+    /**
+     * Sends given {@code request} to connected remote host.
+     *
+     * @param request HTTP request to send.
+     * @return Future eventually completed with response or exception.
+     */
+    Future<HttpConsumerResponse> send(final HttpConsumerRequest request);
 
     /**
-     * Gets the Arrowhead system identity of the connected service provider.
+     * Sends given {@code request} to connected remote host and then closes
+     * the connection after the response has either been received or an
+     * exception prevents it from being received.
      *
-     * @return System identity of service provider.
-     * @throws SecurityDisabled If this connection is not secure.
+     * @param request HTTP request to send.
+     * @return Future eventually completed with response or exception.
      */
-    SystemIdentity remoteIdentity();
-
-    @Override
-    default Certificate[] localCertificateChain() {
-        return localIdentity().chain();
-    }
-
-    /**
-     * Gets the Arrowhead system identity of the system that established this
-     * connection.
-     *
-     * @return System identity of service consumer.
-     * @throws SecurityDisabled If this connection is not secure.
-     */
-    default OwnedIdentity localIdentity() {
-        return localSystem().identity();
-    }
-
-    /**
-     * Gets the Arrowhead system that established this connection.
-     *
-     * @return Arrowhead system.
-     */
-    ArSystem localSystem();
+    Future<HttpConsumerResponse> sendAndClose(final HttpConsumerRequest request);
 }

@@ -10,6 +10,7 @@ import java.util.Objects;
  * traces</i>. If an HTTP request causes an error that should generate a stack
  * trace, some other exception type should be used instead.
  */
+@SuppressWarnings("unused")
 public class MessageException extends RuntimeException {
     private final Message message;
 

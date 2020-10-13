@@ -15,9 +15,11 @@ import java.util.stream.Collectors;
 
 /**
  * An incoming HTTP request.
+ *
+ * @param <Self> Implementing class.
  */
 @SuppressWarnings("unused")
-public interface HttpIncomingRequest extends HttpIncoming {
+public interface HttpIncomingRequest<Self> extends HttpIncoming<Self> {
     /**
      * @return Request HTTP method.
      */

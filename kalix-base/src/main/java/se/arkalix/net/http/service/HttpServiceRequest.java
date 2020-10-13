@@ -1,133 +1,79 @@
 package se.arkalix.net.http.service;
 
 import se.arkalix.description.SystemIdentityDescription;
-import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadable;
 import se.arkalix.net.http.HttpHeaders;
-import se.arkalix.net.http.HttpIncoming;
+import se.arkalix.net.http.HttpIncomingRequest;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.net.http.HttpVersion;
-import se.arkalix.security.SecurityDisabled;
 import se.arkalix.util.concurrent.FutureProgress;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * The head and body of an incoming HTTP request.
  */
 @SuppressWarnings("unused")
-public interface HttpServiceRequest extends HttpIncoming {
+public interface HttpServiceRequest extends HttpIncomingRequest<HttpServiceRequest> {
     /**
-     * @return Request HTTP method.
-     */
-    HttpMethod method();
-
-    /**
-     * @return Request URL path. Will always start with a leading forward
-     * slash ({@code /}).
-     */
-    String path();
-
-    /**
-     * Gets value of identified path parameter.
-     * <p>
-     * This operation accesses an arbitrary list that has exactly the same size
-     * as the number of path parameters of the {@link HttpPattern} matched
-     * prior to this request becoming available.
-     * <p>
-     * Note that it is possible to match a path parameter with an empty string.
-     * It should never be assumed that a non-empty value returned by this
-     * method has a length larger than 0.
+     * Gets connection through which this request was received.
      *
-     * @param index Position of path parameter in original pattern.
-     * @return Path parameter value, if any.
-     * @throws IndexOutOfBoundsException If provided index is out of the bounds
-     *                                   of the request path parameter list.
+     * @return Request connection.
      */
-    default String pathParameter(final int index) {
-        return pathParameters().get(index);
+    HttpServiceConnection connection();
+
+    /**
+     * Gets a description of the Arrowhead system attempting to consume a
+     * service provided by a local system.
+     *
+     * @return Consumer system identity description.
+     */
+    default SystemIdentityDescription consumer() {
+        return connection().remoteSystem();
     }
 
-    /**
-     * @return Unmodifiable list of all path parameters.
-     */
-    List<String> pathParameters();
-
-    /**
-     * Gets first query parameter with given name, if any such.
-     *
-     * @param name Name of query parameter. Case sensitive.
-     * @return Query parameter value, if a corresponding parameter name exists.
-     */
-    default Optional<String> queryParameter(final CharSequence name) {
-        final var values = queryParameters().get(name.toString());
-        return Optional.ofNullable(values != null && values.size() > 0 ? values.get(0) : null);
-    }
-
-    /**
-     * Gets all query parameters with given name.
-     *
-     * @param name Name of query parameter. Case sensitive.
-     * @return Unmodifiable list of query parameter values. May be empty.
-     */
-    default List<String> queryParameters(final CharSequence name) {
-        final var parameters = queryParameters().get(name.toString());
-        if (parameters == null) {
-            return Collections.emptyList();
-        }
-        return Collections.unmodifiableList(parameters);
-    }
-
-    /**
-     * @return Unmodifiable map of all query parameters.
-     */
-    Map<String, List<String>> queryParameters();
-
-    /**
-     * @return Information about the Arrowhead system that sent this request.
-     * @throws SecurityDisabled If the system providing the service receiving
-     *                            this request is not running in {@link
-     *                            se.arkalix.security secure mode}.
-     */
-    SystemIdentityDescription consumer();
-
-    /**
-     * @return HTTP version used by request.
-     */
-    HttpVersion version();
-
-    /**
-     * Creates a shallow copy of this {@code HttpServiceRequest} that contains
-     * the given {@code pathParameters}.
-     *
-     * @param pathParameters Path parameters to include in request clone.
-     * @return Clone of request object that includes given path parameters.
-     */
     default HttpServiceRequest cloneAndSet(final List<String> pathParameters) {
         final var self = this;
         return new HttpServiceRequest() {
             @Override
-            public Optional<Charset> charset() {
-                return self.charset();
+            public HttpServiceConnection connection() {
+                return self.connection();
             }
 
             @Override
-            public Optional<EncodingDescriptor> encoding() {
-                return self.encoding();
+            public HttpMethod method() {
+                return self.method();
+            }
+
+            @Override
+            public String path() {
+                return self.path();
+            }
+
+            @Override
+            public List<String> pathParameters() {
+                return pathParameters;
+            }
+
+            @Override
+            public Map<String, List<String>> queryParameters() {
+                return self.queryParameters();
+            }
+
+            @Override
+            public HttpVersion version() {
+                return self.version();
             }
 
             @Override
             public <R extends DtoReadable> FutureProgress<R> bodyAs(
-                final DtoEncoding encoding,
-                final Class<R> class_)
-            {
+                final DtoEncoding encoding, final Class<R> class_
+            ) {
                 return self.bodyAs(encoding, class_);
             }
 
@@ -137,7 +83,9 @@ public interface HttpServiceRequest extends HttpIncoming {
             }
 
             @Override
-            public <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(final DtoEncoding encoding, final Class<R> class_) {
+            public <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(
+                final DtoEncoding encoding, final Class<R> class_
+            ) {
                 return self.bodyAsList(encoding, class_);
             }
 
@@ -162,33 +110,8 @@ public interface HttpServiceRequest extends HttpIncoming {
             }
 
             @Override
-            public HttpMethod method() {
-                return self.method();
-            }
-
-            @Override
-            public String path() {
-                return self.path();
-            }
-
-            @Override
-            public List<String> pathParameters() {
-                return pathParameters;
-            }
-
-            @Override
-            public Map<String, List<String>> queryParameters() {
-                return self.queryParameters();
-            }
-
-            @Override
-            public SystemIdentityDescription consumer() {
-                return self.consumer();
-            }
-
-            @Override
-            public HttpVersion version() {
-                return self.version();
+            public HttpServiceRequest clearHeaders() {
+                return self.clearHeaders();
             }
         };
     }

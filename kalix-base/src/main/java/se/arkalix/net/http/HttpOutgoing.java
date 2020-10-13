@@ -9,7 +9,7 @@ import java.util.Optional;
  *
  * @param <Self> Implementing class.
  */
-public interface HttpOutgoing<Self> extends HttpMessage, MessageOutgoing<Self> {
+public interface HttpOutgoing<Self> extends HttpMessage<Self>, MessageOutgoing<Self> {
     /**
      * Sets header with {@code name} to given value.
      *
