@@ -194,7 +194,7 @@ public class NettyHttpClientConnection
             if (requestResponseQueue.size() > 0) {
                 final var pendingResponse = requestResponseQueue.remove();
                 pendingResponse.complete(Result.failure(
-                    new HttpOutgoingRequestException(incomingResponse.request(), "Incoming response timed out")));
+                    new HttpOutgoingRequestException(pendingResponse.request(), "Incoming response timed out")));
             }
         }
         finally {
