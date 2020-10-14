@@ -212,7 +212,7 @@ public interface ArSystem extends SystemIdentityDescription {
      * Builder useful for creating {@link ArSystem} instances.
      */
     class Builder {
-        private DefaultSystem.Builder inner;
+        private final DefaultSystem.Builder inner = new DefaultSystem.Builder();
 
         /**
          * Sets system name.
