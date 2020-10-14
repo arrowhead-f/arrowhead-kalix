@@ -82,10 +82,7 @@ class DefaultHttpConsumerConnection implements HttpConsumerConnection {
 
     @SuppressWarnings("unchecked")
     private void prepare(final HttpConsumerRequest request) {
-        final var headers = request.headers();
-        if (!headers.contains("authorization")) {
-            headers.set("authorization", authorization);
-        }
+        Objects.requireNonNull(request, "Expected request");
 
         if (request.encoding().isEmpty()) {
             final var body = request.body().orElse(null);
@@ -100,6 +97,10 @@ class DefaultHttpConsumerConnection implements HttpConsumerConnection {
                     request.body(dtoEncoding, (List<DtoWritable>) body);
                 }
             }
+        }
+
+        if (authorization != null) {
+            request.headers().setIfEmpty("authorization", authorization);
         }
     }
 
