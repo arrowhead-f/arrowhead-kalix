@@ -45,6 +45,6 @@ public class NettyHttpClientConnectionInitializer extends ChannelInitializer<Soc
             .addLast(new LoggingHandler())
             .addLast(new IdleStateHandler(30, 120, 0, TimeUnit.SECONDS))
             .addLast(new HttpClientCodec())
-            .addLast(new NettyHttpClientConnection(futureConnection, channel, sslHandler));
+            .addLast(new NettyHttpClientConnection(futureConnection, sslHandler));
     }
 }

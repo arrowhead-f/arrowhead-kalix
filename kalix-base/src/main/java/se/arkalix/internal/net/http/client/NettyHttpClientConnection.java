@@ -47,9 +47,9 @@ public class NettyHttpClientConnection
     private static final Logger logger = LoggerFactory.getLogger(NettyHttpClientConnection.class);
 
     private final Queue<FutureRequestResponse> requestResponseQueue = new LinkedList<>();
-    private final Channel channel;
     private final SslHandler sslHandler;
 
+    private Channel channel = null;
     private SSLSession sslSession = null;
 
     private FutureCompletion<HttpClientConnection> futureConnection;
@@ -59,16 +59,15 @@ public class NettyHttpClientConnection
 
     public NettyHttpClientConnection(
         final FutureCompletion<HttpClientConnection> futureConnection,
-        final Channel channel,
         final SslHandler sslHandler
     ) {
         this.futureConnection = Objects.requireNonNull(futureConnection, "Expected futureConnection");
-        this.channel = Objects.requireNonNull(channel, "Expected channel");
         this.sslHandler = sslHandler;
     }
 
     @Override
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {
+        channel = ctx.channel();
         if (futureConnection != null) {
             if (futureConnection.isCancelled()) {
                 futureConnection = null;
