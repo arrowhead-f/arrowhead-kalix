@@ -92,7 +92,7 @@ public class NettyHttpServiceConnection
                     cause = throwable;
                 }
                 if (logger.isWarnEnabled()) {
-                    logger.warn("Failed to complete TLS handshake with remote host", cause);
+                    logger.warn("Failed to complete TLS handshake with " + ctx.channel().remoteAddress(), cause);
                 }
                 ctx.close();
             });
