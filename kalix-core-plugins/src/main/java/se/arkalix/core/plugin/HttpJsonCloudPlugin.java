@@ -251,7 +251,7 @@ public class HttpJsonCloudPlugin implements Plugin {
 
         @Override
         public Future<Collection<ServiceDescription>> onServiceQueried(final ServiceQuery query) {
-            return Futures.flatReducePlain(orchestrationStrategy.patterns(), new ArrayList<>(), (services, pattern) -> {
+            return Futures.flatReducePlain(new ArrayList<>(), (services, pattern) -> {
                 if (pattern.isPlainStorePattern()) {
                     synchronized (this) {
                         if (orchestrationPlainStoreQueryAnnouncement == null) {
@@ -270,7 +270,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                     return Future.success(services);
                 }
                 return executeOrchestrationQueryUsing(query, pattern);
-            });
+            }, orchestrationStrategy.patterns());
         }
 
         private Future<Collection<ServiceDescription>> executeOrchestrationQueryUsing(
