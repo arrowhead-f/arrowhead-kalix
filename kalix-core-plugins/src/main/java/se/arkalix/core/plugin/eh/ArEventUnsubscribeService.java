@@ -40,7 +40,7 @@ public interface ArEventUnsubscribeService {
         return unsubscribe(
             topic,
             subscriber.name(),
-            subscriber.localSocketAddress().getHostString(),
-            subscriber.localPort());
+            subscriber.socketAddress().getHostString(),
+            subscriber.port());
     }
 }

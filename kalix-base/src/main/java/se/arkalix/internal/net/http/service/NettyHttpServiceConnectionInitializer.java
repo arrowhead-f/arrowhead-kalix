@@ -50,6 +50,6 @@ public class NettyHttpServiceConnectionInitializer extends ChannelInitializer<So
             .addLast(new HttpContentDecompressor())
             .addLast(new HttpContentCompressor())
 
-            .addLast(new NettyHttpServiceConnectionHandler(system, serviceLookup, sslHandler));
+            .addLast(new NettyHttpServiceConnection(system, serviceLookup, sslHandler));
     }
 }

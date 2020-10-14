@@ -1,7 +1,6 @@
-package se.arkalix.net.http.client;
+package se.arkalix.net.http;
 
-import se.arkalix.net.http.HttpHeaders;
-import se.arkalix.net.http.HttpStatus;
+import se.arkalix.net.http.client.HttpClientConnection;
 
 /**
  * Signifies that some HTTP response received via a
@@ -13,17 +12,16 @@ import se.arkalix.net.http.HttpStatus;
  * traces</i>. If an HTTP response causes an error that should generate a stack
  * trace, some other exception type should be used instead.
  */
-public class HttpClientResponseRejectedException extends HttpClientResponseException {
-    private final HttpClientResponse response;
+public class HttpIncomingResponseUnexpected extends HttpOutgoingRequestException {
+    private final HttpIncomingResponse response;
 
     /**
      * Creates new HTTP response rejection exception from given response.
      *
      * @param response Response not containing the expected result.
      */
-    public HttpClientResponseRejectedException(final HttpClientResponse response) {
-        super(response.request(), "-> [" + response.status().text() + "]");
-        this.response = response;
+    public HttpIncomingResponseUnexpected(final HttpIncomingResponse response) {
+        this(response, null, null);
     }
 
     /**
@@ -33,9 +31,8 @@ public class HttpClientResponseRejectedException extends HttpClientResponseExcep
      * @param response Response not containing the expected result.
      * @param message  Human-readable description of issue.
      */
-    public HttpClientResponseRejectedException(final HttpClientResponse response, final String message) {
-        super(response.request(), "-> [" + response.status().text() + "] " + message);
-        this.response = response;
+    public HttpIncomingResponseUnexpected(final HttpIncomingResponse response, final String message) {
+        this(response, message, null);
     }
 
     /**
@@ -47,12 +44,12 @@ public class HttpClientResponseRejectedException extends HttpClientResponseExcep
      * @param cause    Exception thrown due to response not containing expected
      *                 result.
      */
-    public HttpClientResponseRejectedException(
-        final HttpClientResponse response,
+    public HttpIncomingResponseUnexpected(
+        final HttpIncomingResponse response,
         final String message,
-        final Throwable cause)
-    {
-        super(response.request(), message, cause);
+        final Throwable cause
+    ) {
+        super(response, response.request(), message, cause);
         this.response = response;
     }
 
@@ -73,7 +70,12 @@ public class HttpClientResponseRejectedException extends HttpClientResponseExcep
     /**
      * @return Offending response.
      */
-    public HttpClientResponse response() {
+    public HttpIncomingResponse response() {
         return response;
+    }
+
+    @Override
+    protected String format() {
+        return super.format() + " -> [" + response.status().text() + "]";
     }
 }

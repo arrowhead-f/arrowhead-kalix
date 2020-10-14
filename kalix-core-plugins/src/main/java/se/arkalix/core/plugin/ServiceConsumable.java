@@ -99,7 +99,7 @@ public interface ServiceConsumable {
      *                          #provider()}, if any, is not supported.
      */
     default ServiceDescription toServiceDescription() {
-        final var provider = provider().toProviderDescription();
+        final var provider = provider().toSystemDescription();
         if (!provider.isSecure() && security().isSecure()) {
             throw new IllegalStateException("The description of the \"" +
                 name().name() + "\" service implies that it is served over " +

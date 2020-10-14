@@ -176,8 +176,8 @@ public class JsonString implements JsonValue {
         final var source = buffer.source();
         var token = buffer.next();
         if (token.type() != JsonType.STRING) {
-            throw new DtoReadException(DtoEncoding.JSON, "Expected string",
-                token.readStringRaw(source), token.begin());
+            throw new DtoReadException(JsonString.class, DtoEncoding.JSON,
+                "expected string", token.readStringRaw(source), token.begin());
         }
         return new JsonString(token.readString(source));
     }

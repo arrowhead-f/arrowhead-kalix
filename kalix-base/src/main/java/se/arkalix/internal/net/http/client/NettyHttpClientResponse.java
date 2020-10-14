@@ -1,83 +1,57 @@
 package se.arkalix.internal.net.http.client;
 
-import se.arkalix.dto.DtoEncoding;
-import se.arkalix.dto.DtoReadable;
-import se.arkalix.internal.net.http.NettyHttpBodyReceiver;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.handler.codec.http.HttpResponse;
+import se.arkalix.internal.net.NettyMessageIncoming;
 import se.arkalix.net.http.HttpHeaders;
+import se.arkalix.net.http.HttpOutgoingRequest;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.HttpVersion;
+import se.arkalix.net.http.client.HttpClientConnection;
 import se.arkalix.net.http.client.HttpClientRequest;
 import se.arkalix.net.http.client.HttpClientResponse;
 import se.arkalix.util.annotation.Internal;
-import se.arkalix.util.concurrent.FutureProgress;
-import io.netty.handler.codec.http.HttpResponse;
 
-import java.io.InputStream;
-import java.nio.file.Path;
-import java.util.List;
 import java.util.Objects;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static se.arkalix.internal.net.http.NettyHttpConverters.convert;
 
 @Internal
-public class NettyHttpClientResponse implements HttpClientResponse {
+public class NettyHttpClientResponse extends NettyMessageIncoming implements HttpClientResponse {
+    private final HttpClientConnection connection;
     private final HttpClientRequest request;
-    private final NettyHttpBodyReceiver body;
-    private final HttpResponse response;
+    private final HttpResponse inner;
 
     private HttpHeaders headers = null;
     private HttpStatus status = null;
     private HttpVersion version = null;
 
     public NettyHttpClientResponse(
+        final ByteBufAllocator alloc,
+        final HttpClientConnection connection,
         final HttpClientRequest request,
-        final NettyHttpBodyReceiver body,
-        final HttpResponse response)
-    {
+        final HttpResponse inner
+    ) {
+        super(alloc, Objects.requireNonNull(inner, "Expected inner")
+            .headers().getInt(CONTENT_LENGTH, 0));
+        this.connection = Objects.requireNonNull(connection, "Expected connection");
         this.request = Objects.requireNonNull(request, "Expected request");
-        this.body = Objects.requireNonNull(body, "Expected body");
-        this.response = Objects.requireNonNull(response, "Expected response");
-    }
-
-    @Override
-    public <R extends DtoReadable> FutureProgress<R> bodyAs(final DtoEncoding encoding, final Class<R> class_) {
-        return body.bodyAs(encoding, class_);
-    }
-
-    @Override
-    public FutureProgress<byte[]> bodyAsByteArray() {
-        return body.bodyAsByteArray();
-    }
-
-    @Override
-    public <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(
-        final DtoEncoding encoding,
-        final Class<R> class_)
-    {
-        return body.bodyAsList(encoding, class_);
-    }
-
-    @Override
-    public FutureProgress<? extends InputStream> bodyAsStream() {
-        return body.bodyAsStream();
-    }
-
-    @Override
-    public FutureProgress<String> bodyAsString() {
-        return body.bodyAsString();
-    }
-
-    @Override
-    public FutureProgress<Path> bodyTo(final Path path, final boolean append) {
-        return body.bodyTo(path, append);
+        this.inner = inner;
     }
 
     @Override
     public HttpHeaders headers() {
         if (headers == null) {
-            headers = new HttpHeaders(response.headers());
+            headers = new HttpHeaders(inner.headers());
         }
         return headers;
+    }
+
+    @Override
+    public HttpClientResponse clearHeaders() {
+        inner.headers().clear();
+        return this;
     }
 
     @Override
@@ -88,7 +62,7 @@ public class NettyHttpClientResponse implements HttpClientResponse {
     @Override
     public HttpStatus status() {
         if (status == null) {
-            status = convert(response.status());
+            status = convert(inner.status());
         }
         return status;
     }
@@ -96,8 +70,13 @@ public class NettyHttpClientResponse implements HttpClientResponse {
     @Override
     public HttpVersion version() {
         if (version == null) {
-            version = convert(response.protocolVersion());
+            version = convert(inner.protocolVersion());
         }
         return version;
+    }
+
+    @Override
+    public HttpClientConnection connection() {
+        return connection;
     }
 }

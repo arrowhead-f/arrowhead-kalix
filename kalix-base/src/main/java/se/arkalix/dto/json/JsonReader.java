@@ -45,8 +45,8 @@ public class JsonReader implements DtoReader {
         final var value = DtoReaders.invokeReadMethod(class_, getReadJsonMethod(class_), buffer);
         if (!buffer.atEnd()) {
             final var next = buffer.next();
-            throw new DtoReadException(DtoEncoding.JSON, "Expected end of data, found",
-                next.readStringRaw(source), next.begin());
+            throw new DtoReadException(class_, DtoEncoding.JSON, "Expected " +
+                "end of data, found", next.readStringRaw(source), next.begin());
         }
         return value;
     }
@@ -61,7 +61,8 @@ public class JsonReader implements DtoReader {
 
         var next = buffer.next();
         if (next.type() != JsonType.ARRAY) {
-            throw new DtoReadException(DtoEncoding.JSON, "Expected array, found",
+            throw new DtoReadException(class_, DtoEncoding.JSON, "expected " +
+                "array of encoded instances of target class, found",
                 next.readStringRaw(source), next.begin());
         }
 
@@ -72,7 +73,8 @@ public class JsonReader implements DtoReader {
 
         if (!buffer.atEnd()) {
             next = buffer.next();
-            throw new DtoReadException(DtoEncoding.JSON, "Expected end of data, found",
+            throw new DtoReadException(class_, DtoEncoding.JSON, "expected " +
+                "end of data, found",
                 next.readStringRaw(source), next.begin());
         }
 

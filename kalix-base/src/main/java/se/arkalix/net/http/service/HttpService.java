@@ -1,6 +1,7 @@
 package se.arkalix.net.http.service;
 
 import se.arkalix.ArService;
+import se.arkalix.ArSystem;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
 import se.arkalix.internal.ArServerRegistry;
@@ -816,17 +817,6 @@ public final class HttpService implements ArService {
         return metadata != null
             ? Collections.unmodifiableMap(metadata)
             : Collections.emptyMap();
-    }
-
-    /**
-     * Gets value from service {@link #metadata(Map) metadata map} associated
-     * with given {@code key}, if any.
-     *
-     * @param key Key associated with desired metadata value.
-     * @return Value associated with {@code key}, if any.
-     */
-    public Optional<String> metadata(final String key) {
-        return Optional.ofNullable(metadata().get(key));
     }
 
     /**

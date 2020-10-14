@@ -15,12 +15,36 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class TestHttpMediaTypes {
     @ParameterizedTest
+    @MethodSource("matchingContentTypeEncodingArguments")
+    void shouldProduceCompatibleEncoding(
+        final String contentType,
+        final EncodingDescriptor expected
+    ) {
+        final var actual = HttpMediaTypes.encodingFromContentType(contentType);
+        assertTrue(actual.isPresent());
+        assertEquals(expected, actual.get());
+    }
+
+    static Stream<Arguments> matchingContentTypeEncodingArguments() {
+        return Stream.of(
+            arguments("application/json", EncodingDescriptor.JSON),
+            arguments("application/json; charset=utf-8", EncodingDescriptor.JSON),
+            arguments("application/senml-exi", EncodingDescriptor.EXI),
+            arguments("application/jose+json", EncodingDescriptor.JSON),
+            arguments("text/xml; charset=utf-8", EncodingDescriptor.XML),
+            arguments("text/html; charset=utf-16", EncodingDescriptor.getOrCreate("html")),
+            arguments("application/sensml+xml", EncodingDescriptor.XML),
+            arguments("application/senml+cbor", EncodingDescriptor.CBOR)
+        );
+    }
+
+    @ParameterizedTest
     @MethodSource("compatibleContentTypeEncodingArguments")
     void shouldFindCompatibleEncoding(
         final String contentType,
         final EncodingDescriptor[] encodings,
-        final EncodingDescriptor expected)
-    {
+        final EncodingDescriptor expected
+    ) {
         final var actual = HttpMediaTypes.findEncodingCompatibleWithContentType(Arrays.asList(encodings), contentType);
         assertTrue(actual.isPresent());
         assertEquals(expected, actual.get());
@@ -43,6 +67,10 @@ public class TestHttpMediaTypes {
             arguments("application/jose+json", new EncodingDescriptor[]{
                 EncodingDescriptor.JSON, EncodingDescriptor.XML
             }, EncodingDescriptor.JSON),
+
+            arguments("text/xml; charset=utf-8", new EncodingDescriptor[]{
+                EncodingDescriptor.JSON, EncodingDescriptor.XML
+            }, EncodingDescriptor.XML),
 
             arguments("application/xml; charset=utf-16", new EncodingDescriptor[]{
                 EncodingDescriptor.JSON, EncodingDescriptor.XML
@@ -123,7 +151,7 @@ public class TestHttpMediaTypes {
                 EncodingDescriptor.JSON, EncodingDescriptor.XML
             }, EncodingDescriptor.JSON),
 
-            arguments(Collections.singletonList("application/*"), new EncodingDescriptor[]{
+            arguments(Collections.singletonList("text/*"), new EncodingDescriptor[]{
                 EncodingDescriptor.XML, EncodingDescriptor.JSON
             }, EncodingDescriptor.XML),
 

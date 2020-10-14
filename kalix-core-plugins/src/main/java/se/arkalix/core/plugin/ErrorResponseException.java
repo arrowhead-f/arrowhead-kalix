@@ -1,14 +1,13 @@
 package se.arkalix.core.plugin;
 
-import se.arkalix.net.http.client.HttpClientRequest;
-import se.arkalix.net.http.client.HttpClientResponse;
-import se.arkalix.net.http.client.HttpClientResponseRejectedException;
+import se.arkalix.net.http.HttpIncomingResponse;
+import se.arkalix.net.http.HttpIncomingResponseUnexpected;
 
 /**
  * Some error caused by a core service responding to a request with an {@link
  * ErrorResponse}.
  */
-public class ErrorResponseException extends HttpClientResponseRejectedException {
+public class ErrorResponseException extends HttpIncomingResponseUnexpected {
     private final ErrorResponse error;
 
     /**
@@ -16,7 +15,7 @@ public class ErrorResponseException extends HttpClientResponseRejectedException 
      *
      * @param error Core service error to include in exception.
      */
-    public ErrorResponseException(final HttpClientResponse response, final ErrorResponse error) {
+    public ErrorResponseException(final HttpIncomingResponse response, final ErrorResponse error) {
         super(response, error.type() + " [" + error.code() + "]: " + error.message());
         this.error = error;
     }

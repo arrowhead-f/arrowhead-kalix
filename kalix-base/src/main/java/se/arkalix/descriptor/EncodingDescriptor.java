@@ -14,7 +14,8 @@ import java.util.stream.Collectors;
  * databases or other media.
  */
 public final class EncodingDescriptor {
-    private static final Set<EncodingDescriptor> DTO_ENCODINGS;
+    private static final Map<DtoEncoding, EncodingDescriptor> dtoToEncodingMap;
+    private static final Set<EncodingDescriptor> encodingsWithDtoSupport;
 
     private final String name;
     private final DtoEncoding dtoEncoding;
@@ -31,8 +32,18 @@ public final class EncodingDescriptor {
      * @return Set of all encodings with DTO support.
      * @see se.arkalix.dto
      */
-    public static Set<EncodingDescriptor> dtoEncodings() {
-        return DTO_ENCODINGS;
+    public static Set<EncodingDescriptor> allWithDtoSupport() {
+        return encodingsWithDtoSupport;
+    }
+
+    /**
+     * Acquires a cached encoding descriptor matching the given DTO encoding.
+     *
+     * @param dtoEncoding DTO encoding matching desired encoding descriptor.
+     * @return Existing encoding descriptor.
+     */
+    public static EncodingDescriptor get(final DtoEncoding dtoEncoding) {
+        return dtoToEncodingMap.get(dtoEncoding);
     }
 
     /**
@@ -59,7 +70,7 @@ public final class EncodingDescriptor {
      * @return DTO variant of this descriptor.
      * @see se.arkalix.dto
      */
-    public Optional<DtoEncoding> asDtoEncoding() {
+    public Optional<DtoEncoding> asDto() {
         return Optional.ofNullable(dtoEncoding);
     }
 
@@ -67,7 +78,7 @@ public final class EncodingDescriptor {
      * @return {@code true} only if DTO support is available for this encoding.
      * @see se.arkalix.dto
      */
-    public boolean isDtoEncoding() {
+    public boolean isDto() {
         return dtoEncoding != null;
     }
 
@@ -109,10 +120,14 @@ public final class EncodingDescriptor {
     public static EncodingDescriptor valueOf(String name) {
         name = Objects.requireNonNull(name, "Expected name").toUpperCase();
         switch (name) {
-        case "CBOR": return CBOR;
-        case "JSON": return JSON;
-        case "XML": return XML;
-        case "EXI": return EXI;
+        case "CBOR":
+            return CBOR;
+        case "JSON":
+            return JSON;
+        case "XML":
+            return XML;
+        case "EXI":
+            return EXI;
         }
         return new EncodingDescriptor(name, null);
     }
@@ -137,16 +152,17 @@ public final class EncodingDescriptor {
 
     static {
         try {
-            final var dtoEncodings = new ArrayList<EncodingDescriptor>();
+            final var map = new HashMap<DtoEncoding, EncodingDescriptor>();
             for (final var field : EncodingDescriptor.class.getFields()) {
                 if (Modifier.isStatic(field.getModifiers()) && field.getType() == EncodingDescriptor.class) {
                     final var descriptor = (EncodingDescriptor) field.get(null);
-                    if (descriptor.isDtoEncoding()) {
-                        dtoEncodings.add(descriptor);
+                    if (descriptor.isDto()) {
+                        map.put(descriptor.dtoEncoding, descriptor);
                     }
                 }
             }
-            DTO_ENCODINGS = dtoEncodings.stream().collect(Collectors.toUnmodifiableSet());
+            encodingsWithDtoSupport = map.values().stream().collect(Collectors.toUnmodifiableSet());
+            dtoToEncodingMap = map.entrySet().stream().collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
         }
         catch (final Exception exception) {
             throw new RuntimeException("DTO encoding set initialization failed", exception);

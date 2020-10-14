@@ -7,7 +7,6 @@ import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
 import se.arkalix.internal.core.plugin.HttpJsonServices;
-import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
 import se.arkalix.util.concurrent.Future;
@@ -45,7 +44,7 @@ public class HttpJsonEventPublishService implements ArConsumer, ArEventPublishSe
     public Future<?> publish(final EventOutgoingDto event) {
         return consumer.send(new HttpConsumerRequest()
             .method(POST)
-            .uri(service().uri())
+            .path(service().uri())
             .body(event))
             .flatMap(HttpJsonServices::unwrap);
     }
@@ -75,9 +74,9 @@ public class HttpJsonEventPublishService implements ArConsumer, ArEventPublishSe
         public HttpJsonEventPublishService create(
             final ArSystem system,
             final ServiceDescription service,
-            final Collection<EncodingDescriptor> encodings) throws Exception
-        {
-            return new HttpJsonEventPublishService(new HttpConsumer(HttpClient.from(system), service, encodings));
+            final Collection<EncodingDescriptor> encodings
+        ) {
+            return new HttpJsonEventPublishService(HttpConsumer.create(system, service, encodings));
         }
     }
 }

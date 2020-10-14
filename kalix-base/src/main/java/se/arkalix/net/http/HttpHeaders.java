@@ -134,6 +134,18 @@ public class HttpHeaders {
     }
 
     /**
+     * Checks whether this collection contains any header matching the given
+     * name.
+     *
+     * @param name Name of header. Not case sensitive. Prefer lowercase.
+     * @return {@code true} only if this collection contains at least one
+     * header matching given {@code name}.
+     */
+    public boolean contains(final CharSequence name) {
+        return headers.contains(name);
+    }
+
+    /**
      * Sets header, replacing all such previously set with the same name.
      *
      * @param name  Name of header. Not case sensitive. Prefer lowercase.

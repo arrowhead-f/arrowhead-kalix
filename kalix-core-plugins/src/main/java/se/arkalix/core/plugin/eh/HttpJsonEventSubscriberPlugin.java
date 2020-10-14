@@ -7,7 +7,7 @@ import se.arkalix.core.plugin.CloudException;
 import se.arkalix.core.plugin.ErrorResponseException;
 import se.arkalix.core.plugin.SystemDetails;
 import se.arkalix.core.plugin.SystemDetailsDto;
-import se.arkalix.description.ProviderDescription;
+import se.arkalix.description.SystemDescription;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.service.HttpService;
 import se.arkalix.plugin.Plugin;
@@ -112,7 +112,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
                                         final var topic = nameToTopic.get(topicName.toLowerCase());
                                         if (topic != null) {
                                             final var provider = event.publisher()
-                                                .map(SystemDetails::toProviderDescription)
+                                                .map(SystemDetails::toSystemDescription)
                                                 .orElse(null);
 
                                             topic.publish(provider, event.metadata(), event.data());
@@ -302,7 +302,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
             return name;
         }
 
-        public void publish(final ProviderDescription provider, final Map<String, String> metadata, final String data) {
+        public void publish(final SystemDescription provider, final Map<String, String> metadata, final String data) {
             for (final var subscription : handles) {
                 try {
                     subscription.publish(provider, metadata, data);
@@ -333,7 +333,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
     private static class Handle implements EventSubscriptionHandle {
         private final EventSubscriptionHandler handler;
         private final Map<String, String> metadata;
-        private final Set<ProviderDescription> providers;
+        private final Set<SystemDescription> providers;
         private final Consumer<Handle> onUnsubscribe;
         private final AtomicBoolean isUnsubscribed = new AtomicBoolean(false);
 
@@ -352,7 +352,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
             providers = subscription.providers().isEmpty() ? null : subscription.providers();
         }
 
-        public void publish(final ProviderDescription provider, final Map<String, String> metadata, final String data) {
+        public void publish(final SystemDescription provider, final Map<String, String> metadata, final String data) {
             if (providers != null && !providers.contains(provider)) {
                 return;
             }

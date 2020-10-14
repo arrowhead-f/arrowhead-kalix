@@ -5,7 +5,6 @@ import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 

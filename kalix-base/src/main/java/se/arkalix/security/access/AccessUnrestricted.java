@@ -2,7 +2,7 @@ package se.arkalix.security.access;
 
 import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
-import se.arkalix.description.ConsumerDescription;
+import se.arkalix.description.SystemIdentityDescription;
 import se.arkalix.descriptor.SecurityDescriptor;
 
 /**
@@ -20,7 +20,7 @@ import se.arkalix.descriptor.SecurityDescriptor;
  * this class.
  */
 public class AccessUnrestricted implements AccessPolicy {
-    static AccessUnrestricted INSTANCE = new AccessUnrestricted();
+    static final AccessUnrestricted instance = new AccessUnrestricted();
 
     @Override
     public SecurityDescriptor descriptor() {
@@ -29,7 +29,7 @@ public class AccessUnrestricted implements AccessPolicy {
 
     @Override
     public boolean isAuthorized(
-        final ConsumerDescription consumer,
+        final SystemIdentityDescription consumer,
         final ArSystem provider,
         final ServiceDescription service,
         final String token)

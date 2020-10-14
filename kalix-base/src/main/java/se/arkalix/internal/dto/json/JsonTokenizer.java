@@ -2,8 +2,9 @@ package se.arkalix.internal.dto.json;
 
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadException;
+import se.arkalix.dto.DtoReadable;
 import se.arkalix.dto.binary.BinaryReader;
-import se.arkalix.dto.json.value.JsonType;
+import se.arkalix.dto.json.value.*;
 import se.arkalix.util.annotation.Internal;
 
 import java.nio.charset.StandardCharsets;
@@ -43,10 +44,10 @@ public final class JsonTokenizer {
         p0 = source.readOffset();
     }
 
-    private void saveCandidateAsError(final String message) {
+    private void saveCandidateAsError(final Class<? extends DtoReadable> class_, final String message) {
         final var buffer = new byte[source.readOffset() - p0];
         source.getBytes(p0, buffer);
-        error = new DtoReadException(DtoEncoding.JSON, message, new String(buffer, StandardCharsets.UTF_8), p0);
+        error = new DtoReadException(class_, DtoEncoding.JSON, message, new String(buffer, StandardCharsets.UTF_8), p0);
     }
 
     private void discardWhitespace() {
@@ -67,7 +68,7 @@ public final class JsonTokenizer {
         case '{': return tokenizeObject();
         case '[': return tokenizeArray();
         default:
-            saveCandidateAsError("JSON root not object or array");
+            saveCandidateAsError(JsonObject.class, "JSON root not object or array");
             return false;
         }
     }
@@ -93,14 +94,15 @@ public final class JsonTokenizer {
         case '7':
         case '8':
         case '9':
-            return tokenizeNumber();
+            tokenizeNumber();
+            return true;
 
         case 't': return tokenizeTrue();
         case 'f': return tokenizeFalse();
         case 'n': return tokenizeNull();
 
         default:
-            saveCandidateAsError("Unexpected character");
+            saveCandidateAsError(JsonValue.class, "unexpected character");
             return false;
         }
     }
@@ -111,7 +113,7 @@ public final class JsonTokenizer {
         discardWhitespace();
 
         if (source.readableBytes() == 0) {
-            saveCandidateAsError("Unexpected end of object");
+            saveCandidateAsError(JsonObject.class, "unexpected end of object");
             return false;
         }
         var b = source.peekByte();
@@ -125,7 +127,7 @@ public final class JsonTokenizer {
 
             b = source.readByteOrZero();
             if (b != '\"') {
-                saveCandidateAsError("Object key must be string");
+                saveCandidateAsError(JsonObject.class, "object key must be string");
                 return false;
             }
             if (!tokenizeString()) {
@@ -136,7 +138,7 @@ public final class JsonTokenizer {
 
             b = source.readByteOrZero();
             if (b != ':') {
-                saveCandidateAsError("Object key not followed by colon");
+                saveCandidateAsError(JsonObject.class, "object key not followed by colon");
                 return false;
             }
 
@@ -148,7 +150,7 @@ public final class JsonTokenizer {
             discardWhitespace();
 
             if (source.readableBytes() == 0) {
-                saveCandidateAsError("Unexpected end of object");
+                saveCandidateAsError(JsonObject.class, "unexpected end of object");
                 return false;
             }
             b = source.peekByte();
@@ -157,7 +159,7 @@ public final class JsonTokenizer {
                 continue;
             }
             if (b != '}') {
-                saveCandidateAsError("Expected `,` or `}`");
+                saveCandidateAsError(JsonObject.class, "expected `,` or `}`");
                 return false;
             }
             source.skipByte();
@@ -171,7 +173,7 @@ public final class JsonTokenizer {
         discardWhitespace();
 
         if (source.readableBytes() == 0) {
-            saveCandidateAsError("Unexpected end of array");
+            saveCandidateAsError(JsonArray.class, "unexpected end of array");
             return false;
         }
         byte b = source.peekByte();
@@ -193,7 +195,7 @@ public final class JsonTokenizer {
                 continue;
             }
             if (b != ']') {
-                saveCandidateAsError("Expected `,` or `]`");
+                saveCandidateAsError(JsonArray.class, "expected `,` or `]`");
                 return false;
             }
             return true;
@@ -224,11 +226,11 @@ public final class JsonTokenizer {
                 }
             }
         }
-        saveCandidateAsError("Unexpected end of string");
+        saveCandidateAsError(JsonString.class, "unexpected end of string");
         return false;
     }
 
-    private boolean tokenizeNumber() {
+    private void tokenizeNumber() {
         number:
         while (source.readableBytes() > 0) {
             switch (source.peekByte()) {
@@ -248,7 +250,6 @@ public final class JsonTokenizer {
             }
         }
         collectCandidate(JsonType.NUMBER);
-        return true;
     }
 
     private boolean tokenizeTrue() {
@@ -266,7 +267,7 @@ public final class JsonTokenizer {
             collectCandidate(JsonType.TRUE);
             return true;
         }
-        expandAndSaveCandidateAsError("Bad true token");
+        expandAndSaveCandidateAsError(JsonBoolean.class, "bad true token");
         return false;
     }
 
@@ -288,7 +289,7 @@ public final class JsonTokenizer {
             collectCandidate(JsonType.FALSE);
             return true;
         }
-        expandAndSaveCandidateAsError("Bad false token");
+        expandAndSaveCandidateAsError(JsonBoolean.class, "bad false token");
         return false;
     }
 
@@ -307,11 +308,11 @@ public final class JsonTokenizer {
             collectCandidate(JsonType.NULL);
             return true;
         }
-        expandAndSaveCandidateAsError("Bad null token");
+        expandAndSaveCandidateAsError(JsonNull.class, "bad null token");
         return false;
     }
 
-    private void expandAndSaveCandidateAsError(final String message) {
+    private void expandAndSaveCandidateAsError(final Class<? extends DtoReadable> class_, final String message) {
         expand:
         while (source.readableBytes() > 0) {
             switch (source.peekByte()) {
@@ -330,6 +331,6 @@ public final class JsonTokenizer {
                 break;
             }
         }
-        saveCandidateAsError(message);
+        saveCandidateAsError(class_, message);
     }
 }

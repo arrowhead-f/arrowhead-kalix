@@ -1,6 +1,6 @@
 package se.arkalix.core.plugin.eh;
 
-import se.arkalix.description.ProviderDescription;
+import se.arkalix.description.SystemDescription;
 import se.arkalix.plugin.PluginFacade;
 import se.arkalix.util.concurrent.Future;
 
@@ -57,7 +57,7 @@ public interface ArEventSubscriberPluginFacade extends PluginFacade {
      */
     default Future<EventSubscriptionHandle> subscribe(
         final String topic,
-        final Collection<ProviderDescription> providers,
+        final Collection<SystemDescription> providers,
         final EventSubscriptionHandler handler)
     {
         return subscribe(topic, null, providers, handler);
@@ -78,7 +78,7 @@ public interface ArEventSubscriberPluginFacade extends PluginFacade {
     default Future<EventSubscriptionHandle> subscribe(
         final String topic,
         final Map<String, String> metadata,
-        final Collection<ProviderDescription> providers,
+        final Collection<SystemDescription> providers,
         final EventSubscriptionHandler handler)
     {
         return subscribe(new EventSubscription()

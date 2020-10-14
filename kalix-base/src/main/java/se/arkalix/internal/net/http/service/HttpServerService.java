@@ -1,8 +1,10 @@
 package se.arkalix.internal.net.http.service;
 
+import se.arkalix.ArService;
 import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
+import se.arkalix.internal.net.http.HttpPaths;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.service.*;
 import se.arkalix.security.access.AccessPolicy;
@@ -12,18 +14,20 @@ import se.arkalix.util.concurrent.Future;
 import java.util.*;
 
 @Internal
-public class HttpServiceInternal {
+public class HttpServerService {
     private final AccessPolicy accessPolicy;
     private final String basePath;
-    private final ServiceDescription description;
+    private final ArService service;
     private final List<EncodingDescriptor> encodings;
+    private final ArSystem provider;
     private final HttpRouteSequence[] routeSequences;
 
-    public HttpServiceInternal(final ArSystem system, final HttpService service) {
-        accessPolicy = Objects.requireNonNull(service.accessPolicy(), "Expected accessPolicy");
-        description = service.describeAsIfProvidedBy(system);
+    public HttpServerService(final ArSystem provider, final HttpService service) {
+        this.provider = Objects.requireNonNull(provider, "Expected provider");
+        this.service = Objects.requireNonNull(service, "Expected service");
+        accessPolicy = service.accessPolicy();
 
-        final var basePath = description.uri();
+        final var basePath = service.uri();
         if (!HttpPaths.isValidPathWithoutPercentEncodings(basePath)) {
             throw new IllegalArgumentException("HttpService basePath \"" +
                 basePath + "\" must start with a forward slash (/) and then " +
@@ -53,7 +57,7 @@ public class HttpServiceInternal {
      * @return Service name.
      */
     public String name() {
-        return description.name();
+        return service.name();
     }
 
     /**
@@ -127,6 +131,6 @@ public class HttpServiceInternal {
     }
 
     public ServiceDescription description() {
-        return description;
+        return service.describeAsIfProvidedBy(provider);
     }
 }

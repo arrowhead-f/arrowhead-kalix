@@ -1,266 +1,143 @@
 package se.arkalix.net.http.consumer;
 
+import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoWritable;
-import se.arkalix.dto.DtoWritableAs;
-import se.arkalix.net.http.HttpBodySender;
+import se.arkalix.net.MessageOutgoingWithImplicitEncoding;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpMethod;
+import se.arkalix.net.http.HttpOutgoingRequest;
 import se.arkalix.net.http.HttpVersion;
+import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.client.HttpClientRequest;
 import se.arkalix.util.annotation.Internal;
 
-import java.net.URI;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
-import java.util.*;
-import java.util.function.Supplier;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
- * An outgoing HTTP request, to be sent to a {@link se.arkalix consumed
- * service}.
+ * An HTTP request that can be sent to an HTTP server via an {@link
+ * HttpConsumer}.
  */
 @SuppressWarnings("unused")
-public class HttpConsumerRequest implements HttpBodySender<HttpConsumerRequest> {
-    private final HttpClientRequest request = new HttpClientRequest();
+public class HttpConsumerRequest
+    implements HttpOutgoingRequest<HttpConsumerRequest>, MessageOutgoingWithImplicitEncoding<HttpConsumerRequest>
+{
+    private final HttpClientRequest inner = new HttpClientRequest();
+
+    @Override
+    public Optional<HttpMethod> method() {
+        return inner.method();
+    }
+
+    @Override
+    public HttpConsumerRequest method(final HttpMethod method) {
+        inner.method(method);
+        return this;
+    }
+
+    @Override
+    public HttpConsumerRequest queryParameter(final String name, final Object value) {
+        inner.queryParameter(name, value);
+        return this;
+    }
+
+    @Override
+    public Map<String, List<String>> queryParameters() {
+        return inner.queryParameters();
+    }
+
+    @Override
+    public Optional<String> path() {
+        return inner.path();
+    }
+
+    @Override
+    public HttpConsumerRequest path(final String path) {
+        inner.path(path);
+        return this;
+    }
+
+    @Override
+    public HttpConsumerRequest header(final CharSequence name, final CharSequence value) {
+        inner.header(name, value);
+        return this;
+    }
+
+    @Override
+    public Optional<HttpVersion> version() {
+        return inner.version();
+    }
+
+    @Override
+    public HttpConsumerRequest version(final HttpVersion version) {
+        inner.version(version);
+        return this;
+    }
 
     @Override
     public Optional<Object> body() {
-        return request.body();
+        return inner.body();
     }
 
     @Override
     public HttpConsumerRequest body(final byte[] byteArray) {
-        request.body(byteArray);
+        inner.body(byteArray);
         return this;
-    }
-
-    /**
-     * Sets outgoing HTTP body, replacing any previously set such.
-     * <p>
-     * The provided writable data transfer object is scheduled for encoding and
-     * transmission to the receiver of the body. Please refer to the Javadoc
-     * for the {@code @DtoWritableAs} annotation for more information about
-     * writable data transfer objects.
-     * <p>
-     * This particular method differs from {@link
-     * #body(DtoEncoding, DtoWritable)} in that the {@link DtoEncoding} is
-     * selected automatically from those supported by both the
-     * {@link HttpConsumer} sending the request and the service it is used to
-     * consume.
-     *
-     * @param data Data transfer object to send to consumed service.
-     * @return This.
-     * @throws NullPointerException If {@code body} is {@code null}.
-     * @see DtoWritableAs @DtoWritableAs
-     */
-    public HttpConsumerRequest body(final DtoWritable data) {
-        return body(null, data);
     }
 
     @Override
     public HttpConsumerRequest body(final DtoEncoding encoding, final DtoWritable data) {
-        request.body(encoding, data);
+        inner.body(encoding, data);
         return this;
     }
 
-    /**
-     * Sets outgoing HTTP body, replacing any previously set such.
-     * <p>
-     * The provided list of writable data transfer objects are scheduled for
-     * encoding and transmission to the receiver of the body. Please refer to
-     * the Javadoc for the {@code @DtoWritableAs} annotation for more
-     * information about writable data transfer objects.
-     * <p>
-     * This particular method differs from {@link #body(DtoEncoding, List)} in
-     * that the {@link DtoEncoding} is selected automatically from those
-     * supported by both the {@link HttpConsumer} sending the request and the
-     * service it is used to consume.
-     *
-     * @param data Data transfer objects to send to receiver of the body.
-     * @return This.
-     * @throws NullPointerException If {@code encoding} or {@code body} is
-     *                              {@code null}.
-     * @see DtoWritableAs @DtoWritableAs
-     */
-    public <L extends List<? extends DtoWritable>> HttpConsumerRequest body(final L data) {
-        return body(null, data);
-    }
-
     @Override
-    public <L extends List<? extends DtoWritable>> HttpConsumerRequest body(final DtoEncoding encoding, L data) {
-        request.body(encoding, data);
+    public <L extends List<? extends DtoWritable>> HttpConsumerRequest body(final DtoEncoding encoding, final L data) {
+        inner.body(encoding, data);
         return this;
     }
 
     @Override
     public HttpConsumerRequest body(final Path path) {
-        request.body(path);
+        inner.body(path);
         return this;
     }
 
     @Override
-    public HttpConsumerRequest body(final String string) {
-        request.body(string);
+    public HttpConsumerRequest body(final Charset charset, final String string) {
+        inner.body(charset, string);
         return this;
     }
 
     @Override
     public HttpConsumerRequest clearBody() {
-        request.clearBody();
+        inner.clearBody();
         return this;
     }
 
-    /**
-     * @return Encoding set with the most recent call to {@link
-     * #body(DtoEncoding, DtoWritable)}, if any.
-     */
-    public Optional<DtoEncoding> encoding() {
-        return request.encoding();
-    }
-
-    /**
-     * Gets value of first header with given {@code name}, if any such.
-     *
-     * @param name Name of header. Case is ignored. Prefer lowercase.
-     * @return Header value, or {@code null}.
-     */
-    public Optional<String> header(final CharSequence name) {
-        return request.header(name);
-    }
-
-    /**
-     * Sets header with {@code name} to given value.
-     *
-     * @param name  Name of header. Case is ignored. Prefer lowercase.
-     * @param value Desired header value.
-     * @return This request.
-     */
-    public HttpConsumerRequest header(final CharSequence name, final CharSequence value) {
-        request.header(name, value);
-        return this;
-    }
-
-    /**
-     * Gets all header values associated with given {@code name}, if any.
-     *
-     * @param name Name of header. Case is ignored. Prefer lowercase.
-     * @return Header values. May be an empty list.
-     */
-    public List<String> headers(final CharSequence name) {
-        return request.headers(name);
-    }
-
-    /**
-     * @return <i>Modifiable</i> map of all request headers.
-     */
+    @Override
     public HttpHeaders headers() {
-        return request.headers();
+        return inner.headers();
     }
 
-    /**
-     * @return Currently set HTTP method, if any.
-     */
-    public Optional<HttpMethod> method() {
-        return request.method();
-    }
-
-    /**
-     * Sets HTTP method. <b>Must be specified.</b>
-     *
-     * @param method Desired method.
-     * @return This request.
-     */
-    public HttpConsumerRequest method(final HttpMethod method) {
-        request.method(method);
+    @Override
+    public HttpConsumerRequest clearHeaders() {
+        inner.clearHeaders();
         return this;
     }
 
-    /**
-     * Gets first query parameter with given name, if any such.
-     *
-     * @param name Name of query parameter. Case sensitive.
-     * @return Query parameter value, if a corresponding parameter name exists.
-     */
-    public Optional<String> queryParameter(final String name) {
-        return request.queryParameter(name);
+    @Override
+    public Optional<Charset> charset() {
+        return inner.charset();
     }
 
-    /**
-     * Sets query parameter pair, replacing all previous such with the same
-     * name.
-     *
-     * @param name  Name of query parameter. Case sensitive.
-     * @param value Desired parameter value.
-     * @return This request.
-     */
-    public HttpConsumerRequest queryParameter(final String name, final Object value) {
-        request.queryParameter(name, value);
-        return this;
-    }
-
-    /**
-     * @return Modifiable map of query parameters.
-     */
-    public Map<String, List<String>> queryParameters() {
-        return request.queryParameters();
-    }
-
-    /**
-     * @return Currently set request URI, if any.
-     */
-    public Optional<String> uri() {
-        return request.uri();
-    }
-
-    /**
-     * Sets request URI. <b>Must be specified.</b>
-     *
-     * @param uri Desired URI.
-     * @return This request.
-     */
-    public HttpConsumerRequest uri(final String uri) {
-        request.uri(uri);
-        return this;
-    }
-
-    /**
-     * Sets request URI. <b>Must be specified.</b>
-     *
-     * @param uri Desired URI.
-     * @return This request.
-     */
-    public HttpConsumerRequest uri(final URI uri) {
-        return uri(uri.toString());
-    }
-
-    /**
-     * @return Currently set HTTP version, if any.
-     */
-    public Optional<HttpVersion> version() {
-        return request.version();
-    }
-
-    /**
-     * Sets HTTP version.
-     * <p>
-     * Note that only HTTP/1.0 and HTTP/1.1 are supported by this version of
-     * Kalix.
-     *
-     * @param version Desired HTTP version.
-     * @return This request.
-     * @throws IllegalArgumentException If any other HTTP version than HTTP/1.0
-     *                                  or HTTP/1.1 is provided.
-     */
-    public HttpConsumerRequest version(final HttpVersion version) {
-        request.version(version);
-        return this;
-    }
-
-    /**
-     * @return This request as an {@link HttpClientRequest}.
-     */
-    public HttpClientRequest asClientRequest() {
-        return request;
+    @Override
+    public Optional<EncodingDescriptor> encoding() {
+        return inner.encoding();
     }
 
     /**
@@ -268,13 +145,7 @@ public class HttpConsumerRequest implements HttpBodySender<HttpConsumerRequest> 
      * versions of the Kalix library. Use is not advised.
      */
     @Internal
-    void setEncodingIfRequired(final Supplier<DtoEncoding> encoding) {
-        if (encoding().isPresent()) {
-            return;
-        }
-        final var body = request.body().orElse(null);
-        if (body instanceof DtoWritable) {
-            request.body(encoding.get(), (DtoWritable) body);
-        }
+    public HttpClientRequest unwrap() {
+        return inner;
     }
 }

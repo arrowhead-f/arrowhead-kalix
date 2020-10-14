@@ -9,14 +9,23 @@ package se.arkalix.net.http.client;
  * traces</i>. If an HTTP response causes an error that should generate a stack
  * trace, some other exception type should be used instead.
  */
-public class HttpClientConnectionException extends HttpClientException {
+public class HttpClientConnectionException extends RuntimeException {
     /**
-     * Creates new {@link HttpClient} connection exception with given message.
+     * Creates new HTTP client exception with given message.
      *
-     * @param message Human-readable description of cause of exception being
-     *                thrown.
+     * @param message Human-readable description of issue.
      */
     public HttpClientConnectionException(final String message) {
-        super(message);
+        super(message, null, true, false); // Disable stack trace.
+    }
+
+    /**
+     * Creates new HTTP client exception with given message.
+     *
+     * @param message Human-readable description of issue.
+     * @param cause   Exception causing this exception to be thrown.
+     */
+    public HttpClientConnectionException(final String message, final Throwable cause) {
+        super(message, cause, true, false); // Disable stack trace.
     }
 }

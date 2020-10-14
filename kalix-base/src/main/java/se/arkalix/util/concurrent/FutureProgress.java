@@ -40,7 +40,7 @@ public interface FutureProgress<V> extends Future<V> {
          * @param current  Current progress.
          * @param expected Expected end goal.
          */
-        void onProgress(int current, int expected);
+        void onProgress(long current, long expected);
     }
 
     /**

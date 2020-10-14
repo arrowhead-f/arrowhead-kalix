@@ -1,17 +1,13 @@
 package se.arkalix;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import se.arkalix.description.ProviderDescription;
+import se.arkalix.description.SystemDescription;
 import se.arkalix.description.ServiceDescription;
-import se.arkalix.internal.ArServer;
-import se.arkalix.internal.ArServerRegistry;
-import se.arkalix.internal.plugin.PluginNotifier;
-import se.arkalix.internal.util.concurrent.NettyScheduler;
+import se.arkalix.description.SystemIdentityDescription;
+import se.arkalix.internal.DefaultSystem;
 import se.arkalix.plugin.Plugin;
 import se.arkalix.plugin.PluginFacade;
 import se.arkalix.query.ServiceQuery;
-import se.arkalix.security.NotSecureException;
+import se.arkalix.security.SecurityDisabled;
 import se.arkalix.security.identity.OwnedIdentity;
 import se.arkalix.security.identity.SystemIdentity;
 import se.arkalix.security.identity.TrustStore;
@@ -21,97 +17,12 @@ import se.arkalix.util.concurrent.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 /**
  * An Arrowhead Framework (AHF) system.
  */
 @SuppressWarnings("unused")
-public class ArSystem {
-    private static final Logger logger = LoggerFactory.getLogger(ArSystem.class);
-
-    private final String name;
-    private final InetSocketAddress localSocketAddress;
-    private final boolean isSecure;
-    private final OwnedIdentity identity;
-    private final TrustStore trustStore;
-    private final NettyScheduler scheduler;
-    private final SchedulerShutdownListener schedulerShutdownListener;
-    private final PluginNotifier pluginNotifier;
-
-    private final ArServiceCache consumedServices;
-    private final Map<Class<? extends ArService>, FutureAnnouncement<ArServer>> servers = new ConcurrentHashMap<>();
-
-    private final ProviderDescription description;
-    private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
-
-    private Map<Class<? extends Plugin>, PluginFacade> pluginClassToFacade = null;
-
-    private ArSystem(final Builder builder) {
-        localSocketAddress = Objects.requireNonNullElseGet(builder.socketAddress, () -> new InetSocketAddress(0));
-
-        if (builder.isSecure) {
-            isSecure = true;
-            if (builder.identity == null || builder.trustStore == null) {
-                throw new IllegalArgumentException("Expected identity and " +
-                    "trustStore; required in secure mode");
-            }
-            identity = builder.identity;
-            trustStore = builder.trustStore;
-
-            final var name0 = identity.name();
-            if (builder.name != null && !Objects.equals(builder.name, name0)) {
-                throw new IllegalArgumentException("Expected name to either " +
-                    "not be provided or to match the system certificate " +
-                    "name of the provided identity; \"" + builder.name +
-                    "\" != \"" + name0 + "\"");
-            }
-            name = name0;
-        }
-        else {
-            isSecure = false;
-            if (builder.identity != null || builder.trustStore != null) {
-                throw new IllegalArgumentException("Unexpected identity or " +
-                    "trustStore; not permitted in insecure mode");
-            }
-            identity = null;
-            trustStore = null;
-
-            if (builder.name == null || builder.name.length() == 0) {
-                throw new IllegalArgumentException("Expected name; required " +
-                    "in insecure mode");
-            }
-            name = builder.name;
-        }
-
-        description = new ProviderDescription(name, localSocketAddress, isSecure
-            ? identity.publicKey()
-            : null);
-
-        consumedServices = Objects.requireNonNullElseGet(builder.serviceCache,
-            ArServiceCache::withDefaultEntryLifetimeLimit);
-
-        scheduler = (NettyScheduler) Schedulers.fixed();
-        schedulerShutdownListener = (scheduler) -> shutdown()
-            .onFailure(fault -> {
-                if (logger.isErrorEnabled()) {
-                    logger.error("Shutdown of \"" + name + "\" failed", fault);
-                }
-            });
-        scheduler.addShutdownListener(schedulerShutdownListener);
-
-        pluginNotifier = new PluginNotifier(this, builder.plugins != null
-            ? builder.plugins
-            : Collections.emptyList());
-    }
-
-    Future<?> attachPlugins() {
-        return pluginNotifier.onAttach()
-            .ifSuccess(pluginClassToFacade -> this.pluginClassToFacade = pluginClassToFacade);
-    }
-
+public interface ArSystem extends SystemIdentityDescription {
     /**
      * Gets human and machine-readable name of this system.
      * <p>
@@ -122,9 +33,7 @@ public class ArSystem {
      * @return System name.
      */
     @ThreadSafe
-    public String name() {
-        return name;
-    }
+    String name();
 
     /**
      * Gets the Internet socket address this system has been {@link
@@ -134,9 +43,7 @@ public class ArSystem {
      * interface.
      */
     @ThreadSafe
-    public InetSocketAddress localSocketAddress() {
-        return localSocketAddress;
-    }
+    InetSocketAddress socketAddress();
 
     /**
      * Gets the Internet address this system has been {@link
@@ -145,8 +52,8 @@ public class ArSystem {
      * @return Local network interface address.
      */
     @ThreadSafe
-    public InetAddress localAddress() {
-        return localSocketAddress().getAddress();
+    default InetAddress address() {
+        return socketAddress().getAddress();
     }
 
     /**
@@ -156,8 +63,8 @@ public class ArSystem {
      * @return Port through which this system exposes its provided services.
      */
     @ThreadSafe
-    public int localPort() {
-        return localSocketAddress().getPort();
+    default int port() {
+        return socketAddress().getPort();
     }
 
     /**
@@ -168,9 +75,7 @@ public class ArSystem {
      * in {@link se.arkalix.security secure mode}.
      */
     @ThreadSafe
-    public final boolean isSecure() {
-        return isSecure;
-    }
+    boolean isSecure();
 
     /**
      * Gets the {@link se.arkalix.security.identity cryptographic identity}
@@ -178,34 +83,22 @@ public class ArSystem {
      * to use.
      *
      * @return The cryptographic identity of this system.
-     * @throws NotSecureException If this system is not running in secure
+     * @throws SecurityDisabled If this system is not running in secure
      *                            mode.
      */
     @ThreadSafe
-    public final OwnedIdentity identity() {
-        if (!isSecure) {
-            throw new NotSecureException("System \"" + name() + "\" not " +
-                "in secure mode");
-        }
-        return identity;
-    }
+    OwnedIdentity identity();
 
     /**
      * Gets the {@link se.arkalix.security.identity trust store} this system
      * has been {@link Builder#trustStore(TrustStore)} configured} to use.
      *
      * @return Trust store, which contains certificates trusted by this system.
-     * @throws NotSecureException If this system is not running in secure
+     * @throws SecurityDisabled If this system is not running in secure
      *                            mode.
      */
     @ThreadSafe
-    public final TrustStore trustStore() {
-        if (!isSecure) {
-            throw new NotSecureException("System \"" + name() + "\" not " +
-                "in secure mode");
-        }
-        return trustStore;
-    }
+    TrustStore trustStore();
 
     /**
      * Gets description of this system as a {@link se.arkalix service provider}.
@@ -213,9 +106,7 @@ public class ArSystem {
      * @return Description of this system.
      */
     @ThreadSafe
-    public ProviderDescription description() {
-        return description;
-    }
+    SystemDescription description();
 
     /**
      * Creates new query useful for resolving services provided by other
@@ -229,56 +120,7 @@ public class ArSystem {
      * @see ServiceQuery
      */
     @ThreadSafe
-    public ServiceQuery consume() {
-        return new ServiceQuery(this, this::query);
-    }
-
-    private Future<Set<ServiceDescription>> query(final ServiceQuery query) {
-        final var isTraceEnabled = logger.isTraceEnabled();
-
-        if (isTraceEnabled) {
-            logger.trace("Executing given {} ...", query);
-        }
-
-        final var matchingServices = consumedServices.getAll()
-            .filter(query::matches)
-            .collect(Collectors.toUnmodifiableSet());
-
-        if (isTraceEnabled) {
-            logger.trace("Resolved the following from service cache: {}", matchingServices);
-        }
-
-        if (!matchingServices.isEmpty()) {
-            if (isTraceEnabled) {
-                logger.trace("Service cache contained at least one service " +
-                    "matching the given query");
-            }
-            return Future.success(matchingServices);
-        }
-
-        if (isTraceEnabled) {
-            logger.trace("Service cache did not contain any service " +
-                "matching the given query, delegating query to plugins ...");
-        }
-        return pluginNotifier.onServiceQueried(query)
-            .ifSuccess(services -> {
-                if (isTraceEnabled) {
-                    logger.trace("Retrieved the following entries from " +
-                        "plugins, which will be used to update the service " +
-                        "cache: {}", services);
-                }
-                consumedServices.update(services);
-            })
-            .map(services -> services.stream()
-                .filter(query::matches)
-                .collect(Collectors.toUnmodifiableSet()))
-            .ifSuccess(services -> {
-                if (isTraceEnabled) {
-                    logger.trace("The following entries matched the given " +
-                        "query: {}", services);
-                }
-            });
-    }
+    ServiceQuery consume();
 
     /**
      * Cache of, potentially or previously, consumed services.
@@ -293,9 +135,7 @@ public class ArSystem {
      * has, or has considered to, consume.
      */
     @ThreadSafe
-    public ArServiceCache consumedServices() {
-        return consumedServices;
-    }
+    ArServiceDescriptionCache consumedServices();
 
     /**
      * Registers given {@code service} with this system, eventually making it
@@ -310,24 +150,7 @@ public class ArSystem {
      * @throws NullPointerException If {@code service} is {@code null}.
      */
     @ThreadSafe
-    public Future<ArServiceHandle> provide(final ArService service) {
-        Objects.requireNonNull(service, "Expected service");
-
-        if (isShuttingDown.get()) {
-            return Future.failure(new IllegalStateException("System is shutting down; cannot " +
-                "provide service \"" + service.name() + "\""));
-        }
-
-        return servers.computeIfAbsent(service.getClass(), (class_) -> ArServerRegistry.get(class_)
-            .orElseThrow(() -> new IllegalArgumentException("" +
-                "No Arrowhead server exists for services of type \"" +
-                service.getClass() + "\"; cannot provide service \"" +
-                service.name() + "\""))
-            .create(this, pluginNotifier)
-            .toAnnouncement())
-            .subscribe()
-            .flatMap(server -> server.provide(service));
-    }
+    Future<ArServiceHandle> provide(final ArService service);
 
     /**
      * Gets descriptions of all services currently provided by this system.
@@ -335,26 +158,7 @@ public class ArSystem {
      * @return Stream of service descriptions.
      */
     @ThreadSafe
-    public Collection<ServiceDescription> providedServices() {
-        final var providedServices = new ArrayList<ServiceDescription>();
-        for (final var entry : servers.entrySet()) {
-            final var announcement = entry.getValue();
-            final var optional = announcement.resultIfAvailable();
-            if (optional.isEmpty()) {
-                continue;
-            }
-            final var result = optional.get();
-            if (result.isFailure()) {
-                continue;
-            }
-            final var server = result.value();
-            server.providedServices()
-                .stream()
-                .map(ArServiceHandle::description)
-                .forEach(providedServices::add);
-        }
-        return providedServices;
-    }
+    Collection<ServiceDescription> providedServices();
 
     /**
      * Gets {@link PluginFacade} associated with the identified system {@link
@@ -372,9 +176,7 @@ public class ArSystem {
      * plugin in question provides such a facade.
      */
     @ThreadSafe
-    public Optional<PluginFacade> pluginFacadeOf(final Class<? extends Plugin> pluginClass) {
-        return Optional.ofNullable(pluginClassToFacade.get(pluginClass));
-    }
+    Optional<PluginFacade> pluginFacadeOf(final Class<? extends Plugin> pluginClass);
 
     /**
      * Initiates system shutdown, causing all of its services to be dismissed.
@@ -390,67 +192,27 @@ public class ArSystem {
      * @return Future completed when shutdown is finished.
      */
     @ThreadSafe
-    public Future<?> shutdown() {
-        if (isShuttingDown.getAndSet(true)) {
-            return Future.done();
-        }
-        scheduler.removeShutdownListener(schedulerShutdownListener);
-
-        final var closingServers = new ArrayList<Future<?>>();
-
-        for (final var entry : servers.entrySet()) {
-            final var announcement = entry.getValue();
-            final var optional = announcement.resultIfAvailable();
-            if (optional.isEmpty()) {
-                announcement.cancel(true);
-                continue;
-            }
-            final var result = optional.get();
-            if (result.isFailure()) {
-                logger.warn("Could not shut down " + entry.getKey() +
-                    " server; it never started due to the following " +
-                    "exception", result.fault());
-                continue;
-            }
-            final var server = result.value();
-            closingServers.add(server.close());
-        }
-
-        return Futures.serialize(closingServers)
-            .mapResult(result -> {
-                pluginNotifier.onDetach();
-                servers.clear();
-                return result;
-            });
-    }
+    Future<?> shutdown();
 
     /**
+     * Determines whether this system currently is in the process of, or
+     * already has, shut down.
+     *
      * @return {@code true} only if this system is currently in the process of,
      * or already has, shut down.
      */
     @ThreadSafe
-    public boolean isShuttingDown() {
-        return isShuttingDown.get() || scheduler.isShuttingDown();
-    }
+    boolean isShuttingDown();
 
     @Override
     @ThreadSafe
-    public String toString() {
-        return description.toString();
-    }
+    String toString();
 
     /**
-     * Builder useful for creating instances of the {@link ArSystem}
-     * class.
+     * Builder useful for creating {@link ArSystem} instances.
      */
-    public static class Builder {
-        private String name;
-        private InetSocketAddress socketAddress;
-        private OwnedIdentity identity;
-        private TrustStore trustStore;
-        private boolean isSecure = true;
-        private Collection<Plugin> plugins;
-        private ArServiceCache serviceCache;
+    class Builder {
+        private final DefaultSystem.Builder inner = new DefaultSystem.Builder();
 
         /**
          * Sets system name.
@@ -475,7 +237,7 @@ public class ArSystem {
          * @see <a href="https://tools.ietf.org/html/rfc1035#section-2.3.1">RFC 1035, Section 2.3.1</a>
          */
         public Builder name(final String name) {
-            this.name = name;
+            inner.name(name);
             return this;
         }
 
@@ -496,10 +258,8 @@ public class ArSystem {
          * @return This builder.
          */
         public Builder localAddress(final InetAddress address) {
-            if (socketAddress != null) {
-                return localAddressPort(address, socketAddress.getPort());
-            }
-            return localSocketAddress(new InetSocketAddress(address, 0));
+            inner.localAddress(address);
+            return this;
         }
 
         /**
@@ -515,7 +275,7 @@ public class ArSystem {
          * @return This builder.
          */
         public Builder localSocketAddress(final InetSocketAddress socketAddress) {
-            this.socketAddress = socketAddress;
+            inner.localSocketAddress(socketAddress);
             return this;
         }
 
@@ -527,14 +287,15 @@ public class ArSystem {
          * interface will be used and a random port will be selected by the
          * system.
          *
-         * @param socketAddress Internet socketAddress associated with the
+         * @param address Internet address associated with the
          *                      preferred network interface.
          * @param port          Socket port number. If 0 is provided, the
          *                      system will choose a random port.
          * @return This builder.
          */
-        public Builder localAddressPort(final InetAddress socketAddress, final int port) {
-            return localSocketAddress(new InetSocketAddress(socketAddress, port));
+        public Builder localAddressPort(final InetAddress address, final int port) {
+            inner.localAddressPort(address, port);
+            return this;
         }
 
         /**
@@ -555,7 +316,8 @@ public class ArSystem {
          * @return This builder.
          */
         public Builder localHostnamePort(final String hostname, final int port) {
-            return localSocketAddress(new InetSocketAddress(hostname, port));
+            inner.localHostnamePort(hostname, port);
+            return this;
         }
 
         /**
@@ -574,17 +336,8 @@ public class ArSystem {
          * @return This builder.
          */
         public Builder localPort(final int port) {
-            if (socketAddress != null) {
-                final var address = socketAddress.getAddress();
-                if (address != null) {
-                    return localAddressPort(address, port);
-                }
-                final var hostname = socketAddress.getHostName();
-                if (hostname != null) {
-                    return localHostnamePort(hostname, port);
-                }
-            }
-            return localSocketAddress(new InetSocketAddress(port));
+            inner.localPort(port);
+            return this;
         }
 
         /**
@@ -599,7 +352,7 @@ public class ArSystem {
          * @return This builder.
          */
         public final Builder identity(final OwnedIdentity identity) {
-            this.identity = identity;
+            inner.identity(identity);
             return this;
         }
 
@@ -615,7 +368,7 @@ public class ArSystem {
          * @return This builder.
          */
         public final Builder trustStore(final TrustStore trustStore) {
-            this.trustStore = trustStore;
+            inner.trustStore(trustStore);
             return this;
         }
 
@@ -634,16 +387,16 @@ public class ArSystem {
          * @return This builder.
          */
         public final Builder insecure() {
-            this.isSecure = false;
+            inner.insecure();
             return this;
         }
 
         /**
-         * Sets {@link ArServiceCache service cache} to be used by this system
-         * for storing information about remote services of interest. If not
-         * provided, a such with a {@link
-         * ArServiceCache#withDefaultEntryLifetimeLimit() default entry
-         * expiration time} will be used.
+         * Sets {@link ArServiceDescriptionCache service cache} to be used by
+         * this system for storing information about remote services of
+         * interest. If not provided, a such with a {@link
+         * ArServiceDescriptionCache#withDefaultEntryLifetimeLimit() default
+         * entry expiration time} will be used.
          * <p>
          * After system instance creation, the cache will be available via the
          * {@link ArSystem#consumedServices()} method.
@@ -651,8 +404,8 @@ public class ArSystem {
          * @param serviceCache Desired service cache.
          * @return This builder.
          */
-        public Builder serviceCache(final ArServiceCache serviceCache) {
-            this.serviceCache = serviceCache;
+        public Builder serviceCache(final ArServiceDescriptionCache serviceCache) {
+            inner.serviceCache(serviceCache);
             return this;
         }
 
@@ -681,7 +434,7 @@ public class ArSystem {
          * @return This builder.
          */
         public Builder plugins(final Collection<Plugin> plugins) {
-            this.plugins = plugins;
+            inner.plugins(plugins);
             return this;
         }
 
@@ -693,14 +446,7 @@ public class ArSystem {
          * @return New {@link ArSystem}.
          */
         public ArSystem build() {
-            final var system = new ArSystem(this);
-            try {
-                system.attachPlugins().await();
-            }
-            catch (final InterruptedException exception) {
-                throw new RuntimeException("Failed to attach system \"" + system.name() + "\" plugins", exception);
-            }
-            return system;
+            return inner.build();
         }
 
         /**
@@ -711,14 +457,7 @@ public class ArSystem {
          * be constructed and its plugins attached.
          */
         public Future<ArSystem> buildAsync() {
-            try {
-                final var system = new ArSystem(this);
-                return system.attachPlugins()
-                    .pass(system);
-            }
-            catch (final Throwable throwable) {
-                return Future.failure(throwable);
-            }
+            return inner.buildAsync();
         }
     }
 }

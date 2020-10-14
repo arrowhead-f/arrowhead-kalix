@@ -463,8 +463,8 @@ public interface Future<V> {
      */
     default <T extends Throwable> Future<V> mapCatch(
         final Class<T> class_,
-        final ThrowingFunction<T, ? extends V> mapper)
-    {
+        final ThrowingFunction<T, ? extends V> mapper
+    ) {
         Objects.requireNonNull(class_, "Expected class_");
         Objects.requireNonNull(mapper, "Expected mapper");
         final var source = this;
@@ -529,8 +529,8 @@ public interface Future<V> {
      */
     default <T extends Throwable> Future<V> mapFault(
         final Class<T> class_,
-        final ThrowingFunction<Throwable, Throwable> mapper)
-    {
+        final ThrowingFunction<Throwable, Throwable> mapper
+    ) {
         Objects.requireNonNull(class_, "Expected class_");
         Objects.requireNonNull(mapper, "Expected mapper");
         final var source = this;
@@ -772,8 +772,8 @@ public interface Future<V> {
      */
     default <T extends Throwable> Future<V> flatMapCatch(
         final Class<T> class_,
-        final ThrowingFunction<T, ? extends Future<V>> mapper)
-    {
+        final ThrowingFunction<T, ? extends Future<V>> mapper
+    ) {
         Objects.requireNonNull(class_, "Expected class_");
         Objects.requireNonNull(mapper, "Expected mapper");
         final var source = this;
@@ -860,8 +860,8 @@ public interface Future<V> {
      */
     default <T extends Throwable> Future<V> flatMapFault(
         final Class<T> class_,
-        final ThrowingFunction<Throwable, ? extends Future<Throwable>> mapper)
-    {
+        final ThrowingFunction<Throwable, ? extends Future<Throwable>> mapper
+    ) {
         Objects.requireNonNull(class_, "Expected class_");
         Objects.requireNonNull(mapper, "Expected mapper");
         final var source = this;
@@ -1418,10 +1418,14 @@ public interface Future<V> {
      * Using this method injudiciously may result in severe performance issues.
      *
      * @return Value of this {@code Future}, if successful.
-     * @throws InterruptedException If the thread awaiting the completion of
-     *                              this {@code Future} would be interrupted.
+     * @throws IllegalStateException If this method is called from a thread
+     *                               that might fail to complete this Future if
+     *                               blocked.
+     * @throws InterruptedException  If the thread awaiting the completion of
+     *                               this {@code Future} would be interrupted.
      */
     default V await() throws InterruptedException {
+        throwIfThisThreadBelongsToFixedScheduler();
         final var result = new AtomicReference<Result<V>>();
         onResult(result0 -> {
             result.set(result0);
@@ -1456,10 +1460,14 @@ public interface Future<V> {
      *                blocked and a {@link TimeoutException}, unless the result
      *                of this {@code Future} has become available.
      * @return Value of this {@code Future}, if successful.
-     * @throws InterruptedException If the thread awaiting the completion of
-     *                              this {@code Future} would be interrupted.
+     * @throws IllegalStateException If this method is called from a thread
+     *                               that might fail to complete this Future if
+     *                               blocked.
+     * @throws InterruptedException  If the thread awaiting the completion of
+     *                               this {@code Future} would be interrupted.
      */
     default V await(final Duration timeout) throws InterruptedException, TimeoutException {
+        throwIfThisThreadBelongsToFixedScheduler();
         final var result = new AtomicReference<Result<V>>();
         onResult(result0 -> {
             result.set(result0);
@@ -1485,6 +1493,15 @@ public interface Future<V> {
             }
         }
         throw new TimeoutException("Result of " + this + " did not become available in " + timeout);
+    }
+
+    private void throwIfThisThreadBelongsToFixedScheduler() {
+        if (Thread.currentThread() instanceof NettyThread) {
+            throw new IllegalStateException("Netty threads may not be " +
+                "blocked by waiting; if you believe to have a use case that " +
+                "justifies blocking such a thread, please open a discussion " +
+                "with the Kalix developers");
+        }
     }
 
     /**

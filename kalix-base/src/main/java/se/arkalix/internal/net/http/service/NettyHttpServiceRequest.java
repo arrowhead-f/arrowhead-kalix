@@ -1,30 +1,32 @@
 package se.arkalix.internal.net.http.service;
 
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.QueryStringDecoder;
-import se.arkalix.description.ConsumerDescription;
-import se.arkalix.dto.DtoEncoding;
-import se.arkalix.dto.DtoReadable;
-import se.arkalix.internal.net.http.NettyHttpBodyReceiver;
+import se.arkalix.description.SystemIdentityDescription;
+import se.arkalix.internal.net.NettyMessageIncoming;
 import se.arkalix.internal.net.http.NettyHttpConverters;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.net.http.HttpVersion;
+import se.arkalix.net.http.service.HttpServiceConnection;
 import se.arkalix.net.http.service.HttpServiceRequest;
-import se.arkalix.security.NotSecureException;
+import se.arkalix.security.SecurityDisabled;
 import se.arkalix.util.annotation.Internal;
-import se.arkalix.util.concurrent.FutureProgress;
 
-import java.io.InputStream;
-import java.nio.file.Path;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 
 @Internal
-public class NettyHttpServiceRequest implements HttpServiceRequest {
-    private final NettyHttpBodyReceiver body;
+public class NettyHttpServiceRequest extends NettyMessageIncoming implements HttpServiceRequest {
+    private final HttpServiceConnection connection;
     private final QueryStringDecoder queryStringDecoder;
     private final HttpRequest request;
-    private final ConsumerDescription consumer;
+    private final SystemIdentityDescription consumer;
 
     private HttpHeaders headers = null;
     private HttpMethod method = null;
@@ -32,53 +34,14 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
     private HttpVersion version = null;
 
     private NettyHttpServiceRequest(final Builder builder) {
-        body = Objects.requireNonNull(builder.body, "Expected body");
+        super(
+            builder.alloc,
+            Objects.requireNonNull(builder.request, "Expected request")
+                .headers().getInt(CONTENT_LENGTH, 0));
+        connection = Objects.requireNonNull(builder.connection, "Expected connection");
         queryStringDecoder = Objects.requireNonNull(builder.queryStringDecoder, "Expected queryStringDecoder");
-        request = Objects.requireNonNull(builder.request, "Expected request");
+        request = builder.request;
         consumer = builder.consumer;
-    }
-
-    @Override
-    public <R extends DtoReadable> FutureProgress<R> bodyAs(final Class<R> class_) {
-        return body.bodyAs(class_);
-    }
-
-    @Override
-    public <R extends DtoReadable> FutureProgress<R> bodyAs(final DtoEncoding encoding, final Class<R> class_) {
-        return body.bodyAs(encoding, class_);
-    }
-
-    @Override
-    public FutureProgress<byte[]> bodyAsByteArray() {
-        return body.bodyAsByteArray();
-    }
-
-    @Override
-    public <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(final Class<R> class_) {
-        return body.bodyAsList(class_);
-    }
-
-    @Override
-    public <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(
-        final DtoEncoding encoding,
-        final Class<R> class_)
-    {
-        return body.bodyAsList(encoding, class_);
-    }
-
-    @Override
-    public FutureProgress<? extends InputStream> bodyAsStream() {
-        return body.bodyAsStream();
-    }
-
-    @Override
-    public FutureProgress<String> bodyAsString() {
-        return body.bodyAsString();
-    }
-
-    @Override
-    public FutureProgress<Path> bodyTo(final Path path, final boolean append) {
-        return body.bodyTo(path, append);
     }
 
     @Override
@@ -87,6 +50,12 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
             headers = new HttpHeaders(request.headers());
         }
         return headers;
+    }
+
+    @Override
+    public HttpServiceRequest clearHeaders() {
+        request.headers().clear();
+        return this;
     }
 
     @Override
@@ -116,9 +85,14 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
     }
 
     @Override
-    public ConsumerDescription consumer() {
+    public HttpServiceConnection connection() {
+        return connection;
+    }
+
+    @Override
+    public SystemIdentityDescription consumer() {
         if (consumer == null) {
-            throw new NotSecureException("Not in secure mode; consumer " +
+            throw new SecurityDisabled("Not in secure mode; consumer " +
                 "information unavailable");
         }
         return consumer;
@@ -133,13 +107,19 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
     }
 
     public static class Builder {
-        private NettyHttpBodyReceiver body;
+        private ByteBufAllocator alloc;
         private HttpRequest request;
-        private ConsumerDescription consumer;
+        private SystemIdentityDescription consumer;
+        private HttpServiceConnection connection;
         private QueryStringDecoder queryStringDecoder;
 
-        public Builder body(final NettyHttpBodyReceiver body) {
-            this.body = body;
+        public Builder alloc(final ByteBufAllocator alloc) {
+            this.alloc = alloc;
+            return this;
+        }
+
+        public Builder connection(final HttpServiceConnection connection) {
+            this.connection = connection;
             return this;
         }
 
@@ -153,7 +133,7 @@ public class NettyHttpServiceRequest implements HttpServiceRequest {
             return this;
         }
 
-        public Builder consumer(final ConsumerDescription consumer) {
+        public Builder consumer(final SystemIdentityDescription consumer) {
             this.consumer = consumer;
             return this;
         }

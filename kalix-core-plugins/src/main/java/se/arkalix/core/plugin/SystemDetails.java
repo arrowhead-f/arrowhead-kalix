@@ -1,7 +1,7 @@
 package se.arkalix.core.plugin;
 
 import se.arkalix.ArSystem;
-import se.arkalix.description.ProviderDescription;
+import se.arkalix.description.SystemDescription;
 import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoToString;
@@ -50,31 +50,31 @@ public interface SystemDetails {
     Optional<String> publicKeyBase64();
 
     /**
-     * Converts this objects into a {@link ProviderDescription}.
+     * Converts this objects into a {@link SystemDescription}.
      *
-     * @return New {@link ProviderDescription}.
+     * @return New {@link SystemDescription}.
      * @throws RuntimeException If the value returned by {@link
      *                          #publicKeyBase64()} is not a supported type of
      *                          public key.
      */
-    default ProviderDescription toProviderDescription() {
-        return new ProviderDescription(name(), new InetSocketAddress(hostname(), port()), publicKeyBase64()
+    default SystemDescription toSystemDescription() {
+        return SystemDescription.from(name(), publicKeyBase64()
             .map(X509Keys::parsePublicKey)
-            .orElse(null));
+            .orElse(null), new InetSocketAddress(hostname(), port()));
     }
 
     static SystemDetailsDto from(final ArSystem system) {
         return new SystemDetailsBuilder()
             .name(system.name())
-            .hostname(system.localSocketAddress().getHostString())
-            .port(system.localPort())
+            .hostname(system.socketAddress().getHostString())
+            .port(system.port())
             .publicKeyBase64(system.isSecure()
                 ? Base64.getEncoder().encodeToString(system.identity().publicKey().getEncoded())
                 : null)
             .build();
     }
 
-    static SystemDetailsDto from(final ProviderDescription provider) {
+    static SystemDetailsDto from(final SystemDescription provider) {
         final var socketAddress = provider.socketAddress();
         return new SystemDetailsBuilder()
             .name(provider.name())

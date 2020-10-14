@@ -7,7 +7,6 @@ import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
 import se.arkalix.internal.core.plugin.Paths;
-import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
 import se.arkalix.util.concurrent.Future;
@@ -57,7 +56,7 @@ public class HttpJsonTrustedContractObservationService implements ArConsumer, Ar
     {
         return consumer.send(new HttpConsumerRequest()
             .method(GET)
-            .uri(uriGet)
+            .path(uriGet)
             .queryParameter("name1", name1)
             .queryParameter("name2", name2)
             .queryParameter("id", "" + id))
@@ -84,9 +83,9 @@ public class HttpJsonTrustedContractObservationService implements ArConsumer, Ar
         public HttpJsonTrustedContractObservationService create(
             final ArSystem system,
             final ServiceDescription service,
-            final Collection<EncodingDescriptor> encodings) throws Exception
-        {
-            final var consumer = new HttpConsumer(HttpClient.from(system), service, encodings);
+            final Collection<EncodingDescriptor> encodings
+        ) {
+            final var consumer = HttpConsumer.create(system, service, encodings);
             return new HttpJsonTrustedContractObservationService(consumer);
         }
     }

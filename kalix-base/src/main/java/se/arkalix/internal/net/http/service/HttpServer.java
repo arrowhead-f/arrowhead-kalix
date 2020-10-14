@@ -31,7 +31,7 @@ public class HttpServer implements ArServer {
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 
     private final Set<ArServiceHandle> handles = new HashSet<>();
-    private final Map<String, HttpServiceInternal> services = new ConcurrentSkipListMap<>(Comparator.reverseOrder());
+    private final Map<String, HttpServerService> services = new ConcurrentSkipListMap<>(Comparator.reverseOrder());
 
     private final PluginNotifier pluginNotifier;
     private final ArSystem system;
@@ -64,7 +64,7 @@ public class HttpServer implements ArServer {
                 .handler(new LoggingHandler())
                 .childHandler(new NettyHttpServiceConnectionInitializer(system, server::getServiceByPath, sslContext));
 
-            return adapt(bootstrap.bind(system.localAddress(), system.localPort()))
+            return adapt(bootstrap.bind(system.address(), system.port()))
                 .map(channel -> {
                     server.channel = channel;
                     return server;
@@ -111,7 +111,7 @@ public class HttpServer implements ArServer {
             if (result0.isFailure()) {
                 return Future.failure(result0.fault());
             }
-            final var httpService = new HttpServiceInternal(system, (HttpService) service);
+            final var httpService = new HttpServerService(system, (HttpService) service);
             final var key = httpService.basePath().orElse("/");
 
             final var existingService = services.putIfAbsent(key, httpService);
@@ -154,7 +154,7 @@ public class HttpServer implements ArServer {
         }
     }
 
-    private Optional<HttpServiceInternal> getServiceByPath(final String path) {
+    private Optional<HttpServerService> getServiceByPath(final String path) {
         for (final var entry : services.entrySet()) {
             final var service = entry.getValue();
             if (service.basePath().map(path::startsWith).orElse(true)) {
@@ -177,11 +177,11 @@ public class HttpServer implements ArServer {
     }
 
     private class ServiceHandle implements ArServiceHandle {
-        private final HttpServiceInternal httpService;
+        private final HttpServerService httpService;
         private final AtomicBoolean isDismissed = new AtomicBoolean(false);
         private final String key;
 
-        public ServiceHandle(final HttpServiceInternal httpService, final String key) {
+        public ServiceHandle(final HttpServerService httpService, final String key) {
             this.httpService = httpService;
             this.key = key;
         }

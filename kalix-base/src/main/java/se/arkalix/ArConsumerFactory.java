@@ -38,7 +38,7 @@ public interface ArConsumerFactory<C extends ArConsumer> {
      * factory.
      */
     default Collection<EncodingDescriptor> serviceEncodings() {
-        return EncodingDescriptor.dtoEncodings();
+        return EncodingDescriptor.allWithDtoSupport();
     }
 
     /**
@@ -80,9 +80,8 @@ public interface ArConsumerFactory<C extends ArConsumer> {
      * @param system  System to consume {@code service}.
      * @param service Description of service to be consumed.
      * @return Created {@link ArConsumer} instance.
-     * @throws Exception Any exception.
      */
-    default C create(ArSystem system, ServiceDescription service) throws Exception {
+    default C create(ArSystem system, ServiceDescription service) {
         return create(system, service, serviceEncodings());
     }
 
@@ -97,7 +96,6 @@ public interface ArConsumerFactory<C extends ArConsumer> {
      *                  non- empty result, these encodings must be a subset of
      *                  the encodings returned by that method.
      * @return Created {@link ArConsumer} instance.
-     * @throws Exception Any exception.
      */
-    C create(ArSystem system, ServiceDescription service, Collection<EncodingDescriptor> encodings) throws Exception;
+    C create(ArSystem system, ServiceDescription service, Collection<EncodingDescriptor> encodings);
 }

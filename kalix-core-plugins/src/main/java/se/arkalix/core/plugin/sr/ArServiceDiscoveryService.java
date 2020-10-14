@@ -79,6 +79,6 @@ public interface ArServiceDiscoveryService extends ArConsumer {
      * or failed.
      */
     default Future<?> unregister(final String serviceName, final ArSystem system) {
-        return unregister(serviceName, system.name(), system.localSocketAddress().getHostString(), system.localPort());
+        return unregister(serviceName, system.name(), system.socketAddress().getHostString(), system.port());
     }
 }

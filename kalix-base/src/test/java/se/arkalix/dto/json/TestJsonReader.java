@@ -47,7 +47,7 @@ public class TestJsonReader {
         return Stream.of(
             arguments(List.of(new JsonArray()), "[[]]"),
             arguments(List.of(new JsonObject(new JsonPair("x", new JsonNumber(1)))), "[{\"x\":1}]"),
-            arguments(List.of(new JsonArray(JsonNull.INSTANCE), new JsonArray(JsonBoolean.TRUE)),
+            arguments(List.of(new JsonArray(JsonNull.instance), new JsonArray(JsonBoolean.TRUE)),
                 "[[null],[true]]")
         );
     }

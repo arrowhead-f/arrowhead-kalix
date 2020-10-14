@@ -26,7 +26,7 @@ public class JsonNull implements JsonValue {
     /**
      * JSON null.
      */
-    public static final JsonNull INSTANCE = new JsonNull();
+    public static final JsonNull instance = new JsonNull();
 
     @Override
     public JsonType type() {
@@ -55,10 +55,10 @@ public class JsonNull implements JsonValue {
     public static JsonNull readJson(final JsonTokenBuffer buffer) throws DtoReadException {
         var token = buffer.next();
         if (token.type() != JsonType.NULL) {
-            throw new DtoReadException(DtoEncoding.JSON, "Expected null",
-                token.readStringRaw(buffer.source()), token.begin());
+            throw new DtoReadException(JsonNull.class, DtoEncoding.JSON,
+                "expected 'null'", token.readStringRaw(buffer.source()), token.begin());
         }
-        return INSTANCE;
+        return instance;
     }
 
     @Override

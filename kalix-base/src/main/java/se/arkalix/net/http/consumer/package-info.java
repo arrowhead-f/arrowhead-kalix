@@ -1,8 +1,9 @@
 /**
  * <h1>HTTP Consumer Utilities</h1>
  * This package most significantly contains the {@link
- * se.arkalix.net.http.consumer.HttpConsumer HttpConsumer} class, which is useful for
- * sending HTTP requests to remote Arrowhead {@link se.arkalix services}.
+ * se.arkalix.net.http.consumer.HttpConsumer HttpConsumer} class, which is
+ * useful for sending HTTP requests to remote Arrowhead {@link se.arkalix
+ * services}.
  * <p>
  * This package distinguishing itself form the {@link
  * se.arkalix.net.http.client HTTP Client Utilities} package by relying heavily
@@ -12,7 +13,8 @@
  * se.arkalix.query.ServiceQuery#using(se.arkalix.ArConsumerFactory) using()}
  * method of  the {@link se.arkalix.query.ServiceQuery ServiceQuery} class, an
  * instance of which is returned by the {@link se.arkalix.ArSystem#consume()
- * ArSystem#consume()} method. It effectively allows calls as the following naive example:
+ * ArSystem#consume()} method. It effectively allows calls as the following
+ * naive example:
  * <pre>
  *     system.consume()
  *         .name("the-service-name")

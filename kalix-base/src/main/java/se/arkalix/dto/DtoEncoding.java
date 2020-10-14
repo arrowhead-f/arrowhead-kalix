@@ -27,14 +27,20 @@ public enum DtoEncoding {
     }
 
     /**
-     * @return Reader useful for decoding objects encoded with this encoding.
+     * Gets {@link DtoReader} useful for decoding objects encoded with this DTO
+     * encoding.
+     *
+     * @return DTO reader.
      */
     public DtoReader reader() {
         return reader;
     }
 
     /**
-     * @return Writer useful for encoding objects encoded with this encoding.
+     * Gets {@link DtoWriter} useful for encoded objects with this DTO
+     * encoding.
+     *
+     * @return DTO writer.
      */
     public DtoWriter writer() {
         return writer;

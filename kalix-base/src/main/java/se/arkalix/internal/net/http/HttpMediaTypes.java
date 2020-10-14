@@ -16,6 +16,89 @@ public class HttpMediaTypes {
     private HttpMediaTypes() {}
 
     /**
+     * Attempts to convert given "content-type" into an encoding descriptor.
+     * <p>
+     * While RFC 6838, Section 4.2.8 outlines requirements for how media types
+     * should be structured such as to make their encodings more apparent, the
+     * RFC in question is only categorized as "BEST CURRENT PRACTICE", which
+     * means that it becomes practically impossible to avoid using some
+     * guesswork when writing a routine such as this. This particular
+     * implementation treats the subtype suffix or the subtype itself as an
+     * encoding name. No other parts of the "content-type" is regarded. The
+     * method returns an empty optional <i>only</i> if the given "content-type"
+     * is either empty or invalid.
+     * <p>
+     * While Section 4.2.8 of RFC 6838 designates "+" as suffix delimiter, the
+     * media types using the EXI encoding, such as SenML, seem to use "-" as
+     * delimiter, at least if looking at the IANA <i>Media Types</i> registry.
+     * For this reason, both "+" and "-" are considered valid suffix
+     * designators. For example, both the {@code "application/json"} and {@code
+     * "application/senml+json"} content types will result in {@link
+     * EncodingDescriptor#JSON} being returned.
+     * <p>
+     * More about HTTP content types can be read in RFC 7231, Section 3.1.1.5.
+     *
+     * @param contentType A content type, assumed to follow the specification
+     *                    for the "content-type" HTTP header field.
+     * @return An encoding descriptor, if any such can be produced from the
+     * given content type.
+     * @see <a href="https://tools.ietf.org/html/rfc6838#section-4.2.8">RFC 6838, Section 4.2.8</a>
+     * @see <a href="https://tools.ietf.org/html/rfc7231#section-3.1.1.5">RFC 7231, Section 3.1.1.5</a>
+     * @see <a href="https://www.iana.org/assignments/media-types/media-types.xhtml">IANA Media Types</a>
+     */
+    public static Optional<EncodingDescriptor> encodingFromContentType(final String contentType) {
+        if (contentType == null || contentType.length() == 0) {
+            return Optional.empty();
+        }
+
+        int c0 = 0, c1;
+
+        // Find end of media type.
+        c1 = contentType.indexOf(';');
+        if (c1 == -1) {
+            c1 = contentType.length();
+        }
+
+        // Trim trailing and leading whitespace.
+        while (c1 != 0) {
+            if (contentType.charAt(--c1) > ' ') {
+                c1 += 1;
+                break;
+            }
+        }
+        while (c0 < c1) {
+            if (contentType.charAt(c0) > ' ') {
+                break;
+            }
+            c0 += 1;
+        }
+
+        if (c0 == c1) {
+            return Optional.empty();
+        }
+
+        // Skip until beginning of subtype.
+        while (c0 < c1) {
+            final var c = contentType.charAt(c0);
+            c0 += 1;
+            if (c == '/') {
+                break;
+            }
+        }
+
+        // If a suffix is present in subtype, skip everything else.
+        for (var cx = c1; cx > c0; ) {
+            final var c = contentType.charAt(--cx);
+            if (c == '+' || c == '-') { // EXI uses '-' as suffix delimiter.
+                c0 = cx + 1;
+                break;
+            }
+        }
+
+        return Optional.of(EncodingDescriptor.getOrCreate(contentType.substring(c0, c1)));
+    }
+
+    /**
      * Determines which, if any, out of provided {@code encodings} could be
      * used to decode and/or encode objects from/to the media type specified in
      * {@code contentType}, which is assumed to be an HTTP "content-type"
@@ -26,19 +109,20 @@ public class HttpMediaTypes {
      * RFC in question is only categorized as "BEST CURRENT PRACTICE", which
      * means that it becomes practically impossible to avoid using some
      * guesswork when writing a routine such as this. This particular
-     * implementation will require that a media type matching an encoding has
-     * "application" as type and has a subtype <i>or suffix</i> equal to the
-     * name of the encoding in question. While Section 4.2.8 designates "+" as
-     * suffix delimiter, the media types using the EXI encoding, such as SenML,
-     * seem to use "-" as delimiter, at least if looking at the IANA
-     * <i>Media Types</i> registry. For this reason, both "+" and "-" are
-     * considered valid suffix designators.
+     * implementation will require that a media type matching an encoding has a
+     * subtype <i>or suffix</i> equal to the name of the encoding in question.
+     * Types are ignored.
      * <p>
-     * For example the {@link EncodingDescriptor#JSON JSON} encoding will match
-     * both the {@code "application/json"} and {@code "application/senml+json"}
-     * media types. Furthermore, the {@link EncodingDescriptor#EXI EXI}
-     * encoding will match {@code "application/exi"}, which is non-standard at
-     * the time of writing, as well as {@code "application/senml-exi"}.
+     * While Section 4.2.8 of RFC 6838 designates designates "+" as suffix
+     * delimiter, the media types using the EXI encoding, such as SenML, seem
+     * to use "-" as delimiter, at least if looking at the IANA <i>Media
+     * Types</i> registry. For this reason, both "+" and "-" are considered
+     * valid suffix designators. For example the {@link EncodingDescriptor#JSON
+     * JSON} encoding will match both the {@code "application/json"} and {@code
+     * "application/senml+json"} media types. Furthermore, the {@link
+     * EncodingDescriptor#EXI EXI} encoding will match {@code
+     * "application/exi"}, which is non-standard at the time of writing, as
+     * well as {@code "application/senml-exi"}.
      * <p>
      * More about HTTP content types can be read in RFC 7231, Section 3.1.1.5.
      *
@@ -52,8 +136,8 @@ public class HttpMediaTypes {
      */
     public static Optional<EncodingDescriptor> findEncodingCompatibleWithContentType(
         final List<EncodingDescriptor> encodings,
-        final String contentType)
-    {
+        final String contentType
+    ) {
         Objects.requireNonNull(encodings, "Expected encodings");
         if (encodings.size() == 0) {
             throw new IllegalArgumentException("Expected encodings.size() > 0");
@@ -88,12 +172,13 @@ public class HttpMediaTypes {
             return Optional.of(encodings.get(0));
         }
 
-        // Ensure type is "application".
-        if (contentType.startsWith("application/", c0)) {
-            c0 += 12;
-        }
-        else {
-            return Optional.empty();
+        // Skip until beginning of subtype.
+        while (c0 < c1) {
+            final var c = contentType.charAt(c0);
+            c0 += 1;
+            if (c == '/') {
+                break;
+            }
         }
 
         // If a suffix is present in subtype, skip everything else.
@@ -149,8 +234,8 @@ public class HttpMediaTypes {
      */
     public static Optional<EncodingDescriptor> findEncodingCompatibleWithAcceptHeaders(
         final List<EncodingDescriptor> encodings,
-        final List<String> acceptHeaders)
-    {
+        final List<String> acceptHeaders
+    ) {
         Objects.requireNonNull(encodings, "Expected encodings");
         if (encodings.size() == 0) {
             throw new IllegalArgumentException("Expected encodings.size() > 0");
@@ -171,8 +256,8 @@ public class HttpMediaTypes {
 
     private static EncodingDescriptor findEncodingCompatibleWithAcceptHeader(
         final List<EncodingDescriptor> encodings,
-        final String acceptHeader)
-    {
+        final String acceptHeader
+    ) {
         int a0 = 0, a1, a2 = 0;
         final int a3 = acceptHeader.length();
 
@@ -213,15 +298,13 @@ public class HttpMediaTypes {
                 a0 += 1;
             }
 
-            // Ensure type is either "*" or "application".
-            if (acceptHeader.charAt(a0) == '*' && acceptHeader.charAt(a0 + 1) == '/') {
-                a0 += 2;
-            }
-            else if (acceptHeader.startsWith("application/", a0)) {
-                a0 += 12;
-            }
-            else {
-                continue;
+            // Skip until beginning of subtype.
+            while (a0 < a1) {
+                c = acceptHeader.charAt(a0);
+                a0 += 1;
+                if (c == '/') {
+                    break;
+                }
             }
 
             // If subtype is "*", return the first of the provided encodings.
@@ -272,7 +355,7 @@ public class HttpMediaTypes {
         if (encoding == DtoEncoding.JSON) {
             return "application/json";
         }
-        throw new IllegalStateException("Supported DTO encoding could not be converted to media type");
+        return "application/" + encoding.name().toLowerCase();
     }
 
     /**

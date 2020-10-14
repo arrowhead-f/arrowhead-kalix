@@ -1,120 +1,28 @@
 package se.arkalix.net.http.consumer;
 
-import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.net.http.client.HttpClientConnection;
-import se.arkalix.security.NotSecureException;
-import se.arkalix.security.identity.SystemIdentity;
+import se.arkalix.net.http.HttpConnectionWithArSystem;
 import se.arkalix.util.concurrent.Future;
 
-import java.net.InetSocketAddress;
-import java.util.Objects;
-
 /**
- * Connection useful for sending HTTP requests to a {@link se.arkalix consumed
- * service}.
+ * Represents an established HTTP connection useful for consuming a remote
+ * Arrowhead service.
  */
-@SuppressWarnings("unused")
-public class HttpConsumerConnection {
-    private final HttpClientConnection connection;
-    private final EncodingDescriptor encoding;
-    private final SystemIdentity provider;
-    private final String authorization;
-
-    HttpConsumerConnection(
-        final HttpClientConnection connection,
-        final EncodingDescriptor encoding,
-        final SystemIdentity provider,
-        final String authorization)
-    {
-        this.connection = Objects.requireNonNull(connection, "Expected connection");
-        this.encoding = Objects.requireNonNull(encoding, "Expected encoding");
-        this.provider = provider;
-        this.authorization = authorization;
-    }
-
+public interface HttpConsumerConnection extends HttpConnectionWithArSystem {
     /**
-     * @return Local network interface bound to this connection.
-     */
-    public InetSocketAddress localSocketAddress() {
-        return connection.localSocketAddress();
-    }
-
-    /**
-     * @return Identity associated with the provider of the consumed service.
-     * @throws NotSecureException If the provider is not running in secure
-     *                            mode.
-     */
-    public SystemIdentity provider() {
-        if (provider == null) {
-            throw new NotSecureException("Not in secure mode");
-        }
-        return provider;
-    }
-
-    /**
-     * @return {@code true} only if this connection can be used to send
-     * requests to the service provider.
-     */
-    public boolean isLive() {
-        return connection.isLive();
-    }
-
-    /**
-     * @return {@code true} only if the provider of the consumed service is
-     * running in secure mode, which implies that the connection is secured via
-     * HTTPS.
-     */
-    public boolean isSecure() {
-        return connection.isSecure();
-    }
-
-    /**
-     * Sends given {@code request} to HTTP service represented by this
-     * {@code HttpClientConnection}.
+     * Sends given {@code request} to connected remote host.
      *
      * @param request HTTP request to send.
-     * @return {@code Future} {@code HttpConsumerResponse}.
+     * @return Future eventually completed with response or exception.
      */
-    public Future<HttpConsumerResponse> send(final HttpConsumerRequest request) {
-        prepare(request);
-        return connection.send(request.asClientRequest())
-            .map(response -> new HttpConsumerResponse(response, encoding));
-    }
+    Future<HttpConsumerResponse> send(final HttpConsumerRequest request);
 
     /**
-     * Sends given {@code request} to HTTP service represented by this
-     * {@code HttpClientConnection}, awaits either a response or an error,
-     * closes this connection and then completes the returned {@code Future}
-     * with the resulting response or error.
+     * Sends given {@code request} to connected remote host and then closes
+     * the connection after the response has either been received or an
+     * exception prevents it from being received.
      *
      * @param request HTTP request to send.
-     * @return {@code Future} {@code HttpConsumerResponse}.
+     * @return Future eventually completed with response or exception.
      */
-    public Future<HttpConsumerResponse> sendAndClose(final HttpConsumerRequest request) {
-        prepare(request);
-        return connection.sendAndClose(request.asClientRequest())
-            .map(response -> new HttpConsumerResponse(response, encoding));
-    }
-
-    private void prepare(final HttpConsumerRequest request) {
-        Objects.requireNonNull(request, "Expected request");
-
-        request.setEncodingIfRequired(() -> encoding.asDtoEncoding().orElseThrow(() ->
-            new IllegalStateException("No DTO support is available for the " +
-                "encoding \"" + encoding + "\"; the request body must be " +
-                "encoded some other way")));
-
-        if (authorization != null) {
-            request.headers().setIfEmpty("authorization", authorization);
-        }
-    }
-
-    /**
-     * Attempts to close connection.
-     *
-     * @return Future completed when closing is done. Can be safely ignored.
-     */
-    public Future<?> close() {
-        return connection.close();
-    }
+    Future<HttpConsumerResponse> sendAndClose(final HttpConsumerRequest request);
 }
