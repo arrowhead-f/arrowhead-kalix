@@ -668,10 +668,6 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         writeCache.append('[').addWrite(builder);
 
         builder
-            .addStatement("final var size$L = $N.$N",
-                level, name, type.descriptor() == DtoDescriptor.ARRAY
-                    ? "length"
-                    : "size()")
             .addStatement("var i$L = 0", level)
             .beginControlFlow("for (final var item$L : $N)", level, name)
             .beginControlFlow("if (i$L++ != 0)", level)
@@ -724,7 +720,6 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         final var map = (DtoMap) type;
         builder
             .addStatement("final var entrySet$L = $N.entrySet()", level, name)
-            .addStatement("final var size$1L = entrySet$1L.size()", level)
             .addStatement("var i$L = 0", level)
             .beginControlFlow("for (final var entry$1L : entrySet$1L)", level)
             .beginControlFlow("if (i$L++ != 0)", level)
