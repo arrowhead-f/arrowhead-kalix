@@ -263,7 +263,7 @@ public class NettyHttpServiceConnection
         final var channel = ctx.channel();
         channel.write(new DefaultHttpResponse(nettyVersion, nettyStatus, nettyHeaders));
         body.writeTo(channel);
-        final var future = channel.write(LastHttpContent.EMPTY_LAST_CONTENT);
+        final var future = channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
 
         if (isClosing) {
             future.addListener(ChannelFutureListener.CLOSE);
