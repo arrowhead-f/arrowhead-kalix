@@ -242,7 +242,7 @@ public class NettyHttpServiceConnection
         HttpUtil.setKeepAlive(nettyHeaders, nettyVersion, !isClosing);
 
         if (!nettyHeaders.contains(CONTENT_TYPE)) {
-            final var encoding = response.encoding().orElse(null);
+            final var encoding = response.encoding().orElse(defaultEncoding);
             if (encoding == null) {
                 nettyHeaders.set(CONTENT_TYPE, TEXT_PLAIN + ";charset=" + response.charset()
                     .orElse(StandardCharsets.UTF_8)
