@@ -93,7 +93,8 @@ public class JsonArray implements JsonCollection, Iterable<JsonValue> {
         final var source = buffer.source();
         var token = buffer.next();
         if (token.type() != JsonType.ARRAY) {
-            throw new DtoReadException(JSON, "Expected array", token.readStringRaw(source), token.begin());
+            throw new DtoReadException(JsonArray.class, JSON, "expected array",
+                token.readStringRaw(source), token.begin());
         }
         final var elements = new ArrayList<JsonValue>(token.nChildren());
         for (var n = token.nChildren(); n-- != 0; ) {

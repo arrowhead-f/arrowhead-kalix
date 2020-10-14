@@ -279,8 +279,8 @@ public class JsonNumber implements JsonValue {
         final var source = buffer.source();
         var token = buffer.next();
         if (token.type() != JsonType.NUMBER) {
-            throw new DtoReadException(DtoEncoding.JSON, "Expected number",
-                token.readStringRaw(source), token.begin());
+            throw new DtoReadException(JsonNumber.class, DtoEncoding.JSON,
+                "expected number", token.readStringRaw(source), token.begin());
         }
         return new JsonNumber(token.readStringRaw(source));
     }

@@ -45,7 +45,6 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
 
     private void implementReadMethodsFor(final DtoTarget target, final TypeSpec.Builder implementation) throws DtoException {
         final var dataTypeName = target.dataTypeName();
-        final var dataSimpleName = target.dataSimpleName();
         final var properties = target.properties();
 
         implementation.addMethod(MethodSpec.methodBuilder("readJson")
@@ -84,7 +83,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         final var builderName = target.interfaceType().simpleName() + "Builder";
         builder
             .beginControlFlow("if (token.type() != $T.OBJECT)", JsonType.class)
-            .addStatement("errorMessage = \"Expected object\"")
+            .addStatement("errorMessage = \"expected object\"")
             .addStatement("break error")
             .endControlFlow()
             .addStatement("final var builder = new $N()", builderName)
@@ -117,38 +116,39 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         if (hasInterface) {
             builder
                 .beginControlFlow("catch (final $T exception)", DtoReadException.class)
-                .addStatement("errorMessage = \"($N) Failed to read child object\"", dataSimpleName)
+                .addStatement("errorMessage = \"failed to read child object\"")
                 .addStatement("errorCause = exception")
                 .endControlFlow();
         }
         if (hasNumber) {
             builder
                 .beginControlFlow("catch (final $T exception)", NumberFormatException.class)
-                .addStatement("errorMessage = \"($N) Invalid number\"", dataSimpleName)
+                .addStatement("errorMessage = \"invalid number\"")
                 .addStatement("errorCause = exception")
                 .endControlFlow();
         }
         if (hasMandatory) {
             builder
                 .beginControlFlow("catch (final $T exception)", NullPointerException.class)
-                .addStatement("errorMessage = \"($N) Mandatory field `\" + exception.getMessage() + " +
-                        "\"` missing in object\"", dataSimpleName)
+                .addStatement("errorMessage = \"required field '\" + exception.getMessage() + " +
+                        "\"' not specified\"")
                 .addStatement("errorCause = exception")
                 .endControlFlow();
         }
         if (hasEnum) {
             builder
                 .beginControlFlow("catch (final $T exception)", IllegalArgumentException.class)
-                .addStatement("errorMessage = \"($N) \" + exception.getMessage()", dataSimpleName)
+                .addStatement("errorMessage = \"DTO invariant not satisfied\"")
                 .addStatement("errorCause = exception")
                 .endControlFlow();
         }
 
         builder
             .addStatement("final var atEnd = n == 0")
-            .addStatement("throw new $1T($2T.JSON, errorMessage, atEnd " +
-                    "? \"{\" : token.readStringRaw(source), atEnd ? 0 : token.begin(), errorCause)",
-                DtoReadException.class, DtoEncoding.class);
+            .addStatement("throw new $1T($2T.class, $3T.JSON, errorMessage, " +
+                    "atEnd ? \"{\" : token.readStringRaw(source), atEnd ? 0 " +
+                    ": token.begin(), errorCause)",
+                DtoReadException.class, dataTypeName, DtoEncoding.class);
 
         implementation.addMethod(builder.build());
     }
@@ -292,7 +292,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         }
         builder
             .beginControlFlow("if (type != $T.ARRAY)", JsonType.class)
-            .addStatement("errorMessage = \"Expected array\"")
+            .addStatement("errorMessage = \"expected array\"")
             .addStatement("break error")
             .endControlFlow();
 
@@ -335,7 +335,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         }
         builder
             .beginControlFlow("default:")
-            .addStatement("errorMessage = \"Expected true or false\"")
+            .addStatement("errorMessage = \"expected 'true' or 'false'\"")
             .addStatement("break error")
             .endControlFlow()
             .endControlFlow()
@@ -366,7 +366,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         }
         builder
             .beginControlFlow("if (type != $T.STRING)", JsonType.class)
-            .addStatement("errorMessage = \"Expected number\"")
+            .addStatement("errorMessage = \"expected number\"")
             .addStatement("break error")
             .endControlFlow()
             .addStatement(assignment.expand("$T.valueOf(token.readString(source))"), type.inputTypeName());
@@ -404,7 +404,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         }
         builder
             .beginControlFlow("if (type != $T.OBJECT)", JsonType.class)
-            .addStatement("errorMessage = \"Expected object\"")
+            .addStatement("errorMessage = \"expected object\"")
             .addStatement("break error")
             .endControlFlow()
             .addStatement("var n$L = token.nChildren()", level)
@@ -442,7 +442,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         }
         builder
             .beginControlFlow("if (type != $T.NUMBER)", JsonType.class)
-            .addStatement("errorMessage = \"Expected number\"")
+            .addStatement("errorMessage = \"expected number\"")
             .addStatement("break error")
             .endControlFlow()
             .addStatement(assignment.expand("token.read" + type + "(source)"));
@@ -460,7 +460,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
         }
         builder
             .beginControlFlow("if (type != $T.STRING)", JsonType.class)
-            .addStatement("errorMessage = \"Expected string\"")
+            .addStatement("errorMessage = \"expected string\"")
             .addStatement("break error")
             .endControlFlow()
             .addStatement(assignment.expand("token.readString(source)"));
@@ -482,7 +482,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
                 builder.addStatement("case NULL: continue");
             }
             builder
-                .addStatement("default: errorMessage = \"Expected number or string\"; break error")
+                .addStatement("default: errorMessage = \"expected number or string\"; break error")
                 .endControlFlow()
                 .addStatement(assignment.expand("value$L"), level);
         }
@@ -496,7 +496,7 @@ public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
             }
             builder
                 .beginControlFlow("if (type != $T.STRING)", JsonType.class)
-                .addStatement("errorMessage = \"Expected string\"")
+                .addStatement("errorMessage = \"expected string\"")
                 .addStatement("break error")
                 .endControlFlow()
                 .addStatement(assignment.expand("token.read$T(source)"), class_);

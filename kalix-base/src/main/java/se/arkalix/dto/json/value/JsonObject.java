@@ -93,7 +93,8 @@ public class JsonObject implements JsonCollection, Iterable<JsonPair> {
         final var source = buffer.source();
         var token = buffer.next();
         if (token.type() != JsonType.OBJECT) {
-            throw new DtoReadException(DtoEncoding.JSON, "Expected object", token.readStringRaw(source), token.begin());
+            throw new DtoReadException(JsonObject.class, DtoEncoding.JSON,
+                "expected object", token.readStringRaw(source), token.begin());
         }
         final var pairs = new ArrayList<JsonPair>(token.nChildren());
         for (var n = token.nChildren(); n-- != 0; ) {

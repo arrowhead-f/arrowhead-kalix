@@ -55,8 +55,8 @@ public class JsonNull implements JsonValue {
     public static JsonNull readJson(final JsonTokenBuffer buffer) throws DtoReadException {
         var token = buffer.next();
         if (token.type() != JsonType.NULL) {
-            throw new DtoReadException(DtoEncoding.JSON, "Expected null",
-                token.readStringRaw(buffer.source()), token.begin());
+            throw new DtoReadException(JsonNull.class, DtoEncoding.JSON,
+                "expected 'null'", token.readStringRaw(buffer.source()), token.begin());
         }
         return instance;
     }

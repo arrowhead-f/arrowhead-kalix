@@ -3,6 +3,7 @@ package se.arkalix.internal.dto.json;
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadException;
 import se.arkalix.dto.binary.BinaryReader;
+import se.arkalix.dto.json.value.JsonString;
 import se.arkalix.dto.json.value.JsonType;
 import se.arkalix.util.annotation.Internal;
 
@@ -195,7 +196,8 @@ public final class JsonToken {
             source.getBytes(p0, buffer, b0, p1 - p0);
             return new String(buffer, StandardCharsets.UTF_8);
         }
-        throw new DtoReadException(DtoEncoding.JSON, "Bad escape", badEscapeBuilder.toString(), p1);
+        throw new DtoReadException(JsonString.class, DtoEncoding.JSON,
+            "Bad escape", badEscapeBuilder.toString(), p1);
     }
 
     public String readStringRaw(final BinaryReader source) {

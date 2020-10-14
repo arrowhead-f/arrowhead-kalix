@@ -75,8 +75,8 @@ public class JsonBoolean implements JsonValue {
         case TRUE: return TRUE;
         case FALSE: return FALSE;
         default:
-            throw new DtoReadException(DtoEncoding.JSON, "Expected true or false",
-                token.readStringRaw(buffer.source()), token.begin());
+            throw new DtoReadException(JsonBoolean.class, DtoEncoding.JSON,
+                "expected 'true' or 'false'", token.readStringRaw(buffer.source()), token.begin());
         }
     }
 
