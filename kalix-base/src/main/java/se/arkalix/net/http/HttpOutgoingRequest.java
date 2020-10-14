@@ -130,13 +130,14 @@ public interface HttpOutgoingRequest<Self> extends HttpOutgoing<Self> {
      * @return This request.
      */
     default Self uri(final URI uri) {
-        final var query = uri.getRawQuery();
         queryParameters().clear();
-        for (final var pair : query.split("&")) {
-            final var parts = pair.split("=", 2);
-            queryParameter(urlDecode(parts[0]), urlDecode(parts[1]));
+        final var query = uri.getRawQuery();
+        if (query != null) {
+            for (final var pair : query.split("&")) {
+                final var parts = pair.split("=", 2);
+                queryParameter(urlDecode(parts[0]), urlDecode(parts[1]));
+            }
         }
-
         final var path = uri.getPath();
         return path(path != null ? path : "/");
     }
