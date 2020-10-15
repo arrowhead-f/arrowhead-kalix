@@ -230,10 +230,13 @@ public class ServiceQuery {
      * ServiceNotFoundException}.
      */
     public <C extends ArConsumer> Future<Stream<C>> allUsing(final ArConsumerFactory<C> factory) {
-        return updateAndValidateUsing(factory)
-            .flatMap(ignored -> resolveAll()
-                .map(services -> services.stream()
-                    .map(service -> factory.create(consumer, service, encodings))));
+        final var throwable = updateAndValidateUsing(factory);
+        if (throwable != null) {
+            return Future.failure(throwable);
+        }
+        return resolveAll()
+            .map(services -> services.stream()
+                .map(service -> factory.create(consumer, service, encodings)));
     }
 
     /**
@@ -250,20 +253,23 @@ public class ServiceQuery {
      * ServiceNotFoundException}.
      */
     public <C extends ArConsumer> Future<C> oneUsing(final ArConsumerFactory<C> factory) {
-        return updateAndValidateUsing(factory)
-            .flatMap(ignored -> resolveOne()
-                .map(service -> factory.create(consumer, service, encodings)));
+        final var throwable = updateAndValidateUsing(factory);
+        if (throwable != null) {
+            return Future.failure(throwable);
+        }
+        return resolveOne()
+            .map(service -> factory.create(consumer, service, encodings));
     }
 
-    private Future<?> updateAndValidateUsing(final ArConsumerFactory<?> factory) {
+    private Throwable updateAndValidateUsing(final ArConsumerFactory<?> factory) {
         // Set and check service name.
         final var optionalName = factory.serviceName();
         if (name == null) {
             if (optionalName.isEmpty()) {
-                return Future.failure(new IllegalStateException("No service " +
+                return new IllegalStateException("No service " +
                     "name was specified, neither explicitly or by the " +
                     "provided consumer factory \"" + factory + "\"; cannot " +
-                    "resolve service"));
+                    "resolve service");
             }
             name = optionalName.get();
         }
@@ -271,11 +277,11 @@ public class ServiceQuery {
             if (optionalName.isPresent()) {
                 final var name0 = optionalName.get();
                 if (!name.equals(name0)) {
-                    return Future.failure(new IllegalStateException("The " +
+                    return new IllegalStateException("The " +
                         "service name \"" + name + "\" was explicitly " +
                         "specified, but the provided consumer factory \"" +
                         factory + "\" requires that the name \"" + name0
-                        + "\" be used; cannot resolve service"));
+                        + "\" be used; cannot resolve service");
                 }
             }
         }
@@ -290,14 +296,14 @@ public class ServiceQuery {
             transports.retainAll(factory.serviceTransports());
         }
         if (transports.isEmpty()) {
-            return Future.failure(new IllegalStateException("The provided " +
+            return new IllegalStateException("The provided " +
                 "consumer factory \"" + factory + "\" only supports the " +
                 "following application-level transport protocols: " +
                 factory.serviceTransports() + ", while this query was " +
                 "already configured to require that any out of " +
                 currentTransports + " be supported; no factory-" +
                 "supported transports are present in the existing " +
-                "collection; cannot resolve service"));
+                "collection; cannot resolve service");
         }
 
         // Set and check service encodings.
@@ -309,13 +315,13 @@ public class ServiceQuery {
             encodings.retainAll(factory.serviceEncodings());
         }
         if (encodings.isEmpty()) {
-            return Future.failure(new IllegalStateException("The provided " +
+            return new IllegalStateException("The provided " +
                 "consumer factory \"" + factory + "\" only supports the " +
                 "following encodings: " + factory.serviceEncodings() + ", " +
                 "while this query was already configured to require that " +
                 "any out of " + currentEncodings + " be supported; no " +
                 "factory-supported encodings are present in the existing " +
-                "collection; cannot resolve service"));
+                "collection; cannot resolve service");
         }
 
         // Set and check service metadata.
@@ -334,12 +340,12 @@ public class ServiceQuery {
                     return null;
                 });
                 if (value2 == null) {
-                    return Future.failure(new IllegalStateException("The " +
+                    return new IllegalStateException("The " +
                         "provided consumer factory \"" + factory + "\" " +
                         "requires that the metadata field \"" + key0 + "\" " +
                         "be set to \"" + value0 + "\", but the field has " +
                         "been explicitly set to \"" + metadata.get(key0) +
-                        "\"; cannot create consumer"));
+                        "\"; cannot create consumer");
                 }
             }
         }
@@ -347,10 +353,10 @@ public class ServiceQuery {
         // Set and check service version.
         final var version0 = factory.serviceVersion().orElse(null);
         if (!Objects.equals(version, version0)) {
-            return Future.failure(new IllegalStateException("The provided " +
+            return new IllegalStateException("The provided " +
                 "consumer factory \"" + factory + "\" only supports service " +
                 "version " + version0 + ", while version " + version +
-                " was explicitly specified; cannot create consumer"));
+                " was explicitly specified; cannot create consumer");
         }
         version = version0;
 
@@ -378,13 +384,13 @@ public class ServiceQuery {
             versionMax1 = Integer.MAX_VALUE;
         }
         if (versionMin1 > versionMax1) {
-            return Future.failure(new IllegalStateException("The provided " +
+            return new IllegalStateException("The provided " +
                 "consumer factory \"" + factory + "\" only supports service " +
                 "versions in the range " + versionMin0 + ".." + versionMax0 +
                 ", while the non-overlapping range " +
                 (versionMin != null ? versionMin : "") + ".." +
                 (versionMax != null ? versionMax : "") + " was " +
-                "explicitly specified; cannot create consumer"));
+                "explicitly specified; cannot create consumer");
         }
         if (versionMax1 != Integer.MAX_VALUE) {
             versionMax = versionMax1;
@@ -393,17 +399,17 @@ public class ServiceQuery {
             versionMin = versionMin1;
         }
         if (version != null && (version < versionMin1 || version > versionMax1)) {
-            return Future.failure(new IllegalStateException("Taken " +
+            return new IllegalStateException("Taken " +
                 "together, the service versions supported by both the " +
                 "provided consumer factory \"" + factory + "\" and the " +
                 "explicitly provided versions are in the range " +
                 versionMin1 + ".." + versionMax1 + ", but the " +
                 (version0 == null ? "explicitly provided version " :
                     "version required by the consumer factory ") + version
-                + " is not in that range; cannot create consumer"));
+                + " is not in that range; cannot create consumer");
         }
 
-        return Future.done();
+        return null;
     }
 
     /**
