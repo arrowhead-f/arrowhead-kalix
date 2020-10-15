@@ -227,6 +227,12 @@ public class ServiceQuery {
      * ServiceNotFoundException}.
      */
     public <C extends ArConsumer> Future<C> using(final ArConsumerFactory<C> factory) {
+        return updateAndValidateUsing(factory)
+            .flatMap(ignored -> resolveOne()
+                .map(service -> factory.create(consumer, service, encodings)));
+    }
+
+    private Future<?> updateAndValidateUsing(final ArConsumerFactory<?> factory) {
         // Set and check service name.
         final var optionalName = factory.serviceName();
         if (name == null) {
@@ -374,7 +380,7 @@ public class ServiceQuery {
                 + " is not in that range; cannot create consumer"));
         }
 
-        return resolveOne().map(service -> factory.create(consumer, service, encodings));
+        return Future.done();
     }
 
     /**

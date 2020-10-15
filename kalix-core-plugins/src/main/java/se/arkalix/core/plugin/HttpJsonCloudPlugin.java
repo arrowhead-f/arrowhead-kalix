@@ -279,11 +279,9 @@ public class HttpJsonCloudPlugin implements Plugin {
         ) {
             Objects.requireNonNull(pattern, "Expected pattern");
 
-            final var isTraceEnabled = logger.isTraceEnabled();
-
             return requestOrchestration()
                 .ifSuccess(ignored -> {
-                    if (isTraceEnabled) {
+                    if (logger.isTraceEnabled()) {
                         logger.trace("HTTP/JSON cloud plugin is about to " +
                             "execute {} ...", query);
                     }
@@ -294,7 +292,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                         .stream()
                         .map(ServiceConsumable::toServiceDescription)
                         .collect(Collectors.toUnmodifiableList());
-                    if (isTraceEnabled) {
+                    if (logger.isTraceEnabled()) {
                         logger.trace("HTTP/JSON cloud plugin received {}", services);
                     }
                     return services;
