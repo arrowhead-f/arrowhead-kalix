@@ -83,6 +83,9 @@ public class NettyHttpClientConnection
                             sslSession = sslHandler.engine().getSession();
                             futureConnection.complete(Result.success(this));
                             futureConnection = null;
+                            if (logger.isDebugEnabled()) {
+                                logger.debug("TLS handshake completed with " + channel.remoteAddress());
+                            }
                             return;
                         }
                         else {
@@ -119,11 +122,17 @@ public class NettyHttpClientConnection
 
     @Override
     protected void channelRead0(final ChannelHandlerContext ctx, final HttpObject msg) {
+        var didRead = false;
         if (msg instanceof HttpResponse) {
+            didRead = true;
             readResponse(ctx, (HttpResponse) msg);
         }
         if (msg instanceof HttpContent) {
+            didRead = true;
             readContent(ctx, (HttpContent) msg);
+        }
+        if (!didRead && logger.isDebugEnabled()) {
+            logger.debug("Unread {}", msg);
         }
     }
 
@@ -179,6 +188,7 @@ public class NettyHttpClientConnection
     @Override
     public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) {
         if (!(evt instanceof IdleStateEvent)) {
+            ctx.fireUserEventTriggered(evt);
             return;
         }
         try {
@@ -200,6 +210,10 @@ public class NettyHttpClientConnection
                 final var pendingResponse = requestResponseQueue.remove();
                 pendingResponse.complete(Result.failure(
                     new HttpOutgoingRequestException(pendingResponse.request(), "Incoming response timed out")));
+                return;
+            }
+            if (logger.isWarnEnabled()) {
+                logger.warn("Unhandled {}", evt);
             }
         }
         finally {
@@ -336,7 +350,12 @@ public class NettyHttpClientConnection
 
     @Override
     public Future<?> close() {
-        return adapt(channel.close());
+        var future = adapt(channel.close());
+        if (logger.isDebugEnabled()) {
+            logger.debug("Closing ...");
+            future = future.always(result -> logger.debug("Closed {}", result));
+        }
+        return future;
     }
 
     static class FutureRequestResponse extends FutureCompletionUnsafe<HttpClientResponse> {

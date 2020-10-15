@@ -83,6 +83,9 @@ public class NettyHttpServiceConnection
                             sslHandler.engine().getSession().getPeerCertificates(),
                             (InetSocketAddress) channel.remoteAddress())
                             .orElse(null);
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("TLS handshake completed with " + channel.remoteAddress());
+                        }
                         return;
                     }
                     else {
@@ -114,11 +117,17 @@ public class NettyHttpServiceConnection
 
     @Override
     protected void channelRead0(final ChannelHandlerContext ctx, final Object msg) {
+        var didRead = false;
         if (msg instanceof HttpRequest) {
+            didRead = true;
             readRequest(ctx, (HttpRequest) msg);
         }
         if (msg instanceof HttpContent) {
+            didRead = true;
             readContent((HttpContent) msg);
+        }
+        if (!didRead && logger.isDebugEnabled()) {
+            logger.debug("Unread {}", msg);
         }
     }
 
@@ -285,20 +294,21 @@ public class NettyHttpServiceConnection
         try {
             if (kalixRequest != null) {
                 kalixRequest.tryAbort(cause);
+                sendEmptyResponseAndCleanup(ctx, INTERNAL_SERVER_ERROR);
+                return;
             }
         }
         catch (final Throwable throwable) {
             throwable.addSuppressed(cause);
             cause = throwable;
         }
-        finally {
-            sendInternalServerErrorLogAndCleanup(ctx, cause);
-        }
+        sendInternalServerErrorLogAndCleanup(ctx, cause);
     }
 
     @Override
     public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) {
         if (!(evt instanceof IdleStateEvent)) {
+            ctx.fireUserEventTriggered(evt);
             return;
         }
         isClosing = true;
@@ -309,8 +319,12 @@ public class NettyHttpServiceConnection
                     final var exception = new HttpServiceRequestException(HttpStatus.REQUEST_TIMEOUT);
                     if (kalixRequest.tryAbort(exception)) {
                         sendEmptyResponseAndCleanup(ctx, REQUEST_TIMEOUT);
+                        return;
                     }
                 }
+            }
+            if (logger.isWarnEnabled()) {
+                logger.warn("Unhandled {}", evt);
             }
         }
         finally {
@@ -376,9 +390,7 @@ public class NettyHttpServiceConnection
             ? nettyRequest.protocolVersion()
             : HttpVersion.HTTP_1_1;
 
-        if (!isClosing) {
-            HttpUtil.setKeepAlive(headers, version, true);
-        }
+        HttpUtil.setKeepAlive(headers, version, !isClosing);
 
         final var future = ctx.writeAndFlush(new DefaultFullHttpResponse(
             version, status, Unpooled.EMPTY_BUFFER, headers, EmptyHttpHeaders.INSTANCE));
