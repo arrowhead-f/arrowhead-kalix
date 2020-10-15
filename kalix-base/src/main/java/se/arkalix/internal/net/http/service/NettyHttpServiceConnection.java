@@ -319,11 +319,10 @@ public class NettyHttpServiceConnection
                     final var exception = new HttpServiceRequestException(HttpStatus.REQUEST_TIMEOUT);
                     if (kalixRequest.tryAbort(exception)) {
                         sendEmptyResponseAndCleanup(ctx, REQUEST_TIMEOUT);
-                        return;
                     }
                 }
             }
-            if (logger.isWarnEnabled()) {
+            else if (logger.isWarnEnabled()) {
                 logger.warn("Unhandled {}", evt);
             }
         }
