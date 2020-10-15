@@ -207,7 +207,7 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
             @Override
             public Future<Long> offer(final TrustedContractOfferDto offer, final TrustedContractNegotiatorHandler handler) {
                 return system.consume()
-                    .using(HttpJsonTrustedContractNegotiationService.factory())
+                    .oneUsing(HttpJsonTrustedContractNegotiationService.factory())
                     .flatMap(service -> service.offer(offer))
                     .ifSuccess(negotiationId -> expectedEvents.add(new ExpectedResponseToOffer(
                         system, handler,
@@ -253,7 +253,7 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                         }
                     }
                     system.consume()
-                        .using(HttpJsonTrustedContractObservationService.factory())
+                        .oneUsing(HttpJsonTrustedContractObservationService.factory())
                         .flatMap(service -> service.getByNamesAndId(offerorName, receiverName, negotiationId)
                             .map(optionalNegotiation -> optionalNegotiation
                                 .orElseThrow(() -> new IllegalStateException("" +
@@ -451,7 +451,7 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                         @Override
                         public Future<?> accept() {
                             return system.consume()
-                                .using(HttpJsonTrustedContractNegotiationService.factory())
+                                .oneUsing(HttpJsonTrustedContractNegotiationService.factory())
                                 .flatMap(service -> service.accept(new TrustedContractAcceptanceBuilder()
                                     .negotiationId(negotiation.id())
                                     .offerorName(negotiation.offer().offerorName())
@@ -473,7 +473,7 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                                 .offeredAt(offer.offeredAt())
                                 .build();
                             return system.consume()
-                                .using(HttpJsonTrustedContractNegotiationService.factory())
+                                .oneUsing(HttpJsonTrustedContractNegotiationService.factory())
                                 .flatMap(service -> service.counterOffer(counterOffer))
                                 .ifSuccess(ignored -> {
                                     refresh(counterOffer);
@@ -486,7 +486,7 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                         @Override
                         public Future<?> reject() {
                             return system.consume()
-                                .using(HttpJsonTrustedContractNegotiationService.factory())
+                                .oneUsing(HttpJsonTrustedContractNegotiationService.factory())
                                 .flatMap(service -> service.reject(new TrustedContractRejectionBuilder()
                                     .negotiationId(negotiation.id())
                                     .offerorName(negotiation.offer().offerorName())

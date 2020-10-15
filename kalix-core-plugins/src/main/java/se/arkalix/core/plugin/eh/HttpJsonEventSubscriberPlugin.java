@@ -87,7 +87,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
 
         private Future<?> registerEventReceiver(final List<EventSubscription> defaultSubscriptions) {
             return system.consume()
-                .using(HttpJsonEventSubscribeService.factory())
+                .oneUsing(HttpJsonEventSubscribeService.factory())
                 .flatMap(eventSubscribe -> {
                     if (logger.isInfoEnabled()) {
                         final var service = eventSubscribe.service();
@@ -196,13 +196,13 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
                 "\"{}\" to topic \"{}\" ...", system.name(), topicName);
 
             return system.consume()
-                .using(HttpJsonEventSubscribeService.factory())
+                .oneUsing(HttpJsonEventSubscribeService.factory())
                 .flatMap(eventSubscribe -> eventSubscribe.subscribe(request)
                     .flatMapCatch(ErrorResponseException.class, fault -> {
                         final var error = fault.error();
                         if ("INVALID_PARAMETER".equals(error.type())) {
                             return system.consume()
-                                .using(HttpJsonEventUnsubscribeService.factory())
+                                .oneUsing(HttpJsonEventUnsubscribeService.factory())
                                 .flatMap(eventUnsubscribe -> eventUnsubscribe
                                     .unsubscribe(topicName, system))
                                 .flatMap(ignored -> eventSubscribe.subscribe(request))
@@ -233,7 +233,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
                 "system \"{}\" from topic \"{}\" ...", system.name(), topic);
 
             system.consume()
-                .using(HttpJsonEventUnsubscribeService.factory())
+                .oneUsing(HttpJsonEventUnsubscribeService.factory())
                 .flatMap(eventUnsubscribe -> eventUnsubscribe.unsubscribe(topic, system))
                 .ifSuccess(ignored -> logger.info("HTTP/JSON event " +
                     "subscriber unsubscribed system \"{}\" from topic " +
@@ -262,7 +262,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
             }
 
             system.consume()
-                .using(HttpJsonEventUnsubscribeService.factory())
+                .oneUsing(HttpJsonEventUnsubscribeService.factory())
                 .ifSuccess(consumer -> {
                     for (final var topicName : nameToTopic.keySet()) {
                         unsubscribe(topicName);

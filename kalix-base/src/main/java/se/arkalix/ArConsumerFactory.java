@@ -13,7 +13,7 @@ import java.util.Optional;
  * A factory useful for creating {@link ArConsumer} instances.
  *
  * @param <C> Type of {@link ArConsumer} created by this factory class.
- * @see se.arkalix.query.ServiceQuery#using(ArConsumerFactory) ServiceQuery#using(ArConsumerFactory)
+ * @see se.arkalix.query.ServiceQuery#oneUsing(ArConsumerFactory) ServiceQuery#using(ArConsumerFactory)
  * @see ArSystem#consume()
  */
 public interface ArConsumerFactory<C extends ArConsumer> {

@@ -124,7 +124,7 @@ public interface HttpConsumer extends ArConsumer {
      * Class used for creating {@link HttpConsumer} instances.
      * <p>
      * This class is primarily useful as input to the {@link
-     * se.arkalix.query.ServiceQuery#using(ArConsumerFactory) using()} method
+     * se.arkalix.query.ServiceQuery#oneUsing(ArConsumerFactory) using()} method
      * of the {@link se.arkalix.query.ServiceQuery ServiceQuery} class, an
      * instance of which is returned by the {@link ArSystem#consume()} method.
      * See the {@link se.arkalix.net.http.consumer package documentation} for

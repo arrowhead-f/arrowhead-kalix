@@ -117,7 +117,7 @@ public class HttpJsonTrustedContractObserverPlugin implements ArTrustedContractO
                     }
 
                     system.consume()
-                        .using(HttpJsonTrustedContractObservationService.factory())
+                        .oneUsing(HttpJsonTrustedContractObservationService.factory())
                         .flatMap(service -> service.getByNamesAndId(offerorName, receiverName, negotiationId)
                             .map(optionalSession -> optionalSession.orElseThrow(() -> new IllegalStateException("" +
                                 "Advertised session [data=" + data +

@@ -11,6 +11,7 @@ import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.function.ThrowingFunction;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * A description of an Arrowhead service some {@link ArSystem} wishes to
@@ -26,18 +27,20 @@ import java.util.*;
  *         creation}. How much information is required will depend on the used
  *         resolution strategy, which might vary from just the name of the
  *         service to all possible details about it.</li>
- *     <li>One out of the methods {@link ServiceQuery#using(ArConsumerFactory)
- *         using()}, {@link ServiceQuery#resolveAll() resolveAll()} and {@link
- *         ServiceQuery#resolveOne() resolveOne()} are used to complete the
- *         query and start service resolution. If the {@link
- *         ServiceQuery#using(ArConsumerFactory) using()} method is used, the
- *         provided factory automatically provides additional details to the
- *         query before it is executed. Make sure to read the documentation for
- *         the {@link ArConsumerFactory} you want to use with that method in
- *         order to be certain about what details will be automatically
- *         provided. {@link ArConsumerFactory} classes representing specific
- *         Arrowhead services typically require no query information to be
- *         explicitly specified at all.
+ *     <li>One out of the methods {@link ServiceQuery#allUsing(ArConsumerFactory)
+ *         allUsing()} {@link ServiceQuery#oneUsing(ArConsumerFactory)
+ *         oneUsing()}, {@link ServiceQuery#resolveAll() resolveAll()} and
+ *         {@link ServiceQuery#resolveOne() resolveOne()} are used to complete
+ *         the query and start service resolution. If any of the {@link
+ *         ServiceQuery#oneUsing(ArConsumerFactory) oneUsing()} or {@link
+ *         ServiceQuery#allUsing(ArConsumerFactory) allUsing()} method are
+ *         used, the provided factory automatically provides additional details
+ *         to the query before it is executed. Make sure to read the
+ *         documentation for the {@link ArConsumerFactory} you want to use with
+ *         that method in order to be certain about what details will be
+ *         automatically provided. {@link ArConsumerFactory} classes
+ *         representing specific Arrowhead services typically require no query
+ *         information to be explicitly specified at all.
  *     </li>
  * </ol>
  */
@@ -62,8 +65,8 @@ public class ServiceQuery {
      */
     public ServiceQuery(
         final ArSystem consumer,
-        final ThrowingFunction<ServiceQuery, Future<Set<ServiceDescription>>> resolver)
-    {
+        final ThrowingFunction<ServiceQuery, Future<Set<ServiceDescription>>> resolver
+    ) {
         this.consumer = Objects.requireNonNull(consumer, "Expected consumer");
         this.resolver = Objects.requireNonNull(resolver, "Expected resolver");
     }
@@ -216,7 +219,27 @@ public class ServiceQuery {
     /**
      * Uses provided {@code factory} to (1) add additional details to this
      * query, (2) resolve the query, and then (3) use the resolution result to
-     * construct an {@link ArConsumer} instance, which may be used to consume
+     * construct a stream of {@link ArConsumer} instances, which may be used to
+     * consume those service by exchanging messages with them.
+     *
+     * @param factory Class useful for creating {@link ArConsumer} instances.
+     * @param <C>     Type of {@link ArConsumer}.
+     * @return {@link Future} completed with {@link ArConsumer}, if service
+     * resolution succeeded. If service resolution did not fail but yielded no
+     * matching services, the {@link Future} is failed with a {@link
+     * ServiceNotFoundException}.
+     */
+    public <C extends ArConsumer> Future<Stream<C>> allUsing(final ArConsumerFactory<C> factory) {
+        return updateAndValidateUsing(factory)
+            .flatMap(ignored -> resolveAll()
+                .map(services -> services.stream()
+                    .map(service -> factory.create(consumer, service, encodings))));
+    }
+
+    /**
+     * Uses provided {@code factory} to (1) add additional details to this
+     * query, (2) resolve the query, and then (3) use the resolution result to
+     * construct one {@link ArConsumer} instance, which may be used to consume
      * the service by exchanging messages with it.
      *
      * @param factory Class useful for creating {@link ArConsumer} instances.
@@ -226,7 +249,7 @@ public class ServiceQuery {
      * matching services, the {@link Future} is failed with a {@link
      * ServiceNotFoundException}.
      */
-    public <C extends ArConsumer> Future<C> using(final ArConsumerFactory<C> factory) {
+    public <C extends ArConsumer> Future<C> oneUsing(final ArConsumerFactory<C> factory) {
         return updateAndValidateUsing(factory)
             .flatMap(ignored -> resolveOne()
                 .map(service -> factory.create(consumer, service, encodings)));
@@ -386,7 +409,7 @@ public class ServiceQuery {
     /**
      * Uses resolver provided at {@link
      * ServiceQuery#ServiceQuery(ArSystem, ThrowingFunction) instance creation}
-     * to lookup services matching this query.
+     * to lookup all services matching this query.
      *
      * @return {@link Future} completed, if successful, with a set of service
      * descriptions matching this query.
