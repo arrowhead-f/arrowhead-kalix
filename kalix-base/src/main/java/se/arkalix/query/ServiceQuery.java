@@ -225,9 +225,8 @@ public class ServiceQuery {
      * @param factory Class useful for creating {@link ArConsumer} instances.
      * @param <C>     Type of {@link ArConsumer}.
      * @return {@link Future} completed with {@link ArConsumer}, if service
-     * resolution succeeded. If service resolution did not fail but yielded no
-     * matching services, the {@link Future} is failed with a {@link
-     * ServiceNotFoundException}.
+     * resolution succeeded.
+     * @see se.arkalix.net.http.consumer
      */
     public <C extends ArConsumer> Future<Stream<C>> allUsing(final ArConsumerFactory<C> factory) {
         final var throwable = updateAndValidateUsing(factory);
@@ -251,6 +250,7 @@ public class ServiceQuery {
      * resolution succeeded. If service resolution did not fail but yielded no
      * matching services, the {@link Future} is failed with a {@link
      * ServiceNotFoundException}.
+     * @see se.arkalix.net.http.consumer
      */
     public <C extends ArConsumer> Future<C> oneUsing(final ArConsumerFactory<C> factory) {
         final var throwable = updateAndValidateUsing(factory);

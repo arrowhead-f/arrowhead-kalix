@@ -6,20 +6,18 @@
  * services}.
  * <p>
  * This package distinguishing itself form the {@link
- * se.arkalix.net.http.client HTTP Client Utilities} package by relying heavily
- * on the availability of relevant {@link
+ * se.arkalix.net.http.client HTTP Client Utilities} package by making use of
+ * available Arrowhead {@link
  * se.arkalix.description.ServiceDescription service descriptions}. Such can
- * most adequately be retrieved via the {@link
- * se.arkalix.query.ServiceQuery#oneUsing(se.arkalix.ArConsumerFactory) using()}
- * method of  the {@link se.arkalix.query.ServiceQuery ServiceQuery} class, an
- * instance of which is returned by the {@link se.arkalix.ArSystem#consume()
- * ArSystem#consume()} method. It effectively allows calls as the following
- * naive example:
+ * most adequately be retrieved via the {@link se.arkalix.query.ServiceQuery
+ * ServiceQuery} class, instances of which are returned by the {@link
+ * se.arkalix.ArSystem#consume() ArSystem#consume()} method. It effectively
+ * allows calls as the following naive example:
  * <pre>
  *     system.consume()
  *         .name("the-service-name")
  *         .encoding(EncodingDescriptor.JSON)
- *         .using(HttpConsumer.factory())
+ *         .oneUsing(HttpConsumer.factory())
  *         .flatMap(consumer -&gt; consumer.send(new HttpConsumerRequest()
  *            {...})
  *         .flatMap(HttpConsumerResponse::bodyAsString)
