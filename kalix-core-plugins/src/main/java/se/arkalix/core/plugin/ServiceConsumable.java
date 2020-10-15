@@ -13,6 +13,8 @@ import se.arkalix.internal.core.plugin.Instants;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static se.arkalix.dto.DtoEncoding.JSON;
 
@@ -116,15 +118,10 @@ public interface ServiceConsumable {
             .security(security())
             .metadata(metadata())
             .version(version())
-            .interfaceTokens(interfaces()
-                .stream()
-                .reduce(tokens(), (tokens, name) -> {
-                    tokens.putIfAbsent(name.name(), "");
-                    return tokens;
-                }, (a, b) -> {
-                    a.putAll(b);
-                    return a;
-                }))
+            .interfaceTokens(Stream.concat(
+                interfaces().stream().map(i -> Map.entry(i.name(), "")),
+                tokens().entrySet().stream())
+                .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue)))
             .build();
     }
 }
