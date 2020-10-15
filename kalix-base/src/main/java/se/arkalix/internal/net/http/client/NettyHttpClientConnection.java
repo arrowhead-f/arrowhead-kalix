@@ -28,6 +28,7 @@ import se.arkalix.util.concurrent.Future;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import java.net.InetSocketAddress;
+import java.nio.channels.ClosedChannelException;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
 import java.util.LinkedList;
@@ -95,10 +96,15 @@ public class NettyHttpClientConnection
                         futureConnection.complete(Result.failure(cause));
                         futureConnection = null;
                     }
-                    else {
-                        if (logger.isWarnEnabled()) {
-                            logger.warn("Failed to complete TLS handshake with remote host", cause);
+                    else if (cause instanceof ClosedChannelException) {
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("Connection closed by " + channel.remoteAddress() +
+                                " before TLS handshake could take place", cause);
                         }
+                    }
+                    else if (logger.isWarnEnabled()) {
+                        logger.warn("Failed to complete TLS handshake with " +
+                            channel.remoteAddress(), cause);
                     }
                     ctx.close();
                 });

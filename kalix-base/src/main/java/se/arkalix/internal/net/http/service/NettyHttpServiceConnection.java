@@ -30,6 +30,7 @@ import se.arkalix.util.concurrent.Future;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.channels.ClosedChannelException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
@@ -80,7 +81,7 @@ public class NettyHttpServiceConnection
                     if (future.isSuccess()) {
                         consumer = SystemIdentityDescription.tryFrom(
                             sslHandler.engine().getSession().getPeerCertificates(),
-                            (InetSocketAddress) ctx.channel().remoteAddress())
+                            (InetSocketAddress) channel.remoteAddress())
                             .orElse(null);
                         return;
                     }
@@ -91,14 +92,21 @@ public class NettyHttpServiceConnection
                 catch (final Throwable throwable) {
                     cause = throwable;
                 }
-                if (logger.isWarnEnabled()) {
-                    logger.warn("Failed to complete TLS handshake with " + ctx.channel().remoteAddress(), cause);
+                if (cause instanceof ClosedChannelException) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Connection closed by " + channel.remoteAddress() +
+                            " before TLS handshake could take place", cause);
+                    }
+                }
+                else if (logger.isWarnEnabled()) {
+                    logger.warn("Failed to complete TLS handshake with " +
+                        channel.remoteAddress(), cause);
                 }
                 ctx.close();
             });
         }
         else {
-            final var remoteSocketAddress = (InetSocketAddress) ctx.channel().remoteAddress();
+            final var remoteSocketAddress = (InetSocketAddress) channel.remoteAddress();
             consumer = SystemIdentityDescription.from("<" + remoteSocketAddress + ">", remoteSocketAddress);
         }
         super.channelActive(ctx);
