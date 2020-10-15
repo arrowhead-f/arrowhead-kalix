@@ -13,7 +13,6 @@ import se.arkalix.internal.core.plugin.Instants;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static se.arkalix.dto.DtoEncoding.JSON;
 
@@ -24,6 +23,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 @DtoReadableAs(JSON)
 @DtoEqualsHashCode
 @DtoToString
+@SuppressWarnings("unused")
 public interface ServiceConsumable {
     /**
      * Service name.
@@ -116,11 +116,15 @@ public interface ServiceConsumable {
             .security(security())
             .metadata(metadata())
             .version(version())
-            .interfaces(interfaces()
+            .interfaceTokens(interfaces()
                 .stream()
-                .map(InterfaceName::name)
-                .collect(Collectors.toList()))
-            .interfaceTokens(tokens())
+                .reduce(tokens(), (tokens, name) -> {
+                    tokens.putIfAbsent(name.name(), "");
+                    return tokens;
+                }, (a, b) -> {
+                    a.putAll(b);
+                    return a;
+                }))
             .build();
     }
 }
