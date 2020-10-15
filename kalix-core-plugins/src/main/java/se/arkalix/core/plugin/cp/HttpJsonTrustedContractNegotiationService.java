@@ -1,5 +1,7 @@
 package se.arkalix.core.plugin.cp;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import se.arkalix.ArConsumer;
 import se.arkalix.ArConsumerFactory;
 import se.arkalix.ArSystem;
@@ -26,6 +28,7 @@ import static se.arkalix.net.http.HttpMethod.POST;
  * with via HTTP/JSON in either secure or insecure mode.
  */
 public class HttpJsonTrustedContractNegotiationService implements ArConsumer, ArTrustedContractNegotiationService {
+    private static final Logger logger = LoggerFactory.getLogger(HttpJsonTrustedContractNegotiationService.class);
     private static final Factory factory = new Factory();
 
     private final HttpConsumer consumer;
@@ -57,20 +60,34 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
 
     @Override
     public Future<?> accept(final TrustedContractAcceptanceDto acceptance) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Sending {} to {}", acceptance, consumer.service());
+        }
         return consumer.send(new HttpConsumerRequest()
             .method(POST)
             .path(pathAccept)
             .body(acceptance))
-            .flatMap(HttpJsonServices::unwrap);
+            .flatMap(result -> {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Sent acceptance resulted in {}", result);
+                }
+                return HttpJsonServices.unwrap(result);
+            });
     }
 
     @Override
     public Future<Long> offer(final TrustedContractOfferDto offer) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Sending {} to {}", offer, consumer.service());
+        }
         return consumer.send(new HttpConsumerRequest()
             .method(POST)
             .path(pathOffer)
             .body(offer))
             .flatMapResult(result -> {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Sent offer resulted in {}", result);
+                }
                 if (result.isFailure()) {
                     return Future.failure(result.fault());
                 }
@@ -108,20 +125,36 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
 
     @Override
     public Future<?> counterOffer(final TrustedContractCounterOfferDto counterOffer) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Sending {} to {}", counterOffer, consumer.service());
+        }
         return consumer.send(new HttpConsumerRequest()
             .method(POST)
             .path(pathCounterOffer)
             .body(counterOffer))
-            .flatMap(HttpJsonServices::unwrap);
+            .flatMap(result -> {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Sent counter-offer resulted in {}", result);
+                }
+                return HttpJsonServices.unwrap(result);
+            });
     }
 
     @Override
     public Future<?> reject(final TrustedContractRejectionDto rejection) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Sending {} to {}", rejection, consumer.service());
+        }
         return consumer.send(new HttpConsumerRequest()
             .method(POST)
             .path(pathReject)
             .body(rejection))
-            .flatMap(HttpJsonServices::unwrap);
+            .flatMap(result -> {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Sent rejection resulted in {}", result);
+                }
+                return HttpJsonServices.unwrap(result);
+            });
     }
 
     private static class Factory implements ArConsumerFactory<HttpJsonTrustedContractNegotiationService> {
