@@ -121,7 +121,8 @@ public interface ServiceConsumable {
             .interfaceTokens(Stream.concat(
                 interfaces().stream().map(i -> Map.entry(i.name(), "")),
                 tokens().entrySet().stream())
-                .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue)))
+                .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue,
+                    (a, b) -> a.isBlank() ? b : a)))
             .build();
     }
 }
