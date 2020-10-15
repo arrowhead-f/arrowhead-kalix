@@ -6,6 +6,7 @@ import se.arkalix.util.annotation.Internal;
 
 import java.net.InetSocketAddress;
 import java.security.PublicKey;
+import java.util.Base64;
 import java.util.Objects;
 
 @Internal
@@ -18,8 +19,7 @@ public class DefaultSystemDescription implements SystemDescription {
         final String name,
         final PublicKey publicKey,
         final InetSocketAddress socketAddress
-    )
-    {
+    ) {
         this.name = Objects.requireNonNull(name, "Expected name");
         this.publicKey = publicKey;
         this.socketAddress = Objects.requireNonNull(socketAddress, "Expected remoteSocketAddress");
@@ -70,7 +70,7 @@ public class DefaultSystemDescription implements SystemDescription {
         return "DefaultSystemDescription{" +
             "name='" + name + '\'' +
             ", socketAddress=" + socketAddress +
-            ", publicKey=" + publicKey +
+            ", publicKey='base64:" + Base64.getEncoder().encodeToString(publicKey.getEncoded()) + '\'' +
             '}';
     }
 }

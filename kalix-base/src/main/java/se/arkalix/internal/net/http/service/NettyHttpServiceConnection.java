@@ -43,7 +43,7 @@ import static se.arkalix.internal.util.concurrent.NettyFutures.adapt;
 
 @Internal
 public class NettyHttpServiceConnection
-    extends NettySimpleChannelInboundHandler<Object>
+    extends NettySimpleChannelInboundHandler<HttpObject>
     implements HttpServiceConnection
 {
     private static final Logger logger = LoggerFactory.getLogger(NettyHttpServiceConnection.class);
@@ -116,18 +116,12 @@ public class NettyHttpServiceConnection
     }
 
     @Override
-    protected void channelRead0(final ChannelHandlerContext ctx, final Object msg) {
-        var didRead = false;
+    protected void channelRead0(final ChannelHandlerContext ctx, final HttpObject msg) {
         if (msg instanceof HttpRequest) {
-            didRead = true;
             readRequest(ctx, (HttpRequest) msg);
         }
         if (msg instanceof HttpContent) {
-            didRead = true;
             readContent((HttpContent) msg);
-        }
-        if (!didRead && logger.isDebugEnabled()) {
-            logger.debug("Unread {}", msg);
         }
     }
 
@@ -277,9 +271,8 @@ public class NettyHttpServiceConnection
             nettyHeaders.set(CONTENT_LENGTH, Long.toString(body.length()));
         }
 
-        final var channel = ctx.channel();
         channel.write(new DefaultHttpResponse(nettyVersion, nettyStatus, nettyHeaders));
-        body.writeTo(channel);
+        channel.write(body.content());
         final var future = channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
 
         if (isClosing) {
@@ -321,9 +314,6 @@ public class NettyHttpServiceConnection
                         sendEmptyResponseAndCleanup(ctx, REQUEST_TIMEOUT);
                     }
                 }
-            }
-            else if (logger.isWarnEnabled()) {
-                logger.warn("Unhandled {}", evt);
             }
         }
         finally {

@@ -2,7 +2,6 @@ package se.arkalix.internal.net;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
 import io.netty.channel.DefaultFileRegion;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.dto.DtoWritable;
@@ -95,7 +94,7 @@ public class NettyBodyOutgoing {
         return length;
     }
 
-    public void writeTo(final Channel channel) {
-        channel.write(content);
+    public Object content() {
+        return content;
     }
 }

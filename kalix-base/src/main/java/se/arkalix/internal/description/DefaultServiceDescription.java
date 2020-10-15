@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Internal
 public class DefaultServiceDescription implements ServiceDescription {
@@ -160,8 +161,18 @@ public class DefaultServiceDescription implements ServiceDescription {
             ", security=" + security +
             ", metadata=" + metadata +
             ", version=" + version +
-            ", interfaceTokens=" + interfaceTokens +
+            ", interfaceTokens=" + stringifyTokens() +
             '}';
+    }
+
+    private String stringifyTokens() {
+        return interfaceTokens.entrySet()
+            .stream()
+            .map(entry -> {
+                final var token = entry.getValue();
+                return entry.getKey() + "='" + token.substring(0, Math.min(token.length(), 4)) + "...'";
+            })
+            .collect(Collectors.joining(", ", "[", "]"));
     }
 
     public static class Builder {

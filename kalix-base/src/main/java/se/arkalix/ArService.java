@@ -29,13 +29,6 @@ public interface ArService {
      */
     String uri();
 
-    /*
-     * Gets system providing this service.
-     *
-     * @return Application service provider.
-     */
-    // ArSystem provider();
-
     /**
      * Gets descriptor for application-level transport protocol through which
      * service is made available to other systems.

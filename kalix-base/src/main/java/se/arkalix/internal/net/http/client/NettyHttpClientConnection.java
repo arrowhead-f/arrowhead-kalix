@@ -83,9 +83,6 @@ public class NettyHttpClientConnection
                             sslSession = sslHandler.engine().getSession();
                             futureConnection.complete(Result.success(this));
                             futureConnection = null;
-                            if (logger.isDebugEnabled()) {
-                                logger.debug("TLS handshake completed with " + channel.remoteAddress());
-                            }
                             return;
                         }
                         else {
@@ -210,10 +207,6 @@ public class NettyHttpClientConnection
                 final var pendingResponse = requestResponseQueue.remove();
                 pendingResponse.complete(Result.failure(
                     new HttpOutgoingRequestException(pendingResponse.request(), "Incoming response timed out")));
-                return;
-            }
-            if (logger.isWarnEnabled()) {
-                logger.warn("Unhandled {}", evt);
             }
         }
         finally {
@@ -336,7 +329,7 @@ public class NettyHttpClientConnection
             }
 
             channel.write(new DefaultHttpRequest(nettyVersion, nettyMethod, uri, nettyHeaders));
-            body.writeTo(channel);
+            channel.write(body.content());
             channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
 
             final var futureRequestResponse = new FutureRequestResponse(request);
