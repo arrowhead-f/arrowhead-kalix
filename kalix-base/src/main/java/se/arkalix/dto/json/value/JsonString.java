@@ -12,6 +12,7 @@ import se.arkalix.util.annotation.Internal;
 
 import java.time.*;
 import java.util.Objects;
+import java.util.Optional;
 
 import static se.arkalix.dto.DtoEncoding.JSON;
 
@@ -205,5 +206,10 @@ public class JsonString implements JsonValue {
     @Override
     public String toString() {
         return string;
+    }
+
+    @Override
+    public Optional<String> tryToString() {
+        return Optional.of(string);
     }
 }

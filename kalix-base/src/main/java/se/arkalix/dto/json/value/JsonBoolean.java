@@ -9,6 +9,8 @@ import se.arkalix.internal.dto.json.JsonTokenBuffer;
 import se.arkalix.internal.dto.json.JsonTokenizer;
 import se.arkalix.util.annotation.Internal;
 
+import java.util.Optional;
+
 import static se.arkalix.dto.DtoEncoding.JSON;
 
 /**
@@ -41,6 +43,11 @@ public class JsonBoolean implements JsonValue {
     @Override
     public JsonType type() {
         return JsonType.FALSE;
+    }
+
+    @Override
+    public Optional<Boolean> tryToBoolean() {
+        return Optional.of(value);
     }
 
     /**

@@ -14,6 +14,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.util.Objects;
+import java.util.Optional;
 
 import static se.arkalix.dto.DtoEncoding.JSON;
 
@@ -188,6 +189,11 @@ public class JsonNumber implements JsonValue {
      */
     public double toDouble() {
         return Double.parseDouble(number);
+    }
+
+    @Override
+    public Optional<Double> tryToDouble() {
+        return Optional.of(toDouble());
     }
 
     /**
