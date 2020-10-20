@@ -43,6 +43,18 @@ public interface JsonValue extends JsonReadable, JsonWritable {
     }
 
     /**
+     * Attempts to use this JSON value into a Java long.
+     * <p>
+     * The attempt is successful only if the underlying JSON type is {@link
+     * JsonNumber}.
+     *
+     * @return This value as a Java long, if possible.
+     */
+    default Optional<Long> tryToLong() {
+        return Optional.empty();
+    }
+
+    /**
      * Attempts to use this JSON value into a Java String.
      * <p>
      * The attempt is successful only if the underlying JSON type is {@link

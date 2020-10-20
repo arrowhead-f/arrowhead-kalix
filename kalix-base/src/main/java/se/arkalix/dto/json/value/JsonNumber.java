@@ -243,6 +243,11 @@ public class JsonNumber implements JsonValue {
         return Long.parseLong(number);
     }
 
+    @Override
+    public Optional<Long> tryToLong() {
+        return Optional.of(toLong());
+    }
+
     /**
      * @return This number converted to an {@link OffsetDateTime}.
      * @throws DateTimeException   If this number is too large to be represented
