@@ -22,7 +22,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
  */
 @DtoExclusive(JSON)
 @SuppressWarnings("unused")
-public class JsonObject implements JsonCollection, Iterable<JsonPair> {
+public class JsonObject implements JsonCollection<String>, Iterable<JsonPair> {
     private final List<JsonPair> pairs;
 
     /**
@@ -56,6 +56,18 @@ public class JsonObject implements JsonCollection, Iterable<JsonPair> {
     @Override
     public int size() {
         return pairs.size();
+    }
+
+    @Override
+    public Optional<JsonValue> get(final String key) {
+        if (key != null) {
+            for (final var pair : pairs) {
+                if (key.equals(pair.name())) {
+                    return Optional.of(pair.value());
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     /**

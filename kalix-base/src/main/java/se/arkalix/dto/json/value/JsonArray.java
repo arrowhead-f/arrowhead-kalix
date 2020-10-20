@@ -20,7 +20,7 @@ import static se.arkalix.dto.DtoEncoding.JSON;
  */
 @DtoExclusive(JSON)
 @SuppressWarnings("unused")
-public class JsonArray implements JsonCollection, Iterable<JsonValue> {
+public class JsonArray implements JsonCollection<Integer>, Iterable<JsonValue> {
     private final List<JsonValue> elements;
 
     /**
@@ -56,6 +56,13 @@ public class JsonArray implements JsonCollection, Iterable<JsonValue> {
     @Override
     public int size() {
         return elements.size();
+    }
+
+    @Override
+    public Optional<JsonValue> get(final Integer index) {
+        return (index < 0 || index > elements.size() - 1)
+            ? Optional.empty()
+            : Optional.of(elements.get(index));
     }
 
     /**
