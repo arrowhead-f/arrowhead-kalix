@@ -4,6 +4,8 @@ import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadable;
 import se.arkalix.util.concurrent.Future;
 
+import java.util.List;
+
 /**
  * An incoming HTTP response.
  *
@@ -51,6 +53,50 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
     default <R extends DtoReadable> Future<R> bodyAsIfSuccess(final DtoEncoding encoding, final Class<R> class_) {
         if (status().isSuccess()) {
             return bodyAs(encoding, class_);
+        }
+        return Future.failure(reject());
+    }
+
+    /**
+     * Retrieves the body of this response as a list of instances of the
+     * specified class, if its status code is in the range 200-299.
+     * <p>
+     * If the body is to be decoded, an attempt will be made to automatically
+     * resolve a supported DTO encoding. If the attempt fails an exception is
+     * thrown.
+     *
+     * @param class_ Class to decode incoming HTTP body into.
+     * @param <R>    Type of {@code class_}.
+     * @return Future completed immediately with an exception if the status
+     * code is outside the success range, or when the incoming HTTP body has
+     * been fully received and decoded into an instance of {@code class_}.
+     * @throws se.arkalix.net.MessageException If resolving a default encoding
+     *                                         failed.
+     * @throws IllegalStateException           If the body has already been
+     *                                         requested.
+     */
+    default <R extends DtoReadable> Future<List<R>> bodyAsListIfSuccess(final Class<R> class_) {
+        if (status().isSuccess()) {
+            return bodyAsList(class_);
+        }
+        return Future.failure(reject());
+    }
+
+    /**
+     * Retrieves the body of this response as a list of instances of the
+     * specified class, if its status code is in the range 200-299.
+     *
+     * @param encoding Encoding to use if decoding incoming HTTP body.
+     * @param class_   Class to decode incoming HTTP body into.
+     * @param <R>      Type of {@code class_}.
+     * @return Future completed immediately with an exception if the status
+     * code is outside the success range, or when the incoming HTTP body has
+     * been fully received and decoded into an instance of {@code class_}.
+     * @throws IllegalStateException If the body has already been requested.
+     */
+    default <R extends DtoReadable> Future<List<R>> bodyAsListIfSuccess(final DtoEncoding encoding, final Class<R> class_) {
+        if (status().isSuccess()) {
+            return bodyAsList(encoding, class_);
         }
         return Future.failure(reject());
     }
