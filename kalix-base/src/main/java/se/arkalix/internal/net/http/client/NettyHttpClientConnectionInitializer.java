@@ -3,8 +3,6 @@ package se.arkalix.internal.net.http.client;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
-import io.netty.handler.codec.http.HttpContentCompressor;
-import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
@@ -48,8 +46,6 @@ public class NettyHttpClientConnectionInitializer extends ChannelInitializer<Soc
             .addLast(new IdleStateHandler(30, 120, 0, TimeUnit.SECONDS))
 
             .addLast(new HttpClientCodec())
-            .addLast(new HttpContentDecompressor())
-            .addLast(new HttpContentCompressor())
 
             .addLast(new NettyHttpClientConnection(futureConnection, sslHandler));
     }
