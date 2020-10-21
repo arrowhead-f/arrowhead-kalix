@@ -1,8 +1,6 @@
 package se.arkalix.dto.json;
 
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
@@ -34,7 +32,6 @@ import java.lang.annotation.Target;
  *
  * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
  */
-@Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.METHOD)
 public @interface JsonName {
     String value();
