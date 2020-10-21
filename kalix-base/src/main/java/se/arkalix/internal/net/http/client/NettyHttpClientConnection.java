@@ -102,8 +102,8 @@ public class NettyHttpClientConnection
                                 " before TLS handshake could take place", cause);
                         }
                     }
-                    else if (logger.isWarnEnabled()) {
-                        logger.warn("Failed to complete TLS handshake with " +
+                    else if (logger.isDebugEnabled()) {
+                        logger.debug("Failed to complete TLS handshake with " +
                             channel.remoteAddress(), cause);
                     }
                     ctx.close();
