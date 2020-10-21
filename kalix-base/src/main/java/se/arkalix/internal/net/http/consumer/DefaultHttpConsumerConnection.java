@@ -3,6 +3,7 @@ package se.arkalix.internal.net.http.consumer;
 import se.arkalix.ArSystem;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.dto.DtoWritable;
+import se.arkalix.internal.net.http.HttpMediaTypes;
 import se.arkalix.net.MessageEncodingUnsupported;
 import se.arkalix.net.http.client.HttpClientConnection;
 import se.arkalix.net.http.consumer.HttpConsumerConnection;
@@ -14,6 +15,8 @@ import se.arkalix.util.concurrent.Future;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Objects;
+
+import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT;
 
 class DefaultHttpConsumerConnection implements HttpConsumerConnection {
     private final ArSystem localSystem;
@@ -86,7 +89,10 @@ class DefaultHttpConsumerConnection implements HttpConsumerConnection {
 
         if (request.encoding().isEmpty()) {
             final var body = request.body().orElse(null);
-            if (body instanceof DtoWritable || body instanceof List) {
+            if (body == null) {
+                request.headers().setIfEmpty(ACCEPT, HttpMediaTypes.toMediaType(encoding));
+            }
+            else if (body instanceof DtoWritable || body instanceof List) {
                 final var dtoEncoding = encoding.asDto()
                     .orElseThrow(() -> new MessageEncodingUnsupported(request, encoding));
 
