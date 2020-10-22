@@ -148,6 +148,9 @@ public class OrchestrationPattern {
     public OrchestrationQueryDto toQuery(final SystemDetailsDto requester, final ServiceQuery service) {
         final var useService = isIncludingService && service != null;
         final Map<OrchestrationOption, Boolean> options0;
+        if (options == null) {
+            options = new HashMap<>();
+        }
         if (useService && !service.metadata().isEmpty() && !options.get(OrchestrationOption.METADATA_SEARCH)) {
             options0 = new HashMap<>(options);
             options0.put(OrchestrationOption.METADATA_SEARCH, true);
