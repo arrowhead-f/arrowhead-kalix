@@ -25,6 +25,7 @@ import se.arkalix.util.Result;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;
 
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import java.net.InetSocketAddress;
@@ -166,6 +167,12 @@ public class NettyHttpClientConnection
 
     @Override
     public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
+        if (cause instanceof SSLHandshakeException) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("SSL handshake failed", cause);
+            }
+            return;
+        }
         if (futureConnection != null) {
             futureConnection.complete(Result.failure(cause));
             futureConnection = null;

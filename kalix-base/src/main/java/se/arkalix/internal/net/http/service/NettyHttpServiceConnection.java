@@ -28,6 +28,7 @@ import se.arkalix.security.identity.SystemIdentity;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
@@ -284,6 +285,12 @@ public class NettyHttpServiceConnection
 
     @Override
     public void exceptionCaught(final ChannelHandlerContext ctx, Throwable cause) {
+        if (cause instanceof SSLHandshakeException) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("SSL handshake failed", cause);
+            }
+            return;
+        }
         try {
             if (kalixRequest != null) {
                 kalixRequest.tryAbort(cause);
