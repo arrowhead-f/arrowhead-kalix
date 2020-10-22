@@ -211,7 +211,11 @@ public class NettyHttpServiceConnection
             .ifSuccess(ignored -> sendKalixResponseAndCleanup(ctx, kalixResponse, defaultEncoding))
             .onFailure(fault -> {
                 if (fault instanceof HttpServiceRequestException) {
-                    sendEmptyResponseAndCleanup(ctx, convert(((HttpServiceRequestException) fault).status()));
+                    final var exception = (HttpServiceRequestException) fault;
+                    if (exception.status() == HttpStatus.INTERNAL_SERVER_ERROR && logger.isDebugEnabled()) {
+                        logger.debug("Caught explicit INTERNAL SERVER ERROR exception", exception);
+                    }
+                    sendEmptyResponseAndCleanup(ctx, convert(exception.status()));
                 }
                 else if (fault instanceof DtoReadException) {
                     sendEmptyResponseAndCleanup(ctx, BAD_REQUEST);
@@ -293,9 +297,13 @@ public class NettyHttpServiceConnection
         }
         try {
             if (kalixRequest != null) {
-                kalixRequest.tryAbort(cause);
-                sendEmptyResponseAndCleanup(ctx, INTERNAL_SERVER_ERROR);
-                return;
+                if (kalixRequest.tryAbort(cause)) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Relayed exception causing 500 response to be sent to client", cause);
+                    }
+                    sendEmptyResponseAndCleanup(ctx, INTERNAL_SERVER_ERROR);
+                    return;
+                }
             }
         }
         catch (final Throwable throwable) {
