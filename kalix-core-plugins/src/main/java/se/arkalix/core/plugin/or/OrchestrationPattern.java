@@ -146,25 +146,13 @@ public class OrchestrationPattern {
      * @return New orchestration query.
      */
     public OrchestrationQueryDto toQuery(final SystemDetailsDto requester, final ServiceQuery query) {
-        if (options == null) {
-            options = new HashMap<>();
-        }
-        final var useService = isIncludingService && query != null;
-        final Map<OrchestrationOption, Boolean> options0;
-        if (useService && !query.metadata().isEmpty() &&
-            !options.get(OrchestrationOption.METADATA_SEARCH))
-        {
-            options0 = new HashMap<>(options);
-            options0.put(OrchestrationOption.METADATA_SEARCH, true);
-        }
-        else {
-            options0 = options;
-        }
         return new OrchestrationQueryBuilder()
             .requester(requester)
-            .service(useService ? se.arkalix.core.plugin.sr.ServiceQuery.from(query) : null)
+            .service(isIncludingService && query != null
+                ? se.arkalix.core.plugin.sr.ServiceQuery.from(query)
+                : null)
             .providers(providers)
-            .options(options0)
+            .options(options)
             .build();
     }
 }
