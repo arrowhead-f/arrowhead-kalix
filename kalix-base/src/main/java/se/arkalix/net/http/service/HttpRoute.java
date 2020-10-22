@@ -82,4 +82,9 @@ public class HttpRoute implements HttpRoutable {
     public Future<?> handle(final HttpServiceRequest request, final HttpServiceResponse response) throws Exception {
         return handler.handle(request, response);
     }
+
+    @Override
+    public String toString() {
+        return "[" + (method != null ? method + " " : "") + (pattern != null ? pattern : "/") + "]";
+    }
 }

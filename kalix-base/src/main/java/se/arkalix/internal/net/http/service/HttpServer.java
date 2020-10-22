@@ -6,6 +6,8 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import se.arkalix.ArService;
 import se.arkalix.ArServiceHandle;
 import se.arkalix.ArSystem;
@@ -28,6 +30,8 @@ import static se.arkalix.internal.util.concurrent.NettyFutures.adapt;
 
 @Internal
 public class HttpServer implements ArServer {
+    private static final Logger logger = LoggerFactory.getLogger(HttpServer.class);
+
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 
     private final Set<ArServiceHandle> handles = new HashSet<>();
@@ -157,8 +161,16 @@ public class HttpServer implements ArServer {
     private Optional<HttpServerService> getServiceByPath(final String path) {
         for (final var entry : services.entrySet()) {
             final var service = entry.getValue();
+            if (logger.isTraceEnabled()) {
+                logger.trace("Matching " + service.basePath() + " against " + path);
+            }
             if (service.basePath().map(path::startsWith).orElse(true)) {
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Matched " + service.basePath() + " of " + service);
+                }
                 return Optional.of(service);
+            } else if (logger.isTraceEnabled()) {
+                logger.trace("Failed to match " + service.basePath() + " against " + path);
             }
         }
         return Optional.empty();

@@ -1,5 +1,7 @@
 package se.arkalix.internal.net.http.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import se.arkalix.ArService;
 import se.arkalix.ArSystem;
 import se.arkalix.description.ServiceDescription;
@@ -15,6 +17,8 @@ import java.util.*;
 
 @Internal
 public class HttpServerService {
+    private static final Logger logger = LoggerFactory.getLogger(HttpServerService.class);
+
     private final AccessPolicy accessPolicy;
     private final String basePath;
     private final ArService service;
@@ -98,6 +102,10 @@ public class HttpServerService {
      * finished.
      */
     public Future<?> handle(final HttpServiceRequest request, final HttpServiceResponse response) {
+        if (logger.isTraceEnabled()) {
+            logger.trace("About to handle (basePath: {}) {}", basePath, request);
+        }
+
         final var task = new HttpRouteTask.Builder()
             .basePath(basePath)
             .request(request)
@@ -107,6 +115,9 @@ public class HttpServerService {
         return trySequences(task, 0)
             .map(isHandled -> {
                 if (!isHandled) {
+                    if (logger.isTraceEnabled()) {
+                        logger.trace("No route sequence of service {} matched (basePath: {}) {}", name(), basePath, request);
+                    }
                     response
                         .status(HttpStatus.NOT_FOUND)
                         .clearHeaders()
@@ -121,10 +132,19 @@ public class HttpServerService {
             return Future.success(false);
         }
         final var routeSequence = routeSequences[index];
+        if (logger.isTraceEnabled()) {
+            logger.trace("Attempting sequence {}", routeSequence);
+        }
         return routeSequence.tryHandle(task)
             .flatMap(isHandled -> {
                 if (isHandled) {
+                    if (logger.isTraceEnabled()) {
+                        logger.trace("Matched {}", routeSequence);
+                    }
                     return Future.success(true);
+                }
+                else if (logger.isTraceEnabled()) {
+                    logger.trace("Failed to match {}", routeSequence);
                 }
                 return trySequences(task, index + 1);
             });

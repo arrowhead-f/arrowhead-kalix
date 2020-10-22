@@ -32,8 +32,8 @@ public class HttpRouteSequence {
     public HttpRouteSequence(
         final HttpFilter[] filters,
         final HttpRoute route,
-        final HttpCatcher<?>[] catchers)
-    {
+        final HttpCatcher<?>[] catchers
+    ) {
         this.filters = filters;
         this.route = route;
         this.catchers = catchers;

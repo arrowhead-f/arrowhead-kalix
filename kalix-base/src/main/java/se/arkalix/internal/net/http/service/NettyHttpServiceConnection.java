@@ -138,8 +138,14 @@ public class NettyHttpServiceConnection
         // Resolve HTTP service.
         {
             final var path = queryStringDecoder.path();
+            if (logger.isTraceEnabled()) {
+                logger.trace("Attempting to resolve service by path " + path);
+            }
             service = serviceLookup.getServiceByPath(path).orElse(null);
             if (service == null) {
+                if (logger.isTraceEnabled()) {
+                    logger.trace("No service associated with path " + path);
+                }
                 sendEmptyResponseAndCleanup(ctx, NOT_FOUND);
                 return;
             }
