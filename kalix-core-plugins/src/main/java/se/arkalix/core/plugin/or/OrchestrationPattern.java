@@ -142,16 +142,18 @@ public class OrchestrationPattern {
      * Converts this pattern into a concrete orchestration query.
      *
      * @param requester A description of the system making the query.
-     * @param service   The service desired by the requester.
+     * @param query     The service desired by the requester.
      * @return New orchestration query.
      */
-    public OrchestrationQueryDto toQuery(final SystemDetailsDto requester, final ServiceQuery service) {
-        final var useService = isIncludingService && service != null;
-        final Map<OrchestrationOption, Boolean> options0;
+    public OrchestrationQueryDto toQuery(final SystemDetailsDto requester, final ServiceQuery query) {
         if (options == null) {
             options = new HashMap<>();
         }
-        if (useService && !service.metadata().isEmpty() && !options.get(OrchestrationOption.METADATA_SEARCH)) {
+        final var useService = isIncludingService && query != null;
+        final Map<OrchestrationOption, Boolean> options0;
+        if (useService && !query.metadata().isEmpty() &&
+            !options.get(OrchestrationOption.METADATA_SEARCH))
+        {
             options0 = new HashMap<>(options);
             options0.put(OrchestrationOption.METADATA_SEARCH, true);
         }
@@ -160,7 +162,7 @@ public class OrchestrationPattern {
         }
         return new OrchestrationQueryBuilder()
             .requester(requester)
-            .service(useService ? se.arkalix.core.plugin.sr.ServiceQuery.from(service) : null)
+            .service(useService ? se.arkalix.core.plugin.sr.ServiceQuery.from(query) : null)
             .providers(providers)
             .options(options0)
             .build();
