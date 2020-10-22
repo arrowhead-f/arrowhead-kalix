@@ -29,7 +29,47 @@ public class TestJsonReader {
     static Stream<Arguments> objectsToRead() {
         return Stream.of(
             arguments(new JsonArray(), "[]"),
-            arguments(new JsonObject(new JsonPair("x", new JsonNumber(1))), "{\"x\":1}")
+            arguments(new JsonObject(new JsonPair("x", new JsonNumber(1))), "{\"x\":1}"),
+            arguments(
+                new JsonObject(new JsonPair("nl", new JsonString("\n"))),
+                "{\"nl\":\"\\n\"}"
+            ),
+            arguments(
+                new JsonObject(new JsonPair("nl", new JsonString("1\n"))),
+                "{\"nl\":\"1\\n\"}"
+            ),
+            arguments(
+                new JsonObject(new JsonPair("nl", new JsonString("1\n2"))),
+                "{\"nl\":\"1\\n2\"}"
+            ),
+            arguments(
+                new JsonObject(new JsonPair("nl", new JsonString("\n2"))),
+                "{\"nl\":\"\\n2\"}"
+            ),
+            arguments(
+                new JsonObject(new JsonPair("text", new JsonString("A sentence of arbitrary text\n"))),
+                "{\"text\":\"A sentence of arbitrary text\\n\"}"
+            ),
+            arguments(
+                new JsonObject(new JsonPair("one", new JsonString("1"))),
+                "{\"one\":\"\\u0031\"}"
+            ),
+            arguments(
+                new JsonObject(new JsonPair("oe", new JsonString("1ö"))),
+                "{\"oe\":\"1\\u00F6\"}"
+            ),
+            arguments(
+                new JsonObject(new JsonPair("12", new JsonString("1ᛗ2"))),
+                "{\"12\":\"1\\u16D72\"}"
+            ),
+            arguments(
+                new JsonObject(new JsonPair("arrow", new JsonString("↶2"))),
+                "{\"arrow\":\"\\u21b62\"}"
+            ),
+            arguments(
+                new JsonObject(new JsonPair("text", new JsonString("A sentence of arbitrary text⇶"))),
+                "{\"text\":\"A sentence of arbitrary text\\u21F6\"}"
+            )
         );
     }
 
