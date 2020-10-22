@@ -73,13 +73,14 @@ public final class JsonWrite {
 
     public static void write(final String string, final BinaryWriter target) {
         for (var b : string.getBytes(StandardCharsets.UTF_8)) {
-            if (b >= 0 && b < ' ') {
+            if (b >= 0 && b < ' ' || b == '"') {
                 target.write((byte) '\\');
                 switch (b) {
                 case '\b': b = 'b'; break;
                 case '\f': b = 'f'; break;
                 case '\n': b = 'n'; break;
                 case '\r': b = 'r'; break;
+                case '"': break;
                 default:
                     target.write(new byte[]{'u', '0', '0'});
                     target.write(HEX[(b & 0xF0) >>> 4]);
