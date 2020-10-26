@@ -21,7 +21,7 @@ import java.time.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class DtoSpecificationEncodingJson implements DtoSpecificationEncoding {
+public class DtoImplementerJson implements DtoImplementer {
     private final BinaryWriterWriteCache writeCache = new BinaryWriterWriteCache("target");
 
     private int level = 0;

@@ -23,7 +23,7 @@ public class DtoProcessor extends AbstractProcessor {
     private Elements elementUtils;
 
     private DtoTargetFactory targetFactory;
-    private DtoSpecificationFactory specificationFactory;
+    private DtoImplementerFactory specificationFactory;
 
     @Override
     public synchronized void init(final ProcessingEnvironment processingEnv) {
@@ -34,8 +34,8 @@ public class DtoProcessor extends AbstractProcessor {
         elementUtils = processingEnv.getElementUtils();
 
         targetFactory = new DtoTargetFactory(elementUtils, processingEnv.getTypeUtils());
-        specificationFactory = new DtoSpecificationFactory(
-            new DtoSpecificationEncodingJson()
+        specificationFactory = new DtoImplementerFactory(
+            new DtoImplementerJson()
         );
     }
 

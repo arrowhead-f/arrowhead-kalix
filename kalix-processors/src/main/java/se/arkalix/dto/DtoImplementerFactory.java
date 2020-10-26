@@ -13,11 +13,11 @@ import java.util.Objects;
 import java.util.Optional;
 
 
-public class DtoSpecificationFactory {
-    private final DtoSpecificationEncoding[] specificationEncodings;
+public class DtoImplementerFactory {
+    private final DtoImplementer[] implementers;
 
-    public DtoSpecificationFactory(final DtoSpecificationEncoding... specificationEncodings) {
-        this.specificationEncodings = specificationEncodings;
+    public DtoImplementerFactory(final DtoImplementer... implementers) {
+        this.implementers = implementers;
     }
 
     public DtoTargetSpecification createForTarget(final DtoTarget target) throws DtoException {
@@ -267,9 +267,9 @@ public class DtoSpecificationFactory {
         }
 
         final var targetEncodings = target.encodings();
-        for (final var specificationEncodings : specificationEncodings) {
-            if (targetEncodings.contains(specificationEncodings.encoding())) {
-                specificationEncodings.implementFor(target, implementation);
+        for (final var implementer : implementers) {
+            if (targetEncodings.contains(implementer.encoding())) {
+                implementer.implementFor(target, implementation);
             }
         }
 
