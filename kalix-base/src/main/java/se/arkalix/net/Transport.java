@@ -1,4 +1,4 @@
-package se.arkalix.descriptor;
+package se.arkalix.net;
 
 import java.util.Objects;
 
@@ -7,10 +7,10 @@ import java.util.Objects;
  * or {@link #HTTP}.
  */
 @SuppressWarnings("unused")
-public final class TransportDescriptor {
+public final class Transport {
     private final String name;
 
-    private TransportDescriptor(final String name) {
+    private Transport(final String name) {
         this.name = name;
     }
 
@@ -21,7 +21,7 @@ public final class TransportDescriptor {
      * @param name  Desired transport descriptor name.
      * @return New or existing transport descriptor.
      */
-    public TransportDescriptor getOrCreate(final String name) {
+    public Transport getOrCreate(final String name) {
         return valueOf(name);
     }
 
@@ -37,7 +37,7 @@ public final class TransportDescriptor {
      *
      * @see <a href="http://docs.oasis-open.org/amqp/core/v1.0/amqp-core-overview-v1.0.html">OASIS Advanced Message Queuing Protocol (AMQP) Version 1.0</a>
      */
-    public static final TransportDescriptor AMPQ = new TransportDescriptor("AMPQ");
+    public static final Transport AMPQ = new Transport("AMPQ");
 
     /**
      * Constrained Application Protocol (CoAP).
@@ -45,7 +45,7 @@ public final class TransportDescriptor {
      * @see <a href="https://tools.ietf.org/html/rfc7252">RFC 7252</a>
      * @see <a href="https://tools.ietf.org/html/rfc8323">RFC 8323</a>
      */
-    public static final TransportDescriptor COAP = new TransportDescriptor("COAP");
+    public static final Transport COAP = new Transport("COAP");
 
     /**
      * Hyper-Text Transfer Protocol (HTTP).
@@ -59,7 +59,7 @@ public final class TransportDescriptor {
      * @see <a href="https://tools.ietf.org/html/rfc7235">RFC 7235</a>
      * @see <a href="https://tools.ietf.org/html/rfc7235">RFC 7540</a>
      */
-    public static final TransportDescriptor HTTP = new TransportDescriptor("HTTP");
+    public static final Transport HTTP = new Transport("HTTP");
 
     /**
      * OASIS Message Queuing Telemetry Transport (MQTT).
@@ -67,7 +67,7 @@ public final class TransportDescriptor {
      * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html">OASIS MQTT 5.0</a>
      * @see <a href="http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/mqtt-v3.1.1.html">OASIS MQTT 3.1.1</a>
      */
-    public static final TransportDescriptor MQTT = new TransportDescriptor("MQTT");
+    public static final Transport MQTT = new Transport("MQTT");
 
     /**
      * Extensible Messaging and Presence Protocol (XMPP).
@@ -77,15 +77,15 @@ public final class TransportDescriptor {
      * @see <a href="https://tools.ietf.org/html/rfc7590">RFC 7590</a>
      * @see <a href="https://tools.ietf.org/html/rfc7622">RFC 7622</a>
      */
-    public static final TransportDescriptor XMPP = new TransportDescriptor("XMPP");
+    public static final Transport XMPP = new Transport("XMPP");
 
     /**
-     * Resolves {@link TransportDescriptor} from given {@code name}.
+     * Resolves {@link Transport} from given {@code name}.
      *
      * @param name Name to resolve. Case insensitive.
-     * @return Cached or new {@link TransportDescriptor}.
+     * @return Cached or new {@link Transport}.
      */
-    public static TransportDescriptor valueOf(String name) {
+    public static Transport valueOf(String name) {
         name = Objects.requireNonNull(name, "Name required.").toUpperCase();
         switch (name) {
         case "AMPQ": return AMPQ;
@@ -94,14 +94,14 @@ public final class TransportDescriptor {
         case "MQTT": return MQTT;
         case "XMPP": return XMPP;
         }
-        return new TransportDescriptor(name);
+        return new Transport(name);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) { return true; }
         if (o == null || getClass() != o.getClass()) { return false; }
-        final var transport = (TransportDescriptor) o;
+        final var transport = (Transport) o;
         return name.equals(transport.name);
     }
 

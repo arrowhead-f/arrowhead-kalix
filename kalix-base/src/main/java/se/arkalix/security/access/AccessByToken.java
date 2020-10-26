@@ -3,7 +3,6 @@ package se.arkalix.security.access;
 import se.arkalix.ArSystem;
 import se.arkalix.SystemRecordWithIdentity;
 import se.arkalix.ServiceRecord;
-import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.security.access._internal.AccessToken;
 import se.arkalix.util.annotation.ThreadSafe;
 
@@ -74,8 +73,8 @@ public class AccessByToken implements AccessPolicy {
     }
 
     @Override
-    public SecurityDescriptor descriptor() {
-        return SecurityDescriptor.TOKEN;
+    public AccessType descriptor() {
+        return AccessType.TOKEN;
     }
 
     @Override

@@ -1,9 +1,9 @@
 package se.arkalix._internal;
 
+import se.arkalix.security.access.AccessType;
 import se.arkalix.ServiceRecord;
 import se.arkalix.SystemRecord;
-import se.arkalix.descriptor.InterfaceDescriptor;
-import se.arkalix.descriptor.SecurityDescriptor;
+import se.arkalix.ServiceInterface;
 import se.arkalix.net._internal.dns.DnsNames;
 import se.arkalix.util.annotation.Internal;
 
@@ -21,10 +21,10 @@ public class DefaultServiceRecord implements ServiceRecord {
     private final String uri;
     private final Instant receivedAt;
     private final Instant expiresAt;
-    private final SecurityDescriptor security;
+    private final AccessType security;
     private final Map<String, String> metadata;
     private final int version;
-    private final Map<InterfaceDescriptor, String> interfaceTokens;
+    private final Map<ServiceInterface, String> interfaceTokens;
 
     private DefaultServiceRecord(final Builder builder) {
         name = Objects.requireNonNull(builder.name, "Expected name");
@@ -80,7 +80,7 @@ public class DefaultServiceRecord implements ServiceRecord {
     }
 
     @Override
-    public SecurityDescriptor security() {
+    public AccessType security() {
         return security;
     }
 
@@ -95,7 +95,7 @@ public class DefaultServiceRecord implements ServiceRecord {
     }
 
     @Override
-    public Map<InterfaceDescriptor, String> interfaceTokens() {
+    public Map<ServiceInterface, String> interfaceTokens() {
         return interfaceTokens;
     }
 
@@ -115,8 +115,8 @@ public class DefaultServiceRecord implements ServiceRecord {
         if (aInterfaces.size() == 1 && bInterfaces.size() == 1) {
             return aInterfaces.iterator().next().compareTo(bInterfaces.iterator().next());
         }
-        final var aInterfaceArray = aInterfaces.toArray(new InterfaceDescriptor[0]);
-        final var bInterfaceArray = bInterfaces.toArray(new InterfaceDescriptor[0]);
+        final var aInterfaceArray = aInterfaces.toArray(new ServiceInterface[0]);
+        final var bInterfaceArray = bInterfaces.toArray(new ServiceInterface[0]);
         Arrays.sort(aInterfaceArray);
         Arrays.sort(bInterfaceArray);
         final var i1 = Math.min(aInterfaceArray.length, bInterfaceArray.length);
@@ -178,11 +178,11 @@ public class DefaultServiceRecord implements ServiceRecord {
     public static class Builder {
         private String name;
         private SystemRecord provider;
-        private Map<InterfaceDescriptor, String> interfaceTokens;
+        private Map<ServiceInterface, String> interfaceTokens;
         private String uri;
         private Instant receivedAt;
         private Instant expiresAt;
-        private SecurityDescriptor security;
+        private AccessType security;
         private Map<String, String> metadata;
         private int version;
 
@@ -206,7 +206,7 @@ public class DefaultServiceRecord implements ServiceRecord {
             this.expiresAt = renewAt;
         }
 
-        public void security(final SecurityDescriptor security) {
+        public void security(final AccessType security) {
             this.security = security;
         }
 
@@ -218,7 +218,7 @@ public class DefaultServiceRecord implements ServiceRecord {
             this.version = version;
         }
 
-        public void interfaceTokens(final Map<InterfaceDescriptor, String> interfaceTokens) {
+        public void interfaceTokens(final Map<ServiceInterface, String> interfaceTokens) {
             this.interfaceTokens = interfaceTokens;
         }
 

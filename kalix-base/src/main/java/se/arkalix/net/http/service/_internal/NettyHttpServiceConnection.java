@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.ArSystem;
 import se.arkalix.SystemRecordWithIdentity;
-import se.arkalix.descriptor.EncodingDescriptor;
+import se.arkalix.net.Encoding;
 import se.arkalix.dto.DtoReadException;
 import se.arkalix.dto.DtoWriteException;
 import se.arkalix.net._internal.NettyBodyOutgoing;
@@ -152,7 +152,7 @@ public class NettyHttpServiceConnection
         }
 
         // Resolve default response encoding.
-        final EncodingDescriptor defaultEncoding;
+        final Encoding defaultEncoding;
         {
             final var headers = nettyRequest.headers();
             final var encodings = service.encodings();
@@ -250,7 +250,7 @@ public class NettyHttpServiceConnection
     private void sendKalixResponseAndCleanup(
         final ChannelHandlerContext ctx,
         final DefaultHttpServiceResponse response,
-        final EncodingDescriptor defaultEncoding
+        final Encoding defaultEncoding
     ) throws DtoWriteException, IOException {
         final var status = response.status()
             .orElseThrow(() -> new IllegalStateException("No HTTP status specified in service response"));

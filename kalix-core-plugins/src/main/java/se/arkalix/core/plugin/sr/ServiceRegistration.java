@@ -1,9 +1,9 @@
 package se.arkalix.core.plugin.sr;
 
+import se.arkalix.security.access.AccessType;
 import se.arkalix.core.plugin.SystemDetails;
 import se.arkalix.ServiceRecord;
-import se.arkalix.descriptor.SecurityDescriptor;
-import se.arkalix.descriptor.InterfaceDescriptor;
+import se.arkalix.ServiceInterface;
 import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
@@ -50,7 +50,7 @@ public interface ServiceRegistration {
      * The access policy employed by the service.
      */
     @JsonName("secure")
-    Optional<SecurityDescriptor> security();
+    Optional<AccessType> security();
 
     /**
      * Arbitrary metadata to associate with registered service.
@@ -68,7 +68,7 @@ public interface ServiceRegistration {
      * If the service is provided securely over HTTP and supports JSON and XML,
      * then its two triplets would be "HTTP-SECURE-JSON" and "HTTP-SECURE-XML".
      */
-    List<InterfaceDescriptor> interfaces();
+    List<ServiceInterface> interfaces();
 
     static ServiceRegistrationDto from(final ServiceRecord description) {
         return new ServiceRegistrationBuilder()

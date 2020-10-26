@@ -1,8 +1,9 @@
 package se.arkalix.core.plugin;
 
+import se.arkalix.security.access.AccessType;
 import se.arkalix.core.plugin.sr.ServiceQueryResult;
 import se.arkalix.ServiceRecord;
-import se.arkalix.descriptor.SecurityDescriptor;
+import se.arkalix.ServiceInterface;
 import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoToString;
@@ -55,7 +56,7 @@ public interface ServiceDetails {
      * The security/authentication mode supported by the service.
      */
     @JsonName("secure")
-    SecurityDescriptor security();
+    AccessType security();
 
     /**
      * Arbitrary service metadata.
@@ -70,7 +71,7 @@ public interface ServiceDetails {
     /**
      * List of supported network interface triplets.
      *
-     * @see se.arkalix.descriptor.InterfaceDescriptor InterfaceDescriptor
+     * @see ServiceInterface InterfaceDescriptor
      */
     List<InterfaceName> interfaces();
 

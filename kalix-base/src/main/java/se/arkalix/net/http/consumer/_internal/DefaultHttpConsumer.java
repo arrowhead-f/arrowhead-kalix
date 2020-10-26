@@ -2,8 +2,8 @@ package se.arkalix.net.http.consumer._internal;
 
 import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
-import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.descriptor.SecurityDescriptor;
+import se.arkalix.net.Encoding;
+import se.arkalix.security.access.AccessType;
 import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerConnection;
@@ -17,27 +17,27 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static se.arkalix.descriptor.TransportDescriptor.HTTP;
+import static se.arkalix.net.Transport.HTTP;
 
 @Internal
 public class DefaultHttpConsumer implements HttpConsumer {
     private final ArSystem system;
     private final HttpClient client;
     private final ServiceRecord service;
-    private final EncodingDescriptor encoding;
+    private final Encoding encoding;
     private final String authorization;
 
     public DefaultHttpConsumer(
         final ArSystem system,
         final ServiceRecord service,
-        final Collection<EncodingDescriptor> encodings
+        final Collection<Encoding> encodings
     ) {
         this.system = Objects.requireNonNull(system, "Expected system");
         this.service = Objects.requireNonNull(service, "Expected service");
 
         client = HttpClient.from(system);
 
-        final var isSecure = service.security() != SecurityDescriptor.NOT_SECURE;
+        final var isSecure = service.security() != AccessType.NOT_SECURE;
         if (isSecure != system.isSecure()) {
             if (isSecure) {
                 throw new IllegalStateException("The provided system is " +
@@ -68,7 +68,7 @@ public class DefaultHttpConsumer implements HttpConsumer {
                 service.name() + "\" does not support any " +
                 (isSecure ? "secure" : "insecure") + " HTTP interface with " +
                 "any of the encodings " + encodings.stream()
-                .map(EncodingDescriptor::name)
+                .map(Encoding::name)
                 .collect(Collectors.joining(", ", "[", "]")) +
                 "; cannot consume service"));
 

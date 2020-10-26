@@ -1,6 +1,6 @@
 package se.arkalix.net._internal;
 
-import se.arkalix.descriptor.EncodingDescriptor;
+import se.arkalix.net.Encoding;
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoWritable;
 import se.arkalix.net.MessageOutgoing;
@@ -13,7 +13,7 @@ import java.util.Optional;
 public abstract class DefaultMessageOutgoing<Self> implements MessageOutgoing<Self> {
     private Object body;
     private Charset charset;
-    private EncodingDescriptor encoding;
+    private Encoding encoding;
 
     protected abstract Self self();
 
@@ -23,7 +23,7 @@ public abstract class DefaultMessageOutgoing<Self> implements MessageOutgoing<Se
     }
 
     @Override
-    public Optional<EncodingDescriptor> encoding() {
+    public Optional<Encoding> encoding() {
         return Optional.ofNullable(encoding);
     }
 
@@ -52,7 +52,7 @@ public abstract class DefaultMessageOutgoing<Self> implements MessageOutgoing<Se
 
     protected Self bodyUnsafe(final DtoEncoding encoding, final Object data) {
         charset = null;
-        this.encoding = encoding != null ? EncodingDescriptor.get(encoding) : null;
+        this.encoding = encoding != null ? Encoding.get(encoding) : null;
         body = data;
 
         return self();

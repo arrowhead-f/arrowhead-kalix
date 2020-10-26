@@ -1,8 +1,8 @@
 package se.arkalix.net.http.service;
 
 import se.arkalix.ArService;
-import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.descriptor.TransportDescriptor;
+import se.arkalix.net.Encoding;
+import se.arkalix.net.Transport;
 import se.arkalix._internal.ArServerRegistry;
 import se.arkalix.net.http.service._internal.HttpServer;
 import se.arkalix.net.http.HttpMethod;
@@ -10,7 +10,7 @@ import se.arkalix.security.access.AccessPolicy;
 
 import java.util.*;
 
-import static se.arkalix.descriptor.TransportDescriptor.HTTP;
+import static se.arkalix.net.Transport.HTTP;
 
 /**
  * A concrete Arrowhead service, exposing its functions as HTTP endpoints.
@@ -30,7 +30,7 @@ public final class HttpService implements ArService {
 
     private String name;
     private String basePath;
-    private List<EncodingDescriptor> encodings;
+    private List<Encoding> encodings;
     private AccessPolicy accessPolicy;
     private Map<String, String> metadata;
     private int version = 0;
@@ -103,7 +103,7 @@ public final class HttpService implements ArService {
      * @return This service.
      * @see se.arkalix.dto Data Transfer Object Utilities
      */
-    public HttpService encodings(final EncodingDescriptor... encodings) {
+    public HttpService encodings(final Encoding... encodings) {
         this.encodings = Arrays.asList(encodings.clone());
         return this;
     }
@@ -782,7 +782,7 @@ public final class HttpService implements ArService {
     }
 
     @Override
-    public TransportDescriptor transport() {
+    public Transport transport() {
         return HTTP;
     }
 
@@ -799,10 +799,10 @@ public final class HttpService implements ArService {
     /**
      * {@inheritDoc}
      *
-     * @see #encodings(EncodingDescriptor...)
+     * @see #encodings(Encoding...)
      */
     @Override
-    public List<EncodingDescriptor> encodings() {
+    public List<Encoding> encodings() {
         return Collections.unmodifiableList(encodings);
     }
 

@@ -1,8 +1,7 @@
 package se.arkalix;
 
-import se.arkalix.descriptor.InterfaceDescriptor;
-import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix._internal.DefaultServiceRecord;
+import se.arkalix.security.access.AccessType;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -61,7 +60,7 @@ public interface ServiceRecord extends Comparable<ServiceRecord> {
      *
      * @return Service security schema descriptor.
      */
-    SecurityDescriptor security();
+    AccessType security();
 
     /**
      * Gets metadata associated with this service. Their significance and use
@@ -84,7 +83,7 @@ public interface ServiceRecord extends Comparable<ServiceRecord> {
      *
      * @return Service interface triplets.
      */
-    default Set<InterfaceDescriptor> interfaces() {
+    default Set<ServiceInterface> interfaces() {
         return interfaceTokens().keySet();
     }
 
@@ -95,7 +94,7 @@ public interface ServiceRecord extends Comparable<ServiceRecord> {
      *
      * @return Service interface triplets mapped to authorization tokens.
      */
-    Map<InterfaceDescriptor, String> interfaceTokens();
+    Map<ServiceInterface, String> interfaceTokens();
 
     /**
      * Builder useful for creating {@link ServiceRecord} instances.
@@ -170,7 +169,7 @@ public interface ServiceRecord extends Comparable<ServiceRecord> {
          * @param security Security descriptor.
          * @return This builder.
          */
-        public Builder security(final SecurityDescriptor security) {
+        public Builder security(final AccessType security) {
             inner.security(security);
             return this;
         }
@@ -205,7 +204,7 @@ public interface ServiceRecord extends Comparable<ServiceRecord> {
          * @param interfaces Interface triplets.
          * @return This builder.
          */
-        public Builder interfaces(final InterfaceDescriptor... interfaces) {
+        public Builder interfaces(final ServiceInterface... interfaces) {
             return interfaces(Arrays.asList(interfaces));
         }
 
@@ -217,7 +216,7 @@ public interface ServiceRecord extends Comparable<ServiceRecord> {
          * @param interfaces Interface triplets.
          * @return This builder.
          */
-        public Builder interfaces(final Collection<InterfaceDescriptor> interfaces) {
+        public Builder interfaces(final Collection<ServiceInterface> interfaces) {
             return interfaceTokens(interfaces.stream()
                 .collect(Collectors.toMap(descriptor -> descriptor, ignored -> "")));
         }
@@ -234,7 +233,7 @@ public interface ServiceRecord extends Comparable<ServiceRecord> {
          *                        tokens.
          * @return This builder.
          */
-        public Builder interfaceTokens(final Map<InterfaceDescriptor, String> interfaceTokens) {
+        public Builder interfaceTokens(final Map<ServiceInterface, String> interfaceTokens) {
             inner.interfaceTokens(interfaceTokens);
             return this;
         }

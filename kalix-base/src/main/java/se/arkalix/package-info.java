@@ -6,7 +6,7 @@
  * device can host one or more systems, each of which can provide zero or more
  * services. A service could be thought of as a network API made available
  * through a well-defined set of {@link
- * se.arkalix.descriptor.InterfaceDescriptor network interface protocols}.
+ * se.arkalix.ServiceInterface network interface protocols}.
  * Systems can consume the services other systems provide, where consuming
  * concretely entails exchanging messages. More details about the Arrowhead
  * Framework can be read

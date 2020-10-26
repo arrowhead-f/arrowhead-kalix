@@ -1,6 +1,6 @@
 package se.arkalix.net.http._internal;
 
-import se.arkalix.descriptor.EncodingDescriptor;
+import se.arkalix.net.Encoding;
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.util.annotation.Internal;
 
@@ -34,7 +34,7 @@ public class HttpMediaTypes {
      * For this reason, both "+" and "-" are considered valid suffix
      * designators. For example, both the {@code "application/json"} and {@code
      * "application/senml+json"} content types will result in {@link
-     * EncodingDescriptor#JSON} being returned.
+     * Encoding#JSON} being returned.
      * <p>
      * More about HTTP content types can be read in RFC 7231, Section 3.1.1.5.
      *
@@ -46,7 +46,7 @@ public class HttpMediaTypes {
      * @see <a href="https://tools.ietf.org/html/rfc7231#section-3.1.1.5">RFC 7231, Section 3.1.1.5</a>
      * @see <a href="https://www.iana.org/assignments/media-types/media-types.xhtml">IANA Media Types</a>
      */
-    public static Optional<EncodingDescriptor> encodingFromContentType(final String contentType) {
+    public static Optional<Encoding> encodingFromContentType(final String contentType) {
         if (contentType == null || contentType.length() == 0) {
             return Optional.empty();
         }
@@ -95,7 +95,7 @@ public class HttpMediaTypes {
             }
         }
 
-        return Optional.of(EncodingDescriptor.getOrCreate(contentType.substring(c0, c1)));
+        return Optional.of(Encoding.getOrCreate(contentType.substring(c0, c1)));
     }
 
     /**
@@ -117,10 +117,10 @@ public class HttpMediaTypes {
      * delimiter, the media types using the EXI encoding, such as SenML, seem
      * to use "-" as delimiter, at least if looking at the IANA <i>Media
      * Types</i> registry. For this reason, both "+" and "-" are considered
-     * valid suffix designators. For example the {@link EncodingDescriptor#JSON
+     * valid suffix designators. For example the {@link Encoding#JSON
      * JSON} encoding will match both the {@code "application/json"} and {@code
      * "application/senml+json"} media types. Furthermore, the {@link
-     * EncodingDescriptor#EXI EXI} encoding will match {@code
+     * Encoding#EXI EXI} encoding will match {@code
      * "application/exi"}, which is non-standard at the time of writing, as
      * well as {@code "application/senml-exi"}.
      * <p>
@@ -134,8 +134,8 @@ public class HttpMediaTypes {
      * @see <a href="https://tools.ietf.org/html/rfc7231#section-3.1.1.5">RFC 7231, Section 3.1.1.5</a>
      * @see <a href="https://www.iana.org/assignments/media-types/media-types.xhtml">IANA Media Types</a>
      */
-    public static Optional<EncodingDescriptor> findEncodingCompatibleWithContentType(
-        final List<EncodingDescriptor> encodings,
+    public static Optional<Encoding> findEncodingCompatibleWithContentType(
+        final List<Encoding> encodings,
         final String contentType
     ) {
         Objects.requireNonNull(encodings, "Expected encodings");
@@ -232,8 +232,8 @@ public class HttpMediaTypes {
      * @return A compatible candidate encoding, if any such exists.
      * @see <a href="https://tools.ietf.org/html/rfc7231#section-5.3.2">RFC 7231, Section 5.3.2</a>
      */
-    public static Optional<EncodingDescriptor> findEncodingCompatibleWithAcceptHeaders(
-        final List<EncodingDescriptor> encodings,
+    public static Optional<Encoding> findEncodingCompatibleWithAcceptHeaders(
+        final List<Encoding> encodings,
         final List<String> acceptHeaders
     ) {
         Objects.requireNonNull(encodings, "Expected encodings");
@@ -254,8 +254,8 @@ public class HttpMediaTypes {
         return Optional.empty();
     }
 
-    private static EncodingDescriptor findEncodingCompatibleWithAcceptHeader(
-        final List<EncodingDescriptor> encodings,
+    private static Encoding findEncodingCompatibleWithAcceptHeader(
+        final List<Encoding> encodings,
         final String acceptHeader
     ) {
         int a0 = 0, a1, a2 = 0;
@@ -364,8 +364,8 @@ public class HttpMediaTypes {
      * @param encoding Encoding descriptor to convert.
      * @return Media type string.
      */
-    public static String toMediaType(final EncodingDescriptor encoding) {
-        if (encoding == EncodingDescriptor.JSON) {
+    public static String toMediaType(final Encoding encoding) {
+        if (encoding == Encoding.JSON) {
             return "application/json";
         }
         return "application/" + encoding.name().toLowerCase();

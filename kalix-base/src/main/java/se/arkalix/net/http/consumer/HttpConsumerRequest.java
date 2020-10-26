@@ -1,6 +1,6 @@
 package se.arkalix.net.http.consumer;
 
-import se.arkalix.descriptor.EncodingDescriptor;
+import se.arkalix.net.Encoding;
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoWritable;
 import se.arkalix.net.MessageOutgoingWithImplicitEncoding;
@@ -8,7 +8,6 @@ import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.net.http.HttpOutgoingRequest;
 import se.arkalix.net.http.HttpVersion;
-import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.client.HttpClientRequest;
 import se.arkalix.util.annotation.Internal;
 
@@ -136,7 +135,7 @@ public class HttpConsumerRequest
     }
 
     @Override
-    public Optional<EncodingDescriptor> encoding() {
+    public Optional<Encoding> encoding() {
         return inner.encoding();
     }
 

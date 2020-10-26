@@ -1,7 +1,5 @@
 package se.arkalix.net;
 
-import se.arkalix.descriptor.EncodingDescriptor;
-
 import java.util.Objects;
 
 /**
@@ -9,7 +7,7 @@ import java.util.Objects;
  * an unsupported encoding being specified.
  */
 public class MessageEncodingUnsupported extends MessageException {
-    private final EncodingDescriptor encoding;
+    private final Encoding encoding;
 
     /**
      * Creates new exception.
@@ -17,17 +15,17 @@ public class MessageEncodingUnsupported extends MessageException {
      * @param message  Offending message.
      * @param encoding Unsupported encoding.
      */
-    public MessageEncodingUnsupported(final Message message, final EncodingDescriptor encoding) {
+    public MessageEncodingUnsupported(final Message message, final Encoding encoding) {
         super(message);
         this.encoding = Objects.requireNonNull(encoding);
     }
 
     /**
-     * Gets unsupported encoding causing this exception to be thrown.
+     * Gets name of unsupported encoding causing this exception to be thrown.
      *
      * @return Unsupported encoding descriptor.
      */
-    public EncodingDescriptor encoding() {
+    public Encoding encoding() {
         return encoding;
     }
 

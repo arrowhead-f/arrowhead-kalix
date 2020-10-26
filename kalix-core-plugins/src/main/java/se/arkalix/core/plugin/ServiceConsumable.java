@@ -1,9 +1,9 @@
 package se.arkalix.core.plugin;
 
+import se.arkalix.security.access.AccessType;
 import se.arkalix.core.plugin.or.OrchestrationWarning;
 import se.arkalix.ServiceRecord;
-import se.arkalix.descriptor.InterfaceDescriptor;
-import se.arkalix.descriptor.SecurityDescriptor;
+import se.arkalix.ServiceInterface;
 import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoToString;
@@ -59,7 +59,7 @@ public interface ServiceConsumable {
      * The security/authentication mode supported by the service.
      */
     @JsonName("secure")
-    SecurityDescriptor security();
+    AccessType security();
 
     /**
      * Arbitrary service metadata.
@@ -74,18 +74,18 @@ public interface ServiceConsumable {
     /**
      * List of supported network interface triplets.
      *
-     * @see se.arkalix.descriptor.InterfaceDescriptor InterfaceDescriptor
+     * @see ServiceInterface InterfaceDescriptor
      */
     List<InterfaceName> interfaces();
 
     /**
      * Authorization tokens useful for consuming this service.
      * <p>
-     * One token is provided for each {@link InterfaceDescriptor interface
+     * One token is provided for each {@link ServiceInterface interface
      * triplet} supported by the service.
      */
     @JsonName("authorizationTokens")
-    Map<InterfaceDescriptor, String> tokens();
+    Map<ServiceInterface, String> tokens();
 
     /**
      * Any notifications about the state of the service that might have bearing

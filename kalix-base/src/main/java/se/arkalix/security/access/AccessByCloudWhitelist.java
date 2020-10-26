@@ -3,7 +3,6 @@ package se.arkalix.security.access;
 import se.arkalix.ArSystem;
 import se.arkalix.SystemRecordWithIdentity;
 import se.arkalix.ServiceRecord;
-import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.util.annotation.ThreadSafe;
 
 import java.util.*;
@@ -42,8 +41,8 @@ public class AccessByCloudWhitelist implements AccessPolicy {
     }
 
     @Override
-    public SecurityDescriptor descriptor() {
-        return SecurityDescriptor.CERTIFICATE;
+    public AccessType descriptor() {
+        return AccessType.CERTIFICATE;
     }
 
     @Override

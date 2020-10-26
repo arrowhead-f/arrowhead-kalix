@@ -4,8 +4,8 @@ import se.arkalix.ArConsumer;
 import se.arkalix.ArConsumerFactory;
 import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
-import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.descriptor.TransportDescriptor;
+import se.arkalix.net.Encoding;
+import se.arkalix.net.Transport;
 import se.arkalix.util.Result;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.function.ThrowingFunction;
@@ -50,8 +50,8 @@ public class ServiceQuery {
     private final ThrowingFunction<ServiceQuery, Future<Set<ServiceRecord>>> resolver;
 
     private String name;
-    private Collection<EncodingDescriptor> encodings;
-    private Collection<TransportDescriptor> transports;
+    private Collection<Encoding> encodings;
+    private Collection<Transport> transports;
     private Map<String, String> metadata;
     private Integer version;
     private Integer versionMax;
@@ -99,7 +99,7 @@ public class ServiceQuery {
      * @return Application-level transport protocols that may be employed by
      * the consumed service.
      */
-    public Collection<TransportDescriptor> transports() {
+    public Collection<Transport> transports() {
         return transports != null ? transports : Collections.emptyList();
     }
 
@@ -108,7 +108,7 @@ public class ServiceQuery {
      *                   employed by the consumed service.
      * @return This query.
      */
-    public ServiceQuery transports(final Collection<TransportDescriptor> transports) {
+    public ServiceQuery transports(final Collection<Transport> transports) {
         this.transports = transports;
         return this;
     }
@@ -118,7 +118,7 @@ public class ServiceQuery {
      *                   employed by the consumed service.
      * @return This query.
      */
-    public ServiceQuery transports(final TransportDescriptor... transports) {
+    public ServiceQuery transports(final Transport... transports) {
         this.transports = Arrays.asList(transports);
         return this;
     }
@@ -127,7 +127,7 @@ public class ServiceQuery {
      * @return Message payload encodings that may be employed by the consumed
      * service.
      */
-    public Collection<EncodingDescriptor> encodings() {
+    public Collection<Encoding> encodings() {
         return encodings != null ? encodings : Collections.emptyList();
     }
 
@@ -136,7 +136,7 @@ public class ServiceQuery {
      *                  consumed service.
      * @return This query.
      */
-    public ServiceQuery encodings(final Collection<EncodingDescriptor> encodings) {
+    public ServiceQuery encodings(final Collection<Encoding> encodings) {
         this.encodings = encodings;
         return this;
     }
@@ -146,7 +146,7 @@ public class ServiceQuery {
      *                  consumed service.
      * @return This query.
      */
-    public ServiceQuery encodings(final EncodingDescriptor... encodings) {
+    public ServiceQuery encodings(final Encoding... encodings) {
         this.encodings = Arrays.asList(encodings);
         return this;
     }
@@ -287,7 +287,7 @@ public class ServiceQuery {
         }
 
         // Set and check service transports.
-        Collection<TransportDescriptor> currentTransports = Collections.emptyList();
+        Collection<Transport> currentTransports = Collections.emptyList();
         if (transports == null) {
             transports = factory.serviceTransports();
         }
@@ -307,7 +307,7 @@ public class ServiceQuery {
         }
 
         // Set and check service encodings.
-        Collection<EncodingDescriptor> currentEncodings = Collections.emptyList();
+        Collection<Encoding> currentEncodings = Collections.emptyList();
         if (encodings == null) {
             encodings = factory.serviceEncodings();
         }

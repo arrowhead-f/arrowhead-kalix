@@ -3,7 +3,6 @@ package se.arkalix.security.access;
 import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
 import se.arkalix.SystemRecordWithIdentity;
-import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.security.identity.SystemIdentity;
 import se.arkalix.util.annotation.ThreadSafe;
 
@@ -27,7 +26,7 @@ public interface AccessPolicy {
      * @return Access policy descriptor.
      */
     @ThreadSafe
-    SecurityDescriptor descriptor();
+    AccessType descriptor();
 
     /**
      * Determines whether or not the described {@code system} may consume the

@@ -1,7 +1,5 @@
 package se.arkalix.net;
 
-import se.arkalix.descriptor.EncodingDescriptor;
-
 import java.nio.charset.Charset;
 import java.util.Optional;
 
@@ -21,5 +19,5 @@ public interface Message {
      *
      * @return Message encoding, if specified.
      */
-    Optional<EncodingDescriptor> encoding();
+    Optional<Encoding> encoding();
 }

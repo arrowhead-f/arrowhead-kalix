@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import se.arkalix.ArService;
 import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
-import se.arkalix.descriptor.EncodingDescriptor;
+import se.arkalix.net.Encoding;
 import se.arkalix.net.Uris;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.service.*;
@@ -22,7 +22,7 @@ public class HttpServerService {
     private final AccessPolicy accessPolicy;
     private final String basePath;
     private final ArService service;
-    private final List<EncodingDescriptor> encodings;
+    private final List<Encoding> encodings;
     private final ArSystem provider;
     private final HttpRouteSequence[] routeSequences;
 
@@ -81,14 +81,14 @@ public class HttpServerService {
     /**
      * @return The encoding to use by default.
      */
-    public EncodingDescriptor defaultEncoding() {
+    public Encoding defaultEncoding() {
         return encodings.get(0);
     }
 
     /**
      * @return Data encodings supported by this service.
      */
-    public List<EncodingDescriptor> encodings() {
+    public List<Encoding> encodings() {
         return encodings;
     }
 

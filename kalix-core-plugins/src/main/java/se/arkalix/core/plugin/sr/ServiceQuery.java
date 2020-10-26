@@ -1,7 +1,7 @@
 package se.arkalix.core.plugin.sr;
 
-import se.arkalix.descriptor.InterfaceDescriptor;
-import se.arkalix.descriptor.SecurityDescriptor;
+import se.arkalix.security.access.AccessType;
+import se.arkalix.ServiceInterface;
 import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
@@ -31,13 +31,13 @@ public interface ServiceQuery {
      * Supported service interfaces.
      */
     @JsonName("interfaceRequirements")
-    List<InterfaceDescriptor> interfaces();
+    List<ServiceInterface> interfaces();
 
     /**
      * Permitted security/authentication modes.
      */
     @JsonName("securityRequirements")
-    List<SecurityDescriptor> securityModes();
+    List<AccessType> securityModes();
 
     /**
      * Required metadata pairs.
@@ -78,7 +78,7 @@ public interface ServiceQuery {
                 .stream()
                 .flatMap(transport -> query.encodings()
                     .stream()
-                    .map(encoding -> InterfaceDescriptor.getOrCreate(transport, isSecure, encoding)))
+                    .map(encoding -> ServiceInterface.getOrCreate(transport, isSecure, encoding)))
                 .collect(Collectors.toUnmodifiableList()))
             .metadata(query.metadata())
             .version(query.version().orElse(null))

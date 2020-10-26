@@ -1,4 +1,4 @@
-package se.arkalix.descriptor;
+package se.arkalix.net;
 
 import se.arkalix.dto.DtoEncoding;
 
@@ -13,14 +13,14 @@ import java.util.stream.Collectors;
  * systems. They can also be used for representing data that is stored to disk,
  * databases or other media.
  */
-public final class EncodingDescriptor {
-    private static final Map<DtoEncoding, EncodingDescriptor> dtoToEncodingMap;
-    private static final Set<EncodingDescriptor> encodingsWithDtoSupport;
+public final class Encoding {
+    private static final Map<DtoEncoding, Encoding> dtoToEncodingMap;
+    private static final Set<Encoding> encodingsWithDtoSupport;
 
     private final String name;
     private final DtoEncoding dtoEncoding;
 
-    private EncodingDescriptor(final String name, final DtoEncoding dtoEncoding) {
+    private Encoding(final String name, final DtoEncoding dtoEncoding) {
         this.name = Objects.requireNonNull(name, "Expected name");
         this.dtoEncoding = dtoEncoding;
     }
@@ -32,7 +32,7 @@ public final class EncodingDescriptor {
      * @return Set of all encodings with DTO support.
      * @see se.arkalix.dto
      */
-    public static Set<EncodingDescriptor> allWithDtoSupport() {
+    public static Set<Encoding> allWithDtoSupport() {
         return encodingsWithDtoSupport;
     }
 
@@ -42,7 +42,7 @@ public final class EncodingDescriptor {
      * @param dtoEncoding DTO encoding matching desired encoding descriptor.
      * @return Existing encoding descriptor.
      */
-    public static EncodingDescriptor get(final DtoEncoding dtoEncoding) {
+    public static Encoding get(final DtoEncoding dtoEncoding) {
         return dtoToEncodingMap.get(dtoEncoding);
     }
 
@@ -53,7 +53,7 @@ public final class EncodingDescriptor {
      * @param name Desired encoding descriptor name.
      * @return New or existing encoding descriptor.
      */
-    public static EncodingDescriptor getOrCreate(final String name) {
+    public static Encoding getOrCreate(final String name) {
         return valueOf(name);
     }
 
@@ -87,14 +87,14 @@ public final class EncodingDescriptor {
      *
      * @see <a href="https://tools.ietf.org/html/rfc7049">RFC 7049</a>
      */
-    public static final EncodingDescriptor CBOR = new EncodingDescriptor("CBOR", null);
+    public static final Encoding CBOR = new Encoding("CBOR", null);
 
     /**
      * JavaScript Object Notation (JSON).
      *
      * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
      */
-    public static final EncodingDescriptor JSON = new EncodingDescriptor("JSON", DtoEncoding.JSON);
+    public static final Encoding JSON = new Encoding("JSON", DtoEncoding.JSON);
 
     /**
      * Extensible Markup Language (XML).
@@ -102,22 +102,22 @@ public final class EncodingDescriptor {
      * @see <a href="https://www.w3.org/TR/xml">W3C XML 1.0</a>
      * @see <a href="https://www.w3.org/TR/xml11">W3C XML 1.1</a>
      */
-    public static final EncodingDescriptor XML = new EncodingDescriptor("XML", null);
+    public static final Encoding XML = new Encoding("XML", null);
 
     /**
      * Efficient XML Interchange (EXI).
      *
      * @see <a href="https://www.w3.org/TR/exi/">W3C EXI 1.0</a>
      */
-    public static final EncodingDescriptor EXI = new EncodingDescriptor("EXI", null);
+    public static final Encoding EXI = new Encoding("EXI", null);
 
     /**
-     * Resolves {@link EncodingDescriptor} from given {@code name}.
+     * Resolves {@link Encoding} from given {@code name}.
      *
      * @param name Name to resolve. Case insensitive.
-     * @return Cached or new {@link EncodingDescriptor}.
+     * @return Cached or new {@link Encoding}.
      */
-    public static EncodingDescriptor valueOf(String name) {
+    public static Encoding valueOf(String name) {
         name = Objects.requireNonNull(name, "Expected name").toUpperCase();
         switch (name) {
         case "CBOR":
@@ -129,14 +129,14 @@ public final class EncodingDescriptor {
         case "EXI":
             return EXI;
         }
-        return new EncodingDescriptor(name, null);
+        return new Encoding(name, null);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) { return true; }
         if (o == null || getClass() != o.getClass()) { return false; }
-        final var encoding = (EncodingDescriptor) o;
+        final var encoding = (Encoding) o;
         return name.equals(encoding.name);
     }
 
@@ -152,10 +152,10 @@ public final class EncodingDescriptor {
 
     static {
         try {
-            final var map = new HashMap<DtoEncoding, EncodingDescriptor>();
-            for (final var field : EncodingDescriptor.class.getFields()) {
-                if (Modifier.isStatic(field.getModifiers()) && field.getType() == EncodingDescriptor.class) {
-                    final var descriptor = (EncodingDescriptor) field.get(null);
+            final var map = new HashMap<DtoEncoding, Encoding>();
+            for (final var field : Encoding.class.getFields()) {
+                if (Modifier.isStatic(field.getModifiers()) && field.getType() == Encoding.class) {
+                    final var descriptor = (Encoding) field.get(null);
                     if (descriptor.isDto()) {
                         map.put(descriptor.dtoEncoding, descriptor);
                     }

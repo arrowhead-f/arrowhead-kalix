@@ -4,8 +4,8 @@ import se.arkalix.ArConsumer;
 import se.arkalix.ArConsumerFactory;
 import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
-import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.descriptor.TransportDescriptor;
+import se.arkalix.net.Encoding;
+import se.arkalix.net.Transport;
 import se.arkalix.core.plugin._internal.HttpJsonServices;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
@@ -15,8 +15,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 
-import static se.arkalix.descriptor.EncodingDescriptor.JSON;
-import static se.arkalix.descriptor.TransportDescriptor.HTTP;
+import static se.arkalix.net.Encoding.JSON;
+import static se.arkalix.net.Transport.HTTP;
 import static se.arkalix.net.http.HttpMethod.POST;
 
 /**
@@ -61,12 +61,12 @@ public class HttpJsonEventSubscribeService implements ArConsumer, ArEventSubscri
         }
 
         @Override
-        public Collection<TransportDescriptor> serviceTransports() {
+        public Collection<Transport> serviceTransports() {
             return Collections.singleton(HTTP);
         }
 
         @Override
-        public Collection<EncodingDescriptor> serviceEncodings() {
+        public Collection<Encoding> serviceEncodings() {
             return Collections.singleton(JSON);
         }
 
@@ -74,7 +74,7 @@ public class HttpJsonEventSubscribeService implements ArConsumer, ArEventSubscri
         public HttpJsonEventSubscribeService create(
             final ArSystem system,
             final ServiceRecord service,
-            final Collection<EncodingDescriptor> encodings
+            final Collection<Encoding> encodings
         ) {
             return new HttpJsonEventSubscribeService(HttpConsumer.create(system, service, encodings));
         }

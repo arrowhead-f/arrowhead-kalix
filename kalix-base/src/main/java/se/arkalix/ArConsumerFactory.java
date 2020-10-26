@@ -1,7 +1,7 @@
 package se.arkalix;
 
-import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.descriptor.TransportDescriptor;
+import se.arkalix.net.Encoding;
+import se.arkalix.net.Transport;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -29,15 +29,15 @@ public interface ArConsumerFactory<C extends ArConsumer> {
      * must be supported by any services consumed by any consumers created by
      * this factory.
      */
-    Collection<TransportDescriptor> serviceTransports();
+    Collection<Transport> serviceTransports();
 
     /**
      * @return Message payload encodings out of which at least one must be
      * supported by any services consumed by any consumers created by this
      * factory.
      */
-    default Collection<EncodingDescriptor> serviceEncodings() {
-        return EncodingDescriptor.allWithDtoSupport();
+    default Collection<Encoding> serviceEncodings() {
+        return Encoding.allWithDtoSupport();
     }
 
     /**
@@ -96,5 +96,5 @@ public interface ArConsumerFactory<C extends ArConsumer> {
      *                  the encodings returned by that method.
      * @return Created {@link ArConsumer} instance.
      */
-    C create(ArSystem system, ServiceRecord service, Collection<EncodingDescriptor> encodings);
+    C create(ArSystem system, ServiceRecord service, Collection<Encoding> encodings);
 }

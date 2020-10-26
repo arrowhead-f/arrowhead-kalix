@@ -3,7 +3,6 @@ package se.arkalix.security.access;
 import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
 import se.arkalix.SystemRecordWithIdentity;
-import se.arkalix.descriptor.SecurityDescriptor;
 
 import java.util.*;
 
@@ -22,8 +21,8 @@ public class AccessByCloudCertificate implements AccessPolicy {
     private AccessByCloudCertificate() {}
 
     @Override
-    public SecurityDescriptor descriptor() {
-        return SecurityDescriptor.CERTIFICATE;
+    public AccessType descriptor() {
+        return AccessType.CERTIFICATE;
     }
 
     @Override

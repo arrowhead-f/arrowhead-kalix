@@ -1,6 +1,5 @@
 package se.arkalix;
 
-import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix._internal.DefaultServiceDescriptionCache;
 import se.arkalix.util.annotation.ThreadSafe;
 
@@ -68,7 +67,7 @@ public interface ArServiceDescriptionCache {
     @ThreadSafe
     default Stream<ServiceRecord> getByNameAndInterfaces(
         final String name,
-        final InterfaceDescriptor... interfaces
+        final ServiceInterface... interfaces
     ) {
         return getByNameAndInterfaces(name, Arrays.asList(interfaces));
     }
@@ -84,7 +83,7 @@ public interface ArServiceDescriptionCache {
     @ThreadSafe
     default Stream<ServiceRecord> getByNameAndInterfaces(
         final String name,
-        final List<InterfaceDescriptor> interfaces
+        final List<ServiceInterface> interfaces
     ) {
         return getAll().filter(service -> service.name().equals(name) &&
             interfaces.stream().anyMatch(interfaces::contains));

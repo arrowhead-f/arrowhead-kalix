@@ -1,7 +1,5 @@
-package se.arkalix.descriptor;
+package se.arkalix.security.access;
 
-import se.arkalix.security.access.AccessByCloudCertificate;
-import se.arkalix.security.access.AccessByCloudWhitelist;
 import se.arkalix.security.identity.SystemIdentity;
 
 import java.util.Objects;
@@ -11,10 +9,10 @@ import java.util.Objects;
  * Arrowhead services can be configured to use.
  */
 @SuppressWarnings("unused")
-public final class SecurityDescriptor {
+public final class AccessType {
     private final String name;
 
-    private SecurityDescriptor(final String name) {
+    private AccessType(final String name) {
         this.name = Objects.requireNonNull(name, "Expected name");
     }
 
@@ -25,7 +23,7 @@ public final class SecurityDescriptor {
      * @param name Desired security descriptor name.
      * @return New or existing security descriptor.
      */
-    public static SecurityDescriptor getOrCreate(final String name) {
+    public static AccessType getOrCreate(final String name) {
         return valueOf(name);
     }
 
@@ -46,7 +44,7 @@ public final class SecurityDescriptor {
      * {@link se.arkalix.security.identity system name} of that certificate is
      * white-listed, if required, by the service.
      */
-    public static final SecurityDescriptor CERTIFICATE = new SecurityDescriptor("CERTIFICATE");
+    public static final AccessType CERTIFICATE = new AccessType("CERTIFICATE");
 
     /**
      * Unrestricted {@link se.arkalix.security.access.AccessUnrestricted access
@@ -57,7 +55,7 @@ public final class SecurityDescriptor {
      * services being provided by systems running in {@link se.arkalix.security
      * insecure mode}.
      */
-    public static final SecurityDescriptor NOT_SECURE = new SecurityDescriptor("NOT_SECURE");
+    public static final AccessType NOT_SECURE = new AccessType("NOT_SECURE");
 
     /**
      * Token access policy.
@@ -68,29 +66,29 @@ public final class SecurityDescriptor {
      * certificate as a provider, as well as (2) present a token originating
      * from a designated authorization system.
      */
-    public static final SecurityDescriptor TOKEN = new SecurityDescriptor("TOKEN");
+    public static final AccessType TOKEN = new AccessType("TOKEN");
 
     /**
-     * Resolves {@link SecurityDescriptor} from given {@code name}.
+     * Resolves {@link AccessType} from given {@code name}.
      *
      * @param name Name to resolve. Case insensitive.
-     * @return Cached or new {@link SecurityDescriptor}.
+     * @return Cached or new {@link AccessType}.
      */
-    public static SecurityDescriptor valueOf(String name) {
+    public static AccessType valueOf(String name) {
         name = Objects.requireNonNull(name, "Expected name").toUpperCase();
         switch (name) {
         case "CERTIFICATE": return CERTIFICATE;
         case "NOT_SECURE": return NOT_SECURE;
         case "TOKEN": return TOKEN;
         }
-        return new SecurityDescriptor(name);
+        return new AccessType(name);
     }
 
     @Override
     public boolean equals(Object other) {
         if (this == other) { return true; }
         if (other == null || getClass() != other.getClass()) { return false; }
-        final var accessDescriptor = (SecurityDescriptor) other;
+        final var accessDescriptor = (AccessType) other;
         return name.equals(accessDescriptor.name);
     }
 

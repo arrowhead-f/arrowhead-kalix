@@ -1,7 +1,7 @@
 package se.arkalix.net.http;
 
 import io.netty.handler.codec.http.HttpUtil;
-import se.arkalix.descriptor.EncodingDescriptor;
+import se.arkalix.net.Encoding;
 import se.arkalix.net.http._internal.HttpMediaTypes;
 import se.arkalix.net.MessageEncodingInvalid;
 import se.arkalix.net.MessageIncoming;
@@ -23,7 +23,7 @@ public interface HttpIncoming<Self> extends HttpMessage<Self>, MessageIncoming {
     }
 
     @Override
-    default Optional<EncodingDescriptor> encoding() {
+    default Optional<Encoding> encoding() {
         final var contentType = headers().get(CONTENT_TYPE).orElse(null);
         if (contentType == null || contentType.length() == 0) {
             return Optional.empty();

@@ -2,6 +2,7 @@ package se.arkalix.net.http;
 
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadable;
+import se.arkalix.net.MessageException;
 import se.arkalix.util.concurrent.Future;
 
 import java.util.List;
@@ -26,7 +27,7 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
      * @return Future completed immediately with an exception if the status
      * code is outside the success range, or when the incoming HTTP body has
      * been fully received and decoded into an instance of {@code class_}.
-     * @throws se.arkalix.net.MessageException If resolving a default encoding
+     * @throws MessageException If resolving a default encoding
      *                                         failed.
      * @throws IllegalStateException           If the body has already been
      *                                         requested.
@@ -70,7 +71,7 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
      * @return Future completed immediately with an exception if the status
      * code is outside the success range, or when the incoming HTTP body has
      * been fully received and decoded into an instance of {@code class_}.
-     * @throws se.arkalix.net.MessageException If resolving a default encoding
+     * @throws MessageException If resolving a default encoding
      *                                         failed.
      * @throws IllegalStateException           If the body has already been
      *                                         requested.

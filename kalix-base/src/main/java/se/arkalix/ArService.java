@@ -1,8 +1,7 @@
 package se.arkalix;
 
-import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.descriptor.InterfaceDescriptor;
-import se.arkalix.descriptor.TransportDescriptor;
+import se.arkalix.net.Encoding;
+import se.arkalix.net.Transport;
 import se.arkalix.security.access.AccessPolicy;
 
 import java.util.List;
@@ -34,7 +33,7 @@ public interface ArService {
      *
      * @return Service transport descriptor.
      */
-    TransportDescriptor transport();
+    Transport transport();
 
     /**
      * Gets access policy enforced by this service.
@@ -48,7 +47,7 @@ public interface ArService {
      *
      * @return Unmodifiable list of supported encodings.
      */
-    List<EncodingDescriptor> encodings();
+    List<Encoding> encodings();
 
     /**
      * Gets service metadata.
@@ -90,7 +89,7 @@ public interface ArService {
             .metadata(metadata())
             .version(version())
             .interfaces(encodings().stream()
-                .map(encoding -> InterfaceDescriptor.getOrCreate(transport(), isSecure, encoding))
+                .map(encoding -> ServiceInterface.getOrCreate(transport(), isSecure, encoding))
                 .collect(Collectors.toUnmodifiableList()))
             .build();
     }

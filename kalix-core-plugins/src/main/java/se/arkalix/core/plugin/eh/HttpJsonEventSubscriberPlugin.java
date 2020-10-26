@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import static se.arkalix.descriptor.EncodingDescriptor.JSON;
+import static se.arkalix.net.Encoding.JSON;
 
 /**
  * HTTP/JSON event subscriber plugin.

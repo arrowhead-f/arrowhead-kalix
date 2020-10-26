@@ -3,7 +3,6 @@ package se.arkalix.security.access;
 import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
 import se.arkalix.SystemRecordWithIdentity;
-import se.arkalix.descriptor.SecurityDescriptor;
 
 /**
  * Unrestricted access policy.
@@ -23,8 +22,8 @@ public class AccessUnrestricted implements AccessPolicy {
     static final AccessUnrestricted instance = new AccessUnrestricted();
 
     @Override
-    public SecurityDescriptor descriptor() {
-        return SecurityDescriptor.NOT_SECURE;
+    public AccessType descriptor() {
+        return AccessType.NOT_SECURE;
     }
 
     @Override

@@ -3,7 +3,7 @@ package se.arkalix.net._internal;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.DefaultFileRegion;
-import se.arkalix.descriptor.EncodingDescriptor;
+import se.arkalix.net.Encoding;
 import se.arkalix.dto.DtoWritable;
 import se.arkalix.dto.DtoWriteException;
 import se.arkalix.dto.binary._internal.ByteBufWriter;
@@ -26,7 +26,7 @@ public class NettyBodyOutgoing {
     public static NettyBodyOutgoing from(
         final MessageOutgoing<?> message,
         final ByteBufAllocator alloc,
-        final EncodingDescriptor defaultEncoding
+        final Encoding defaultEncoding
     ) throws DtoWriteException, IOException {
 
         final var body = message.body().orElse(null);

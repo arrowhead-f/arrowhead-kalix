@@ -4,8 +4,8 @@ import se.arkalix.ArConsumer;
 import se.arkalix.ArConsumerFactory;
 import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
-import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.descriptor.TransportDescriptor;
+import se.arkalix.net.Encoding;
+import se.arkalix.net.Transport;
 import se.arkalix.net.http.consumer._internal.DefaultHttpConsumer;
 import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.util.concurrent.Future;
@@ -15,7 +15,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
 
-import static se.arkalix.descriptor.TransportDescriptor.HTTP;
+import static se.arkalix.net.Transport.HTTP;
 
 /**
  * Client useful for consuming an {@link se.arkalix.security secure or
@@ -50,7 +50,7 @@ public interface HttpConsumer extends ArConsumer {
      * @param service   Service to be consumed.
      * @param encodings Supported request/response encodings. If specified as
      *                  {@code null}, the encodings returned by
-     *                  {@link EncodingDescriptor#allWithDtoSupport()} are used.
+     *                  {@link Encoding#allWithDtoSupport()} are used.
      * @throws NullPointerException     If {@code system} or {@code service} is
      *                                  {@code null}.
      * @throws IllegalArgumentException If the security modes of {@code system}
@@ -61,7 +61,7 @@ public interface HttpConsumer extends ArConsumer {
     static HttpConsumer create(
         final ArSystem system,
         final ServiceRecord service,
-        final Collection<EncodingDescriptor> encodings
+        final Collection<Encoding> encodings
     ) {
         return factory().create(system, service, encodings);
     }
@@ -140,7 +140,7 @@ public interface HttpConsumer extends ArConsumer {
         private static final Factory instance = new Factory();
 
         @Override
-        public Collection<TransportDescriptor> serviceTransports() {
+        public Collection<Transport> serviceTransports() {
             return Collections.singleton(HTTP);
         }
 
@@ -148,7 +148,7 @@ public interface HttpConsumer extends ArConsumer {
         public HttpConsumer create(
             final ArSystem system,
             final ServiceRecord service,
-            final Collection<EncodingDescriptor> encodings
+            final Collection<Encoding> encodings
         ) {
             return new DefaultHttpConsumer(system, service, encodings);
         }

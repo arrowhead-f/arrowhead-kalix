@@ -6,7 +6,7 @@ import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
 import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.lang.JoseException;
-import se.arkalix.descriptor.InterfaceDescriptor;
+import se.arkalix.ServiceInterface;
 import se.arkalix.security.access.AccessTokenException;
 import se.arkalix.util.annotation.Internal;
 
@@ -23,10 +23,10 @@ public final class AccessToken {
     private static final long CLOCK_SKEW_TOLERANCE_IN_MS = 60_000;
 
     private final String cid;
-    private final InterfaceDescriptor iid;
+    private final ServiceInterface iid;
     private final String sid;
 
-    private AccessToken(final String cid, final InterfaceDescriptor iid, final String sid) {
+    private AccessToken(final String cid, final ServiceInterface iid, final String sid) {
         this.cid = cid;
         this.iid = iid;
         this.sid = sid;
@@ -36,7 +36,7 @@ public final class AccessToken {
         return cid;
     }
 
-    public InterfaceDescriptor iid() {
+    public ServiceInterface iid() {
         return iid;
     }
 
@@ -63,9 +63,9 @@ public final class AccessToken {
         if (iid == null) {
             throw new AccessTokenException("Expected \"iid\" claim");
         }
-        InterfaceDescriptor iid0;
+        ServiceInterface iid0;
         try {
-            iid0 = InterfaceDescriptor.valueOf(iid);
+            iid0 = ServiceInterface.valueOf(iid);
         }
         catch (final IllegalArgumentException exception) {
             throw new AccessTokenException("Malformed \"iid\"; expected " +

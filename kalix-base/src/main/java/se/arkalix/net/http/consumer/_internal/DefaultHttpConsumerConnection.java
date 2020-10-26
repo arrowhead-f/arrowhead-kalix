@@ -1,7 +1,7 @@
 package se.arkalix.net.http.consumer._internal;
 
 import se.arkalix.ArSystem;
-import se.arkalix.descriptor.EncodingDescriptor;
+import se.arkalix.net.Encoding;
 import se.arkalix.dto.DtoWritable;
 import se.arkalix.net.http._internal.HttpMediaTypes;
 import se.arkalix.net.MessageEncodingUnsupported;
@@ -20,14 +20,14 @@ import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT;
 
 class DefaultHttpConsumerConnection implements HttpConsumerConnection {
     private final ArSystem localSystem;
-    private final EncodingDescriptor encoding;
+    private final Encoding encoding;
     private final String authorization;
     private final SystemIdentity remoteIdentity;
     private final HttpClientConnection connection;
 
     DefaultHttpConsumerConnection(
         final ArSystem localSystem,
-        final EncodingDescriptor encoding,
+        final Encoding encoding,
         final String authorization,
         final SystemIdentity remoteIdentity,
         final HttpClientConnection connection
