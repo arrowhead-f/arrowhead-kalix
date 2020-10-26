@@ -1,6 +1,6 @@
-package se.arkalix.internal.description;
+package se.arkalix.internal;
 
-import se.arkalix.description.SystemIdentityDescription;
+import se.arkalix.SystemRecordWithIdentity;
 import se.arkalix.security.SecurityDisabled;
 import se.arkalix.security.identity.SystemIdentity;
 import se.arkalix.util.annotation.Internal;
@@ -9,12 +9,12 @@ import java.net.InetSocketAddress;
 import java.util.Objects;
 
 @Internal
-public class DefaultSystemIdentityDescription implements SystemIdentityDescription {
+public class DefaultSystemRecordWithIdentity implements SystemRecordWithIdentity {
     private final String name;
     private final SystemIdentity identity;
     private final InetSocketAddress socketAddress;
 
-    public DefaultSystemIdentityDescription(
+    public DefaultSystemRecordWithIdentity(
         final String name,
         final SystemIdentity identity,
         final InetSocketAddress socketAddress
@@ -52,7 +52,7 @@ public class DefaultSystemIdentityDescription implements SystemIdentityDescripti
     public boolean equals(final Object other) {
         if (this == other) { return true; }
         if (other == null || getClass() != other.getClass()) { return false; }
-        final SystemIdentityDescription that = (SystemIdentityDescription) other;
+        final SystemRecordWithIdentity that = (SystemRecordWithIdentity) other;
         return name.equals(that.name()) &&
             socketAddress.equals(that.socketAddress()) &&
             isSecure()

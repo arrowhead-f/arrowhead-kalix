@@ -1,7 +1,7 @@
 package se.arkalix.internal;
 
 import se.arkalix.ArServiceDescriptionCache;
-import se.arkalix.description.ServiceDescription;
+import se.arkalix.ServiceRecord;
 import se.arkalix.util.annotation.Internal;
 
 import java.time.Duration;
@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 
 @Internal
 public class DefaultServiceDescriptionCache implements ArServiceDescriptionCache {
-    private final ConcurrentSkipListSet<ServiceDescription> services = new ConcurrentSkipListSet<>();
+    private final ConcurrentSkipListSet<ServiceRecord> services = new ConcurrentSkipListSet<>();
     private final Duration entryLifetimeLimit;
 
     public DefaultServiceDescriptionCache(final Duration entryLifetimeLimit) {
@@ -25,12 +25,12 @@ public class DefaultServiceDescriptionCache implements ArServiceDescriptionCache
     }
 
     @Override
-    public Stream<ServiceDescription> getByName(final String name) {
+    public Stream<ServiceRecord> getByName(final String name) {
         return getAll().filter(service -> service.name().equals(name));
     }
 
     @Override
-    public Stream<ServiceDescription> getAll() {
+    public Stream<ServiceRecord> getAll() {
         final var now = Instant.now();
         services.removeIf(service -> now.isAfter(service.expiresAt()) ||
             now.isAfter(service.receivedAt().plus(entryLifetimeLimit)));
@@ -38,7 +38,7 @@ public class DefaultServiceDescriptionCache implements ArServiceDescriptionCache
     }
 
     @Override
-    public void update(Stream<ServiceDescription> services) {
+    public void update(Stream<ServiceRecord> services) {
         services.forEach(service -> {
             if (!this.services.add(service)) {
                 this.services.remove(service);

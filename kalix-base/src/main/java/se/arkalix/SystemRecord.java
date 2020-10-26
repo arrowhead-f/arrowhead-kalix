@@ -1,17 +1,15 @@
-package se.arkalix.description;
+package se.arkalix;
 
-import se.arkalix.internal.description.DefaultSystemDescription;
+import se.arkalix.internal.DefaultSystemRecord;
 import se.arkalix.security.SecurityDisabled;
-import se.arkalix.security.identity.SystemIdentity;
 
 import java.net.InetSocketAddress;
 import java.security.PublicKey;
-import java.util.Objects;
 
 /**
  * Describes an Arrowhead system that can, potentially, be communicated with.
  */
-public interface SystemDescription {
+public interface SystemRecord {
     /**
      * Creates new Arrowhead provider system description.
      *
@@ -22,12 +20,12 @@ public interface SystemDescription {
      * @throws NullPointerException If {@code name} or {@code
      *                              remoteSocketAddress} is {@code null}.
      */
-    static SystemDescription from(
+    static SystemRecord from(
         final String name,
         final PublicKey publicKey,
         final InetSocketAddress remoteSocketAddress
     ) {
-        return new DefaultSystemDescription(name, publicKey, remoteSocketAddress);
+        return new DefaultSystemRecord(name, publicKey, remoteSocketAddress);
     }
 
     /**
@@ -42,8 +40,8 @@ public interface SystemDescription {
      * @throws NullPointerException If {@code name} or {@code
      *                              remoteSocketAddress} is {@code null}.
      */
-    static SystemDescription from(final String name, final InetSocketAddress remoteSocketAddress) {
-        return new DefaultSystemDescription(name, null, remoteSocketAddress);
+    static SystemRecord from(final String name, final InetSocketAddress remoteSocketAddress) {
+        return new DefaultSystemRecord(name, null, remoteSocketAddress);
     }
 
     /**

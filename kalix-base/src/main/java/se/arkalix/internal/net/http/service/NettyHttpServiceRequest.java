@@ -3,7 +3,7 @@ package se.arkalix.internal.net.http.service;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.QueryStringDecoder;
-import se.arkalix.description.SystemIdentityDescription;
+import se.arkalix.SystemRecordWithIdentity;
 import se.arkalix.internal.net.NettyMessageIncoming;
 import se.arkalix.internal.net.http.NettyHttpConverters;
 import se.arkalix.net.http.HttpHeaders;
@@ -26,7 +26,7 @@ public class NettyHttpServiceRequest extends NettyMessageIncoming implements Htt
     private final HttpServiceConnection connection;
     private final QueryStringDecoder queryStringDecoder;
     private final HttpRequest request;
-    private final SystemIdentityDescription consumer;
+    private final SystemRecordWithIdentity consumer;
 
     private HttpHeaders headers = null;
     private HttpMethod method = null;
@@ -90,7 +90,7 @@ public class NettyHttpServiceRequest extends NettyMessageIncoming implements Htt
     }
 
     @Override
-    public SystemIdentityDescription consumer() {
+    public SystemRecordWithIdentity consumer() {
         if (consumer == null) {
             throw new SecurityDisabled("Not in secure mode; consumer " +
                 "information unavailable");
@@ -109,7 +109,7 @@ public class NettyHttpServiceRequest extends NettyMessageIncoming implements Htt
     public static class Builder {
         private ByteBufAllocator alloc;
         private HttpRequest request;
-        private SystemIdentityDescription consumer;
+        private SystemRecordWithIdentity consumer;
         private HttpServiceConnection connection;
         private QueryStringDecoder queryStringDecoder;
 
@@ -133,7 +133,7 @@ public class NettyHttpServiceRequest extends NettyMessageIncoming implements Htt
             return this;
         }
 
-        public Builder consumer(final SystemIdentityDescription consumer) {
+        public Builder consumer(final SystemRecordWithIdentity consumer) {
             this.consumer = consumer;
             return this;
         }

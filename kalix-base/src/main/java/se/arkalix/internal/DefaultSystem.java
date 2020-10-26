@@ -6,8 +6,8 @@ import se.arkalix.ArService;
 import se.arkalix.ArServiceDescriptionCache;
 import se.arkalix.ArServiceHandle;
 import se.arkalix.ArSystem;
-import se.arkalix.description.SystemDescription;
-import se.arkalix.description.ServiceDescription;
+import se.arkalix.SystemRecord;
+import se.arkalix.ServiceRecord;
 import se.arkalix.internal.plugin.PluginNotifier;
 import se.arkalix.plugin.Plugin;
 import se.arkalix.plugin.PluginFacade;
@@ -41,7 +41,7 @@ public class DefaultSystem implements ArSystem {
     private final ArServiceDescriptionCache consumedServices;
     private final Map<Class<? extends ArService>, FutureAnnouncement<ArServer>> servers = new ConcurrentHashMap<>();
 
-    private final SystemDescription description;
+    private final SystemRecord description;
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 
     private Map<Class<? extends Plugin>, PluginFacade> pluginClassToFacade = null;
@@ -83,7 +83,7 @@ public class DefaultSystem implements ArSystem {
             name = builder.name;
         }
 
-        description = SystemDescription.from(name, isSecure
+        description = SystemRecord.from(name, isSecure
             ? identity.publicKey()
             : null, localSocketAddress);
 
@@ -143,7 +143,7 @@ public class DefaultSystem implements ArSystem {
     }
 
     @Override
-    public SystemDescription description() {
+    public SystemRecord description() {
         return description;
     }
 
@@ -152,7 +152,7 @@ public class DefaultSystem implements ArSystem {
         return new ServiceQuery(this, this::query);
     }
 
-    private Future<Set<ServiceDescription>> query(final ServiceQuery query) {
+    private Future<Set<ServiceRecord>> query(final ServiceQuery query) {
         final var isTraceEnabled = logger.isTraceEnabled();
 
         if (isTraceEnabled) {
@@ -225,8 +225,8 @@ public class DefaultSystem implements ArSystem {
     }
 
     @Override
-    public Collection<ServiceDescription> providedServices() {
-        final var providedServices = new ArrayList<ServiceDescription>();
+    public Collection<ServiceRecord> providedServices() {
+        final var providedServices = new ArrayList<ServiceRecord>();
         for (final var entry : servers.entrySet()) {
             final var announcement = entry.getValue();
             final var optional = announcement.resultIfAvailable();

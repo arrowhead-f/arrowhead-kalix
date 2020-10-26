@@ -8,7 +8,7 @@
  * This package distinguishing itself form the {@link
  * se.arkalix.net.http.client HTTP Client Utilities} package by making use of
  * available Arrowhead {@link
- * se.arkalix.description.ServiceDescription service descriptions}. Such can
+ * se.arkalix.ServiceRecord service descriptions}. Such can
  * most adequately be retrieved via the {@link se.arkalix.query.ServiceQuery
  * ServiceQuery} class, instances of which are returned by the {@link
  * se.arkalix.ArSystem#consume() ArSystem#consume()} method. It effectively

@@ -1,8 +1,8 @@
-package se.arkalix.description;
+package se.arkalix;
 
 import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.descriptor.SecurityDescriptor;
-import se.arkalix.internal.description.DefaultServiceDescription;
+import se.arkalix.internal.DefaultServiceRecord;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 /**
  * Describes an Arrowhead service that can, potentially, be communicated with.
  */
-public interface ServiceDescription extends Comparable<ServiceDescription> {
+public interface ServiceRecord extends Comparable<ServiceRecord> {
     /**
      * Gets name, or <i>service definition</i>, of this service
      *
@@ -27,7 +27,7 @@ public interface ServiceDescription extends Comparable<ServiceDescription> {
      *
      * @return Description of system providing this service.
      */
-    SystemDescription provider();
+    SystemRecord provider();
 
     /**
      * Qualifier that distinguishes this service from other such provided by
@@ -98,11 +98,11 @@ public interface ServiceDescription extends Comparable<ServiceDescription> {
     Map<InterfaceDescriptor, String> interfaceTokens();
 
     /**
-     * Builder useful for creating {@link ServiceDescription} instances.
+     * Builder useful for creating {@link ServiceRecord} instances.
      */
     @SuppressWarnings("unused")
     class Builder {
-        private final DefaultServiceDescription.Builder inner = new DefaultServiceDescription.Builder();
+        private final DefaultServiceRecord.Builder inner = new DefaultServiceRecord.Builder();
 
         /**
          * Service name. <b>Must be specified.</b>
@@ -122,7 +122,7 @@ public interface ServiceDescription extends Comparable<ServiceDescription> {
          * @param provider Providing system description.
          * @return This builder.
          */
-        public Builder provider(final SystemDescription provider) {
+        public Builder provider(final SystemRecord provider) {
             inner.provider(provider);
             return this;
         }
@@ -131,7 +131,7 @@ public interface ServiceDescription extends Comparable<ServiceDescription> {
          * Sets service URI. <b>Must be specified.</b>
          *
          * @return This builder.
-         * @see ServiceDescription#uri()
+         * @see ServiceRecord#uri()
          */
         public Builder uri(final String uri) {
             inner.uri(uri);
@@ -240,9 +240,9 @@ public interface ServiceDescription extends Comparable<ServiceDescription> {
         }
 
         /**
-         * @return New {@link ServiceDescription}.
+         * @return New {@link ServiceRecord}.
          */
-        public ServiceDescription build() {
+        public ServiceRecord build() {
             return inner.build();
         }
     }

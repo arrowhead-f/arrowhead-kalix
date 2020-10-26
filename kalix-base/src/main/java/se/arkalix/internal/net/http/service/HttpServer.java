@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import se.arkalix.ArService;
 import se.arkalix.ArServiceHandle;
 import se.arkalix.ArSystem;
-import se.arkalix.description.ServiceDescription;
+import se.arkalix.ServiceRecord;
 import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.internal.ArServer;
 import se.arkalix.internal.plugin.PluginNotifier;
@@ -199,7 +199,7 @@ public class HttpServer implements ArServer {
         }
 
         @Override
-        public ServiceDescription description() {
+        public ServiceRecord description() {
             return httpService.description();
         }
 

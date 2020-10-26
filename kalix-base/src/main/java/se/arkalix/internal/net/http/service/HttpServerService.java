@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.ArService;
 import se.arkalix.ArSystem;
-import se.arkalix.description.ServiceDescription;
+import se.arkalix.ServiceRecord;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.internal.net.http.HttpPaths;
 import se.arkalix.net.http.HttpStatus;
@@ -150,7 +150,7 @@ public class HttpServerService {
             });
     }
 
-    public ServiceDescription description() {
+    public ServiceRecord description() {
         return service.describeAsIfProvidedBy(provider);
     }
 }

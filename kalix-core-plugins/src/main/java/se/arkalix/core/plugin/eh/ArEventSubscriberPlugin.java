@@ -1,7 +1,7 @@
 package se.arkalix.core.plugin.eh;
 
 import se.arkalix.ArSystem;
-import se.arkalix.description.SystemDescription;
+import se.arkalix.SystemRecord;
 import se.arkalix.plugin.Plugin;
 
 import java.util.Collection;
@@ -114,7 +114,7 @@ public interface ArEventSubscriberPlugin extends Plugin {
      */
     default HttpJsonEventSubscriberPlugin subscribe(
         final String topic,
-        final Collection<SystemDescription> providers,
+        final Collection<SystemRecord> providers,
         final EventSubscriptionHandler handler)
     {
         return subscribe(topic, null, providers, handler);
@@ -153,7 +153,7 @@ public interface ArEventSubscriberPlugin extends Plugin {
     default HttpJsonEventSubscriberPlugin subscribe(
         final String topic,
         final Map<String, String> metadata,
-        final Collection<SystemDescription> providers,
+        final Collection<SystemRecord> providers,
         final EventSubscriptionHandler handler)
     {
         return subscribe(new EventSubscription()

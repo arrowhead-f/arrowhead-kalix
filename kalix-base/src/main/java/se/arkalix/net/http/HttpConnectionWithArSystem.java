@@ -1,7 +1,7 @@
 package se.arkalix.net.http;
 
 import se.arkalix.ArSystem;
-import se.arkalix.description.SystemIdentityDescription;
+import se.arkalix.SystemRecordWithIdentity;
 import se.arkalix.security.SecurityDisabled;
 import se.arkalix.security.identity.OwnedIdentity;
 import se.arkalix.security.identity.SystemIdentity;
@@ -32,10 +32,10 @@ public interface HttpConnectionWithArSystem extends HttpConnection {
      *
      * @return Provider system identity description.
      */
-    default SystemIdentityDescription remoteSystem() {
+    default SystemRecordWithIdentity remoteSystem() {
         return isSecure()
-            ? SystemIdentityDescription.from(remoteIdentity(), remoteSocketAddress())
-            : SystemIdentityDescription.from("<" + remoteSocketAddress() + ">", remoteSocketAddress());
+            ? SystemRecordWithIdentity.from(remoteIdentity(), remoteSocketAddress())
+            : SystemRecordWithIdentity.from("<" + remoteSocketAddress() + ">", remoteSocketAddress());
     }
 
     @Override

@@ -1,7 +1,7 @@
 package se.arkalix.core.plugin;
 
 import se.arkalix.core.plugin.or.OrchestrationWarning;
-import se.arkalix.description.ServiceDescription;
+import se.arkalix.ServiceRecord;
 import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.dto.DtoEqualsHashCode;
@@ -94,13 +94,13 @@ public interface ServiceConsumable {
     List<OrchestrationWarning> warnings();
 
     /**
-     * Converts this objects into a {@link ServiceDescription}.
+     * Converts this objects into a {@link ServiceRecord}.
      *
-     * @return New {@link ServiceDescription}.
+     * @return New {@link ServiceRecord}.
      * @throws RuntimeException If the type of public key held by {@link
      *                          #provider()}, if any, is not supported.
      */
-    default ServiceDescription toServiceDescription() {
+    default ServiceRecord toServiceDescription() {
         final var provider = provider().toSystemDescription();
         if (!provider.isSecure() && security().isSecure()) {
             throw new IllegalStateException("The description of the \"" +
@@ -108,7 +108,7 @@ public interface ServiceConsumable {
                 "a secure transport, but its provider \"" + provider.name() +
                 "\" does not specify a public key");
         }
-        return new ServiceDescription.Builder()
+        return new ServiceRecord.Builder()
             .name(name().name())
             .provider(provider)
             .uri(uri())

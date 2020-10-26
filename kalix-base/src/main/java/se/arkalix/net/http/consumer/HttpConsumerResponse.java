@@ -1,6 +1,6 @@
 package se.arkalix.net.http.consumer;
 
-import se.arkalix.description.SystemIdentityDescription;
+import se.arkalix.SystemRecordWithIdentity;
 import se.arkalix.net.http.HttpIncomingResponse;
 
 /**
@@ -20,7 +20,7 @@ public interface HttpConsumerResponse extends HttpIncomingResponse<HttpConsumerR
      *
      * @return Provider system identity description.
      */
-    default SystemIdentityDescription provider() {
+    default SystemRecordWithIdentity provider() {
         return connection().remoteSystem();
     }
 }

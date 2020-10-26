@@ -3,7 +3,7 @@ package se.arkalix.net.http.consumer;
 import se.arkalix.ArConsumer;
 import se.arkalix.ArConsumerFactory;
 import se.arkalix.ArSystem;
-import se.arkalix.description.ServiceDescription;
+import se.arkalix.ServiceRecord;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
 import se.arkalix.internal.net.http.consumer.DefaultHttpConsumer;
@@ -38,7 +38,7 @@ public interface HttpConsumer extends ArConsumer {
      *                                  the system is secure but the service is
      *                                  not).
      */
-    static HttpConsumer create(final ArSystem system, final ServiceDescription service) {
+    static HttpConsumer create(final ArSystem system, final ServiceRecord service) {
         return create(system, service, null);
     }
 
@@ -60,7 +60,7 @@ public interface HttpConsumer extends ArConsumer {
      */
     static HttpConsumer create(
         final ArSystem system,
-        final ServiceDescription service,
+        final ServiceRecord service,
         final Collection<EncodingDescriptor> encodings
     ) {
         return factory().create(system, service, encodings);
@@ -147,7 +147,7 @@ public interface HttpConsumer extends ArConsumer {
         @Override
         public HttpConsumer create(
             final ArSystem system,
-            final ServiceDescription service,
+            final ServiceRecord service,
             final Collection<EncodingDescriptor> encodings
         ) {
             return new DefaultHttpConsumer(system, service, encodings);

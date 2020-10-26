@@ -1,6 +1,5 @@
 package se.arkalix;
 
-import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
@@ -81,9 +80,9 @@ public interface ArService {
      *
      * @return New description.
      */
-    default ServiceDescription describeAsIfProvidedBy(final ArSystem system) {
+    default ServiceRecord describeAsIfProvidedBy(final ArSystem system) {
         final var isSecure = system.isSecure();
-        return new ServiceDescription.Builder()
+        return new ServiceRecord.Builder()
             .name(name())
             .provider(system.description())
             .uri(uri())

@@ -1,6 +1,6 @@
-package se.arkalix.internal.description;
+package se.arkalix.internal;
 
-import se.arkalix.description.SystemDescription;
+import se.arkalix.SystemRecord;
 import se.arkalix.security.SecurityDisabled;
 import se.arkalix.util.annotation.Internal;
 
@@ -10,12 +10,12 @@ import java.util.Base64;
 import java.util.Objects;
 
 @Internal
-public class DefaultSystemDescription implements SystemDescription {
+public class DefaultSystemRecord implements SystemRecord {
     private final String name;
     private final PublicKey publicKey;
     private final InetSocketAddress socketAddress;
 
-    public DefaultSystemDescription(
+    public DefaultSystemRecord(
         final String name,
         final PublicKey publicKey,
         final InetSocketAddress socketAddress
@@ -52,7 +52,7 @@ public class DefaultSystemDescription implements SystemDescription {
     public boolean equals(final Object other) {
         if (this == other) { return true; }
         if (other == null || getClass() != other.getClass()) { return false; }
-        final SystemDescription that = (SystemDescription) other;
+        final SystemRecord that = (SystemRecord) other;
         return name.equals(that.name()) &&
             socketAddress.equals(that.socketAddress()) &&
             isSecure() ?

@@ -1,6 +1,5 @@
 package se.arkalix;
 
-import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.internal.DefaultServiceDescriptionCache;
 import se.arkalix.util.annotation.ThreadSafe;
@@ -35,7 +34,7 @@ public interface ArServiceDescriptionCache {
      * @param entryLifetimeLimit Duration after which service descriptions
      *                           added to this cache become stale and are
      *                           removed, even if they explicitly specify a
-     *                           later {@link ServiceDescription#expiresAt()
+     *                           later {@link ServiceRecord#expiresAt()
      *                           expiration time}.
      * @return New service cache.
      */
@@ -56,7 +55,7 @@ public interface ArServiceDescriptionCache {
      * @return Stream of matching service descriptions.
      */
     @ThreadSafe
-    Stream<ServiceDescription> getByName(final String name);
+    Stream<ServiceRecord> getByName(final String name);
 
     /**
      * Gets stream of all services in cache matching given {@code name} and
@@ -67,7 +66,7 @@ public interface ArServiceDescriptionCache {
      * @return Stream of matching service descriptions.
      */
     @ThreadSafe
-    default Stream<ServiceDescription> getByNameAndInterfaces(
+    default Stream<ServiceRecord> getByNameAndInterfaces(
         final String name,
         final InterfaceDescriptor... interfaces
     ) {
@@ -83,7 +82,7 @@ public interface ArServiceDescriptionCache {
      * @return Stream of matching service descriptions.
      */
     @ThreadSafe
-    default Stream<ServiceDescription> getByNameAndInterfaces(
+    default Stream<ServiceRecord> getByNameAndInterfaces(
         final String name,
         final List<InterfaceDescriptor> interfaces
     ) {
@@ -97,7 +96,7 @@ public interface ArServiceDescriptionCache {
      * @return Stream of all services in cache.
      */
     @ThreadSafe
-    Stream<ServiceDescription> getAll();
+    Stream<ServiceRecord> getAll();
 
     /**
      * Adds or replaces existing service entries in cache.
@@ -105,7 +104,7 @@ public interface ArServiceDescriptionCache {
      * @param services Services to update.
      */
     @ThreadSafe
-    default void update(final ServiceDescription... services) {
+    default void update(final ServiceRecord... services) {
         update(Stream.of(services));
     }
 
@@ -115,7 +114,7 @@ public interface ArServiceDescriptionCache {
      * @param services Services to update.
      */
     @ThreadSafe
-    default void update(final Collection<ServiceDescription> services) {
+    default void update(final Collection<ServiceRecord> services) {
         update(services.stream());
     }
 
@@ -125,5 +124,5 @@ public interface ArServiceDescriptionCache {
      * @param services Services to update.
      */
     @ThreadSafe
-    void update(Stream<ServiceDescription> services);
+    void update(Stream<ServiceRecord> services);
 }

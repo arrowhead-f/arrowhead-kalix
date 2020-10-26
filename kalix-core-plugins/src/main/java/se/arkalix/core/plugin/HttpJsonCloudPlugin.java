@@ -10,8 +10,8 @@ import se.arkalix.core.plugin.or.OrchestrationStrategy;
 import se.arkalix.core.plugin.sr.HttpJsonServiceDiscoveryService;
 import se.arkalix.core.plugin.sr.ServiceQueryBuilder;
 import se.arkalix.core.plugin.sr.ServiceRegistration;
-import se.arkalix.description.SystemDescription;
-import se.arkalix.description.ServiceDescription;
+import se.arkalix.SystemRecord;
+import se.arkalix.ServiceRecord;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.internal.security.identity.X509Keys;
@@ -63,7 +63,7 @@ import static se.arkalix.util.concurrent.Future.done;
 public class HttpJsonCloudPlugin implements Plugin {
     private static final Logger logger = LoggerFactory.getLogger(HttpJsonCloudPlugin.class);
 
-    private final Predicate<ServiceDescription> serviceRegistrationPredicate;
+    private final Predicate<ServiceRecord> serviceRegistrationPredicate;
     private final InetSocketAddress serviceRegistrySocketAddress;
     private final String serviceDiscoveryBasePath;
     private final OrchestrationStrategy orchestrationStrategy;
@@ -115,7 +115,7 @@ public class HttpJsonCloudPlugin implements Plugin {
 
         private FutureAnnouncement<PublicKey> authorizationKeyAnnouncement = null;
         private FutureAnnouncement<HttpJsonOrchestrationService> orchestrationAnnouncement = null;
-        private FutureAnnouncement<Collection<ServiceDescription>> orchestrationPlainStoreQueryAnnouncement = null;
+        private FutureAnnouncement<Collection<ServiceRecord>> orchestrationPlainStoreQueryAnnouncement = null;
         private FutureAnnouncement<HttpJsonServiceDiscoveryService> serviceDiscoveryAnnouncement = null;
 
         Attached(final ArSystem system) {
@@ -154,7 +154,7 @@ public class HttpJsonCloudPlugin implements Plugin {
         }
 
         @Override
-        public Future<?> onServiceProvided(final ServiceDescription service) {
+        public Future<?> onServiceProvided(final ServiceRecord service) {
             if (!serviceRegistrationPredicate.test(service)) {
                 if (logger.isInfoEnabled()) {
                     logger.info("HTTP/JSON cloud ignoring to register \"{}\" " +
@@ -209,7 +209,7 @@ public class HttpJsonCloudPlugin implements Plugin {
         }
 
         @Override
-        public void onServiceDismissed(final ServiceDescription service) {
+        public void onServiceDismissed(final ServiceRecord service) {
             if (!serviceRegistrationPredicate.test(service)) {
                 if (logger.isInfoEnabled()) {
                     logger.info("HTTP/JSON cloud ignoring to unregister \"{}\" " +
@@ -250,7 +250,7 @@ public class HttpJsonCloudPlugin implements Plugin {
         }
 
         @Override
-        public Future<Collection<ServiceDescription>> onServiceQueried(final ServiceQuery query) {
+        public Future<Collection<ServiceRecord>> onServiceQueried(final ServiceQuery query) {
             return Futures.flatReducePlain(new ArrayList<>(), (services, pattern) -> {
                 if (pattern.isPlainStorePattern()) {
                     synchronized (this) {
@@ -273,7 +273,7 @@ public class HttpJsonCloudPlugin implements Plugin {
             }, orchestrationStrategy.patterns());
         }
 
-        private Future<Collection<ServiceDescription>> executeOrchestrationQueryUsing(
+        private Future<Collection<ServiceRecord>> executeOrchestrationQueryUsing(
             final ServiceQuery query,
             final OrchestrationPattern pattern
         ) {
@@ -321,7 +321,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                                 : "not running in secure mode, while this system is")
                                 + "; failed to resolve service discovery service "));
                         }
-                        final SystemDescription provider;
+                        final SystemRecord provider;
                         if (isSecure) {
                             final var identity = new SystemIdentity(connection.remoteCertificateChain());
                             final var name = identity.name();
@@ -334,14 +334,14 @@ public class HttpJsonCloudPlugin implements Plugin {
                                     "to be \"service_registry\"; failed to " +
                                     "resolve service discovery service "));
                             }
-                            provider = SystemDescription.from(name, identity.publicKey(), serviceRegistrySocketAddress);
+                            provider = SystemRecord.from(name, identity.publicKey(), serviceRegistrySocketAddress);
                         }
                         else {
-                            provider = SystemDescription.from("service_registry", serviceRegistrySocketAddress);
+                            provider = SystemRecord.from("service_registry", serviceRegistrySocketAddress);
                         }
 
                         final var serviceDiscovery = new HttpJsonServiceDiscoveryService(system,
-                            new ServiceDescription.Builder()
+                            new ServiceRecord.Builder()
                                 .name("service-discovery")
                                 .provider(provider)
                                 .uri(serviceDiscoveryBasePath)
@@ -492,7 +492,7 @@ public class HttpJsonCloudPlugin implements Plugin {
     @SuppressWarnings("unused")
     public static class Builder {
         private String serviceDiscoveryBasePath;
-        private Predicate<ServiceDescription> serviceRegistrationPredicate;
+        private Predicate<ServiceRecord> serviceRegistrationPredicate;
         private InetSocketAddress serviceRegistrySocketAddress;
         private OrchestrationStrategy orchestrationStrategy;
 
@@ -521,7 +521,7 @@ public class HttpJsonCloudPlugin implements Plugin {
          * @param serviceRegistrationPredicate Service registration predicate.
          * @return This builder.
          */
-        public Builder serviceRegistrationPredicate(final Predicate<ServiceDescription> serviceRegistrationPredicate) {
+        public Builder serviceRegistrationPredicate(final Predicate<ServiceRecord> serviceRegistrationPredicate) {
             this.serviceRegistrationPredicate = serviceRegistrationPredicate;
             return this;
         }

@@ -2,7 +2,7 @@ package se.arkalix.core.plugin.eh;
 
 import se.arkalix.core.plugin.SystemDetails;
 import se.arkalix.core.plugin.SystemDetailsDto;
-import se.arkalix.description.SystemDescription;
+import se.arkalix.SystemRecord;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 public class EventSubscription {
     private String topic;
     private Map<String, String> metadata;
-    private Set<SystemDescription> providers;
+    private Set<SystemRecord> providers;
     private EventSubscriptionHandler handler;
 
     public Optional<String> topic() {
@@ -39,24 +39,24 @@ public class EventSubscription {
         return this;
     }
 
-    public EventSubscription provider(final SystemDescription provider) {
+    public EventSubscription provider(final SystemRecord provider) {
         providers().add(provider);
         return this;
     }
 
-    public Set<SystemDescription> providers() {
+    public Set<SystemRecord> providers() {
         if (providers == null) {
             providers = new HashSet<>();
         }
         return providers;
     }
 
-    public EventSubscription providers(final Collection<SystemDescription> providers) {
+    public EventSubscription providers(final Collection<SystemRecord> providers) {
         this.providers = providers != null ? new HashSet<>(providers) : null;
         return this;
     }
 
-    public EventSubscription providers(final SystemDescription... providers) {
+    public EventSubscription providers(final SystemRecord... providers) {
         return providers(Arrays.asList(providers));
     }
 

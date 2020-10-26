@@ -1,6 +1,5 @@
 package se.arkalix;
 
-import se.arkalix.description.ServiceDescription;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
 
@@ -81,7 +80,7 @@ public interface ArConsumerFactory<C extends ArConsumer> {
      * @param service Description of service to be consumed.
      * @return Created {@link ArConsumer} instance.
      */
-    default C create(ArSystem system, ServiceDescription service) {
+    default C create(ArSystem system, ServiceRecord service) {
         return create(system, service, serviceEncodings());
     }
 
@@ -97,5 +96,5 @@ public interface ArConsumerFactory<C extends ArConsumer> {
      *                  the encodings returned by that method.
      * @return Created {@link ArConsumer} instance.
      */
-    C create(ArSystem system, ServiceDescription service, Collection<EncodingDescriptor> encodings);
+    C create(ArSystem system, ServiceRecord service, Collection<EncodingDescriptor> encodings);
 }

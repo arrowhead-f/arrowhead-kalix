@@ -3,7 +3,7 @@ package se.arkalix.query;
 import se.arkalix.ArConsumer;
 import se.arkalix.ArConsumerFactory;
 import se.arkalix.ArSystem;
-import se.arkalix.description.ServiceDescription;
+import se.arkalix.ServiceRecord;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
 import se.arkalix.util.Result;
@@ -47,7 +47,7 @@ import java.util.stream.Stream;
 @SuppressWarnings("unused")
 public class ServiceQuery {
     private final ArSystem consumer;
-    private final ThrowingFunction<ServiceQuery, Future<Set<ServiceDescription>>> resolver;
+    private final ThrowingFunction<ServiceQuery, Future<Set<ServiceRecord>>> resolver;
 
     private String name;
     private Collection<EncodingDescriptor> encodings;
@@ -65,7 +65,7 @@ public class ServiceQuery {
      */
     public ServiceQuery(
         final ArSystem consumer,
-        final ThrowingFunction<ServiceQuery, Future<Set<ServiceDescription>>> resolver
+        final ThrowingFunction<ServiceQuery, Future<Set<ServiceRecord>>> resolver
     ) {
         this.consumer = Objects.requireNonNull(consumer, "Expected consumer");
         this.resolver = Objects.requireNonNull(resolver, "Expected resolver");
@@ -420,7 +420,7 @@ public class ServiceQuery {
      * @return {@link Future} completed, if successful, with a set of service
      * descriptions matching this query.
      */
-    public Future<Set<ServiceDescription>> resolveAll() {
+    public Future<Set<ServiceRecord>> resolveAll() {
         try {
             return resolver.apply(this);
         }
@@ -439,7 +439,7 @@ public class ServiceQuery {
      * resolved, the {@link Future} is failed with a {@link
      * ServiceNotFoundException}.
      */
-    public Future<ServiceDescription> resolveOne() {
+    public Future<ServiceRecord> resolveOne() {
         return resolveAll().mapResult(result -> {
             if (result.isFailure()) {
                 return Result.failure(result.fault());
@@ -459,7 +459,7 @@ public class ServiceQuery {
      * @return {@code true} only if the given {@code service} satisfies the
      * requirements of this query.
      */
-    public boolean matches(final ServiceDescription service) {
+    public boolean matches(final ServiceRecord service) {
         if (name != null && !name.equals(service.name())) {
             return false;
         }

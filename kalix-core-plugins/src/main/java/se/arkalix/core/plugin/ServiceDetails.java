@@ -1,7 +1,7 @@
 package se.arkalix.core.plugin;
 
 import se.arkalix.core.plugin.sr.ServiceQueryResult;
-import se.arkalix.description.ServiceDescription;
+import se.arkalix.ServiceRecord;
 import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoReadableAs;
@@ -75,13 +75,13 @@ public interface ServiceDetails {
     List<InterfaceName> interfaces();
 
     /**
-     * Converts this objects into a {@link ServiceDescription}.
+     * Converts this objects into a {@link ServiceRecord}.
      *
-     * @return New {@link ServiceDescription}.
+     * @return New {@link ServiceRecord}.
      * @throws RuntimeException If the type of public key held by {@link
      *                          #provider()}, if any, is not supported.
      */
-    default ServiceDescription toServiceDescription() {
+    default ServiceRecord toServiceDescription() {
         final var provider = provider().toSystemDescription();
         if (!provider.isSecure() && security().isSecure()) {
             throw new IllegalStateException("The description of the \"" +
@@ -89,7 +89,7 @@ public interface ServiceDetails {
                 "a secure transport, but its provider \"" + provider.name() +
                 "\" does not specify a public key");
         }
-        return new ServiceDescription.Builder()
+        return new ServiceRecord.Builder()
             .name(name().name())
             .provider(provider)
             .uri(uri())
@@ -106,7 +106,7 @@ public interface ServiceDetails {
             .build();
     }
 
-    static ServiceDetailsDto from(final ServiceDescription description) {
+    static ServiceDetailsDto from(final ServiceRecord description) {
         return new ServiceDetailsBuilder()
             .name(new ServiceNameBuilder().name(description.name()).build())
             .provider(SystemDetails.from(description.provider()))

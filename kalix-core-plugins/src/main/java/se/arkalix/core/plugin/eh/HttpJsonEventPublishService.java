@@ -3,7 +3,7 @@ package se.arkalix.core.plugin.eh;
 import se.arkalix.ArConsumer;
 import se.arkalix.ArConsumerFactory;
 import se.arkalix.ArSystem;
-import se.arkalix.description.ServiceDescription;
+import se.arkalix.ServiceRecord;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
 import se.arkalix.internal.core.plugin.HttpJsonServices;
@@ -50,7 +50,7 @@ public class HttpJsonEventPublishService implements ArConsumer, ArEventPublishSe
     }
 
     @Override
-    public ServiceDescription service() {
+    public ServiceRecord service() {
         return consumer.service();
     }
 
@@ -73,7 +73,7 @@ public class HttpJsonEventPublishService implements ArConsumer, ArEventPublishSe
         @Override
         public HttpJsonEventPublishService create(
             final ArSystem system,
-            final ServiceDescription service,
+            final ServiceRecord service,
             final Collection<EncodingDescriptor> encodings
         ) {
             return new HttpJsonEventPublishService(HttpConsumer.create(system, service, encodings));

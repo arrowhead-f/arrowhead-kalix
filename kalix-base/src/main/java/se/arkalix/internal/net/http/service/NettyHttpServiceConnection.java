@@ -11,7 +11,7 @@ import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.ArSystem;
-import se.arkalix.description.SystemIdentityDescription;
+import se.arkalix.SystemRecordWithIdentity;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.dto.DtoReadException;
 import se.arkalix.dto.DtoWriteException;
@@ -53,7 +53,7 @@ public class NettyHttpServiceConnection
     private final HttpServiceLookup serviceLookup;
     private final SslHandler sslHandler;
 
-    private SystemIdentityDescription consumer = null;
+    private SystemRecordWithIdentity consumer = null;
     private Channel channel = null;
 
     private HttpRequest nettyRequest = null;
@@ -80,7 +80,7 @@ public class NettyHttpServiceConnection
                 Throwable cause;
                 try {
                     if (future.isSuccess()) {
-                        consumer = SystemIdentityDescription.tryFrom(
+                        consumer = SystemRecordWithIdentity.tryFrom(
                             sslHandler.engine().getSession().getPeerCertificates(),
                             (InetSocketAddress) channel.remoteAddress())
                             .orElse(null);
@@ -111,7 +111,7 @@ public class NettyHttpServiceConnection
         }
         else {
             final var remoteSocketAddress = (InetSocketAddress) channel.remoteAddress();
-            consumer = SystemIdentityDescription.from("<" + remoteSocketAddress + ">", remoteSocketAddress);
+            consumer = SystemRecordWithIdentity.from("<" + remoteSocketAddress + ">", remoteSocketAddress);
         }
         super.channelActive(ctx);
     }

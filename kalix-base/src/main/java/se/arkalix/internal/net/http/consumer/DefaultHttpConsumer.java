@@ -1,7 +1,7 @@
 package se.arkalix.internal.net.http.consumer;
 
 import se.arkalix.ArSystem;
-import se.arkalix.description.ServiceDescription;
+import se.arkalix.ServiceRecord;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.net.http.client.HttpClient;
@@ -23,13 +23,13 @@ import static se.arkalix.descriptor.TransportDescriptor.HTTP;
 public class DefaultHttpConsumer implements HttpConsumer {
     private final ArSystem system;
     private final HttpClient client;
-    private final ServiceDescription service;
+    private final ServiceRecord service;
     private final EncodingDescriptor encoding;
     private final String authorization;
 
     public DefaultHttpConsumer(
         final ArSystem system,
-        final ServiceDescription service,
+        final ServiceRecord service,
         final Collection<EncodingDescriptor> encodings
     ) {
         this.system = Objects.requireNonNull(system, "Expected system");
@@ -81,7 +81,7 @@ public class DefaultHttpConsumer implements HttpConsumer {
     }
 
     @Override
-    public ServiceDescription service() {
+    public ServiceRecord service() {
         return service;
     }
 

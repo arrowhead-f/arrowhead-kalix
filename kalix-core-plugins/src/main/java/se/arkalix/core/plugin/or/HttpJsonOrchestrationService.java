@@ -1,7 +1,7 @@
 package se.arkalix.core.plugin.or;
 
 import se.arkalix.ArConsumer;
-import se.arkalix.description.ServiceDescription;
+import se.arkalix.ServiceRecord;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
 import se.arkalix.util.concurrent.Future;
@@ -23,7 +23,7 @@ public class HttpJsonOrchestrationService implements ArConsumer, ArOrchestration
     }
 
     @Override
-    public ServiceDescription service() {
+    public ServiceRecord service() {
         return consumer.service();
     }
 

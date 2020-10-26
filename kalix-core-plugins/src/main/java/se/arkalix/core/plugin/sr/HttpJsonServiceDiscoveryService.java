@@ -1,7 +1,7 @@
 package se.arkalix.core.plugin.sr;
 
 import se.arkalix.ArSystem;
-import se.arkalix.description.ServiceDescription;
+import se.arkalix.ServiceRecord;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.internal.core.plugin.HttpJsonServices;
 import se.arkalix.internal.core.plugin.Paths;
@@ -27,7 +27,7 @@ public class HttpJsonServiceDiscoveryService implements ArServiceDiscoveryServic
     private final String pathRegister;
     private final String pathUnregister;
 
-    public HttpJsonServiceDiscoveryService(final ArSystem system, final ServiceDescription service) {
+    public HttpJsonServiceDiscoveryService(final ArSystem system, final ServiceRecord service) {
         Objects.requireNonNull(system, "Expected system");
         Objects.requireNonNull(service, "Expected service");
 
@@ -40,7 +40,7 @@ public class HttpJsonServiceDiscoveryService implements ArServiceDiscoveryServic
     }
 
     @Override
-    public ServiceDescription service() {
+    public ServiceRecord service() {
         return consumer.service();
     }
 

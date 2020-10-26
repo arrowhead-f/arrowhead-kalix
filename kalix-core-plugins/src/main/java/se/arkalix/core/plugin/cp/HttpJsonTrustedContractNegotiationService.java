@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import se.arkalix.ArConsumer;
 import se.arkalix.ArConsumerFactory;
 import se.arkalix.ArSystem;
-import se.arkalix.description.ServiceDescription;
+import se.arkalix.ServiceRecord;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
 import se.arkalix.internal.core.plugin.HttpJsonServices;
@@ -54,7 +54,7 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
     }
 
     @Override
-    public ServiceDescription service() {
+    public ServiceRecord service() {
         return consumer.service();
     }
 
@@ -176,7 +176,7 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
         @Override
         public HttpJsonTrustedContractNegotiationService create(
             final ArSystem system,
-            final ServiceDescription service,
+            final ServiceRecord service,
             final Collection<EncodingDescriptor> encodings
         ) {
             final var consumer = HttpConsumer.create(system, service, encodings);

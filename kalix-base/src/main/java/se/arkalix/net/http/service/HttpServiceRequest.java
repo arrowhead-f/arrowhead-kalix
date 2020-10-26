@@ -1,6 +1,6 @@
 package se.arkalix.net.http.service;
 
-import se.arkalix.description.SystemIdentityDescription;
+import se.arkalix.SystemRecordWithIdentity;
 import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadable;
 import se.arkalix.net.http.HttpHeaders;
@@ -33,7 +33,7 @@ public interface HttpServiceRequest extends HttpIncomingRequest<HttpServiceReque
      *
      * @return Consumer system identity description.
      */
-    default SystemIdentityDescription consumer() {
+    default SystemRecordWithIdentity consumer() {
         return connection().remoteSystem();
     }
 

@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.ArService;
 import se.arkalix.ArSystem;
-import se.arkalix.description.ServiceDescription;
+import se.arkalix.ServiceRecord;
 import se.arkalix.plugin.Plugin;
 import se.arkalix.plugin.PluginAttached;
 import se.arkalix.plugin.PluginFacade;
@@ -187,12 +187,12 @@ public class PluginNotifier {
     }
 
     @ThreadSafe
-    public Future<?> onServiceProvided(final ServiceDescription service) {
+    public Future<?> onServiceProvided(final ServiceRecord service) {
         return serialize(attached -> attached.onServiceProvided(service));
     }
 
     @ThreadSafe
-    public void onServiceDismissed(final ServiceDescription service) {
+    public void onServiceDismissed(final ServiceRecord service) {
         for (final var handler : handlers) {
             try {
                 handler.attached().onServiceDismissed(service);
@@ -204,7 +204,7 @@ public class PluginNotifier {
     }
 
     @ThreadSafe
-    public Future<Set<ServiceDescription>> onServiceQueried(final ServiceQuery query) {
+    public Future<Set<ServiceRecord>> onServiceQueried(final ServiceQuery query) {
         return Futures
             .serialize(handlers.stream().map(handler -> {
                 try {

@@ -1,8 +1,8 @@
 package se.arkalix.security.access;
 
 import se.arkalix.ArSystem;
-import se.arkalix.description.ServiceDescription;
-import se.arkalix.description.SystemIdentityDescription;
+import se.arkalix.ServiceRecord;
+import se.arkalix.SystemRecordWithIdentity;
 import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.security.identity.SystemIdentity;
 import se.arkalix.util.annotation.ThreadSafe;
@@ -44,9 +44,9 @@ public interface AccessPolicy {
      */
     @ThreadSafe
     boolean isAuthorized(
-        SystemIdentityDescription consumer,
+        SystemRecordWithIdentity consumer,
         ArSystem provider,
-        ServiceDescription service,
+        ServiceRecord service,
         String token
     )
         throws AccessTokenException;

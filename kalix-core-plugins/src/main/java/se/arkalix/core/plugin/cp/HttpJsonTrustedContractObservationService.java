@@ -3,7 +3,7 @@ package se.arkalix.core.plugin.cp;
 import se.arkalix.ArConsumer;
 import se.arkalix.ArConsumerFactory;
 import se.arkalix.ArSystem;
-import se.arkalix.description.ServiceDescription;
+import se.arkalix.ServiceRecord;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
 import se.arkalix.internal.core.plugin.Paths;
@@ -44,7 +44,7 @@ public class HttpJsonTrustedContractObservationService implements ArConsumer, Ar
     }
 
     @Override
-    public ServiceDescription service() {
+    public ServiceRecord service() {
         return consumer.service();
     }
 
@@ -82,7 +82,7 @@ public class HttpJsonTrustedContractObservationService implements ArConsumer, Ar
         @Override
         public HttpJsonTrustedContractObservationService create(
             final ArSystem system,
-            final ServiceDescription service,
+            final ServiceRecord service,
             final Collection<EncodingDescriptor> encodings
         ) {
             final var consumer = HttpConsumer.create(system, service, encodings);

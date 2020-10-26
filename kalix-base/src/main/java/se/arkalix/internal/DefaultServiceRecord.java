@@ -1,7 +1,7 @@
-package se.arkalix.internal.description;
+package se.arkalix.internal;
 
-import se.arkalix.description.ServiceDescription;
-import se.arkalix.description.SystemDescription;
+import se.arkalix.ServiceRecord;
+import se.arkalix.SystemRecord;
 import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.internal.net.dns.DnsNames;
@@ -15,9 +15,9 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Internal
-public class DefaultServiceDescription implements ServiceDescription {
+public class DefaultServiceRecord implements ServiceRecord {
     private final String name;
-    private final SystemDescription provider;
+    private final SystemRecord provider;
     private final String uri;
     private final Instant receivedAt;
     private final Instant expiresAt;
@@ -26,7 +26,7 @@ public class DefaultServiceDescription implements ServiceDescription {
     private final int version;
     private final Map<InterfaceDescriptor, String> interfaceTokens;
 
-    private DefaultServiceDescription(final Builder builder) {
+    private DefaultServiceRecord(final Builder builder) {
         name = Objects.requireNonNull(builder.name, "Expected name");
         if (!DnsNames.isLabel(name)) {
             throw new IllegalArgumentException("Name \"" + name + "\" is " +
@@ -60,7 +60,7 @@ public class DefaultServiceDescription implements ServiceDescription {
     }
 
     @Override
-    public SystemDescription provider() {
+    public SystemRecord provider() {
         return provider;
     }
 
@@ -100,7 +100,7 @@ public class DefaultServiceDescription implements ServiceDescription {
     }
 
     @Override
-    public int compareTo(final ServiceDescription other) {
+    public int compareTo(final ServiceRecord other) {
         int d;
         d = name().compareTo(other.name());
         if (d != 0) {
@@ -133,7 +133,7 @@ public class DefaultServiceDescription implements ServiceDescription {
     public boolean equals(final Object other) {
         if (this == other) { return true; }
         if (other == null || getClass() != other.getClass()) { return false; }
-        final ServiceDescription that = (ServiceDescription) other;
+        final ServiceRecord that = (ServiceRecord) other;
         return version == that.version() &&
             name.equals(that.name()) &&
             provider.equals(that.provider()) &&
@@ -177,7 +177,7 @@ public class DefaultServiceDescription implements ServiceDescription {
 
     public static class Builder {
         private String name;
-        private SystemDescription provider;
+        private SystemRecord provider;
         private Map<InterfaceDescriptor, String> interfaceTokens;
         private String uri;
         private Instant receivedAt;
@@ -190,7 +190,7 @@ public class DefaultServiceDescription implements ServiceDescription {
             this.name = name;
         }
 
-        public void provider(final SystemDescription provider) {
+        public void provider(final SystemRecord provider) {
             this.provider = provider;
         }
 
@@ -222,8 +222,8 @@ public class DefaultServiceDescription implements ServiceDescription {
             this.interfaceTokens = interfaceTokens;
         }
 
-        public DefaultServiceDescription build() {
-            return new DefaultServiceDescription(this);
+        public DefaultServiceRecord build() {
+            return new DefaultServiceRecord(this);
         }
     }
 }

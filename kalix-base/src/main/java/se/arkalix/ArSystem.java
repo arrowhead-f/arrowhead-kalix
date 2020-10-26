@@ -1,8 +1,5 @@
 package se.arkalix;
 
-import se.arkalix.description.SystemDescription;
-import se.arkalix.description.ServiceDescription;
-import se.arkalix.description.SystemIdentityDescription;
 import se.arkalix.internal.DefaultSystem;
 import se.arkalix.plugin.Plugin;
 import se.arkalix.plugin.PluginFacade;
@@ -22,7 +19,7 @@ import java.util.*;
  * An Arrowhead Framework (AHF) system.
  */
 @SuppressWarnings("unused")
-public interface ArSystem extends SystemIdentityDescription {
+public interface ArSystem extends SystemRecordWithIdentity {
     /**
      * Gets human and machine-readable name of this system.
      * <p>
@@ -106,7 +103,7 @@ public interface ArSystem extends SystemIdentityDescription {
      * @return Description of this system.
      */
     @ThreadSafe
-    SystemDescription description();
+    SystemRecord description();
 
     /**
      * Creates new query useful for resolving services provided by other
@@ -158,7 +155,7 @@ public interface ArSystem extends SystemIdentityDescription {
      * @return Stream of service descriptions.
      */
     @ThreadSafe
-    Collection<ServiceDescription> providedServices();
+    Collection<ServiceRecord> providedServices();
 
     /**
      * Gets {@link PluginFacade} associated with the identified system {@link

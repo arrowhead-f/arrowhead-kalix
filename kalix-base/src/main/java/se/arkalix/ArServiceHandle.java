@@ -1,6 +1,5 @@
 package se.arkalix;
 
-import se.arkalix.description.ServiceDescription;
 import se.arkalix.util.annotation.ThreadSafe;
 
 /**
@@ -16,7 +15,7 @@ public interface ArServiceHandle {
      * @return Description of AHF service.
      */
     @ThreadSafe
-    ServiceDescription description();
+    ServiceRecord description();
 
     /**
      * Causes represented service to be dismissed, making it unavailable to

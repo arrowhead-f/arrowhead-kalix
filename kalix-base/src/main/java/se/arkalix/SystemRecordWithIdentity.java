@@ -1,6 +1,6 @@
-package se.arkalix.description;
+package se.arkalix;
 
-import se.arkalix.internal.description.DefaultSystemIdentityDescription;
+import se.arkalix.internal.DefaultSystemRecordWithIdentity;
 import se.arkalix.security.SecurityDisabled;
 import se.arkalix.security.identity.SystemIdentity;
 
@@ -14,7 +14,7 @@ import java.util.Optional;
  * Describes an Arrowhead system with a known {@link #identity() identity}, if
  * the described system is running in {@link se.arkalix.security secure mode}.
  */
-public interface SystemIdentityDescription extends SystemDescription {
+public interface SystemRecordWithIdentity extends SystemRecord {
     /**
      * Creates new Arrowhead consumer system description.
      *
@@ -24,9 +24,9 @@ public interface SystemIdentityDescription extends SystemDescription {
      * @throws NullPointerException If {@code identity} or {@code
      *                              remoteSocketAddress} is {@code null}.
      */
-    static SystemIdentityDescription from(final SystemIdentity identity, final InetSocketAddress remoteSocketAddress) {
+    static SystemRecordWithIdentity from(final SystemIdentity identity, final InetSocketAddress remoteSocketAddress) {
         Objects.requireNonNull(identity, "Expected identity");
-        return new DefaultSystemIdentityDescription(identity.name(), identity, remoteSocketAddress);
+        return new DefaultSystemRecordWithIdentity(identity.name(), identity, remoteSocketAddress);
     }
 
     /**
@@ -41,8 +41,8 @@ public interface SystemIdentityDescription extends SystemDescription {
      * @throws NullPointerException If {@code name} or {@code
      *                              remoteSocketAddress} is {@code null}.
      */
-    static SystemIdentityDescription from(final String name, final InetSocketAddress remoteSocketAddress) {
-        return new DefaultSystemIdentityDescription(name, null, remoteSocketAddress);
+    static SystemRecordWithIdentity from(final String name, final InetSocketAddress remoteSocketAddress) {
+        return new DefaultSystemRecordWithIdentity(name, null, remoteSocketAddress);
     }
 
     /**
@@ -54,7 +54,7 @@ public interface SystemIdentityDescription extends SystemDescription {
      *                            the system can be contacted.
      * @return System description, if all criteria are satisfied.
      */
-    static Optional<SystemIdentityDescription> tryFrom(
+    static Optional<SystemRecordWithIdentity> tryFrom(
         final Certificate[] chain,
         final InetSocketAddress remoteSocketAddress
     ) {

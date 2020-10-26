@@ -1,7 +1,7 @@
 package se.arkalix.core.plugin.sr;
 
 import se.arkalix.core.plugin.SystemDetails;
-import se.arkalix.description.ServiceDescription;
+import se.arkalix.ServiceRecord;
 import se.arkalix.descriptor.SecurityDescriptor;
 import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.dto.DtoEqualsHashCode;
@@ -70,7 +70,7 @@ public interface ServiceRegistration {
      */
     List<InterfaceDescriptor> interfaces();
 
-    static ServiceRegistrationDto from(final ServiceDescription description) {
+    static ServiceRegistrationDto from(final ServiceRecord description) {
         return new ServiceRegistrationBuilder()
             .name(description.name())
             .provider(SystemDetails.from(description.provider()))

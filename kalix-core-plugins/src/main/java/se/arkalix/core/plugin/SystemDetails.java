@@ -1,7 +1,7 @@
 package se.arkalix.core.plugin;
 
 import se.arkalix.ArSystem;
-import se.arkalix.description.SystemDescription;
+import se.arkalix.SystemRecord;
 import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoToString;
@@ -50,15 +50,15 @@ public interface SystemDetails {
     Optional<String> publicKeyBase64();
 
     /**
-     * Converts this objects into a {@link SystemDescription}.
+     * Converts this objects into a {@link SystemRecord}.
      *
-     * @return New {@link SystemDescription}.
+     * @return New {@link SystemRecord}.
      * @throws RuntimeException If the value returned by {@link
      *                          #publicKeyBase64()} is not a supported type of
      *                          public key.
      */
-    default SystemDescription toSystemDescription() {
-        return SystemDescription.from(name(), publicKeyBase64()
+    default SystemRecord toSystemDescription() {
+        return SystemRecord.from(name(), publicKeyBase64()
             .map(X509Keys::parsePublicKey)
             .orElse(null), new InetSocketAddress(hostname(), port()));
     }
@@ -74,7 +74,7 @@ public interface SystemDetails {
             .build();
     }
 
-    static SystemDetailsDto from(final SystemDescription provider) {
+    static SystemDetailsDto from(final SystemRecord provider) {
         final var socketAddress = provider.socketAddress();
         return new SystemDetailsBuilder()
             .name(provider.name())
