@@ -1,7 +1,7 @@
 package se.arkalix;
 
 import se.arkalix.descriptor.InterfaceDescriptor;
-import se.arkalix.internal.DefaultServiceDescriptionCache;
+import se.arkalix._internal.DefaultServiceDescriptionCache;
 import se.arkalix.util.annotation.ThreadSafe;
 
 import java.time.Duration;

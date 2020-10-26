@@ -6,9 +6,9 @@ import se.arkalix.dto.DtoReadable;
 import se.arkalix.dto.DtoReader;
 import se.arkalix.dto.binary.BinaryReader;
 import se.arkalix.dto.json.value.JsonType;
-import se.arkalix.internal.dto.DtoReaders;
-import se.arkalix.internal.dto.json.JsonTokenBuffer;
-import se.arkalix.internal.dto.json.JsonTokenizer;
+import se.arkalix.dto._internal.DtoReaders;
+import se.arkalix.dto.json._internal.JsonTokenBuffer;
+import se.arkalix.dto.json._internal.JsonTokenizer;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;

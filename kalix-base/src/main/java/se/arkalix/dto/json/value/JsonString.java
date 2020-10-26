@@ -5,9 +5,9 @@ import se.arkalix.dto.DtoExclusive;
 import se.arkalix.dto.DtoReadException;
 import se.arkalix.dto.binary.BinaryReader;
 import se.arkalix.dto.binary.BinaryWriter;
-import se.arkalix.internal.dto.json.JsonTokenBuffer;
-import se.arkalix.internal.dto.json.JsonTokenizer;
-import se.arkalix.internal.dto.json.JsonWrite;
+import se.arkalix.dto.json._internal.JsonTokenBuffer;
+import se.arkalix.dto.json._internal.JsonTokenizer;
+import se.arkalix.dto.json._internal.JsonWrite;
 import se.arkalix.util.annotation.Internal;
 
 import java.time.*;

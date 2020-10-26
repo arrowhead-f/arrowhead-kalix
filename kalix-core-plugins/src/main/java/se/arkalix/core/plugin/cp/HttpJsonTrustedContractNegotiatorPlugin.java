@@ -6,7 +6,7 @@ import se.arkalix.ArSystem;
 import se.arkalix.core.plugin.eh.ArEventSubscriberPluginFacade;
 import se.arkalix.core.plugin.eh.EventSubscriptionHandle;
 import se.arkalix.core.plugin.eh.HttpJsonEventSubscriberPlugin;
-import se.arkalix.internal.util.concurrent.FutureCompletion;
+import se.arkalix.util.concurrent._internal.FutureCompletion;
 import se.arkalix.plugin.Plugin;
 import se.arkalix.plugin.PluginAttached;
 import se.arkalix.plugin.PluginFacade;

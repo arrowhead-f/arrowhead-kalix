@@ -1,7 +1,7 @@
 package se.arkalix.net.http.client;
 
-import se.arkalix.internal.net.DefaultMessageOutgoing;
-import se.arkalix.internal.net.http.HttpPaths;
+import se.arkalix.net._internal.DefaultMessageOutgoing;
+import se.arkalix.net.Uris;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.net.http.HttpOutgoingRequest;
@@ -41,7 +41,7 @@ public class HttpClientRequest
 
     @Override
     public HttpClientRequest path(final String path) {
-        if (path != null && !HttpPaths.isValidPath(path)) {
+        if (path != null && !Uris.isValidPath(path)) {
             throw new IllegalArgumentException("Invalid RFC3986 path: " + path);
         }
         this.path = path;

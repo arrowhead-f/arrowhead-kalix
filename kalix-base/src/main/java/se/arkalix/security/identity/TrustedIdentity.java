@@ -1,6 +1,6 @@
 package se.arkalix.security.identity;
 
-import se.arkalix.internal.security.identity.X509Names;
+import se.arkalix.security.identity._internal.X509Names;
 
 import java.security.PublicKey;
 import java.security.cert.Certificate;

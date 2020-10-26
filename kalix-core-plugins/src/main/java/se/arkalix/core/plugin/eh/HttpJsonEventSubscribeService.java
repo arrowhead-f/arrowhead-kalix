@@ -6,7 +6,7 @@ import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
-import se.arkalix.internal.core.plugin.HttpJsonServices;
+import se.arkalix.core.plugin._internal.HttpJsonServices;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
 import se.arkalix.util.concurrent.Future;

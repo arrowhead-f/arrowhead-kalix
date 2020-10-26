@@ -1,6 +1,6 @@
 package se.arkalix;
 
-import se.arkalix.internal.DefaultSystemRecordWithIdentity;
+import se.arkalix._internal.DefaultSystemRecordWithIdentity;
 import se.arkalix.security.SecurityDisabled;
 import se.arkalix.security.identity.SystemIdentity;
 

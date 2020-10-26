@@ -4,7 +4,7 @@ import se.arkalix.ArSystem;
 import se.arkalix.SystemRecordWithIdentity;
 import se.arkalix.ServiceRecord;
 import se.arkalix.descriptor.SecurityDescriptor;
-import se.arkalix.internal.security.access.AccessToken;
+import se.arkalix.security.access._internal.AccessToken;
 import se.arkalix.util.annotation.ThreadSafe;
 
 import java.security.PublicKey;

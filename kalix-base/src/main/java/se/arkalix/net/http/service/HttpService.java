@@ -1,11 +1,10 @@
 package se.arkalix.net.http.service;
 
 import se.arkalix.ArService;
-import se.arkalix.ArSystem;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
-import se.arkalix.internal.ArServerRegistry;
-import se.arkalix.internal.net.http.service.HttpServer;
+import se.arkalix._internal.ArServerRegistry;
+import se.arkalix.net.http.service._internal.HttpServer;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.security.access.AccessPolicy;
 

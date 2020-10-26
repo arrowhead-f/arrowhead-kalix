@@ -7,7 +7,7 @@ import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.json.JsonName;
-import se.arkalix.internal.core.plugin.Instants;
+import se.arkalix.core.plugin._internal.Instants;
 
 import java.util.List;
 import java.util.Map;

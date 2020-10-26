@@ -14,7 +14,7 @@ import se.arkalix.SystemRecord;
 import se.arkalix.ServiceRecord;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.InterfaceDescriptor;
-import se.arkalix.internal.security.identity.X509Keys;
+import se.arkalix.security.identity._internal.X509Keys;
 import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.plugin.Plugin;

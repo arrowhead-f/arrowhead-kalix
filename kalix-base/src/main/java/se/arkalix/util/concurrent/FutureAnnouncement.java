@@ -1,6 +1,6 @@
 package se.arkalix.util.concurrent;
 
-import se.arkalix.internal.util.concurrent.FutureCompletion;
+import se.arkalix.util.concurrent._internal.FutureCompletion;
 import se.arkalix.util.Result;
 import se.arkalix.util.annotation.ThreadSafe;
 

@@ -2,7 +2,7 @@ package se.arkalix;
 
 import se.arkalix.descriptor.InterfaceDescriptor;
 import se.arkalix.descriptor.SecurityDescriptor;
-import se.arkalix.internal.DefaultServiceRecord;
+import se.arkalix._internal.DefaultServiceRecord;
 
 import java.time.Instant;
 import java.util.Arrays;

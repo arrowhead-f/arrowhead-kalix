@@ -10,10 +10,10 @@ import se.arkalix.dto.json.*;
 import se.arkalix.dto.types.*;
 import se.arkalix.dto.util.BinaryWriterWriteCache;
 import se.arkalix.dto.util.Expander;
-import se.arkalix.internal.dto.json.JsonTokenBuffer;
-import se.arkalix.internal.dto.json.JsonTokenizer;
+import se.arkalix.dto.json._internal.JsonTokenBuffer;
+import se.arkalix.dto.json._internal.JsonTokenizer;
 import se.arkalix.dto.json.value.JsonType;
-import se.arkalix.internal.dto.json.JsonWrite;
+import se.arkalix.dto.json._internal.JsonWrite;
 import se.arkalix.util.annotation.Internal;
 
 import javax.lang.model.element.Modifier;

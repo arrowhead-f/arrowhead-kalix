@@ -6,10 +6,10 @@ import se.arkalix.ArConsumer;
 import se.arkalix.ArConsumerFactory;
 import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
+import se.arkalix.core.plugin._internal.HttpJsonServices;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
-import se.arkalix.internal.core.plugin.HttpJsonServices;
-import se.arkalix.internal.core.plugin.Paths;
+import se.arkalix.net.Uris;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
 import se.arkalix.util.concurrent.Future;
@@ -40,10 +40,10 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
     private HttpJsonTrustedContractNegotiationService(final HttpConsumer consumer) {
         this.consumer = Objects.requireNonNull(consumer, "Expected consumer");
         final var basePath = consumer.service().uri();
-        pathAccept = Paths.combine(basePath, "acceptances");
-        pathCounterOffer = Paths.combine(basePath, "counter-offers");
-        pathOffer = Paths.combine(basePath, "offers");
-        pathReject = Paths.combine(basePath, "rejections");
+        pathAccept = Uris.pathOf(basePath, "acceptances");
+        pathCounterOffer = Uris.pathOf(basePath, "counter-offers");
+        pathOffer = Uris.pathOf(basePath, "offers");
+        pathReject = Uris.pathOf(basePath, "rejections");
     }
 
     /**

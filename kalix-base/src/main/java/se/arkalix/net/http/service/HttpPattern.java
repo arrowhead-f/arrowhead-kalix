@@ -1,6 +1,6 @@
 package se.arkalix.net.http.service;
 
-import se.arkalix.internal.net.http.HttpPaths;
+import se.arkalix.net.Uris;
 
 import java.util.*;
 
@@ -251,7 +251,7 @@ public class HttpPattern implements Comparable<HttpPattern> {
                 throw new IllegalArgumentException("Percent encodings may not be used in patterns");
             }
             if (c != '/') {
-                if (HttpPaths.isValidPathCharacter(c)) {
+                if (Uris.isValidPathCharacter(c)) {
                     builder.append(c);
                     continue;
                 }

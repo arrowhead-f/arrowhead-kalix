@@ -6,12 +6,13 @@
  * device can host one or more systems, each of which can provide zero or more
  * services. A service could be thought of as a network API made available
  * through a well-defined set of {@link
- * se.arkalix.descriptor.InterfaceDescriptor network interfaces}. Systems can
- * consume the services other systems provide, where consuming concretely
- * entails exchanging messages. More details about the Arrowhead Framework can
- * be read <a href="https://arrowhead.eu/arrowheadframework/this-is-it">on the
- * official website</a>, while more information about Arrowhead Kalix is
- * available on <a href="https://arkalix.se">https://arkalix.se</a>.
+ * se.arkalix.descriptor.InterfaceDescriptor network interface protocols}.
+ * Systems can consume the services other systems provide, where consuming
+ * concretely entails exchanging messages. More details about the Arrowhead
+ * Framework can be read
+ * <a href="https://arrowhead.eu/arrowheadframework/this-is-it">on the official
+ * website</a>, while more information about Arrowhead Kalix is available on
+ * <a href="https://arkalix.se">https://arkalix.se</a>.
  * <h2>About This Package</h2>
  * This package most significantly contains the {@link se.arkalix.ArSystem
  * ArSystem} class, which is what allows a Kalix application to host Arrowhead

@@ -1,7 +1,7 @@
 package se.arkalix.core.plugin.eh;
 
 import se.arkalix.ArSystem;
-import se.arkalix.internal.core.plugin.Instants;
+import se.arkalix.core.plugin._internal.Instants;
 import se.arkalix.core.plugin.SystemDetails;
 import se.arkalix.util.concurrent.Future;
 

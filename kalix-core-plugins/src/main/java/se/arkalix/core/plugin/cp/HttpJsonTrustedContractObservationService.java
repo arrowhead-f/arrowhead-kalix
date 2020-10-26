@@ -6,7 +6,7 @@ import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
 import se.arkalix.descriptor.EncodingDescriptor;
 import se.arkalix.descriptor.TransportDescriptor;
-import se.arkalix.internal.core.plugin.Paths;
+import se.arkalix.net.Uris;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
 import se.arkalix.util.concurrent.Future;
@@ -16,9 +16,9 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 
+import static se.arkalix.core.plugin._internal.HttpJsonServices.unwrapOptional;
 import static se.arkalix.descriptor.EncodingDescriptor.JSON;
 import static se.arkalix.descriptor.TransportDescriptor.HTTP;
-import static se.arkalix.internal.core.plugin.HttpJsonServices.unwrapOptional;
 import static se.arkalix.net.http.HttpMethod.GET;
 
 /**
@@ -33,7 +33,7 @@ public class HttpJsonTrustedContractObservationService implements ArConsumer, Ar
 
     private HttpJsonTrustedContractObservationService(final HttpConsumer consumer) {
         this.consumer = Objects.requireNonNull(consumer, "Expected consumer");
-        uriGet = Paths.combine(consumer.service().uri(), "negotiations");
+        uriGet = Uris.pathOf(consumer.service().uri(), "negotiations");
     }
 
     /**

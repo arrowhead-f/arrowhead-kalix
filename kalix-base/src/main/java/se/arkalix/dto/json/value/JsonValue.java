@@ -4,8 +4,8 @@ import se.arkalix.dto.DtoReadException;
 import se.arkalix.dto.binary.BinaryReader;
 import se.arkalix.dto.json.JsonReadable;
 import se.arkalix.dto.json.JsonWritable;
-import se.arkalix.internal.dto.json.JsonTokenBuffer;
-import se.arkalix.internal.dto.json.JsonTokenizer;
+import se.arkalix.dto.json._internal.JsonTokenBuffer;
+import se.arkalix.dto.json._internal.JsonTokenizer;
 import se.arkalix.util.annotation.Internal;
 
 import java.util.Optional;

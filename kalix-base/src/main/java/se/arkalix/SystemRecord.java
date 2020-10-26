@@ -1,6 +1,6 @@
 package se.arkalix;
 
-import se.arkalix.internal.DefaultSystemRecord;
+import se.arkalix._internal.DefaultSystemRecord;
 import se.arkalix.security.SecurityDisabled;
 
 import java.net.InetSocketAddress;

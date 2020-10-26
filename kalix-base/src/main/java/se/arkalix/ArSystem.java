@@ -1,6 +1,6 @@
 package se.arkalix;
 
-import se.arkalix.internal.DefaultSystem;
+import se.arkalix._internal.DefaultSystem;
 import se.arkalix.plugin.Plugin;
 import se.arkalix.plugin.PluginFacade;
 import se.arkalix.query.ServiceQuery;

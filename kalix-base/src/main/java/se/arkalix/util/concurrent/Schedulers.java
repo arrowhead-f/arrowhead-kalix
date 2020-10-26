@@ -1,7 +1,7 @@
 package se.arkalix.util.concurrent;
 
-import se.arkalix.internal.util.concurrent.DynamicScheduler;
-import se.arkalix.internal.util.concurrent.NettyScheduler;
+import se.arkalix.util.concurrent._internal.DynamicScheduler;
+import se.arkalix.util.concurrent._internal.NettyScheduler;
 import se.arkalix.util.annotation.ThreadSafe;
 
 /**

@@ -8,7 +8,7 @@ import se.arkalix.util.concurrent.Future;
 
 import java.util.Objects;
 
-import static se.arkalix.internal.core.plugin.HttpJsonServices.unwrap;
+import static se.arkalix.core.plugin._internal.HttpJsonServices.unwrap;
 import static se.arkalix.net.http.HttpMethod.POST;
 
 /**

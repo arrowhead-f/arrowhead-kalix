@@ -1,7 +1,7 @@
 package se.arkalix.util.concurrent;
 
 import org.slf4j.LoggerFactory;
-import se.arkalix.internal.util.concurrent.NettyThread;
+import se.arkalix.util.concurrent._internal.NettyThread;
 import se.arkalix.util.Result;
 import se.arkalix.util.annotation.ThreadSafe;
 import se.arkalix.util.function.ThrowingConsumer;

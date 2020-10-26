@@ -7,7 +7,7 @@ import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
 import se.arkalix.dto.json.JsonName;
-import se.arkalix.internal.security.identity.X509Keys;
+import se.arkalix.security.identity._internal.X509Keys;
 
 import java.net.InetSocketAddress;
 import java.util.Base64;
