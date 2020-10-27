@@ -32,8 +32,8 @@ public class DefaultHttpConsumer implements HttpConsumer {
         final ServiceRecord service,
         final Collection<Encoding> encodings
     ) {
-        this.system = Objects.requireNonNull(system, "Expected system");
-        this.service = Objects.requireNonNull(service, "Expected service");
+        this.system = Objects.requireNonNull(system, "system");
+        this.service = Objects.requireNonNull(service, "service");
 
         client = HttpClient.from(system);
 

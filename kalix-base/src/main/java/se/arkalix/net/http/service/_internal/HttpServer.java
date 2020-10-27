@@ -40,8 +40,8 @@ public class HttpServer implements ArServer {
     private Channel channel;
 
     private HttpServer(final ArSystem system, final PluginNotifier pluginNotifier) {
-        this.pluginNotifier = Objects.requireNonNull(pluginNotifier, "Expected pluginNotifier");
-        this.system = Objects.requireNonNull(system, "Expected system");
+        this.pluginNotifier = Objects.requireNonNull(pluginNotifier, "pluginNotifier");
+        this.system = Objects.requireNonNull(system, "system");
     }
 
     public static Future<ArServer> create(final ArSystem system, final PluginNotifier pluginNotifier) {
@@ -83,7 +83,7 @@ public class HttpServer implements ArServer {
 
     @Override
     public Future<ArServiceHandle> provide(final ArService service) {
-        Objects.requireNonNull(service, "Expected service");
+        Objects.requireNonNull(service, "service");
 
         if (!(service instanceof HttpService)) {
             throw new IllegalArgumentException("Expected service to be HttpService");

@@ -22,8 +22,8 @@ public enum DtoEncoding {
     private final DtoWriter writer;
 
     DtoEncoding(final DtoReader reader, final DtoWriter writer) {
-        this.reader = Objects.requireNonNull(reader, "Expected reader");
-        this.writer = Objects.requireNonNull(writer, "Expected writer");
+        this.reader = Objects.requireNonNull(reader, "reader");
+        this.writer = Objects.requireNonNull(writer, "writer");
     }
 
     /**

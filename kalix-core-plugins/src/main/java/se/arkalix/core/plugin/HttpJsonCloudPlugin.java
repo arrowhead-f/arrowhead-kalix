@@ -119,7 +119,7 @@ public class HttpJsonCloudPlugin implements Plugin {
         private FutureAnnouncement<HttpJsonServiceDiscoveryService> serviceDiscoveryAnnouncement = null;
 
         Attached(final ArSystem system) {
-            this.system = Objects.requireNonNull(system, "Expected system");
+            this.system = Objects.requireNonNull(system, "system");
             this.systemDetails = SystemDetails.from(system);
             this.client = HttpClient.from(system);
 
@@ -277,7 +277,7 @@ public class HttpJsonCloudPlugin implements Plugin {
             final ServiceQuery query,
             final OrchestrationPattern pattern
         ) {
-            Objects.requireNonNull(pattern, "Expected pattern");
+            Objects.requireNonNull(pattern, "pattern");
 
             return requestOrchestration()
                 .ifSuccess(ignored -> {

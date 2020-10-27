@@ -67,8 +67,8 @@ public class NettyHttpServiceConnection
         final HttpServiceLookup serviceLookup,
         final SslHandler sslHandler
     ) {
-        this.system = Objects.requireNonNull(system, "Expected system");
-        this.serviceLookup = Objects.requireNonNull(serviceLookup, "Expected serviceLookup");
+        this.system = Objects.requireNonNull(system, "system");
+        this.serviceLookup = Objects.requireNonNull(serviceLookup, "serviceLookup");
         this.sslHandler = sslHandler;
     }
 

@@ -31,15 +31,15 @@ public class DtoSequence implements DtoCollection {
     }
 
     public static DtoSequence newArray(final ArrayType type, final DtoType element) {
-        Objects.requireNonNull(type, "Expected type");
-        Objects.requireNonNull(type, "Expected element");
+        Objects.requireNonNull(type, "type");
+        Objects.requireNonNull(type, "element");
         final var name = ArrayTypeName.of(element.inputTypeName());
         return new DtoSequence(DtoDescriptor.ARRAY, name, name, element);
     }
 
     public static DtoSequence newList(final DeclaredType type, final DtoType element) {
-        Objects.requireNonNull(type, "Expected type");
-        Objects.requireNonNull(type, "Expected element");
+        Objects.requireNonNull(type, "type");
+        Objects.requireNonNull(type, "element");
         return new DtoSequence(
             DtoDescriptor.LIST,
             ParameterizedTypeName.get(ClassName.get(List.class), element.inputTypeName()),

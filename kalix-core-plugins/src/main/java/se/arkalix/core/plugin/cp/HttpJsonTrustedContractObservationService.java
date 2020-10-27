@@ -32,7 +32,7 @@ public class HttpJsonTrustedContractObservationService implements ArConsumer, Ar
     private final String uriGet;
 
     private HttpJsonTrustedContractObservationService(final HttpConsumer consumer) {
-        this.consumer = Objects.requireNonNull(consumer, "Expected consumer");
+        this.consumer = Objects.requireNonNull(consumer, "consumer");
         uriGet = Uris.pathOf(consumer.service().uri(), "negotiations");
     }
 

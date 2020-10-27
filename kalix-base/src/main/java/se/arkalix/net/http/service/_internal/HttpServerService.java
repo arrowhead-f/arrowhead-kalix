@@ -27,8 +27,8 @@ public class HttpServerService {
     private final HttpRouteSequence[] routeSequences;
 
     public HttpServerService(final ArSystem provider, final HttpService service) {
-        this.provider = Objects.requireNonNull(provider, "Expected provider");
-        this.service = Objects.requireNonNull(service, "Expected service");
+        this.provider = Objects.requireNonNull(provider, "provider");
+        this.service = Objects.requireNonNull(service, "service");
         accessPolicy = service.accessPolicy();
 
         final var basePath = service.uri();

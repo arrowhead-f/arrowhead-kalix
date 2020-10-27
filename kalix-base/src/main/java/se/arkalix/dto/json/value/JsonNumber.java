@@ -38,7 +38,7 @@ public class JsonNumber implements JsonValue {
      * @param number Number.
      */
     public JsonNumber(final BigDecimal number) {
-        this.number = Objects.requireNonNull(number, "Expected number").toString();
+        this.number = Objects.requireNonNull(number, "number").toString();
     }
 
     /**
@@ -47,7 +47,7 @@ public class JsonNumber implements JsonValue {
      * @param number Number.
      */
     public JsonNumber(final BigInteger number) {
-        this.number = Objects.requireNonNull(number, "Expected number").toString();
+        this.number = Objects.requireNonNull(number, "number").toString();
     }
 
     /**
@@ -74,7 +74,7 @@ public class JsonNumber implements JsonValue {
      * @param number Number.
      */
     public JsonNumber(final Duration number) {
-        Objects.requireNonNull(number, "Expected number");
+        Objects.requireNonNull(number, "number");
         this.number = formatDecimal(number.getSeconds(), number.toNanosPart());
     }
 
@@ -102,7 +102,7 @@ public class JsonNumber implements JsonValue {
      * @param number Number.
      */
     public JsonNumber(final Instant number) {
-        Objects.requireNonNull(number, "Expected number");
+        Objects.requireNonNull(number, "number");
         this.number = formatDecimal(number.getEpochSecond(), number.getNano());
     }
 
@@ -121,7 +121,7 @@ public class JsonNumber implements JsonValue {
      * @param number Number.
      */
     public JsonNumber(final OffsetDateTime number) {
-        final var instant = Objects.requireNonNull(number, "Expected number").toInstant();
+        final var instant = Objects.requireNonNull(number, "number").toInstant();
         this.number = formatDecimal(instant.getEpochSecond(), instant.getNano());
     }
 

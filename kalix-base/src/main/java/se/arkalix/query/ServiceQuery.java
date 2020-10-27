@@ -67,8 +67,8 @@ public class ServiceQuery {
         final ArSystem consumer,
         final ThrowingFunction<ServiceQuery, Future<Set<ServiceRecord>>> resolver
     ) {
-        this.consumer = Objects.requireNonNull(consumer, "Expected consumer");
-        this.resolver = Objects.requireNonNull(resolver, "Expected resolver");
+        this.consumer = Objects.requireNonNull(consumer, "consumer");
+        this.resolver = Objects.requireNonNull(resolver, "resolver");
     }
 
     /**

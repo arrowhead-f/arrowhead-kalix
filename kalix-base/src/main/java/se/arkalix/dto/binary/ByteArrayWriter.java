@@ -44,7 +44,7 @@ public class ByteArrayWriter implements BinaryWriter {
      */
     public ByteArrayWriter(final byte[] byteArray) {
         isStatic = true;
-        this.byteArray = Objects.requireNonNull(byteArray, "Expected byteArray");
+        this.byteArray = Objects.requireNonNull(byteArray, "byteArray");
     }
 
     /**

@@ -222,7 +222,7 @@ public interface Future<V> {
      * @throws NullPointerException If {@code consumer} is {@code null}.
      */
     default void onFailure(final Consumer<Throwable> consumer) {
-        Objects.requireNonNull(consumer, "Expected consumer");
+        Objects.requireNonNull(consumer, "consumer");
         onResult(result -> {
             if (result.isFailure()) {
                 consumer.accept(result.fault());
@@ -249,7 +249,7 @@ public interface Future<V> {
      * @throws NullPointerException If {@code consumer} is {@code null}.
      */
     default Future<V> ifSuccess(final ThrowingConsumer<V> consumer) {
-        Objects.requireNonNull(consumer, "Expected consumer");
+        Objects.requireNonNull(consumer, "consumer");
         final var source = this;
         return new Future<>() {
             @Override
@@ -298,7 +298,7 @@ public interface Future<V> {
      * @throws NullPointerException If {@code consumer} is {@code null}.
      */
     default <T extends Throwable> Future<V> ifFailure(final Class<T> class_, final ThrowingConsumer<T> consumer) {
-        Objects.requireNonNull(consumer, "Expected consumer");
+        Objects.requireNonNull(consumer, "consumer");
         final var source = this;
         return new Future<>() {
             @Override
@@ -348,7 +348,7 @@ public interface Future<V> {
      * @throws NullPointerException If {@code consumer} is {@code null}.
      */
     default Future<V> always(final ThrowingConsumer<Result<V>> consumer) {
-        Objects.requireNonNull(consumer, "Expected consumer");
+        Objects.requireNonNull(consumer, "consumer");
         final var source = this;
         return new Future<>() {
             @Override
@@ -401,7 +401,7 @@ public interface Future<V> {
      * @throws NullPointerException If {@code mapper} is {@code null}.
      */
     default <U> Future<U> map(final ThrowingFunction<? super V, U> mapper) {
-        Objects.requireNonNull(mapper, "Expected mapper");
+        Objects.requireNonNull(mapper, "mapper");
         final var source = this;
         return new Future<>() {
             @Override
@@ -465,8 +465,8 @@ public interface Future<V> {
         final Class<T> class_,
         final ThrowingFunction<T, ? extends V> mapper
     ) {
-        Objects.requireNonNull(class_, "Expected class_");
-        Objects.requireNonNull(mapper, "Expected mapper");
+        Objects.requireNonNull(class_, "class_");
+        Objects.requireNonNull(mapper, "mapper");
         final var source = this;
         return new Future<>() {
             @Override
@@ -531,8 +531,8 @@ public interface Future<V> {
         final Class<T> class_,
         final ThrowingFunction<Throwable, Throwable> mapper
     ) {
-        Objects.requireNonNull(class_, "Expected class_");
-        Objects.requireNonNull(mapper, "Expected mapper");
+        Objects.requireNonNull(class_, "class_");
+        Objects.requireNonNull(mapper, "mapper");
         final var source = this;
         return new Future<>() {
             @Override
@@ -590,7 +590,7 @@ public interface Future<V> {
      * @throws NullPointerException If {@code mapper} is {@code null}.
      */
     default <U> Future<U> mapResult(final ThrowingFunction<Result<V>, Result<U>> mapper) {
-        Objects.requireNonNull(mapper, "Expected mapper");
+        Objects.requireNonNull(mapper, "mapper");
         final var source = this;
         return new Future<>() {
             @Override
@@ -637,7 +637,7 @@ public interface Future<V> {
      * @throws NullPointerException If {@code mapper} is {@code null}.
      */
     default <U> Future<U> mapThrow(final ThrowingFunction<? super V, Throwable> mapper) {
-        Objects.requireNonNull(mapper, "Expected mapper");
+        Objects.requireNonNull(mapper, "mapper");
         final var source = this;
         return new Future<>() {
             @Override

@@ -27,8 +27,8 @@ public class NettyHttpServiceConnectionInitializer extends ChannelInitializer<So
         final HttpServiceLookup serviceLookup,
         final SslContext sslContext)
     {
-        this.system = Objects.requireNonNull(system, "Expected system");
-        this.serviceLookup = Objects.requireNonNull(serviceLookup, "Expected serviceLookup");
+        this.system = Objects.requireNonNull(system, "system");
+        this.serviceLookup = Objects.requireNonNull(serviceLookup, "serviceLookup");
         this.sslContext = sslContext;
     }
 

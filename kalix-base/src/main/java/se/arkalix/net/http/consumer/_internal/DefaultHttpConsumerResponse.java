@@ -29,8 +29,8 @@ public class DefaultHttpConsumerResponse implements HttpConsumerResponse {
         final HttpConsumerRequest request,
         final HttpClientResponse inner
     ) {
-        this.connection = Objects.requireNonNull(connection, "Expected connection");
-        this.request = Objects.requireNonNull(request, "Expected request");
+        this.connection = Objects.requireNonNull(connection, "connection");
+        this.request = Objects.requireNonNull(request, "request");
         this.inner = inner;
     }
 

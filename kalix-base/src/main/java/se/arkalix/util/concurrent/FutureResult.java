@@ -29,7 +29,7 @@ class FutureResult<V> implements FutureProgress<V> {
 
     @Override
     public void onResult(final Consumer<Result<V>> consumer) {
-        Objects.requireNonNull(consumer, "Expected consumer");
+        Objects.requireNonNull(consumer, "consumer");
         consumer.accept(result);
     }
 
@@ -40,7 +40,7 @@ class FutureResult<V> implements FutureProgress<V> {
 
     @Override
     public void onFailure(final Consumer<Throwable> consumer) {
-        Objects.requireNonNull(consumer, "Expected consumer");
+        Objects.requireNonNull(consumer, "consumer");
         if (result.isFailure()) {
             consumer.accept(result.fault());
         }
@@ -48,14 +48,14 @@ class FutureResult<V> implements FutureProgress<V> {
 
     @Override
     public Future<V> addProgressListener(final Listener listener) {
-        Objects.requireNonNull(listener, "Expected listener");
+        Objects.requireNonNull(listener, "listener");
         // Does nothing.
         return this;
     }
 
     @Override
     public Future<V> ifSuccess(final ThrowingConsumer<V> consumer) {
-        Objects.requireNonNull(consumer, "Expected consumer");
+        Objects.requireNonNull(consumer, "consumer");
         if (result.isSuccess()) {
             try {
                 consumer.accept(result.value());
@@ -69,7 +69,7 @@ class FutureResult<V> implements FutureProgress<V> {
 
     @Override
     public <T extends Throwable> Future<V> ifFailure(final Class<T> class_, final ThrowingConsumer<T> consumer) {
-        Objects.requireNonNull(consumer, "Expected consumer");
+        Objects.requireNonNull(consumer, "consumer");
         if (result.isFailure()) {
             final var fault = result.fault();
             if (class_.isAssignableFrom(fault.getClass())) {
@@ -87,7 +87,7 @@ class FutureResult<V> implements FutureProgress<V> {
 
     @Override
     public Future<V> always(final ThrowingConsumer<Result<V>> consumer) {
-        Objects.requireNonNull(consumer, "Expected consumer");
+        Objects.requireNonNull(consumer, "consumer");
         try {
             consumer.accept(result);
         }
@@ -102,7 +102,7 @@ class FutureResult<V> implements FutureProgress<V> {
 
     @Override
     public <U> Future<U> map(final ThrowingFunction<? super V, U> mapper) {
-        Objects.requireNonNull(mapper, "Expected mapper");
+        Objects.requireNonNull(mapper, "mapper");
         Throwable fault;
         if (result.isSuccess()) {
             try {
@@ -123,8 +123,8 @@ class FutureResult<V> implements FutureProgress<V> {
         final Class<U> class_,
         final ThrowingFunction<U, ? extends V> mapper)
     {
-        Objects.requireNonNull(class_, "Expected class_");
-        Objects.requireNonNull(mapper, "Expected mapper");
+        Objects.requireNonNull(class_, "class_");
+        Objects.requireNonNull(mapper, "mapper");
         if (result.isSuccess()) {
             return this;
         }
@@ -145,8 +145,8 @@ class FutureResult<V> implements FutureProgress<V> {
         final Class<T> class_,
         final ThrowingFunction<Throwable, Throwable> mapper)
     {
-        Objects.requireNonNull(class_, "Expected class_");
-        Objects.requireNonNull(mapper, "Expected mapper");
+        Objects.requireNonNull(class_, "class_");
+        Objects.requireNonNull(mapper, "mapper");
         if (result.isSuccess()) {
             return this;
         }
@@ -164,7 +164,7 @@ class FutureResult<V> implements FutureProgress<V> {
 
     @Override
     public <U> Future<U> mapResult(final ThrowingFunction<Result<V>, Result<U>> mapper) {
-        Objects.requireNonNull(mapper, "Expected mapper");
+        Objects.requireNonNull(mapper, "mapper");
         try {
             return Future.of(mapper.apply(result));
         }
@@ -175,7 +175,7 @@ class FutureResult<V> implements FutureProgress<V> {
 
     @Override
     public <U> Future<U> mapThrow(final ThrowingFunction<? super V, Throwable> mapper) {
-        Objects.requireNonNull(mapper, "Expected mapper");
+        Objects.requireNonNull(mapper, "mapper");
         Throwable fault;
         if (result.isSuccess()) {
             try {
@@ -193,7 +193,7 @@ class FutureResult<V> implements FutureProgress<V> {
 
     @Override
     public <U> Future<U> flatMap(final ThrowingFunction<? super V, ? extends Future<U>> mapper) {
-        Objects.requireNonNull(mapper, "Expected mapper");
+        Objects.requireNonNull(mapper, "mapper");
         Throwable fault;
         if (result.isSuccess()) {
             try {
@@ -211,8 +211,8 @@ class FutureResult<V> implements FutureProgress<V> {
 
     @Override
     public <U extends Throwable> Future<V> flatMapCatch(final Class<U> class_, final ThrowingFunction<U, ? extends Future<V>> mapper) {
-        Objects.requireNonNull(class_, "Expected class_");
-        Objects.requireNonNull(mapper, "Expected mapper");
+        Objects.requireNonNull(class_, "class_");
+        Objects.requireNonNull(mapper, "mapper");
         if (result.isSuccess()) {
             return this;
         }
@@ -233,8 +233,8 @@ class FutureResult<V> implements FutureProgress<V> {
         final Class<T> class_,
         final ThrowingFunction<Throwable, ? extends Future<Throwable>> mapper)
     {
-        Objects.requireNonNull(class_, "Expected class_");
-        Objects.requireNonNull(mapper, "Expected mapper");
+        Objects.requireNonNull(class_, "class_");
+        Objects.requireNonNull(mapper, "mapper");
         if (result.isSuccess()) {
             return this;
         }
@@ -287,7 +287,7 @@ class FutureResult<V> implements FutureProgress<V> {
 
     @Override
     public Future<V> flatMapThrow(final ThrowingFunction<V, ? extends Future<? extends Throwable>> mapper) {
-        Objects.requireNonNull(mapper, "Expected mapper");
+        Objects.requireNonNull(mapper, "mapper");
         if (result.isFailure()) {
             return this;
         }
@@ -326,7 +326,7 @@ class FutureResult<V> implements FutureProgress<V> {
 
     @Override
     public <U> Future<U> pass(final U value) {
-        Objects.requireNonNull(value, "Expected value");
+        Objects.requireNonNull(value, "value");
         return result.isSuccess()
             ? Future.success(value)
             : Future.failure(result.fault());
@@ -334,7 +334,7 @@ class FutureResult<V> implements FutureProgress<V> {
 
     @Override
     public <U> Future<U> fail(final Throwable throwable) {
-        Objects.requireNonNull(throwable, "Expected throwable");
+        Objects.requireNonNull(throwable, "throwable");
         if (result.isFailure()) {
             throwable.addSuppressed(result.fault());
         }
@@ -343,7 +343,7 @@ class FutureResult<V> implements FutureProgress<V> {
 
     @Override
     public Future<V> delay(final Duration duration) {
-        Objects.requireNonNull(duration, "Expected duration");
+        Objects.requireNonNull(duration, "duration");
         return new Future<>() {
             private Future<?> cancelTarget = null;
 
@@ -365,7 +365,7 @@ class FutureResult<V> implements FutureProgress<V> {
 
     @Override
     public Future<V> delayUntil(final Instant baseline) {
-        Objects.requireNonNull(baseline, "Expected baseline");
+        Objects.requireNonNull(baseline, "baseline");
         return new Future<>() {
             private Future<?> cancelTarget = null;
 

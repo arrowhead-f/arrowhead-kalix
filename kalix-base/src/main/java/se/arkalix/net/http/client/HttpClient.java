@@ -144,7 +144,7 @@ public interface HttpClient {
         final InetSocketAddress remoteSocketAddress,
         final HttpClientRequest request
     ) {
-        Objects.requireNonNull(request, "Expected request");
+        Objects.requireNonNull(request, "request");
         return connect(remoteSocketAddress, localSocketAddress().orElse(null))
             .flatMap(connection -> connection.sendAndClose(request));
     }

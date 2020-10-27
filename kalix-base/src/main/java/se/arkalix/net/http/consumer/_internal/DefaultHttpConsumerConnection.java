@@ -32,11 +32,11 @@ class DefaultHttpConsumerConnection implements HttpConsumerConnection {
         final SystemIdentity remoteIdentity,
         final HttpClientConnection connection
     ) {
-        this.localSystem = Objects.requireNonNull(localSystem, "Expected localSystem");
-        this.encoding = Objects.requireNonNull(encoding, "Expected encoding");
+        this.localSystem = Objects.requireNonNull(localSystem, "localSystem");
+        this.encoding = Objects.requireNonNull(encoding, "encoding");
         this.authorization = authorization;
         this.remoteIdentity = remoteIdentity;
-        this.connection = Objects.requireNonNull(connection, "Expected connection");
+        this.connection = Objects.requireNonNull(connection, "connection");
     }
 
     @Override
@@ -85,7 +85,7 @@ class DefaultHttpConsumerConnection implements HttpConsumerConnection {
 
     @SuppressWarnings("unchecked")
     private void prepare(final HttpConsumerRequest request) {
-        Objects.requireNonNull(request, "Expected request");
+        Objects.requireNonNull(request, "request");
 
         if (request.encoding().isEmpty()) {
             final var body = request.body().orElse(null);

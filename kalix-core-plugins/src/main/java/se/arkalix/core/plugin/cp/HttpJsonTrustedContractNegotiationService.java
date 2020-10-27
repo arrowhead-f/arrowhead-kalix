@@ -38,7 +38,7 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
     private final String pathReject;
 
     private HttpJsonTrustedContractNegotiationService(final HttpConsumer consumer) {
-        this.consumer = Objects.requireNonNull(consumer, "Expected consumer");
+        this.consumer = Objects.requireNonNull(consumer, "consumer");
         final var basePath = consumer.service().uri();
         pathAccept = Uris.pathOf(basePath, "acceptances");
         pathCounterOffer = Uris.pathOf(basePath, "counter-offers");

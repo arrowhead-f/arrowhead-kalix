@@ -21,7 +21,7 @@ public class ByteArrayReader implements BinaryReader {
      * @param byteArray Byte array to read.
      */
     public ByteArrayReader(final byte[] byteArray) {
-        this.byteArray = Objects.requireNonNull(byteArray, "Expected byteArray");
+        this.byteArray = Objects.requireNonNull(byteArray, "byteArray");
     }
 
     @Override

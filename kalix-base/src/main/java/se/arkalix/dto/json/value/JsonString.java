@@ -32,7 +32,7 @@ public class JsonString implements JsonValue {
      * @param string String.
      */
     public JsonString(final String string) {
-        this.string = Objects.requireNonNull(string, "Expected string");
+        this.string = Objects.requireNonNull(string, "string");
     }
 
     /**
@@ -41,7 +41,7 @@ public class JsonString implements JsonValue {
      * @param duration Duration.
      */
     public JsonString(final Duration duration) {
-        this.string = Objects.requireNonNull(duration, "Expected string").toString();
+        this.string = Objects.requireNonNull(duration, "string").toString();
     }
 
     /**
@@ -50,7 +50,7 @@ public class JsonString implements JsonValue {
      * @param instant Instant.
      */
     public JsonString(final Instant instant) {
-        this.string = Objects.requireNonNull(instant, "Expected string").toString();
+        this.string = Objects.requireNonNull(instant, "string").toString();
     }
 
     /**
@@ -59,7 +59,7 @@ public class JsonString implements JsonValue {
      * @param monthDay Month and day.
      */
     public JsonString(final MonthDay monthDay) {
-        this.string = Objects.requireNonNull(monthDay, "Expected string").toString();
+        this.string = Objects.requireNonNull(monthDay, "string").toString();
     }
 
     /**
@@ -68,7 +68,7 @@ public class JsonString implements JsonValue {
      * @param offsetDateTime Date and time with time zone offset.
      */
     public JsonString(final OffsetDateTime offsetDateTime) {
-        this.string = Objects.requireNonNull(offsetDateTime, "Expected string").toString();
+        this.string = Objects.requireNonNull(offsetDateTime, "string").toString();
     }
 
     /**
@@ -77,7 +77,7 @@ public class JsonString implements JsonValue {
      * @param offsetTime Time with time zone offset.
      */
     public JsonString(final OffsetTime offsetTime) {
-        this.string = Objects.requireNonNull(offsetTime, "Expected string").toString();
+        this.string = Objects.requireNonNull(offsetTime, "string").toString();
     }
 
     /**
@@ -86,7 +86,7 @@ public class JsonString implements JsonValue {
      * @param period Period.
      */
     public JsonString(final Period period) {
-        this.string = Objects.requireNonNull(period, "Expected string").toString();
+        this.string = Objects.requireNonNull(period, "string").toString();
     }
 
     @Override

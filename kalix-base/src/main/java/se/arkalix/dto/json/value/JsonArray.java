@@ -30,7 +30,7 @@ public class JsonArray implements JsonCollection<Integer>, Iterable<JsonValue> {
      *                 array.
      */
     public JsonArray(final List<JsonValue> elements) {
-        this.elements = Collections.unmodifiableList(Objects.requireNonNull(elements, "Expected elements"));
+        this.elements = Collections.unmodifiableList(Objects.requireNonNull(elements, "elements"));
     }
 
     /**

@@ -17,7 +17,7 @@ public class JsonPair {
      * @param value Pair value.
      */
     public JsonPair(final String name, final JsonValue value) {
-        this.name = Objects.requireNonNull(name, "Expected name");
+        this.name = Objects.requireNonNull(name, "name");
         this.value = Objects.requireNonNullElse(value, JsonNull.instance);
     }
 

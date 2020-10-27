@@ -81,8 +81,8 @@ public class HttpJsonTrustedContractObserverPlugin implements ArTrustedContractO
         private EventSubscriptionHandle eventSubscriptionHandle = null;
 
         private Attached(final ArSystem system, final ArEventSubscriberPluginFacade eventSubscriber) {
-            this.system = Objects.requireNonNull(system, "Expected system");
-            this.eventSubscriber = Objects.requireNonNull(eventSubscriber, "Expected eventSubscriber");
+            this.system = Objects.requireNonNull(system, "system");
+            this.eventSubscriber = Objects.requireNonNull(eventSubscriber, "eventSubscriber");
         }
 
         public Future<?> subscribe() {

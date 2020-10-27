@@ -25,7 +25,7 @@ public interface SystemRecordWithIdentity extends SystemRecord {
      *                              remoteSocketAddress} is {@code null}.
      */
     static SystemRecordWithIdentity from(final SystemIdentity identity, final InetSocketAddress remoteSocketAddress) {
-        Objects.requireNonNull(identity, "Expected identity");
+        Objects.requireNonNull(identity, "identity");
         return new DefaultSystemRecordWithIdentity(identity.name(), identity, remoteSocketAddress);
     }
 
