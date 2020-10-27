@@ -11,7 +11,7 @@ import java.util.Objects;
 public class DtoProperty implements DtoType {
     private final ExecutableElement parentElement;
     private final String name;
-    private final Map<DtoEncoding, String> encodingNames;
+    private final Map<String, String> encodingNames;
     private final DtoType type;
     private final boolean isOptional;
 
@@ -31,7 +31,7 @@ public class DtoProperty implements DtoType {
         return name;
     }
 
-    public String nameFor(final DtoEncoding dtoEncoding) {
+    public String nameFor(final String dtoEncoding) {
         return encodingNames.getOrDefault(dtoEncoding, name);
     }
 
@@ -61,7 +61,7 @@ public class DtoProperty implements DtoType {
     public static class Builder {
         private ExecutableElement parentElement;
         private String name;
-        private Map<DtoEncoding, String> encodingNames;
+        private Map<String, String> encodingNames;
         private DtoType type;
         private boolean isOptional;
 
@@ -75,7 +75,7 @@ public class DtoProperty implements DtoType {
             return this;
         }
 
-        public Builder encodingNames(final Map<DtoEncoding, String> encodingNames) {
+        public Builder encodingNames(final Map<String, String> encodingNames) {
             this.encodingNames = encodingNames;
             return this;
         }

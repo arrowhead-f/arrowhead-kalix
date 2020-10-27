@@ -3,7 +3,6 @@ package se.arkalix.dto.types;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.TypeName;
 import se.arkalix.dto.DtoTarget;
-import se.arkalix.dto.DtoEncoding;
 
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
@@ -13,9 +12,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DtoInterface implements DtoType {
-    private final Set<DtoEncoding> readableDtoEncodings;
-    private final Set<DtoEncoding> writableDtoEncodings;
-    private final Set<DtoEncoding> dtoEncodings;
+    private final Set<String> readableDtoEncodings;
+    private final Set<String> writableDtoEncodings;
+    private final Set<String> dtoEncodings;
 
     private final String simpleName;
     private final String dataSimpleName;
@@ -25,8 +24,8 @@ public class DtoInterface implements DtoType {
 
     public DtoInterface(
         final DeclaredType interfaceType,
-        final DtoEncoding[] readableDtoEncodings,
-        final DtoEncoding[] writableDtoEncodings
+        final String[] readableDtoEncodings,
+        final String[] writableDtoEncodings
     ) {
         this.readableDtoEncodings = Stream.of(readableDtoEncodings).collect(Collectors.toSet());
         this.writableDtoEncodings = Stream.of(writableDtoEncodings).collect(Collectors.toSet());
@@ -77,7 +76,7 @@ public class DtoInterface implements DtoType {
         return builderSimpleName;
     }
 
-    public Set<DtoEncoding> encodings() {
+    public Set<String> encodings() {
         return dtoEncodings;
     }
 
@@ -96,11 +95,11 @@ public class DtoInterface implements DtoType {
         return outputTypeName;
     }
 
-    public boolean isReadable(final DtoEncoding dtoEncoding) {
+    public boolean isReadable(final String dtoEncoding) {
         return readableDtoEncodings.contains(dtoEncoding);
     }
 
-    public boolean isWritable(final DtoEncoding dtoEncoding) {
+    public boolean isWritable(final String dtoEncoding) {
         return writableDtoEncodings.contains(dtoEncoding);
     }
 

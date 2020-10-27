@@ -1,7 +1,6 @@
 package se.arkalix.net.http.service;
 
 import se.arkalix.SystemRecordWithIdentity;
-import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadable;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpIncomingRequest;

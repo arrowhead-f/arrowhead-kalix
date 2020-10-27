@@ -44,7 +44,7 @@ public class DtoTarget {
         return isPrintable;
     }
 
-    public Set<DtoEncoding> encodings() {
+    public Set<String> encodings() {
         return interfaceType.encodings();
     }
 

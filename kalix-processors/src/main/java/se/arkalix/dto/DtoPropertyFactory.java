@@ -158,8 +158,8 @@ public class DtoPropertyFactory {
             .build();
     }
 
-    private Map<DtoEncoding, String> collectEncodingNamesFrom(final Element method) {
-        final var encodingNames = new HashMap<DtoEncoding, String>();
+    private Map<String, String> collectEncodingNamesFrom(final Element method) {
+        final var encodingNames = new HashMap<String, String>();
         final var nameJSON = method.getAnnotation(JsonName.class);
         if (nameJSON != null) {
             encodingNames.put(DtoEncoding.JSON, nameJSON.value());
@@ -353,8 +353,8 @@ public class DtoPropertyFactory {
                 elementUtils.getAllAnnotationMirrors(element) + ")");
         }
 
-        final var readableEncodings = readable != null ? readable.value() : new DtoEncoding[0];
-        final var writableEncodings = writable != null ? writable.value() : new DtoEncoding[0];
+        final var readableEncodings = readable != null ? readable.value() : new String[0];
+        final var writableEncodings = writable != null ? writable.value() : new String[0];
 
         return new DtoInterface(declaredType, readableEncodings, writableEncodings);
     }

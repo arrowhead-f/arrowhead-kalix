@@ -1,6 +1,7 @@
 package se.arkalix.dto;
 
 import se.arkalix.dto.binary.BinaryWriter;
+import se.arkalix.net.Encoding;
 
 import java.util.List;
 
@@ -9,6 +10,13 @@ import java.util.List;
  * targets representing their contents with a specific encoding.
  */
 public interface DtoWriter {
+    /**
+     * Encoding written by this DTO writer.
+     *
+     * @return Written encoding.
+     */
+    Encoding encoding();
+
     /**
      * Attempts to encode {@code value} and write it to {@code target}.
      *

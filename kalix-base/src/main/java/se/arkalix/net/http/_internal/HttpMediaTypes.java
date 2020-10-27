@@ -1,7 +1,6 @@
 package se.arkalix.net.http._internal;
 
 import se.arkalix.net.Encoding;
-import se.arkalix.dto.DtoEncoding;
 import se.arkalix.util.annotation.Internal;
 
 import java.util.List;
@@ -343,31 +342,5 @@ public class HttpMediaTypes {
             }
         }
         return null;
-    }
-
-    /**
-     * Converts given {@code encoding} to a media type.
-     *
-     * @param encoding DTO encoding to convert.
-     * @return Media type string.
-     */
-    public static String toMediaType(final DtoEncoding encoding) {
-        if (encoding == DtoEncoding.JSON) {
-            return "application/json";
-        }
-        return "application/" + encoding.name().toLowerCase();
-    }
-
-    /**
-     * Converts given {@code encoding} to a media type.
-     *
-     * @param encoding Encoding descriptor to convert.
-     * @return Media type string.
-     */
-    public static String toMediaType(final Encoding encoding) {
-        if (encoding == Encoding.JSON) {
-            return "application/json";
-        }
-        return "application/" + encoding.name().toLowerCase();
     }
 }

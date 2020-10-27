@@ -50,7 +50,7 @@ public interface HttpConsumer extends ArConsumer {
      * @param service   Service to be consumed.
      * @param encodings Supported request/response encodings. If specified as
      *                  {@code null}, the encodings returned by
-     *                  {@link Encoding#allWithDtoSupport()} are used.
+     *                  {@link Encoding#allReadable()} are used.
      * @throws NullPointerException     If {@code system} or {@code service} is
      *                                  {@code null}.
      * @throws IllegalArgumentException If the security modes of {@code system}

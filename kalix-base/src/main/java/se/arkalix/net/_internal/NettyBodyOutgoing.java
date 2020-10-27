@@ -47,7 +47,7 @@ public class NettyBodyOutgoing {
             if (encoding == null) {
                 throw new MessageEncodingUnspecified(message);
             }
-            final var dtoEncoding = encoding.asDto()
+            final var dtoEncoding = encoding.reader()
                 .orElseThrow(() -> new MessageEncodingUnsupported(message, encoding));
 
             final var buffer = alloc.buffer();

@@ -12,5 +12,5 @@ public @interface DtoExclusive {
     /**
      * The DTO encoding the annotated type is exclusive to.
      */
-    DtoEncoding value();
+    String value();
 }

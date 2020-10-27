@@ -1,9 +1,9 @@
 package se.arkalix.net._internal;
 
 import io.netty.buffer.*;
-import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadable;
 import se.arkalix.net.MessageIncoming;
+import se.arkalix.net.ToEncoding;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.FutureProgress;
 
@@ -64,8 +64,8 @@ public abstract class NettyMessageIncoming implements MessageIncoming {
     }
 
     @Override
-    public <R extends DtoReadable> FutureProgress<R> bodyAs(final DtoEncoding encoding, final Class<R> class_) {
-        return request(() -> new NettyBodyIncoming.As<>(alloc, expectedBodyLength, class_, encoding));
+    public <R extends DtoReadable> FutureProgress<R> bodyAs(final ToEncoding encoding, final Class<R> class_) {
+        return request(() -> new NettyBodyIncoming.As<>(alloc, expectedBodyLength, class_, encoding.toEncoding()));
     }
 
     @Override
@@ -75,10 +75,10 @@ public abstract class NettyMessageIncoming implements MessageIncoming {
 
     @Override
     public <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(
-        final DtoEncoding encoding,
+        final ToEncoding encoding,
         final Class<R> class_
     ) {
-        return request(() -> new NettyBodyIncoming.AsList<>(alloc, expectedBodyLength, class_, encoding));
+        return request(() -> new NettyBodyIncoming.AsList<>(alloc, expectedBodyLength, class_, encoding.toEncoding()));
     }
 
     @Override

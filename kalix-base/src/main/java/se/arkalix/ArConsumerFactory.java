@@ -37,7 +37,7 @@ public interface ArConsumerFactory<C extends ArConsumer> {
      * factory.
      */
     default Collection<Encoding> serviceEncodings() {
-        return Encoding.allWithDtoSupport();
+        return Encoding.allReadable();
     }
 
     /**

@@ -1,68 +1,60 @@
 package se.arkalix.dto;
 
+import java.util.Objects;
+
 /**
  * Signifies the failure to read one or more {@link se.arkalix.dto DTO class
  * instances} from some arbitrary source.
  */
-public class DtoReadException extends Exception {
+public class DtoReadException extends DtoException {
+    private final DtoReader reader;
     private final Class<? extends DtoReadable> target;
-    private final DtoEncoding dtoEncoding;
-    private final String value;
-    private final int offset;
 
     /**
      * Creates new {@link se.arkalix.dto DTO} read exception.
      *
-     * @param target      Class the failed DTO read intended to instantiate.
-     * @param dtoEncoding Encoding applied when reading failed.
-     * @param message     Description of failure.
-     * @param value       Offending value.
-     * @param offset      Position of offending value in read source.
+     * @param reader Encoding applied when reading failed.
+     * @param target Class the failed DTO read intended to instantiate.
      */
-    public DtoReadException(
-        final Class<? extends DtoReadable> target,
-        final DtoEncoding dtoEncoding,
-        final String message,
-        final String value,
-        final int offset
-    ) {
-        super(message);
-        this.target = target;
-        this.dtoEncoding = dtoEncoding;
-        this.value = value;
-        this.offset = offset;
+    public DtoReadException(final DtoReader reader, final Class<? extends DtoReadable> target) {
+        this(reader, target, null, null);
     }
 
     /**
      * Creates new {@link se.arkalix.dto DTO} read exception.
      *
-     * @param target      Class the failed DTO read intended to instantiate.
-     * @param dtoEncoding Encoding applied when reading failed.
-     * @param message     Description of failure.
-     * @param value       Offending value.
-     * @param offset      Position of offending value in read source.
-     * @param cause       Exception causing this exception to be thrown.
+     * @param reader  Encoding applied when reading failed.
+     * @param target  Class the failed DTO read intended to instantiate.
+     * @param message Description of failure.
+     */
+    public DtoReadException(final DtoReader reader, final Class<? extends DtoReadable> target, final String message) {
+        this(reader, target, message, null);
+    }
+
+    /**
+     * Creates new {@link se.arkalix.dto DTO} read exception.
+     *
+     * @param reader  DTO reader used when decoding failed.
+     * @param target  Class the failed DTO read intended to instantiate.
+     * @param message Description of failure.
+     * @param cause   Exception causing this exception to be thrown.
      */
     public DtoReadException(
+        final DtoReader reader,
         final Class<? extends DtoReadable> target,
-        final DtoEncoding dtoEncoding,
         final String message,
-        final String value,
-        final int offset,
         final Throwable cause
     ) {
         super(message, cause);
-        this.target = target;
-        this.dtoEncoding = dtoEncoding;
-        this.value = value;
-        this.offset = offset;
+        this.target = Objects.requireNonNull(target, "target");
+        this.reader = Objects.requireNonNull(reader, "reader");
     }
 
     @Override
     public String getMessage() {
-        return "Failed to read " + target.getName() + " from " + dtoEncoding +
-            " source; the following issue occurred when reading '" + value +
-            "' at source offset " + offset + ": " + super.getMessage();
+        final var message = super.getMessage();
+        return "Failed to read " + target + " from " + reader.encoding() +
+            " source" + (message != null ? ": " + message : "");
     }
 
     /**
@@ -76,29 +68,11 @@ public class DtoReadException extends Exception {
     }
 
     /**
-     * Gets encoding used when reading DTO class.
+     * Gets DTO reader that threw this exception.
      *
-     * @return Used DTO encoding.
+     * @return Throwing DTO reader.
      */
-    public DtoEncoding dtoEncoding() {
-        return dtoEncoding;
-    }
-
-    /**
-     * Gets the value read while this exception was thrown.
-     *
-     * @return Offending source value.
-     */
-    public String value() {
-        return value;
-    }
-
-    /**
-     * Gets the source offset at which the offending value is located.
-     *
-     * @return Offending value source offset.
-     */
-    public int offset() {
-        return offset;
+    public DtoReader reader() {
+        return reader;
     }
 }

@@ -1,9 +1,10 @@
 package se.arkalix.dto.json._internal;
 
-import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadException;
+import se.arkalix.dto.DtoReadUnexpectedToken;
 import se.arkalix.dto.DtoReadable;
 import se.arkalix.dto.binary.BinaryReader;
+import se.arkalix.dto.json.JsonEncoding;
 import se.arkalix.dto.json.value.*;
 import se.arkalix.util.annotation.Internal;
 
@@ -27,7 +28,7 @@ public final class JsonTokenizer {
 
     public static JsonTokenBuffer tokenize(final BinaryReader source) throws DtoReadException {
         final var tokenizer = new JsonTokenizer(source);
-        if (tokenizer.tokenizeRoot()) {
+        if (tokenizer.tokenizeValue()) {
             return new JsonTokenBuffer(tokenizer.tokens, source);
         }
         throw tokenizer.error;
@@ -47,7 +48,13 @@ public final class JsonTokenizer {
     private void saveCandidateAsError(final Class<? extends DtoReadable> class_, final String message) {
         final var buffer = new byte[source.readOffset() - p0];
         source.getBytes(p0, buffer);
-        error = new DtoReadException(class_, DtoEncoding.JSON, message, new String(buffer, StandardCharsets.UTF_8), p0);
+        error = new DtoReadUnexpectedToken(
+            class_,
+            JsonEncoding.instance(),
+            message,
+            new String(buffer, StandardCharsets.UTF_8),
+            p0
+        );
     }
 
     private void discardWhitespace() {
@@ -61,19 +68,6 @@ public final class JsonTokenizer {
         discardCandidate();
     }
 
-    private boolean tokenizeRoot() {
-        discardWhitespace();
-
-        switch (source.readByteOrZero()) {
-        case '{': return tokenizeObject();
-        case '[': return tokenizeArray();
-        default:
-            saveCandidateAsError(JsonObject.class, "JSON root not object or array");
-            return false;
-        }
-    }
-
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean tokenizeValue() {
         discardWhitespace();
 
@@ -324,7 +318,7 @@ public final class JsonTokenizer {
             case '\r':
             case '\n':
             case ' ':
-               break expand;
+                break expand;
 
             default:
                 source.skipByte();

@@ -1,6 +1,5 @@
 package se.arkalix.net.http.consumer._internal;
 
-import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadable;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpStatus;

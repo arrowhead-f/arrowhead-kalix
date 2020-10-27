@@ -1,9 +1,9 @@
 package se.arkalix.net._internal;
 
 import se.arkalix.net.Encoding;
-import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoWritable;
 import se.arkalix.net.MessageOutgoing;
+import se.arkalix.net.ToEncoding;
 
 import java.nio.charset.Charset;
 import java.nio.file.Path;
@@ -41,16 +41,16 @@ public abstract class DefaultMessageOutgoing<Self> implements MessageOutgoing<Se
     }
 
     @Override
-    public Self body(final DtoEncoding encoding, final DtoWritable data) {
+    public Self body(final ToEncoding encoding, final DtoWritable data) {
         return bodyUnsafe(encoding, data);
     }
 
     @Override
-    public <L extends List<? extends DtoWritable>> Self body(final DtoEncoding encoding, final L data) {
+    public <L extends List<? extends DtoWritable>> Self body(final ToEncoding encoding, final L data) {
         return bodyUnsafe(encoding, data);
     }
 
-    protected Self bodyUnsafe(final DtoEncoding encoding, final Object data) {
+    protected Self bodyUnsafe(final ToEncoding encoding, final Object data) {
         charset = null;
         this.encoding = encoding != null ? Encoding.get(encoding) : null;
         body = data;

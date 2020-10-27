@@ -1,6 +1,5 @@
 package se.arkalix.net;
 
-import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoWritable;
 import se.arkalix.dto.DtoWritableAs;
 
@@ -51,7 +50,7 @@ public interface MessageOutgoing<Self> extends Message {
      * @throws NullPointerException If {@code data} is {@code null}.
      * @see DtoWritableAs @DtoWritableAs
      */
-    Self body(final DtoEncoding encoding, final DtoWritable data);
+    Self body(final ToEncoding encoding, final DtoWritable data);
 
     /**
      * Sets outgoing message body, replacing any previously set such.
@@ -70,7 +69,7 @@ public interface MessageOutgoing<Self> extends Message {
      * @throws NullPointerException If {@code data} is {@code null}.
      * @see DtoWritableAs @DtoWritableAs
      */
-    default Self body(final DtoEncoding encoding, final DtoWritable... data) {
+    default Self body(final ToEncoding encoding, final DtoWritable... data) {
         return body(encoding, List.of(data));
     }
 
@@ -92,7 +91,7 @@ public interface MessageOutgoing<Self> extends Message {
      * @throws NullPointerException If {@code data} is {@code null}.
      * @see DtoWritableAs @DtoWritableAs
      */
-    <L extends List<? extends DtoWritable>> Self body(final DtoEncoding encoding, final L data);
+    <L extends List<? extends DtoWritable>> Self body(final ToEncoding encoding, final L data);
 
     /**
      * Sets outgoing message body, replacing any previously set such.

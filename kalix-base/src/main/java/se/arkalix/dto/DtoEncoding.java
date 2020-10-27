@@ -1,48 +1,27 @@
 package se.arkalix.dto;
 
-import se.arkalix.dto.json.JsonReader;
-import se.arkalix.dto.json.JsonWriter;
-
-import java.util.Objects;
-
 /**
- * Enumerates the encodings that can be read and written by the Kalix
- * {@link se.arkalix.dto DTO} package.
+ * Contains names of all encoding implementations that are provided by a Kalix
+ * package.
+ * <p>
+ * These names are suitable as arguments to the {@link
+ * DtoReadableAs @DtoReadableAs} and {@link DtoWritableAs @DtoWritableAs}
+ * annotations.
+ *
+ * @see se.arkalix.dto
  */
-public enum DtoEncoding {
+public final class DtoEncoding {
+    private DtoEncoding() {}
+
     /**
      * JavaScript Object Notation (JSON).
      *
+     * This variable is suitable as arguments to the {@link
+     * DtoReadableAs @DtoReadableAs} and {@link DtoWritableAs @DtoWritableAs}
+     * annotations.
+     *
+     * @see se.arkalix.dto.json.JsonEncoding JsonEncoding
      * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
      */
-    JSON(JsonReader.instance(), JsonWriter.instance()),
-    ;
-
-    private final DtoReader reader;
-    private final DtoWriter writer;
-
-    DtoEncoding(final DtoReader reader, final DtoWriter writer) {
-        this.reader = Objects.requireNonNull(reader, "reader");
-        this.writer = Objects.requireNonNull(writer, "writer");
-    }
-
-    /**
-     * Gets {@link DtoReader} useful for decoding objects encoded with this DTO
-     * encoding.
-     *
-     * @return DTO reader.
-     */
-    public DtoReader reader() {
-        return reader;
-    }
-
-    /**
-     * Gets {@link DtoWriter} useful for encoded objects with this DTO
-     * encoding.
-     *
-     * @return DTO writer.
-     */
-    public DtoWriter writer() {
-        return writer;
-    }
+    String JSON = "se.arkalix.dto.json.JsonEncoding";
 }

@@ -1,6 +1,7 @@
 package se.arkalix.dto;
 
 import se.arkalix.dto.binary.BinaryReader;
+import se.arkalix.net.Encoding;
 
 import java.util.List;
 
@@ -9,6 +10,13 @@ import java.util.List;
  * sources representing their contents with a specific encoding.
  */
 public interface DtoReader {
+    /**
+     * Encoding read by this DTO reader.
+     *
+     * @return Read encoding.
+     */
+    Encoding encoding();
+
     /**
      * Reads one encoded value from {@code source}.
      *

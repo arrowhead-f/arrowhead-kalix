@@ -27,7 +27,7 @@ public class DtoImplementerJson implements DtoImplementer {
     private int level = 0;
 
     @Override
-    public DtoEncoding encoding() {
+    public String encoding() {
         return DtoEncoding.JSON;
     }
 

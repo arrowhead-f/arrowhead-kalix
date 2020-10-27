@@ -1,10 +1,11 @@
 package se.arkalix.net._internal;
 
 import io.netty.buffer.*;
-import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadException;
 import se.arkalix.dto.DtoReadable;
 import se.arkalix.dto.binary._internal.ByteBufReader;
+import se.arkalix.net.Encoding;
+import se.arkalix.net.ToEncoding;
 import se.arkalix.util.Result;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.concurrent.FutureProgress;
@@ -124,13 +125,13 @@ public abstract class NettyBodyIncoming<V> implements FutureProgress<V> {
 
     static class As<V extends DtoReadable> extends Buffered<V> {
         private final Class<V> class_;
-        private final DtoEncoding encoding;
+        private final Encoding encoding;
 
         public As(
             final ByteBufAllocator alloc,
             final int expectedLength,
             final Class<V> class_,
-            final DtoEncoding encoding
+            final Encoding encoding
         ) {
             super(alloc, expectedLength);
             this.class_ = class_;
@@ -168,13 +169,13 @@ public abstract class NettyBodyIncoming<V> implements FutureProgress<V> {
 
     static class AsList<V extends DtoReadable> extends Buffered<List<V>> {
         private final Class<V> class_;
-        private final DtoEncoding encoding;
+        private final Encoding encoding;
 
         public AsList(
             final ByteBufAllocator alloc,
             final int expectedLength,
             final Class<V> class_,
-            final DtoEncoding encoding
+            final Encoding encoding
         ) {
             super(alloc, expectedLength);
             this.class_ = class_;

@@ -1,6 +1,5 @@
 package se.arkalix.dto.json._internal;
 
-import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadException;
 import se.arkalix.dto.binary.BinaryReader;
 import se.arkalix.dto.json.value.JsonString;

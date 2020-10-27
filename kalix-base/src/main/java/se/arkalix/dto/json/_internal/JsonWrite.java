@@ -1,8 +1,8 @@
 package se.arkalix.dto.json._internal;
 
-import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoWriteException;
 import se.arkalix.dto.binary.BinaryWriter;
+import se.arkalix.dto.json.JsonEncoding;
 import se.arkalix.util.annotation.Internal;
 
 import java.math.BigDecimal;
@@ -52,8 +52,8 @@ public final class JsonWrite {
 
     public static void write(final double number, final BinaryWriter target) throws DtoWriteException {
         if (!Double.isFinite(number)) {
-            throw new DtoWriteException(DtoEncoding.JSON, "NaN, +Infinify and " +
-                "-Infinity cannot be represented in JSON");
+            throw new DtoWriteException(JsonEncoding.instance(), number, "" +
+                "NaN, +Infinify and -Infinity cannot be represented as JSON");
         }
         target.write(Double.toString(number)
             .getBytes(StandardCharsets.ISO_8859_1));

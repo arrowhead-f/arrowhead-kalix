@@ -93,7 +93,7 @@ class DefaultHttpConsumerConnection implements HttpConsumerConnection {
                 request.headers().setIfEmpty(ACCEPT, HttpMediaTypes.toMediaType(encoding));
             }
             else if (body instanceof DtoWritable || body instanceof List) {
-                final var dtoEncoding = encoding.asDto()
+                final var dtoEncoding = encoding.reader()
                     .orElseThrow(() -> new MessageEncodingUnsupported(request, encoding));
 
                 if (body instanceof DtoWritable) {

@@ -1,7 +1,6 @@
 package se.arkalix.net.http.consumer;
 
 import se.arkalix.net.Encoding;
-import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoWritable;
 import se.arkalix.net.MessageOutgoingWithImplicitEncoding;
 import se.arkalix.net.http.HttpHeaders;

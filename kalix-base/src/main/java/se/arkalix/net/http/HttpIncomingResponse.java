@@ -1,8 +1,8 @@
 package se.arkalix.net.http;
 
-import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadable;
 import se.arkalix.net.MessageException;
+import se.arkalix.net.ToEncoding;
 import se.arkalix.util.concurrent.Future;
 
 import java.util.List;
@@ -51,7 +51,7 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
      * been fully received and decoded into an instance of {@code class_}.
      * @throws IllegalStateException If the body has already been requested.
      */
-    default <R extends DtoReadable> Future<R> bodyAsIfSuccess(final DtoEncoding encoding, final Class<R> class_) {
+    default <R extends DtoReadable> Future<R> bodyAsIfSuccess(final ToEncoding encoding, final Class<R> class_) {
         if (status().isSuccess()) {
             return bodyAs(encoding, class_);
         }
@@ -95,7 +95,7 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
      * been fully received and decoded into an instance of {@code class_}.
      * @throws IllegalStateException If the body has already been requested.
      */
-    default <R extends DtoReadable> Future<List<R>> bodyAsListIfSuccess(final DtoEncoding encoding, final Class<R> class_) {
+    default <R extends DtoReadable> Future<List<R>> bodyAsListIfSuccess(final ToEncoding encoding, final Class<R> class_) {
         if (status().isSuccess()) {
             return bodyAsList(encoding, class_);
         }
@@ -149,7 +149,7 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
      * This method is primarily intended to be used when receiving messages
      * that contain unexpected status codes and no response body is expected.
      * If a response body <i>is</i> expected, please use
-     * {@link #bodyAsIfSuccess(DtoEncoding, Class)} instead. If the
+     * {@link #bodyAsIfSuccess(ToEncoding, Class)} instead. If the
      * reason behind the rejection requires more explanation, please use
      * {@link #rejectIfNotSuccess(String)} instead.
      *
@@ -170,7 +170,7 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
      * This method is primarily intended to be used when receiving messages
      * that contain unexpected status codes and no response body is expected.
      * If a response body <i>is</i> expected, please use
-     * {@link #bodyAsIfSuccess(DtoEncoding, Class)} instead.
+     * {@link #bodyAsIfSuccess(ToEncoding, Class)} instead.
      *
      * @param reason Description of what expectations this request fails to
      *               fulfill.

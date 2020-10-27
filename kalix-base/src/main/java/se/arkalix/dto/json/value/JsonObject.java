@@ -1,6 +1,5 @@
 package se.arkalix.dto.json.value;
 
-import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoExclusive;
 import se.arkalix.dto.DtoReadException;
 import se.arkalix.dto.DtoWriteException;

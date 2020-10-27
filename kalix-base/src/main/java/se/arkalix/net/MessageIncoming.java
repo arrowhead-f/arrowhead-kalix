@@ -1,6 +1,5 @@
 package se.arkalix.net;
 
-import se.arkalix.dto.DtoEncoding;
 import se.arkalix.dto.DtoReadable;
 import se.arkalix.util.concurrent.FutureProgress;
 
@@ -38,7 +37,7 @@ public interface MessageIncoming extends Message {
      * @throws IllegalStateException If the body has already been requested.
      */
     default <R extends DtoReadable> FutureProgress<R> bodyAs(final Class<R> class_) {
-        return bodyAs(encodingAsDtoOrThrow(), class_);
+        return bodyAs(encoding().orElseThrow(() -> new MessageEncodingUnspecified(this)), class_);
     }
 
     /**
@@ -60,7 +59,7 @@ public interface MessageIncoming extends Message {
      * received and then decoded into an instance of {@code class_}.
      * @throws IllegalStateException If the body has already been requested.
      */
-    <R extends DtoReadable> FutureProgress<R> bodyAs(final DtoEncoding encoding, final Class<R> class_);
+    <R extends DtoReadable> FutureProgress<R> bodyAs(final ToEncoding encoding, final Class<R> class_);
 
     /**
      * Requests that the incoming message body be collected into a regular Java
@@ -99,7 +98,7 @@ public interface MessageIncoming extends Message {
      * @throws IllegalStateException If the body has already been requested.
      */
     default <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(final Class<R> class_) {
-        return bodyAsList(encodingAsDtoOrThrow(), class_);
+        return bodyAsList(encoding().orElseThrow(() -> new MessageEncodingUnspecified(this)), class_);
     }
 
     /**
@@ -122,7 +121,7 @@ public interface MessageIncoming extends Message {
      * received and then decoded into instances of {@code class_}.
      * @throws IllegalStateException If the body has already been requested.
      */
-    <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(final DtoEncoding encoding, final Class<R> class_);
+    <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(final ToEncoding encoding, final Class<R> class_);
 
     /**
      * Requests that the incoming message body be collected into a regular Java
@@ -235,21 +234,4 @@ public interface MessageIncoming extends Message {
      * @throws IllegalStateException If the body has already been requested.
      */
     FutureProgress<Path> bodyTo(final Path path, boolean append);
-
-    /**
-     * Resolves the {@link DtoEncoding} from the {@link #encoding() encoding
-     * associated with this message}, or throws an exception if the operation
-     * fails.
-     *
-     * @return DTO variant of message encoding.
-     * @throws MessageException If resolving DTO encoding from this message
-     *                          fails.
-     */
-    default DtoEncoding encodingAsDtoOrThrow() {
-        final var encoding = encoding()
-            .orElseThrow(() -> new MessageEncodingUnspecified(this));
-
-        return encoding.asDto()
-            .orElseThrow(() -> new MessageEncodingUnsupported(this, encoding));
-    }
 }

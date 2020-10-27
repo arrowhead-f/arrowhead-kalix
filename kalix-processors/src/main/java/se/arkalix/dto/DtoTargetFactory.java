@@ -42,8 +42,8 @@ public class DtoTargetFactory {
 
         final var readable = interfaceElement.getAnnotation(DtoReadableAs.class);
         final var writable = interfaceElement.getAnnotation(DtoWritableAs.class);
-        final var readableEncodings = readable != null ? readable.value() : new DtoEncoding[0];
-        final var writableEncodings = writable != null ? writable.value() : new DtoEncoding[0];
+        final var readableEncodings = readable != null ? readable.value() : new String[0];
+        final var writableEncodings = writable != null ? writable.value() : new String[0];
         Arrays.sort(readableEncodings);
         Arrays.sort(writableEncodings);
 
@@ -81,8 +81,8 @@ public class DtoTargetFactory {
     }
 
     private void verifyAnyExclusivityConstraints(
-        final DtoEncoding[] readable,
-        final DtoEncoding[] writable,
+        final String[] readable,
+        final String[] writable,
         final ExecutableElement executable) throws DtoException
     {
         final var type = executable.getReturnType();
