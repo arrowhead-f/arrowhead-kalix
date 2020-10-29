@@ -19,8 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
-
 @Internal
 public class NettyHttpServiceRequest extends NettyMessageIncoming implements HttpServiceRequest {
     private final HttpServiceConnection connection;
@@ -35,9 +33,8 @@ public class NettyHttpServiceRequest extends NettyMessageIncoming implements Htt
 
     private NettyHttpServiceRequest(final Builder builder) {
         super(
-            builder.alloc,
-            Objects.requireNonNull(builder.request, "Expected request")
-                .headers().getInt(CONTENT_LENGTH, 0));
+            builder.alloc
+        );
         connection = Objects.requireNonNull(builder.connection, "Expected connection");
         queryStringDecoder = Objects.requireNonNull(builder.queryStringDecoder, "Expected queryStringDecoder");
         request = builder.request;

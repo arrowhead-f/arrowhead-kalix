@@ -2,7 +2,7 @@ package se.arkalix.dto.json;
 
 import se.arkalix.dto.DtoWritable;
 import se.arkalix.dto.DtoWriteException;
-import se.arkalix.dto.binary.BinaryWriter;
+import se.arkalix.encoding.binary.BinaryWriter;
 
 /**
  * Represents a type that can be written as JSON.

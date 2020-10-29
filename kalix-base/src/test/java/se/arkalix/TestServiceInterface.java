@@ -1,4 +1,4 @@
-package se.arkalix.name;
+package se.arkalix;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;

@@ -1,7 +1,7 @@
 package se.arkalix.net.http.service;
 
 import se.arkalix.ArService;
-import se.arkalix.net.Encoding;
+import se.arkalix.encoding.Encoding;
 import se.arkalix.net.Transport;
 import se.arkalix._internal.ArServerRegistry;
 import se.arkalix.net.http.service._internal.HttpServer;

@@ -1,13 +1,15 @@
 package se.arkalix.net;
 
-import se.arkalix.dto.DtoWritable;
-import se.arkalix.dto.DtoWritableAs;
+import se.arkalix.encoding.Encoding;
+import se.arkalix.encoding.MultiEncodable;
 
-import java.util.List;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
- * An outgoing network message not explicitly required to have its encoding
- * specified when its body is being a {@link DtoWritable}.
+ * An outgoing network message not always required to always have its body
+ * encoding specified.
  * <p>
  * That an outgoing message type implements this interface indicates that its
  * sender is able to assign the message a suitable encoding even if none is
@@ -17,56 +19,44 @@ import java.util.List;
  */
 public interface MessageOutgoingWithImplicitEncoding<Self> extends MessageOutgoing<Self> {
     /**
-     * Sets outgoing message body, replacing any previously set such.
+     * Sets given {@code encodable} as outgoing message body.
      * <p>
-     * The provided writable data transfer object is scheduled for encoding and
-     * transmission to the message receiver. An attempt will be made to resolve
-     * a suitable encoding automatically. Please refer to the Javadoc for the
-     * {@code @DtoWritableAs} annotation for more information about writable
-     * data transfer objects.
+     * An attempt will be made to automatically resolve a suitable encoding for
+     * the {@code encodable}. If the attempt fails the message will not be sent.
      *
-     * @param data Data transfer object to send to message receiver.
+     * @param encodable Object to use, in encoded form, as message body.
      * @return This message.
-     * @throws NullPointerException If {@code data} is {@code null}.
-     * @see DtoWritableAs @DtoWritableAs
+     * @throws NullPointerException If {@code encoding} or {@code encodable} is
+     *                              {@code null}.
      */
-    default Self body(final DtoWritable data) {
-        return body(null, data);
+    default Self body(final MultiEncodable encodable) {
+        Objects.requireNonNull(encodable, "encodable");
+        return body(BodyOutgoing.create(writer -> {
+            final var encoding0 = encoding().orElseThrow(() -> new MessageEncodingUnspecified(this));
+            encodable.encodeUsing(writer, encoding0);
+            return Optional.of(encoding0);
+        }));
     }
 
     /**
-     * Sets outgoing message body, replacing any previously set such.
+     * Sets given {@code string} as outgoing message body.
      * <p>
-     * The provided array of writable data transfer objects is scheduled for
-     * encoding and transmission to the message receiver. An attempt will be
-     * made to resolve a suitable encoding automatically. Please refer to the
-     * Javadoc for the {@code @DtoWritableAs} annotation for more information
-     * about writable data transfer objects.
-     *
-     * @param data Array of data transfer objects to send to message receiver.
-     * @return This message.
-     * @throws NullPointerException If {@code data} is {@code null}.
-     * @see DtoWritableAs @DtoWritableAs
-     */
-    default Self body(final DtoWritable... data) {
-        return body(null, data);
-    }
-
-    /**
-     * Sets outgoing message body, replacing any previously set such.
+     * An attempt will be made to automatically resolve a suitable encoding for
+     * the {@code string}. If it fails UTF-8 will be used by default.
      * <p>
-     * The provided list of writable data transfer objects is scheduled for
-     * encoding and transmission to the message receiver. An attempt will be
-     * made to resolve a suitable encoding automatically. Please refer to the
-     * Javadoc for the {@code @DtoWritableAs} annotation for more information
-     * about writable data transfer objects.
+     * It becomes the responsibility of the caller to ensure that the message
+     * receiver knows how to interpret the body.
      *
-     * @param data List of data transfer objects to send to message receiver.
+     * @param string String to send to message receiver.
      * @return This message.
-     * @throws NullPointerException If {@code data} is {@code null}.
-     * @see DtoWritableAs @DtoWritableAs
+     * @throws NullPointerException If {@code string} is {@code null}.
      */
-    default <L extends List<? extends DtoWritable>> Self body(final L data) {
-        return body(null, data);
+    default Self body(final String string) {
+        return body(BodyOutgoing.create(writer -> {
+            writer.write(string.getBytes(encoding()
+                .flatMap(Encoding::charset)
+                .orElse(StandardCharsets.UTF_8)));
+            return Optional.empty();
+        }));
     }
 }

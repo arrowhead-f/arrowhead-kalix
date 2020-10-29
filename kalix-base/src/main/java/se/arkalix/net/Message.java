@@ -1,6 +1,7 @@
 package se.arkalix.net;
 
-import java.nio.charset.Charset;
+import se.arkalix.encoding.Encoding;
+
 import java.util.Optional;
 
 /**
@@ -8,16 +9,11 @@ import java.util.Optional;
  */
 public interface Message {
     /**
-     * Character set used to encode the contents of this message, if specified.
-     *
-     * @return Message character set, if specified.
-     */
-    Optional<Charset> charset();
-
-    /**
      * Encoding used to encode the contents of this message, if specified.
      *
      * @return Message encoding, if specified.
+     * @throws MessageEncodingInvalid If a message encoding is specified in the
+     *                                message, but it cannot be interpreted.
      */
     Optional<Encoding> encoding();
 }

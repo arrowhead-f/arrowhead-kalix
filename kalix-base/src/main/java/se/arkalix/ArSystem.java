@@ -132,7 +132,7 @@ public interface ArSystem extends SystemRecordWithIdentity {
      * has, or has considered to, consume.
      */
     @ThreadSafe
-    ArServiceDescriptionCache consumedServices();
+    ArServiceRecordCache consumedServices();
 
     /**
      * Registers given {@code service} with this system, eventually making it
@@ -389,10 +389,10 @@ public interface ArSystem extends SystemRecordWithIdentity {
         }
 
         /**
-         * Sets {@link ArServiceDescriptionCache service cache} to be used by
+         * Sets {@link ArServiceRecordCache service cache} to be used by
          * this system for storing information about remote services of
          * interest. If not provided, a such with a {@link
-         * ArServiceDescriptionCache#withDefaultEntryLifetimeLimit() default
+         * ArServiceRecordCache#withDefaultEntryLifetimeLimit() default
          * entry expiration time} will be used.
          * <p>
          * After system instance creation, the cache will be available via the
@@ -401,7 +401,7 @@ public interface ArSystem extends SystemRecordWithIdentity {
          * @param serviceCache Desired service cache.
          * @return This builder.
          */
-        public Builder serviceCache(final ArServiceDescriptionCache serviceCache) {
+        public Builder serviceCache(final ArServiceRecordCache serviceCache) {
             inner.serviceCache(serviceCache);
             return this;
         }

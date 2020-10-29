@@ -1,4 +1,4 @@
-package se.arkalix.dto.binary;
+package se.arkalix.encoding.binary;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;

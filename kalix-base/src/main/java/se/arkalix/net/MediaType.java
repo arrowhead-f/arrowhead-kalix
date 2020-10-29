@@ -1,15 +1,28 @@
-package se.arkalix.net.media;
+package se.arkalix.net;
 
-import se.arkalix.net.Encoding;
-import se.arkalix.net.ToEncoding;
+import se.arkalix.encoding.Encoding;
+import se.arkalix.encoding.ToEncoding;
 
+import java.nio.charset.Charset;
 import java.util.*;
 
+/**
+ * An IETF RFC 6838/4855 Media type specifier.
+ * <p>
+ * Media type specifiers differ from {@link Encoding} instances in two major
+ * ways. Firstly, each media type always specifies a major type, which
+ * classifies the described as a member of a abstract type category. Secondly,
+ * they can include so-called <i>type parameters</i>, which allow for
+ * additional type information to be specified, such as used character sets.
+ *
+ * @see <a href="https://tools.ietf.org/html/rfc6838">IETF RFC 6838</a>
+ * @see <a href="https://tools.ietf.org/html/rfc4855">IETF RFC 4855</a>
+ * @see <a href="https://www.iana.org/assignments/media-types/media-types.xhtml">IANA Media Types Registry</a>
+ */
 public final class MediaType implements ToEncoding {
     private final String original;
 
     private final String type;
-    private final String facets;
     private final String subtype;
     private final String suffix;
     private final Map<String, String> parameters;
@@ -19,7 +32,6 @@ public final class MediaType implements ToEncoding {
     private MediaType(
         final String original,
         final String type,
-        final String facets,
         final String subtype,
         final String suffix,
         final Map<String, String> parameters,
@@ -27,29 +39,61 @@ public final class MediaType implements ToEncoding {
     ) {
         this.original = original;
         this.type = Objects.requireNonNull(type);
-        this.facets = facets;
         this.subtype = Objects.requireNonNull(subtype);
         this.suffix = suffix;
         this.parameters = Objects.requireNonNullElse(parameters, Collections.emptyMap());
         this.encoding = encoding;
     }
 
+    /**
+     * Major type category, such as "application", "text", "model", "font" or
+     * "image".
+     *
+     * @return Type.
+     * @see <a href="https://www.iana.org/assignments/media-types/media-types.xhtml">IANA Media Types Registry</a>
+     */
     public String type() {
         return type;
     }
 
+    /**
+     * Subtype, excluding any trailing suffix.
+     * <p>
+     * For example, given the following media types, the highlighted regions
+     * will be treated as subtypes:
+     * <pre>
+     * application/senml+json
+     *             ^^^^^
+     * application/vnd.apple.pages
+     *             ^^^^^^^^^^^^^^^
+     * text/html; charset=utf-16
+     *      ^^^^
+     * </pre>
+     *
+     * @return Subtype.
+     * @see <a href="https://tools.ietf.org/html/rfc6838#section-4.2">IETF RFC 6838, Section 4.2</a>
+     */
     public String subtype() {
         return subtype;
     }
 
-    public Optional<String> facets() {
-        return Optional.ofNullable(facets);
-    }
-
+    /**
+     * Subtype suffix, if any.
+     * <p>
+     * The suffix, if present, is intended to identity the structural encoding
+     * of the subtype, as in "application/senml+xml", where the suffix is "xml".
+     *
+     * @return Subtype suffix, if any.
+     */
     public Optional<String> suffix() {
         return Optional.ofNullable(suffix);
     }
 
+    /**
+     * Type parameters.
+     *
+     * @return Type parameters associated with this type.
+     */
     public Map<String, String> parameters() {
         return parameters;
     }
@@ -64,13 +108,22 @@ public final class MediaType implements ToEncoding {
         return original;
     }
 
+    /**
+     * Creates or looks up {@link MediaType} from given {@code string}.
+     *
+     * @param string String to interpret as media type.
+     * @return Cached or new {@link MediaType}.
+     * @throws NullPointerException If {@code string} is {@code null}.
+     */
     public static MediaType valueOf(final String string) {
+        Objects.requireNonNull(string, "string");
+
         String error = null;
         error:
         {
             final int s4 = string.length();
-            // s0 = end of type, s1 = end of facets, s2 = start of suffix, s3 = end of subtype
-            int s0 = 0, s1 = 0, s2 = 0, s3 = 0;
+            // s0 = end of type, s1 = start of suffix, s2 = end of subtype
+            int s0 = 0, s1 = 0, s2 = 0, s3;
 
             // Type.
             char ch;
@@ -107,15 +160,14 @@ public final class MediaType implements ToEncoding {
                 while (sx < s4) {
                     ch = string.charAt(sx);
                     if (ch == '.') {
-                        s1 = sx;
                         continue outer;
                     }
                     if (ch == '+') {
-                        s2 = sx;
+                        s1 = sx;
                         break outer;
                     }
                     if (ch == ';' || isWhitespace(ch)) {
-                        s3 = sx;
+                        s2 = sx;
                         break outer;
                     }
                     if (isNotRestrictedNameChar(ch)) {
@@ -127,15 +179,16 @@ public final class MediaType implements ToEncoding {
             }
 
             // Suffix.
-            if (s2 != 0) {
-                outer: while (s3 < s4) {
-                    ch = string.charAt(s3++);
+            if (s1 != 0) {
+                outer:
+                while (s2 < s4) {
+                    ch = string.charAt(s2++);
                     if (isNotRestrictedNameFirst(ch)) {
                         error = "Invalid suffix lead character '" + ch + "'";
                         break error;
                     }
-                    while (s3 < s4) {
-                        ch = string.charAt(s3);
+                    while (s2 < s4) {
+                        ch = string.charAt(s2);
                         if (ch == ';' || isWhitespace(ch)) {
                             break outer;
                         }
@@ -143,58 +196,31 @@ public final class MediaType implements ToEncoding {
                             error = "Invalid suffix character '" + ch + "'";
                             break error;
                         }
-                        s3++;
+                        s2++;
                     }
                 }
-                if (s3 - s2 == 0) {
+                if (s2 - s1 == 0) {
                     error = "Empty suffixes not permitted";
                     break error;
                 }
             }
 
             final String type;
-            final String facets;
             final String subtype;
             final String suffix;
-            final Encoding encoding;
 
             type = string.substring(0, s0 - 1);
             if (s1 == 0) {
-                facets = null;
-                if (s2 == 0) {
-                    subtype = string.substring(s0, s3);
-                    suffix = null;
-                }
-                else {
-                    subtype = string.substring(s0, s2);
-                    suffix = string.substring(s2, s3);
-                }
+                subtype = string.substring(s0, s2);
+                suffix = null;
             }
             else {
-                facets = string.substring(s0, s1);
-                if (s2 == 0) {
-                    subtype = string.substring(s1, s3);
-                    suffix = null;
-                }
-                else {
-                    subtype = string.substring(s1, s2);
-                    suffix = string.substring(s2, s3);
-                }
-            }
-
-            if (suffix == null) {
-                if (subtype.regionMatches(true, subtype.length() - 4, "-exi", 0, 4)) {
-                    encoding = Encoding.EXI;
-                }
-                else {
-                    encoding = Encoding.getOrCreate(subtype);
-                }
-            }
-            else {
-                encoding = Encoding.getOrCreate(suffix);
+                subtype = string.substring(s0, s1);
+                suffix = string.substring(s1, s2);
             }
 
             final Map<String, String> parameters;
+            s3 = s2;
             if (s3 < s4) {
 
                 // s0 = start of parameter name, s1 = end of parameter name, s3 = start of value, s4 = end of value
@@ -264,10 +290,34 @@ public final class MediaType implements ToEncoding {
                 parameters = Collections.unmodifiableMap(parameters0);
             }
             else {
-                parameters = null;
+                parameters = Collections.emptyMap();
             }
 
-            return new MediaType(string, type, facets, subtype, suffix, parameters, encoding);
+            final Encoding encoding;
+            encoding:
+            if (suffix == null) {
+                if (subtype.regionMatches(true, subtype.length() - 4, "-exi", 0, 4)) {
+                    encoding = Encoding.EXI;
+                    break encoding;
+                }
+                final var encoding0 = Encoding.getOrCreate(subtype);
+                if (!encoding0.isRegistered() && type.equalsIgnoreCase("text") && subtype.equalsIgnoreCase("plain")) {
+                    var charset = parameters.get("charset");
+                    if (charset != null) {
+                        charset = charset.trim().toUpperCase();
+                        if (Charset.isSupported(charset)) {
+                            encoding = Encoding.getOrRegister(Charset.forName(charset));
+                            break encoding;
+                        }
+                    }
+                }
+                encoding = encoding0;
+            }
+            else {
+                encoding = Encoding.getOrCreate(suffix);
+            }
+
+            return new MediaType(string, type, subtype, suffix, parameters, encoding);
         }
         if (error == null) {
             error = "Expected '<type>/<subtype>[;<parameter-name>=<parameter-value>]*'; got '" + string + "'";

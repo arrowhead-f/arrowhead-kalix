@@ -2,7 +2,7 @@ package se.arkalix.net.http;
 
 import se.arkalix.dto.DtoReadable;
 import se.arkalix.net.MessageException;
-import se.arkalix.net.ToEncoding;
+import se.arkalix.encoding.ToEncoding;
 import se.arkalix.util.concurrent.Future;
 
 import java.util.List;

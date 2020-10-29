@@ -3,7 +3,7 @@ package se.arkalix._internal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.ArService;
-import se.arkalix.ArServiceDescriptionCache;
+import se.arkalix.ArServiceRecordCache;
 import se.arkalix.ArServiceHandle;
 import se.arkalix.ArSystem;
 import se.arkalix.SystemRecord;
@@ -38,7 +38,7 @@ public class DefaultSystem implements ArSystem {
     private final SchedulerShutdownListener schedulerShutdownListener;
     private final PluginNotifier pluginNotifier;
 
-    private final ArServiceDescriptionCache consumedServices;
+    private final ArServiceRecordCache consumedServices;
     private final Map<Class<? extends ArService>, FutureAnnouncement<ArServer>> servers = new ConcurrentHashMap<>();
 
     private final SystemRecord description;
@@ -88,7 +88,7 @@ public class DefaultSystem implements ArSystem {
             : null, localSocketAddress);
 
         consumedServices = Objects.requireNonNullElseGet(builder.serviceCache,
-            ArServiceDescriptionCache::withDefaultEntryLifetimeLimit);
+            ArServiceRecordCache::withDefaultEntryLifetimeLimit);
 
         scheduler = Schedulers.fixed();
         schedulerShutdownListener = (scheduler) -> shutdown()
@@ -200,7 +200,7 @@ public class DefaultSystem implements ArSystem {
     }
 
     @Override
-    public ArServiceDescriptionCache consumedServices() {
+    public ArServiceRecordCache consumedServices() {
         return consumedServices;
     }
 
@@ -304,7 +304,7 @@ public class DefaultSystem implements ArSystem {
         private TrustStore trustStore;
         private boolean isSecure = true;
         private Collection<Plugin> plugins;
-        private ArServiceDescriptionCache serviceCache;
+        private ArServiceRecordCache serviceCache;
 
         public void name(final String name) {
             this.name = name;
@@ -361,7 +361,7 @@ public class DefaultSystem implements ArSystem {
             this.isSecure = false;
         }
 
-        public void serviceCache(final ArServiceDescriptionCache serviceCache) {
+        public void serviceCache(final ArServiceRecordCache serviceCache) {
             this.serviceCache = serviceCache;
         }
 

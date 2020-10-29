@@ -1,6 +1,6 @@
 package se.arkalix._internal;
 
-import se.arkalix.ArServiceDescriptionCache;
+import se.arkalix.ArServiceRecordCache;
 import se.arkalix.ServiceRecord;
 import se.arkalix.util.annotation.Internal;
 
@@ -11,11 +11,11 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Stream;
 
 @Internal
-public class DefaultServiceDescriptionCache implements ArServiceDescriptionCache {
+public class DefaultServiceRecordCache implements ArServiceRecordCache {
     private final ConcurrentSkipListSet<ServiceRecord> services = new ConcurrentSkipListSet<>();
     private final Duration entryLifetimeLimit;
 
-    public DefaultServiceDescriptionCache(final Duration entryLifetimeLimit) {
+    public DefaultServiceRecordCache(final Duration entryLifetimeLimit) {
         this.entryLifetimeLimit = Objects.requireNonNull(entryLifetimeLimit, "Expected entryLifetimeLimit");
     }
 

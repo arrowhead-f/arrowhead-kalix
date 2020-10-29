@@ -1,7 +1,7 @@
 package se.arkalix.dto;
 
-import se.arkalix.dto.binary.BinaryReader;
-import se.arkalix.net.Encoding;
+import se.arkalix.encoding.binary.BinaryReader;
+import se.arkalix.encoding.Encoding;
 
 import java.util.List;
 

@@ -3,12 +3,12 @@ package se.arkalix.dto.json;
 import se.arkalix.dto.*;
 import se.arkalix.dto._internal.DtoReaders;
 import se.arkalix.dto._internal.UncheckedDtoException;
-import se.arkalix.dto.binary.BinaryReader;
-import se.arkalix.dto.binary.BinaryWriter;
+import se.arkalix.encoding.binary.BinaryReader;
+import se.arkalix.encoding.binary.BinaryWriter;
 import se.arkalix.dto.json._internal.JsonTokenBuffer;
 import se.arkalix.dto.json._internal.JsonTokenizer;
 import se.arkalix.dto.json.value.JsonType;
-import se.arkalix.net.Encoding;
+import se.arkalix.encoding.Encoding;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -25,6 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
  */
 public class JsonEncoding implements DtoReader, DtoWriter {
+    private static final byte[] EMPTY_ARRAY = new byte[]{'[', ']'};
+
     private static final Map<Class<? extends DtoReadable>, Method> readMethods = new ConcurrentHashMap<>();
     private static final JsonEncoding instance = new JsonEncoding();
 
@@ -114,18 +116,19 @@ public class JsonEncoding implements DtoReader, DtoWriter {
     public <U extends DtoWritable> void writeMany(final List<U> values, final BinaryWriter target)
         throws DtoWriteException
     {
-        final var isNonEmpty = !values.isEmpty();
-        if (isNonEmpty && !(values.get(0) instanceof JsonWritable)) {
+        if (values == null || values.isEmpty()) {
+            target.write(EMPTY_ARRAY);
+            return;
+        }
+        if (!(values.get(0) instanceof JsonWritable)) {
             throw new DtoWriterNotImplemented(this, values.get(0), JsonWritable.class);
         }
         target.write((byte) '[');
-        if (isNonEmpty) {
-            final var t1 = values.size();
-            ((JsonWritable) values.get(0)).writeJson(target);
-            for (var t0 = 1; t0 < t1; ++t0) {
-                target.write((byte) ',');
-                ((JsonWritable) values.get(t0)).writeJson(target);
-            }
+        final var t1 = values.size();
+        ((JsonWritable) values.get(0)).writeJson(target);
+        for (var t0 = 1; t0 < t1; ++t0) {
+            target.write((byte) ',');
+            ((JsonWritable) values.get(t0)).writeJson(target);
         }
         target.write((byte) ']');
     }

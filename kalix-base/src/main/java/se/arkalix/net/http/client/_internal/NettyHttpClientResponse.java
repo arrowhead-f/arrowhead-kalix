@@ -13,7 +13,6 @@ import se.arkalix.util.annotation.Internal;
 
 import java.util.Objects;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static se.arkalix.net.http._internal.NettyHttpConverters.convert;
 
 @Internal
@@ -32,8 +31,7 @@ public class NettyHttpClientResponse extends NettyMessageIncoming implements Htt
         final HttpClientRequest request,
         final HttpResponse inner
     ) {
-        super(alloc, Objects.requireNonNull(inner, "Expected inner")
-            .headers().getInt(CONTENT_LENGTH, 0));
+        super(alloc);
         this.connection = Objects.requireNonNull(connection, "Expected connection");
         this.request = Objects.requireNonNull(request, "Expected request");
         this.inner = inner;

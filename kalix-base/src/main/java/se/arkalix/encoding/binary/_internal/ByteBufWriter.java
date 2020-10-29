@@ -1,6 +1,6 @@
-package se.arkalix.dto.binary._internal;
+package se.arkalix.encoding.binary._internal;
 
-import se.arkalix.dto.binary.BinaryWriter;
+import se.arkalix.encoding.binary.BinaryWriter;
 import se.arkalix.util.annotation.Internal;
 import io.netty.buffer.ByteBuf;
 

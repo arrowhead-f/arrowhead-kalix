@@ -12,7 +12,7 @@ import se.arkalix.core.plugin.sr.ServiceQueryBuilder;
 import se.arkalix.core.plugin.sr.ServiceRegistration;
 import se.arkalix.SystemRecord;
 import se.arkalix.ServiceRecord;
-import se.arkalix.net.Encoding;
+import se.arkalix.encoding.Encoding;
 import se.arkalix.ServiceInterface;
 import se.arkalix.security.identity._internal.X509Keys;
 import se.arkalix.net.http.client.HttpClient;

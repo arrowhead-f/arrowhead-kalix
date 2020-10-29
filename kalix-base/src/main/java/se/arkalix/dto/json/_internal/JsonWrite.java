@@ -1,7 +1,7 @@
 package se.arkalix.dto.json._internal;
 
 import se.arkalix.dto.DtoWriteException;
-import se.arkalix.dto.binary.BinaryWriter;
+import se.arkalix.encoding.binary.BinaryWriter;
 import se.arkalix.dto.json.JsonEncoding;
 import se.arkalix.util.annotation.Internal;
 

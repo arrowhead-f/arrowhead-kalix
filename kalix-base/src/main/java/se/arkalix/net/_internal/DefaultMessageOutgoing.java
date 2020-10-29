@@ -1,25 +1,22 @@
 package se.arkalix.net._internal;
 
-import se.arkalix.net.Encoding;
-import se.arkalix.dto.DtoWritable;
+import se.arkalix.encoding.Encoding;
+import se.arkalix.net.BodyOutgoing;
 import se.arkalix.net.MessageOutgoing;
-import se.arkalix.net.ToEncoding;
+import se.arkalix.util.annotation.Internal;
 
-import java.nio.charset.Charset;
-import java.nio.file.Path;
-import java.util.List;
 import java.util.Optional;
 
+@Internal
 public abstract class DefaultMessageOutgoing<Self> implements MessageOutgoing<Self> {
-    private Object body;
-    private Charset charset;
+    private BodyOutgoing body;
     private Encoding encoding;
 
     protected abstract Self self();
 
-    @Override
-    public Optional<Charset> charset() {
-        return Optional.ofNullable(charset);
+    protected Self encoding(final Encoding encoding) {
+        this.encoding = encoding;
+        return self();
     }
 
     @Override
@@ -28,57 +25,13 @@ public abstract class DefaultMessageOutgoing<Self> implements MessageOutgoing<Se
     }
 
     @Override
-    public Optional<Object> body() {
+    public Optional<BodyOutgoing> body() {
         return Optional.ofNullable(body);
     }
 
     @Override
-    public Self body(final byte[] byteArray) {
-        body = byteArray;
-        charset = null;
-        encoding = null;
-        return self();
-    }
-
-    @Override
-    public Self body(final ToEncoding encoding, final DtoWritable data) {
-        return bodyUnsafe(encoding, data);
-    }
-
-    @Override
-    public <L extends List<? extends DtoWritable>> Self body(final ToEncoding encoding, final L data) {
-        return bodyUnsafe(encoding, data);
-    }
-
-    protected Self bodyUnsafe(final ToEncoding encoding, final Object data) {
-        charset = null;
-        this.encoding = encoding != null ? Encoding.get(encoding) : null;
-        body = data;
-
-        return self();
-    }
-
-    @Override
-    public Self body(final Path path) {
-        body = path;
-        charset = null;
-        encoding = null;
-        return self();
-    }
-
-    @Override
-    public Self body(final Charset charset, final String string) {
-        body = string;
-        this.charset = charset;
-        encoding = null;
-        return self();
-    }
-
-    @Override
-    public Self clearBody() {
-        body = null;
-        charset = null;
-        encoding = null;
+    public Self body(final BodyOutgoing body) {
+        this.body = body;
         return self();
     }
 }

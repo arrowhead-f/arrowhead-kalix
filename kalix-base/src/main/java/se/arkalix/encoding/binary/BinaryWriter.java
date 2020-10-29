@@ -1,4 +1,4 @@
-package se.arkalix.dto.binary;
+package se.arkalix.encoding.binary;
 
 /**
  * Represents an object useful for <i>writing</i> binary data.

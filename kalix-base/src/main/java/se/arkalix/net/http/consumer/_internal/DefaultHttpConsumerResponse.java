@@ -9,7 +9,6 @@ import se.arkalix.net.http.consumer.HttpConsumerConnection;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
 import se.arkalix.net.http.consumer.HttpConsumerResponse;
 import se.arkalix.util.annotation.Internal;
-import se.arkalix.util.concurrent.FutureProgress;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;

@@ -1,6 +1,6 @@
 package se.arkalix.net.http._internal;
 
-import se.arkalix.net.Encoding;
+import se.arkalix.encoding.Encoding;
 import se.arkalix.util.annotation.Internal;
 
 import java.util.List;

@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.ArSystem;
 import se.arkalix.SystemRecordWithIdentity;
-import se.arkalix.net.Encoding;
+import se.arkalix.encoding.Encoding;
 import se.arkalix.dto.DtoReadException;
 import se.arkalix.dto.DtoWriteException;
 import se.arkalix.net._internal.NettyBodyOutgoing;
@@ -239,7 +239,7 @@ public class NettyHttpServiceConnection
         if (kalixRequest == null) {
             return;
         }
-        kalixRequest.append(content);
+        kalixRequest.write(content);
         if (content instanceof LastHttpContent) {
             kalixRequest.headers().unwrap().add(((LastHttpContent) content).trailingHeaders());
             kalixRequest.finish();

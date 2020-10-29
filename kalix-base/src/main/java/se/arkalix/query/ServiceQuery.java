@@ -4,7 +4,7 @@ import se.arkalix.ArConsumer;
 import se.arkalix.ArConsumerFactory;
 import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
-import se.arkalix.net.Encoding;
+import se.arkalix.encoding.Encoding;
 import se.arkalix.net.Transport;
 import se.arkalix.util.Result;
 import se.arkalix.util.concurrent.Future;

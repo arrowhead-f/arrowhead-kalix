@@ -1,5 +1,8 @@
 package se.arkalix.net;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Objects;
 
 /**
@@ -7,11 +10,14 @@ import java.util.Objects;
  * <p>
  * As these exceptions are expected to be quite common, and are caused by
  * external rather than internal mistakes, <i>they do not produce stack
- * traces</i>. If an HTTP request causes an error that should generate a stack
- * trace, some other exception type should be used instead.
+ * traces unless debug-level logging is enabled for this class</i>. If an HTTP
+ * request causes an error that should always generate a stack trace, some
+ * other exception type should be used instead.
  */
 @SuppressWarnings("unused")
 public class MessageException extends RuntimeException {
+    private static final Logger logger = LoggerFactory.getLogger(MessageException.class);
+
     private final Message message;
 
     /**
@@ -41,7 +47,7 @@ public class MessageException extends RuntimeException {
      * @param cause       Exception causing this exception to be thrown.
      */
     public MessageException(final Message message, final String description, final Throwable cause) {
-        super(description, cause, true, false);
+        super(description, cause, true, logger.isDebugEnabled());
         this.message = Objects.requireNonNull(message);
     }
 

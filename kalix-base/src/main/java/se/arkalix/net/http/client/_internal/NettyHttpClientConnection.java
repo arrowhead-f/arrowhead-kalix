@@ -154,7 +154,7 @@ public class NettyHttpClientConnection
         if (incomingResponse == null) {
             return;
         }
-        incomingResponse.append(content);
+        incomingResponse.write(content);
         if (content instanceof LastHttpContent) {
             incomingResponse.headers().unwrap().add(((LastHttpContent) content).trailingHeaders());
             incomingResponse.finish();

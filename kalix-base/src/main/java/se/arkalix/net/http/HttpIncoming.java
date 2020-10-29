@@ -1,7 +1,7 @@
 package se.arkalix.net.http;
 
 import io.netty.handler.codec.http.HttpUtil;
-import se.arkalix.net.Encoding;
+import se.arkalix.encoding.Encoding;
 import se.arkalix.net.http._internal.HttpMediaTypes;
 import se.arkalix.net.MessageEncodingInvalid;
 import se.arkalix.net.MessageIncoming;

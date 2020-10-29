@@ -4,7 +4,7 @@ import se.arkalix.ArConsumer;
 import se.arkalix.ArConsumerFactory;
 import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
-import se.arkalix.net.Encoding;
+import se.arkalix.encoding.Encoding;
 import se.arkalix.net.Transport;
 import se.arkalix.net.Uris;
 import se.arkalix.net.http.consumer.HttpConsumer;
@@ -17,7 +17,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static se.arkalix.core.plugin._internal.HttpJsonServices.unwrapOptional;
-import static se.arkalix.net.Encoding.JSON;
+import static se.arkalix.encoding.Encoding.JSON;
 import static se.arkalix.net.Transport.HTTP;
 import static se.arkalix.net.http.HttpMethod.GET;
 

@@ -1,6 +1,6 @@
 package se.arkalix.net.http.consumer;
 
-import se.arkalix.net.Encoding;
+import se.arkalix.encoding.Encoding;
 import se.arkalix.dto.DtoWritable;
 import se.arkalix.net.MessageOutgoingWithImplicitEncoding;
 import se.arkalix.net.http.HttpHeaders;
@@ -106,8 +106,8 @@ public class HttpConsumerRequest
     }
 
     @Override
-    public HttpConsumerRequest body(final Charset charset, final String string) {
-        inner.body(charset, string);
+    public HttpConsumerRequest body(final String string, final Charset charset) {
+        inner.body(string, charset);
         return this;
     }
 

@@ -89,4 +89,4 @@
  */
 package se.arkalix.net.http.service;
 
-import se.arkalix.net.Encoding;
+import se.arkalix.encoding.Encoding;

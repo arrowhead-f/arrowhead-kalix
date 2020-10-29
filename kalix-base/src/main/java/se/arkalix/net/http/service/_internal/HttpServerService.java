@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import se.arkalix.ArService;
 import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
-import se.arkalix.net.Encoding;
+import se.arkalix.encoding.Encoding;
 import se.arkalix.net.Uris;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.service.*;

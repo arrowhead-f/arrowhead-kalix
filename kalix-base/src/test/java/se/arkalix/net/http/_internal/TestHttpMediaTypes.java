@@ -3,7 +3,7 @@ package se.arkalix.net.http._internal;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import se.arkalix.net.Encoding;
+import se.arkalix.encoding.Encoding;
 
 import java.util.Arrays;
 import java.util.Collections;

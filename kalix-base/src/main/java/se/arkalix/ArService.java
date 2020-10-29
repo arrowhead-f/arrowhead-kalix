@@ -1,6 +1,6 @@
 package se.arkalix;
 
-import se.arkalix.net.Encoding;
+import se.arkalix.encoding.Encoding;
 import se.arkalix.net.Transport;
 import se.arkalix.security.access.AccessPolicy;
 

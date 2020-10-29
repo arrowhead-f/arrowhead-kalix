@@ -2,7 +2,7 @@ package se.arkalix.net.http.consumer._internal;
 
 import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
-import se.arkalix.net.Encoding;
+import se.arkalix.encoding.Encoding;
 import se.arkalix.security.access.AccessType;
 import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.consumer.HttpConsumer;

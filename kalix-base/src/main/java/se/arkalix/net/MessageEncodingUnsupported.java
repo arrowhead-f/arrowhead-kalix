@@ -1,5 +1,8 @@
 package se.arkalix.net;
 
+import se.arkalix.encoding.Encoding;
+import se.arkalix.encoding.EncodingUnsupported;
+
 import java.util.Objects;
 
 /**
@@ -12,12 +15,13 @@ public class MessageEncodingUnsupported extends MessageException {
     /**
      * Creates new exception.
      *
-     * @param message  Offending message.
-     * @param encoding Unsupported encoding.
+     * @param message Offending message.
+     * @param cause   Unsupported encoding exception causing this exception to
+     *                be thrown.
      */
-    public MessageEncodingUnsupported(final Message message, final Encoding encoding) {
-        super(message);
-        this.encoding = Objects.requireNonNull(encoding);
+    public MessageEncodingUnsupported(final Message message, final EncodingUnsupported cause) {
+        super(message, cause);
+        this.encoding = Objects.requireNonNull(cause).encoding();
     }
 
     /**

@@ -6,7 +6,6 @@ import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpIncomingRequest;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.net.http.HttpVersion;
-import se.arkalix.util.concurrent.FutureProgress;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;
