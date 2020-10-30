@@ -23,5 +23,5 @@ public final class DtoEncoding {
      * @see se.arkalix.dto.json.JsonEncoding JsonEncoding
      * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
      */
-    String JSON = "se.arkalix.dto.json.JsonEncoding";
+    public static final String JSON = "se.arkalix.dto.json.JsonEncoding";
 }

@@ -6,6 +6,7 @@ import se.arkalix.net._internal.NettyMessageIncoming;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.HttpVersion;
+import se.arkalix.net.http._internal.NettyHttpHeaders;
 import se.arkalix.net.http.client.HttpClientConnection;
 import se.arkalix.net.http.client.HttpClientRequest;
 import se.arkalix.net.http.client.HttpClientResponse;
@@ -26,12 +27,12 @@ public class NettyHttpClientResponse extends NettyMessageIncoming implements Htt
     private HttpVersion version = null;
 
     public NettyHttpClientResponse(
-        final ByteBufAllocator alloc,
+        final ByteBufAllocator allocator,
         final HttpClientConnection connection,
         final HttpClientRequest request,
         final HttpResponse inner
     ) {
-        super(alloc);
+        super(allocator);
         this.connection = Objects.requireNonNull(connection, "Expected connection");
         this.request = Objects.requireNonNull(request, "Expected request");
         this.inner = inner;
@@ -40,7 +41,7 @@ public class NettyHttpClientResponse extends NettyMessageIncoming implements Htt
     @Override
     public HttpHeaders headers() {
         if (headers == null) {
-            headers = new HttpHeaders(inner.headers());
+            headers = new NettyHttpHeaders(inner.headers());
         }
         return headers;
     }
@@ -75,5 +76,9 @@ public class NettyHttpClientResponse extends NettyMessageIncoming implements Htt
     @Override
     public HttpClientConnection connection() {
         return connection;
+    }
+
+    public HttpResponse unwrap() {
+        return inner;
     }
 }

@@ -1,15 +1,16 @@
-package se.arkalix.net.http;
+package se.arkalix.net.http._internal;
 
 import org.junit.jupiter.api.Test;
+import se.arkalix.net.http._internal.NettyHttpHeaders;
 
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class TestHttpHeaders {
+public class TestNettyHttpHeaders {
     @Test
     void shouldIgnoreNameCase() {
-        final var headers = new HttpHeaders()
+        final var headers = new NettyHttpHeaders()
             .set("Content-Type", "application/json")
             .set("Accept-Charset", "utf-8");
 

@@ -7,8 +7,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Description of how to assemble the body to be sent with some outgoing
- * message.
+ * Describes how the body to be sent with some outgoing message is to be
+ * produced.
  */
 public interface BodyOutgoing {
     /**
@@ -22,12 +22,12 @@ public interface BodyOutgoing {
         Objects.requireNonNull(encodable, "encodable");
         return new BodyOutgoing() {
             @Override
-            public Optional<Encodable> encodable() {
+            public Optional<Encodable> asEncodable() {
                 return Optional.of(encodable);
             }
 
             @Override
-            public Optional<Path> path() {
+            public Optional<Path> asPath() {
                 return Optional.empty();
             }
         };
@@ -44,12 +44,12 @@ public interface BodyOutgoing {
         Objects.requireNonNull(path, "path");
         return new BodyOutgoing() {
             @Override
-            public Optional<Encodable> encodable() {
+            public Optional<Encodable> asEncodable() {
                 return Optional.empty();
             }
 
             @Override
-            public Optional<Path> path() {
+            public Optional<Path> asPath() {
                 return Optional.of(path);
             }
         };
@@ -60,12 +60,12 @@ public interface BodyOutgoing {
      *
      * @return Set encodable, if any.
      */
-    Optional<Encodable> encodable();
+    Optional<Encodable> asEncodable();
 
     /**
      * Gets {@link Path} pointing to file set as outgoing message body, if any.
      *
      * @return Set path, if any.
      */
-    Optional<Path> path();
+    Optional<Path> asPath();
 }

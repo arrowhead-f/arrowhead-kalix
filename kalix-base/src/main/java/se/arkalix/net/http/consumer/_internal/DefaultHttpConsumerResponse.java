@@ -1,6 +1,6 @@
 package se.arkalix.net.http.consumer._internal;
 
-import se.arkalix.dto.DtoReadable;
+import se.arkalix.net.BodyIncoming;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.HttpVersion;
@@ -10,10 +10,6 @@ import se.arkalix.net.http.consumer.HttpConsumerRequest;
 import se.arkalix.net.http.consumer.HttpConsumerResponse;
 import se.arkalix.util.annotation.Internal;
 
-import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.nio.file.Path;
-import java.util.List;
 import java.util.Objects;
 
 @Internal
@@ -64,36 +60,7 @@ public class DefaultHttpConsumerResponse implements HttpConsumerResponse {
     }
 
     @Override
-    public <R extends DtoReadable> FutureProgress<R> bodyAs(
-        final DtoEncoding encoding, final Class<R> class_
-    ) {
-        return inner.bodyAs(encoding, class_);
-    }
-
-    @Override
-    public FutureProgress<byte[]> bodyAsByteArray() {
-        return inner.bodyAsByteArray();
-    }
-
-    @Override
-    public <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(
-        final DtoEncoding encoding, final Class<R> class_
-    ) {
-        return inner.bodyAsList(encoding, class_);
-    }
-
-    @Override
-    public FutureProgress<? extends InputStream> bodyAsStream() {
-        return inner.bodyAsStream();
-    }
-
-    @Override
-    public FutureProgress<String> bodyAsString(final Charset charset) {
-        return inner.bodyAsString(charset);
-    }
-
-    @Override
-    public FutureProgress<Path> bodyTo(final Path path, final boolean append) {
-        return inner.bodyTo(path, append);
+    public BodyIncoming body() {
+        return inner.body();
     }
 }

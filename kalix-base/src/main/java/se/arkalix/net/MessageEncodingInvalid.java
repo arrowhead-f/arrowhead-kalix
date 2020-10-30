@@ -16,8 +16,19 @@ public class MessageEncodingInvalid extends MessageException {
      * @param encoding Unexpectedly formatted encoding.
      */
     public MessageEncodingInvalid(final Message message, final Object encoding) {
-        super(message);
-        this.encoding = Objects.requireNonNull(encoding);
+        this(message, encoding, null);
+    }
+
+    /**
+     * Creates new exception.
+     *
+     * @param message  Offending message.
+     * @param encoding Unexpectedly formatted encoding.
+     * @param cause    Description of formatting error, if any.
+     */
+    public MessageEncodingInvalid(final Message message, final Object encoding, final Throwable cause) {
+        super(message, cause);
+        this.encoding = Objects.requireNonNull(encoding, "encoding");
     }
 
     /**

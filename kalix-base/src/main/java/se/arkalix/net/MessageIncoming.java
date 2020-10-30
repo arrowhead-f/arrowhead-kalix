@@ -3,11 +3,13 @@ package se.arkalix.net;
 import se.arkalix.encoding.Decoder;
 import se.arkalix.encoding.MultiDecoder;
 import se.arkalix.encoding.Encoding;
+import se.arkalix.encoding.ToEncoding;
 import se.arkalix.util.concurrent.Future;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Objects;
 
 /**
  * An incoming network message.
@@ -33,8 +35,10 @@ public interface MessageIncoming extends Message {
      * @return Future completed when the incoming message body has been fully
      * received and decoded.
      * @throws IllegalStateException If the body has already been consumed.
+     * @throws NullPointerException  If {@code decoder} is {@code null}.
      */
     default <T> Future<T> bodyAs(final Decoder<T> decoder) {
+        Objects.requireNonNull(decoder, "decoder");
         return body()
             .buffer()
             .map(decoder::decode);
@@ -42,9 +46,8 @@ public interface MessageIncoming extends Message {
 
     /**
      * Collects and then converts the incoming message body using the provided
-     * {@code decoder} selector, which will attempt to select an appropriate
-     * decoder function from any {@link #encoding() encoding} specified in the
-     * message.
+     * {@code decoder}, which will attempt to select an appropriate decoder
+     * function from any {@link #encoding() encoding} specified in the message.
      * <p>
      * Calling this method consumes the body associated with this message. Any
      * further attempts to consume the body will cause exceptions to be thrown.
@@ -61,12 +64,38 @@ public interface MessageIncoming extends Message {
      *                                    message is not supported by the given
      *                                    {@code decoder}.
      * @throws IllegalStateException      If the body has already been consumed.
+     * @throws NullPointerException       If {@code decoder} is {@code null}.
      */
     default <T> Future<T> bodyAs(final MultiDecoder<T> decoder) {
-        final var encoding = encoding().orElseThrow(() -> new MessageEncodingUnspecified(this));
+        return bodyAs(decoder, encoding().orElseThrow(() -> new MessageEncodingUnspecified(this)));
+    }
+
+    /**
+     * Collects and then converts the incoming message body using the provided
+     * {@code decoder}, which will attempt to select an appropriate decoder
+     * function from any {@link #encoding() encoding} specified in the message.
+     * <p>
+     * Calling this method consumes the body associated with this message. Any
+     * further attempts to consume the body will cause exceptions to be thrown.
+     *
+     * @param <T>     Type produced by given {@code decoder}, if successful.
+     * @param decoder Function to use for decoding the message body.
+     * @return Future completed when the incoming message body has been fully
+     * received and decoded.
+     * @throws MessageEncodingUnsupported If the given encoding is not
+     *                                    supported by the given {@code
+     *                                    decoder}.
+     * @throws IllegalStateException      If the body has already been consumed.
+     * @throws NullPointerException       If {@code decoder} or {@code encoding}
+     *                                    is {@code null}.
+     */
+    default <T> Future<T> bodyAs(final MultiDecoder<T> decoder, final ToEncoding encoding) {
+        Objects.requireNonNull(decoder, "decoder");
+        Objects.requireNonNull(encoding, "encoding");
+        final var encoding0 = encoding.toEncoding();
         return body()
             .buffer()
-            .map(reader -> decoder.decodeUsing(reader, encoding));
+            .map(reader -> decoder.decodeUsing(reader, encoding0));
     }
 
     /**
@@ -107,6 +136,7 @@ public interface MessageIncoming extends Message {
      */
     default Future<String> bodyAsString() {
         return bodyAsString(encoding()
+            .map(ToEncoding::toEncoding)
             .flatMap(Encoding::charset)
             .orElse(StandardCharsets.UTF_8));
     }
@@ -121,8 +151,10 @@ public interface MessageIncoming extends Message {
      * @return Future completed when the incoming message body becomes has been
      * fully collected into a {@code String}.
      * @throws IllegalStateException If the body has already been requested.
+     * @throws NullPointerException  If {@code charset} is {@code null}.
      */
     default Future<String> bodyAsString(final Charset charset) {
+        Objects.requireNonNull(charset, "charset");
         return bodyAsByteArray().map(bytes -> new String(bytes, charset));
     }
 
@@ -150,6 +182,7 @@ public interface MessageIncoming extends Message {
      * incoming message body is fully received and written to the file at that
      * path.
      * @throws IllegalStateException If the body has already been requested.
+     * @throws NullPointerException  If {@code path} is {@code null}.
      */
     default Future<?> writeTo(final Path path, boolean append) {
         return body().writeTo(path, append);
@@ -175,6 +208,7 @@ public interface MessageIncoming extends Message {
      * incoming message body is fully received and written to the file at that
      * path.
      * @throws IllegalStateException If the body has already been requested.
+     * @throws NullPointerException  If {@code path} is {@code null}.
      */
     default Future<?> writeTo(final Path path) {
         return body().writeTo(path);

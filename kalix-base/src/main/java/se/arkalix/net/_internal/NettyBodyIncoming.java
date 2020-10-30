@@ -15,8 +15,7 @@ public class NettyBodyIncoming implements BodyIncoming, NettyBodyReceiver {
     private final ByteBufAllocator allocator;
 
     private NettyBodyReceiver receiver;
-    private boolean isRequested = false;
-    private boolean isReceived = false;
+    private boolean isDone = true;
 
     public NettyBodyIncoming(final ByteBufAllocator allocator) {
         this.allocator = Objects.requireNonNull(allocator, "allocator");
@@ -29,7 +28,7 @@ public class NettyBodyIncoming implements BodyIncoming, NettyBodyReceiver {
         }
         final var receiver = new NettyBodyReceiverBuffered(allocator);
         this.receiver = receiver;
-        isRequested = true;
+        isDone = false;
         return receiver;
     }
 
@@ -40,16 +39,12 @@ public class NettyBodyIncoming implements BodyIncoming, NettyBodyReceiver {
         }
         final var receiver = new NettyBodyReceiverFileWriter(path, append);
         this.receiver = receiver;
-        isRequested = true;
+        isDone = false;
         return receiver;
     }
 
-    public boolean isRequested() {
-        return isRequested;
-    }
-
-    public boolean isReceived() {
-        return isReceived;
+    public boolean isDone() {
+        return isDone || receiver.isCancelled();
     }
 
     @Override
@@ -59,7 +54,7 @@ public class NettyBodyIncoming implements BodyIncoming, NettyBodyReceiver {
 
     @Override
     public void abort(final Throwable cause) {
-        isReceived = true;
+        isDone = true;
         receiver.abort(cause);
     }
 
@@ -70,7 +65,7 @@ public class NettyBodyIncoming implements BodyIncoming, NettyBodyReceiver {
 
     @Override
     public void close() {
-        isReceived = true;
+        isDone = true;
         receiver.close();
     }
 }

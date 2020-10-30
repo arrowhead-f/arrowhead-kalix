@@ -15,30 +15,6 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class TestHttpMediaTypes {
     @ParameterizedTest
-    @MethodSource("matchingContentTypeEncodingArguments")
-    void shouldProduceCompatibleEncoding(
-        final String contentType,
-        final Encoding expected
-    ) {
-        final var actual = HttpMediaTypes.encodingFromContentType(contentType);
-        assertTrue(actual.isPresent());
-        assertEquals(expected, actual.get());
-    }
-
-    static Stream<Arguments> matchingContentTypeEncodingArguments() {
-        return Stream.of(
-            arguments("application/json", Encoding.JSON),
-            arguments("application/json; charset=utf-8", Encoding.JSON),
-            arguments("application/senml-exi", Encoding.EXI),
-            arguments("application/jose+json", Encoding.JSON),
-            arguments("text/xml; charset=utf-8", Encoding.XML),
-            arguments("text/html; charset=utf-16", Encoding.getOrCreate("html")),
-            arguments("application/sensml+xml", Encoding.XML),
-            arguments("application/senml+cbor", Encoding.CBOR)
-        );
-    }
-
-    @ParameterizedTest
     @MethodSource("compatibleContentTypeEncodingArguments")
     void shouldFindCompatibleEncoding(
         final String contentType,

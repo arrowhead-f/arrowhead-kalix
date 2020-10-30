@@ -3,6 +3,7 @@ package se.arkalix.net;
 import se.arkalix.encoding.Encoding;
 import se.arkalix.encoding.MultiEncodable;
 
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
@@ -32,8 +33,11 @@ public interface MessageOutgoingWithImplicitEncoding<Self> extends MessageOutgoi
     default Self body(final MultiEncodable encodable) {
         Objects.requireNonNull(encodable, "encodable");
         return body(BodyOutgoing.create(writer -> {
-            final var encoding0 = encoding().orElseThrow(() -> new MessageEncodingUnspecified(this));
+            final var encoding0 = encoding()
+                .orElseThrow(() -> new MessageEncodingUnspecified(this));
+
             encodable.encodeUsing(writer, encoding0);
+
             return Optional.of(encoding0);
         }));
     }
@@ -53,10 +57,19 @@ public interface MessageOutgoingWithImplicitEncoding<Self> extends MessageOutgoi
      */
     default Self body(final String string) {
         return body(BodyOutgoing.create(writer -> {
-            writer.write(string.getBytes(encoding()
-                .flatMap(Encoding::charset)
-                .orElse(StandardCharsets.UTF_8)));
-            return Optional.empty();
+            Encoding encoding = encoding().orElse(null);
+            Charset charset = null;
+
+            if (encoding != null) {
+                charset = encoding.charset().orElse(null);
+            }
+            if (charset == null) {
+                encoding = Encoding.UTF_8;
+                charset = StandardCharsets.UTF_8;
+            }
+
+            writer.write(string.getBytes(charset));
+            return Optional.of(encoding);
         }));
     }
 }

@@ -5,10 +5,11 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import se.arkalix.SystemRecordWithIdentity;
 import se.arkalix.net._internal.NettyMessageIncoming;
-import se.arkalix.net.http._internal.NettyHttpConverters;
 import se.arkalix.net.http.HttpHeaders;
+import se.arkalix.net.http._internal.NettyHttpConverters;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.net.http.HttpVersion;
+import se.arkalix.net.http._internal.NettyHttpHeaders;
 import se.arkalix.net.http.service.HttpServiceConnection;
 import se.arkalix.net.http.service.HttpServiceRequest;
 import se.arkalix.security.SecurityDisabled;
@@ -44,7 +45,7 @@ public class NettyHttpServiceRequest extends NettyMessageIncoming implements Htt
     @Override
     public HttpHeaders headers() {
         if (headers == null) {
-            headers = new HttpHeaders(request.headers());
+            headers = new NettyHttpHeaders(request.headers());
         }
         return headers;
     }
@@ -101,6 +102,10 @@ public class NettyHttpServiceRequest extends NettyMessageIncoming implements Htt
             version = NettyHttpConverters.convert(request.protocolVersion());
         }
         return version;
+    }
+
+    public HttpRequest unwrap() {
+        return request;
     }
 
     public static class Builder {

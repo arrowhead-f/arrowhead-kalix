@@ -2,9 +2,11 @@ package se.arkalix.net;
 
 import se.arkalix.encoding.Encoding;
 import se.arkalix.encoding.ToEncoding;
+import se.arkalix.util.annotation.ThreadSafe;
 
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An IETF RFC 6838/4855 Media type specifier.
@@ -20,6 +22,8 @@ import java.util.*;
  * @see <a href="https://www.iana.org/assignments/media-types/media-types.xhtml">IANA Media Types Registry</a>
  */
 public final class MediaType implements ToEncoding {
+    private static final ConcurrentHashMap<Encoding, MediaType> encodingToMediaType = new ConcurrentHashMap<>();
+
     private final String original;
 
     private final String type;
@@ -43,6 +47,73 @@ public final class MediaType implements ToEncoding {
         this.suffix = suffix;
         this.parameters = Objects.requireNonNullElse(parameters, Collections.emptyMap());
         this.encoding = encoding;
+    }
+
+    /**
+     * Gets cached media type matching given encoding, or creates a new one
+     * using a simple heuristic.
+     *
+     * @param encoding Encoding associated with desired media type.
+     * @return Existing encoding, if any matches {@code name}.
+     */
+    @ThreadSafe
+    public static Optional<MediaType> getOrCreate(final Encoding encoding) {
+        Objects.requireNonNull(encoding, "encoding");
+        final var mediaType = encodingToMediaType.get(encoding);
+        if (mediaType != null) {
+            return Optional.of(mediaType);
+        }
+
+        final String type;
+        final String subtype;
+        final String original;
+        final Map<String, String> parameters;
+
+        done:
+        {
+            if (!encoding.isGeneral() && encoding.isTextual()) {
+                type = "text";
+                final var charset = encoding.charset().orElse(null);
+                if (charset != null) {
+                    subtype = "plain";
+                    final var charsetName = charset.name().toLowerCase();
+                    original = "text/plain;charset=" + charsetName;
+                    parameters = Map.of("charset", charsetName);
+                    break done;
+                }
+            }
+            else {
+                type = "application";
+            }
+            subtype = encoding.name().toLowerCase();
+            original = type + "/" + subtype;
+            parameters = Map.of();
+        }
+
+        final var newMediaType = new MediaType(original, type, subtype, null, parameters, encoding);
+        final var oldMediaType = encodingToMediaType.putIfAbsent(encoding, newMediaType);
+
+        return Optional.of(oldMediaType == null ? newMediaType : oldMediaType);
+    }
+
+    /**
+     * Registers given media-type as the preferred match for the encoding it
+     * contains.
+     *
+     * @param mediaType Media type to register.
+     * @return Registered media type.
+     * @throws NullPointerException If {@code mediaType} is {@code null} or if
+     *                              {@code mediaType} does not have an
+     *                              associated encoding.
+     */
+    @ThreadSafe
+    public static MediaType register(final MediaType mediaType) {
+        Objects.requireNonNull(mediaType, "mediaType");
+        Objects.requireNonNull(mediaType.encoding, "mediaType.encoding()");
+
+        encodingToMediaType.put(mediaType.encoding, mediaType);
+
+        return mediaType;
     }
 
     /**
@@ -109,11 +180,154 @@ public final class MediaType implements ToEncoding {
     }
 
     /**
+     * Concise Binary Object Representation (CBOR).
+     *
+     * @see <a href="https://tools.ietf.org/html/rfc7049">RFC 7049</a>
+     */
+    public static final MediaType APPLICATION_CBOR = register(new MediaType("application/cbor",
+        "application",
+        "cbor",
+        null,
+        null,
+        Encoding.CBOR));
+
+    /**
+     * JavaScript Object Notation (JSON).
+     *
+     * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
+     */
+    public static final MediaType APPLICATION_JSON = register(new MediaType(
+        "application/json",
+        "application",
+        "json",
+        null,
+        null,
+        Encoding.JSON));
+
+    /**
+     * Extensible Markup Language (XML).
+     *
+     * @see <a href="https://www.w3.org/TR/xml">W3C XML 1.0</a>
+     * @see <a href="https://www.w3.org/TR/xml11">W3C XML 1.1</a>
+     */
+    public static final MediaType APPLICATION_XML = register(new MediaType(
+        "application/xml",
+        "application",
+        "xml",
+        null,
+        null,
+        Encoding.XML));
+
+    /**
+     * Efficient XML Interchange (EXI).
+     *
+     * @see <a href="https://www.w3.org/TR/exi/">W3C EXI 1.0</a>
+     */
+    public static final MediaType APPLICATION_EXI = register(new MediaType(
+        "application/exi",
+        "application",
+        "exi",
+        null,
+        null,
+        Encoding.EXI));
+
+    /**
+     * Cascading Style Sheets (CSS).
+     */
+    public static final MediaType TEXT_CSS = register(new MediaType(
+        "text/css",
+        "text",
+        "css",
+        null,
+        null,
+        Encoding.CSS));
+
+    /**
+     * Hyper-Text Markup Language (HTML).
+     */
+    public static final MediaType TEXT_HTML = register(new MediaType(
+        "text/html",
+        "text",
+        "html",
+        null,
+        null,
+        Encoding.HTML));
+
+    /**
+     * The Seven-bit ASCII or ISO-646-US character set, which is also the
+     * <i>Basic Latin</i> block of the Unicode character set.
+     */
+    public static final MediaType TEXT_PLAIN_US_ASCII = register(new MediaType(
+        "text/plain;charset=us-ascii",
+        "text",
+        "plain",
+        null,
+        Map.of("charset", "us-ascii"),
+        Encoding.US_ASCII));
+
+    /**
+     * The ISO-8869-1 or ISO-LATIN-1 character set.
+     */
+    public static final MediaType TEXT_PLAIN_ISO_8859_1 = register(new MediaType(
+        "text/plain;charset=iso-8859-1",
+        "text",
+        "plain",
+        null,
+        Map.of("charset", "iso-8859-1"),
+        Encoding.ISO_8859_1));
+
+    /**
+     * The UTF-8 Unicode character set.
+     */
+    public static final MediaType TEXT_PLAIN_UTF_8 = register(new MediaType(
+        "text/plain;charset=utf-8",
+        "text",
+        "plain",
+        null,
+        Map.of("charset", "utf-8"),
+        Encoding.UTF_8));
+
+    /**
+     * The UTF-16 Unicode character set, utilizing optional byte order marks to
+     * identity 16-bit token endianess.
+     */
+    public static final MediaType TEXT_PLAIN_UTF_16 = register(new MediaType(
+        "text/plain;charset=utf-16",
+        "text",
+        "plain",
+        null,
+        Map.of("charset", "utf-16"),
+        Encoding.UTF_16));
+
+    /**
+     * The UTF-16 Unicode character set with Big-Endian 16-bit tokens.
+     */
+    public static final MediaType TEXT_PLAIN_UTF16_BE = register(new MediaType(
+        "text/plain;charset=utf-16be",
+        "text",
+        "plain",
+        null,
+        Map.of("charset", "utf-16be"),
+        Encoding.UTF_16BE));
+
+    /**
+     * The UTF-16 Unicode character set with Little-Endian 16-bit tokens.
+     */
+    public static final MediaType TEXT_PLAIN_UTF16_LE = register(new MediaType(
+        "text/plain;charset=utf-16le",
+        "text",
+        "plain",
+        null,
+        Map.of("charset", "utf-16le"),
+        Encoding.UTF_16LE));
+
+    /**
      * Creates or looks up {@link MediaType} from given {@code string}.
      *
      * @param string String to interpret as media type.
      * @return Cached or new {@link MediaType}.
      * @throws NullPointerException If {@code string} is {@code null}.
+     * @see <a href="https://tools.ietf.org/html/rfc6838">IETF RFC 6838</a>
      */
     public static MediaType valueOf(final String string) {
         Objects.requireNonNull(string, "string");
@@ -320,7 +534,7 @@ public final class MediaType implements ToEncoding {
             return new MediaType(string, type, subtype, suffix, parameters, encoding);
         }
         if (error == null) {
-            error = "Expected '<type>/<subtype>[;<parameter-name>=<parameter-value>]*'; got '" + string + "'";
+            error = "expected '<type>/<subtype>[;<parameter-name>=<parameter-value>]*'; got '" + string + "'";
         }
         throw new IllegalArgumentException(error);
     }

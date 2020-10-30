@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.encoding.binary.BinaryReader;
 import se.arkalix.encoding.binary._internal.ByteBufReader;
+import se.arkalix.net.BodyIncoming;
 import se.arkalix.util.Result;
 import se.arkalix.util.concurrent.Future;
 
@@ -14,7 +15,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 public class NettyBodyReceiverBuffered implements NettyBodyReceiver, Future<BinaryReader> {
-    private static final Logger logger = LoggerFactory.getLogger(NettyBodyReceiverBuffered.class);
+    private static final Logger logger = LoggerFactory.getLogger(BodyIncoming.class);
 
     private final CompositeByteBuf buffer;
 

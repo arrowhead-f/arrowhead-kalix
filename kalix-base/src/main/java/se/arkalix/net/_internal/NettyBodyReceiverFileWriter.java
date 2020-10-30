@@ -3,6 +3,7 @@ package se.arkalix.net._internal;
 import io.netty.buffer.ByteBuf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.arkalix.net.BodyIncoming;
 import se.arkalix.util.Result;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;
@@ -15,7 +16,7 @@ import java.util.function.Consumer;
 
 @Internal
 public class NettyBodyReceiverFileWriter implements NettyBodyReceiver, Future<Long> {
-    private static final Logger logger = LoggerFactory.getLogger(NettyBodyReceiverFileWriter.class);
+    private static final Logger logger = LoggerFactory.getLogger(BodyIncoming.class);
 
     private boolean isCancelled = false;
     private Consumer<Result<Long>> consumer;

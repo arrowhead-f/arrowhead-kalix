@@ -6,6 +6,7 @@ import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.net.http.HttpOutgoingRequest;
 import se.arkalix.net.http.HttpVersion;
+import se.arkalix.net.http._internal.NettyHttpHeaders;
 
 import java.util.*;
 
@@ -16,7 +17,7 @@ public class HttpClientRequest
     extends DefaultMessageOutgoing<HttpClientRequest>
     implements HttpOutgoingRequest<HttpClientRequest>
 {
-    private final HttpHeaders headers = new HttpHeaders();
+    private final HttpHeaders headers = new NettyHttpHeaders();
     private final Map<String, List<String>> queryParameters = new HashMap<>();
 
     private HttpMethod method = null;

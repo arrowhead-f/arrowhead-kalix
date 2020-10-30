@@ -27,32 +27,14 @@ import static se.arkalix.net.Transport.HTTP;
  */
 public interface HttpConsumer extends ArConsumer {
     /**
-     * Creates new service consumer.
-     *
-     * @param system  Arrowhead system consuming {@code service}.
-     * @param service Service to be consumed.
-     * @throws NullPointerException     If {@code system} or {@code service} is
-     *                                  {@code null}.
-     * @throws IllegalArgumentException If the security modes of {@code system}
-     *                                  and {@code service} do not match (e.g.
-     *                                  the system is secure but the service is
-     *                                  not).
-     */
-    static HttpConsumer create(final ArSystem system, final ServiceRecord service) {
-        return create(system, service, null);
-    }
-
-    /**
      * Creates new service consumer, limiting itself to a subset of the
      * encodings supported by {@code service}.
      *
      * @param system    Arrowhead system consuming {@code service}.
      * @param service   Service to be consumed.
-     * @param encodings Supported request/response encodings. If specified as
-     *                  {@code null}, the encodings returned by
-     *                  {@link Encoding#allReadable()} are used.
-     * @throws NullPointerException     If {@code system} or {@code service} is
-     *                                  {@code null}.
+     * @param encodings Supported request/response encodings.
+     * @throws NullPointerException     If {@code system}, {@code service} or
+     *                                  {@code encodings} is {@code null}.
      * @throws IllegalArgumentException If the security modes of {@code system}
      *                                  and {@code service} do not match (e.g.
      *                                  the system is secure but the service is

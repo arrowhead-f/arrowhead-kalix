@@ -12,14 +12,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.ArSystem;
 import se.arkalix.SystemRecordWithIdentity;
-import se.arkalix.encoding.Encoding;
 import se.arkalix.dto.DtoReadException;
-import se.arkalix.dto.DtoWriteException;
+import se.arkalix.encoding.Encoding;
+import se.arkalix.net.MediaType;
 import se.arkalix.net._internal.NettyBodyOutgoing;
 import se.arkalix.net._internal.NettySimpleChannelInboundHandler;
+import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http._internal.HttpMediaTypes;
 import se.arkalix.net.http._internal.NettyHttpConverters;
-import se.arkalix.net.http.HttpStatus;
+import se.arkalix.net.http._internal.NettyHttpHeaders;
 import se.arkalix.net.http.service.HttpServiceConnection;
 import se.arkalix.net.http.service.HttpServiceRequestException;
 import se.arkalix.query.ServiceNotFoundException;
@@ -32,12 +33,10 @@ import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
-import static io.netty.handler.codec.http.HttpHeaderValues.TEXT_PLAIN;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static se.arkalix.net.http._internal.NettyHttpConverters.convert;
 import static se.arkalix.util.concurrent._internal.NettyFutures.adapt;
@@ -214,7 +213,7 @@ public class NettyHttpServiceConnection
 
         service
             .handle(this.kalixRequest, kalixResponse)
-            .ifSuccess(ignored -> sendKalixResponseAndCleanup(ctx, kalixResponse, defaultEncoding))
+            .ifSuccess(ignored -> sendKalixResponseAndCleanup(kalixResponse, defaultEncoding))
             .onFailure(fault -> {
                 if (fault instanceof HttpServiceRequestException) {
                     final var exception = (HttpServiceRequestException) fault;
@@ -239,19 +238,18 @@ public class NettyHttpServiceConnection
         if (kalixRequest == null) {
             return;
         }
-        kalixRequest.write(content);
+        final var body = kalixRequest.body();
+        body.write(content.content());
         if (content instanceof LastHttpContent) {
-            kalixRequest.headers().unwrap().add(((LastHttpContent) content).trailingHeaders());
-            kalixRequest.finish();
+            kalixRequest.unwrap().headers().add(((LastHttpContent) content).trailingHeaders());
             kalixRequest = null;
+            body.close();
         }
     }
 
-    private void sendKalixResponseAndCleanup(
-        final ChannelHandlerContext ctx,
-        final DefaultHttpServiceResponse response,
-        final Encoding defaultEncoding
-    ) throws DtoWriteException, IOException {
+    private void sendKalixResponseAndCleanup(final DefaultHttpServiceResponse response, final Encoding defaultEncoding)
+        throws IOException
+    {
         final var status = response.status()
             .orElseThrow(() -> new IllegalStateException("No HTTP status specified in service response"));
 
@@ -259,27 +257,19 @@ public class NettyHttpServiceConnection
         final var nettyVersion = response.version()
             .map(NettyHttpConverters::convert)
             .orElse(nettyRequest.protocolVersion());
-        final var nettyHeaders = response.headers().unwrap();
+        final var nettyHeaders = ((NettyHttpHeaders) response.headers()).unwrap();
+
+        final var body = NettyBodyOutgoing.from(response.body().orElse(null), channel.alloc());
+
+        if (!nettyHeaders.contains(CONTENT_LENGTH)) {
+            nettyHeaders.set(CONTENT_LENGTH, Long.toString(body.length()));
+        }
 
         HttpUtil.setKeepAlive(nettyHeaders, nettyVersion, !isClosing);
 
         if (!nettyHeaders.contains(CONTENT_TYPE)) {
-            final var encoding = response.encoding().orElse(defaultEncoding);
-            if (encoding == null) {
-                nettyHeaders.set(CONTENT_TYPE, TEXT_PLAIN + ";charset=" + response.charset()
-                    .orElse(StandardCharsets.UTF_8)
-                    .name()
-                    .toLowerCase());
-            }
-            else {
-                nettyHeaders.set(CONTENT_TYPE, HttpMediaTypes.toMediaType(encoding));
-            }
-        }
-
-        final var body = NettyBodyOutgoing.from(response, ctx.alloc(), defaultEncoding);
-
-        if (!nettyHeaders.contains(CONTENT_LENGTH)) {
-            nettyHeaders.set(CONTENT_LENGTH, Long.toString(body.length()));
+            final var encoding = body.encoding().orElse(defaultEncoding);
+            nettyHeaders.set(CONTENT_TYPE, MediaType.getOrCreate(encoding));
         }
 
         channel.write(new DefaultHttpResponse(nettyVersion, nettyStatus, nettyHeaders));
@@ -303,7 +293,9 @@ public class NettyHttpServiceConnection
         }
         try {
             if (kalixRequest != null) {
-                if (kalixRequest.tryAbort(cause)) {
+                final var body = kalixRequest.body();
+                if (!body.isDone()) {
+                    kalixRequest = null;
                     if (logger.isDebugEnabled()) {
                         logger.debug("Relayed exception causing 500 response to be sent to client", cause);
                     }
@@ -330,8 +322,10 @@ public class NettyHttpServiceConnection
             final var idleStateEvent = (IdleStateEvent) evt;
             if (idleStateEvent.state() == IdleState.READER_IDLE) {
                 if (kalixRequest != null) {
-                    final var exception = new HttpServiceRequestException(HttpStatus.REQUEST_TIMEOUT);
-                    if (kalixRequest.tryAbort(exception)) {
+                    final var body = kalixRequest.body();
+                    if (!body.isDone()) {
+                        kalixRequest = null;
+                        body.abort(new HttpServiceRequestException(HttpStatus.REQUEST_TIMEOUT));
                         sendEmptyResponseAndCleanup(ctx, REQUEST_TIMEOUT);
                     }
                 }

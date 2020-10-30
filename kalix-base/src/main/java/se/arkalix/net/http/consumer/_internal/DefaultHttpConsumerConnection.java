@@ -2,9 +2,7 @@ package se.arkalix.net.http.consumer._internal;
 
 import se.arkalix.ArSystem;
 import se.arkalix.encoding.Encoding;
-import se.arkalix.dto.DtoWritable;
-import se.arkalix.net.http._internal.HttpMediaTypes;
-import se.arkalix.net.MessageEncodingUnsupported;
+import se.arkalix.net.MediaType;
 import se.arkalix.net.http.client.HttpClientConnection;
 import se.arkalix.net.http.consumer.HttpConsumerConnection;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
@@ -13,10 +11,7 @@ import se.arkalix.security.identity.SystemIdentity;
 import se.arkalix.util.concurrent.Future;
 
 import java.net.InetSocketAddress;
-import java.util.List;
 import java.util.Objects;
-
-import static io.netty.handler.codec.http.HttpHeaderNames.ACCEPT;
 
 class DefaultHttpConsumerConnection implements HttpConsumerConnection {
     private final ArSystem localSystem;
@@ -83,26 +78,16 @@ class DefaultHttpConsumerConnection implements HttpConsumerConnection {
             .map(response -> new DefaultHttpConsumerResponse(this, request, response));
     }
 
-    @SuppressWarnings("unchecked")
     private void prepare(final HttpConsumerRequest request) {
         Objects.requireNonNull(request, "request");
 
-        if (request.encoding().isEmpty()) {
-            final var body = request.body().orElse(null);
-            if (body == null) {
-                request.headers().setIfEmpty(ACCEPT, HttpMediaTypes.toMediaType(encoding));
-            }
-            else if (body instanceof DtoWritable || body instanceof List) {
-                final var dtoEncoding = encoding.reader()
-                    .orElseThrow(() -> new MessageEncodingUnsupported(request, encoding));
+        final var headers = request.headers();
+        if (!headers.contains("accept")) {
+            headers.set("accept", MediaType.getOrCreate(encoding).toString());
+        }
 
-                if (body instanceof DtoWritable) {
-                    request.body(dtoEncoding, (DtoWritable) body);
-                }
-                else {
-                    request.body(dtoEncoding, (List<DtoWritable>) body);
-                }
-            }
+        if (request.encoding().isEmpty()) {
+            request.body().ifPresent(body -> request.encoding(encoding));
         }
 
         if (authorization != null) {

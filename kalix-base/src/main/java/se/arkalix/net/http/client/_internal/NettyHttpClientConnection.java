@@ -8,10 +8,11 @@ import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.arkalix.net.MediaType;
 import se.arkalix.net._internal.NettyBodyOutgoing;
 import se.arkalix.net._internal.NettySimpleChannelInboundHandler;
-import se.arkalix.net.http._internal.HttpMediaTypes;
 import se.arkalix.net.http._internal.NettyHttpConverters;
+import se.arkalix.net.http._internal.NettyHttpHeaders;
 import se.arkalix.util.concurrent._internal.FutureCompletion;
 import se.arkalix.util.concurrent._internal.FutureCompletionUnsafe;
 import se.arkalix.net.http.*;
@@ -30,14 +31,12 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
-import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
 import java.util.LinkedList;
 import java.util.Objects;
 import java.util.Queue;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
-import static io.netty.handler.codec.http.HttpHeaderValues.TEXT_PLAIN;
 import static se.arkalix.net.http._internal.NettyHttpConverters.convert;
 import static se.arkalix.util.concurrent._internal.NettyFutures.adapt;
 
@@ -154,11 +153,12 @@ public class NettyHttpClientConnection
         if (incomingResponse == null) {
             return;
         }
-        incomingResponse.write(content);
+        final var body = incomingResponse.body();
+        body.write(content.content());
         if (content instanceof LastHttpContent) {
-            incomingResponse.headers().unwrap().add(((LastHttpContent) content).trailingHeaders());
-            incomingResponse.finish();
+            incomingResponse.unwrap().headers().add(((LastHttpContent) content).trailingHeaders());
             incomingResponse = null;
+            body.close();
             if (isClosing && requestResponseQueue.isEmpty()) {
                 ctx.close();
             }
@@ -178,9 +178,13 @@ public class NettyHttpClientConnection
             futureConnection = null;
             return;
         }
-        if (incomingResponse != null && incomingResponse.tryAbort(cause)) {
-            incomingResponse = null;
-            return;
+        if (incomingResponse != null) {
+            final var body = incomingResponse.body();
+            if (!body.isDone()) {
+                body.abort(cause);
+                incomingResponse = null;
+                return;
+            }
         }
         if (requestResponseQueue.size() > 0) {
             requestResponseQueue.remove().complete(Result.failure(cause));
@@ -206,9 +210,12 @@ public class NettyHttpClientConnection
                 return;
             }
             if (incomingResponse != null) {
-                incomingResponse.tryAbort(new HttpOutgoingRequestException(incomingResponse.request(), "Incoming response body timed out"));
-                incomingResponse = null;
-                return;
+                final var body = incomingResponse.body();
+                if (!body.isDone()) {
+                    body.abort(new HttpOutgoingRequestException(incomingResponse.request(), "Incoming response body timed out"));
+                    incomingResponse = null;
+                    return;
+                }
             }
             if (requestResponseQueue.size() > 0) {
                 final var pendingResponse = requestResponseQueue.remove();
@@ -309,7 +316,13 @@ public class NettyHttpClientConnection
                 .map(NettyHttpConverters::convert)
                 .orElse(io.netty.handler.codec.http.HttpVersion.HTTP_1_1);
             final var nettyMethod = convert(method);
-            final var nettyHeaders = request.headers().unwrap();
+            final var nettyHeaders = ((NettyHttpHeaders) request.headers()).unwrap();
+
+            final var body = NettyBodyOutgoing.from(request.body().orElse(null), channel.alloc());
+
+            if (!nettyHeaders.contains(CONTENT_LENGTH)) {
+                nettyHeaders.set(CONTENT_LENGTH, Long.toString(body.length()));
+            }
 
             final var host = (InetSocketAddress) channel.remoteAddress();
             nettyHeaders.set(HOST, host.getHostString() + ":" + host.getPort());
@@ -317,22 +330,8 @@ public class NettyHttpClientConnection
             HttpUtil.setKeepAlive(nettyHeaders, nettyVersion, !close);
 
             if (!nettyHeaders.contains(CONTENT_TYPE)) {
-                final var encoding = request.encoding().orElse(null);
-                if (encoding == null) {
-                    nettyHeaders.set(CONTENT_TYPE, TEXT_PLAIN + ";charset=" + request.charset()
-                        .orElse(StandardCharsets.UTF_8)
-                        .name()
-                        .toLowerCase());
-                }
-                else {
-                    nettyHeaders.set(CONTENT_TYPE, HttpMediaTypes.toMediaType(encoding));
-                }
-            }
-
-            final var body = NettyBodyOutgoing.from(request, channel.alloc(), null);
-
-            if (!nettyHeaders.contains(CONTENT_LENGTH)) {
-                nettyHeaders.set(CONTENT_LENGTH, Long.toString(body.length()));
+                body.encoding()
+                    .ifPresent(encoding -> nettyHeaders.set(CONTENT_TYPE, MediaType.getOrCreate(encoding)));
             }
 
             channel.write(new DefaultHttpRequest(nettyVersion, nettyMethod, uri, nettyHeaders));

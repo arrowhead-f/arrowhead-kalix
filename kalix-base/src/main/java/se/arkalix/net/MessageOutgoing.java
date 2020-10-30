@@ -1,6 +1,7 @@
 package se.arkalix.net;
 
 import se.arkalix.encoding.Encodable;
+import se.arkalix.encoding.Encoding;
 import se.arkalix.encoding.MultiEncodable;
 import se.arkalix.encoding.ToEncoding;
 
@@ -16,6 +17,19 @@ import java.util.Optional;
  */
 @SuppressWarnings("UnusedReturnValue")
 public interface MessageOutgoing<Self> extends Message {
+    /**
+     * Sets name of encoding used to represent the body of this message.
+     * <p>
+     * This method only needs to be called if the encoding cannot be determined
+     * automatically from the set {@link #body(BodyOutgoing) body}, such as
+     * when using {@link #body(byte[])}. Note that the message sender might set
+     * the encoding automatically when required.
+     *
+     * @param encoding Encoding to set.
+     * @return This message.
+     */
+    Self encoding(final ToEncoding encoding);
+
     /**
      * Gets outgoing message body, if any is set.
      *
@@ -112,9 +126,11 @@ public interface MessageOutgoing<Self> extends Message {
     default Self body(final String string, final Charset charset) {
         Objects.requireNonNull(string, "string");
         Objects.requireNonNull(charset, "charset");
+
+        final var encoding = Encoding.getOrRegister(charset);
         return body(BodyOutgoing.create(writer -> {
             writer.write(string.getBytes(charset));
-            return Optional.empty();
+            return Optional.of(encoding);
         }));
     }
 

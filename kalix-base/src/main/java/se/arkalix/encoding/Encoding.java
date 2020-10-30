@@ -10,37 +10,36 @@ import java.util.concurrent.ConcurrentHashMap;
  * Names an <i>encoding</i>.
  * <p>
  * An encoding is understood to be a routine used for assigning meaning to
- * certain bit patterns in strings of bytes. Each encoding is either
- * structural or flat, as well as textual or binary.
+ * certain bit patterns in strings of bytes. Each encoding can be <i>known</i>
+ * to be general-purpose and/or textual.
  * <p>
- * A structural encoding can represent data structures such as associative
- * arrays (a.k.a. maps or dictionaries) and lists, while a flat encoding only
- * can represent a single array of a non-structured data type, such as Unicode
- * points.
+ * A general-purpose encoding can represent arbitrary data structures, such as
+ * associative arrays (a.k.a. maps or dictionaries) and lists. Examples include
+ * {@link #JSON} and {@link #XML}. Encodings not being general-purpose are
+ * interpreted as being protocol-specific, such as {@link #HTML} or {@link
+ * #CSS}.
  * <p>
  * A textual encoding is such that is fully compatible with one or more
  * character sets, while a binary encoding is not. Textual encodings can, as a
- * consequence, be treated as strings of text, even if they are structural.
- * Note that only the encodings with a single associated character set might
- * make that available via the {@link #charset()} method.
- * <p>
- * Note that both encodings such as {@link #JSON} or {@link #CBOR} match this
- * definition, as well as plain character sets, such as {@link #US_ASCII} or
- * {@link #UTF_8}.
+ * consequence, be treated as strings of text, even if they are general-
+ * purpose. Note that only the encodings with a single associated character set
+ * might make that available via the {@link #charset()} method. Note that both
+ * encodings such as {@link #JSON} or {@link #CBOR} match this definition, as
+ * well as plain character sets, such as {@link #US_ASCII} or {@link #UTF_8}.
  */
 public final class Encoding implements ToEncoding {
     private static final ConcurrentHashMap<String, Encoding> nameToEncoding = new ConcurrentHashMap<>();
 
     private final String name;
     private final boolean isRegistered;
-    private final boolean isStructural;
+    private final boolean isGeneral;
     private final boolean isTextual;
     private final Charset charset;
 
     private Encoding(final String name) {
         this.name = Objects.requireNonNull(name, "name");
         this.isRegistered = false;
-        this.isStructural = false;
+        this.isGeneral = false;
         this.isTextual = false;
         this.charset = null;
     }
@@ -48,7 +47,7 @@ public final class Encoding implements ToEncoding {
     private Encoding(final Registration registration) {
         this.name = Objects.requireNonNull(registration.name, "name");
         this.isRegistered = true;
-        this.isStructural = registration.isStructural;
+        this.isGeneral = registration.isGeneral;
         this.isTextual = registration.isTextual;
         this.charset = registration.charset;
     }
@@ -162,12 +161,13 @@ public final class Encoding implements ToEncoding {
 
     /**
      * Determines weather or not this encoding is <i>known</i> to be
-     * structural, as defined in the {@link Encoding class description}.
+     * general-purpose, as defined in the {@link Encoding class description}.
      *
-     * @return {@code true} only if this encoding is known to be structural.
+     * @return {@code true} only if this encoding is known to be general-
+     * purpose.
      */
-    public boolean isStructural() {
-        return isStructural;
+    public boolean isGeneral() {
+        return isGeneral;
     }
 
     /**
@@ -203,7 +203,21 @@ public final class Encoding implements ToEncoding {
      */
     public static final Encoding CBOR = register(new Registration()
         .name("CBOR")
-        .isStructural(true));
+        .isGeneral(true));
+
+    /**
+     * Cascading Style Sheet (CSS).
+     */
+    public static final Encoding CSS = register(new Registration()
+        .name("CSS")
+        .isTextual(true));
+
+    /**
+     * Hyper-Text Markup Language (HTML).
+     */
+    public static final Encoding HTML = register(new Registration()
+        .name("HTML")
+        .isTextual(true));
 
     /**
      * JavaScript Object Notation (JSON).
@@ -212,7 +226,7 @@ public final class Encoding implements ToEncoding {
      */
     public static final Encoding JSON = register(new Registration()
         .name("JSON")
-        .isStructural(true)
+        .isGeneral(true)
         .isTextual(true)
         .charset(StandardCharsets.UTF_8));
 
@@ -224,7 +238,7 @@ public final class Encoding implements ToEncoding {
      */
     public static final Encoding XML = register(new Registration()
         .name("XML")
-        .isStructural(true)
+        .isGeneral(true)
         .isTextual(true));
 
     /**
@@ -234,7 +248,7 @@ public final class Encoding implements ToEncoding {
      */
     public static final Encoding EXI = register(new Registration()
         .name("EXI")
-        .isStructural(true));
+        .isGeneral(true));
 
     /**
      * The Seven-bit ASCII or ISO-646-US character set, which is also the
@@ -261,12 +275,12 @@ public final class Encoding implements ToEncoding {
     /**
      * The UTF-16 Unicode character set with Big-Endian 16-bit tokens.
      */
-    public static final Encoding UTF16_BE = register(StandardCharsets.UTF_16BE);
+    public static final Encoding UTF_16BE = register(StandardCharsets.UTF_16BE);
 
     /**
      * The UTF-16 Unicode character set with Little-Endian 16-bit tokens.
      */
-    public static final Encoding UTF16_LE = register(StandardCharsets.UTF_16LE);
+    public static final Encoding UTF_16LE = register(StandardCharsets.UTF_16LE);
 
     /**
      * Resolves {@link Encoding} from given {@code name}.
@@ -308,7 +322,7 @@ public final class Encoding implements ToEncoding {
      */
     public static class Registration {
         private String name;
-        private boolean isStructural = false;
+        private boolean isGeneral = false;
         private boolean isTextual = false;
         private Charset charset = null;
 
@@ -325,14 +339,15 @@ public final class Encoding implements ToEncoding {
 
         /**
          * Sets weather or not the registered encoding is to be considered as
-         * being structural. <b>Defaults to false.</b>
+         * being general-purpose. <b>Defaults to false.</b>
          *
-         * @param isStructural Whether or not the registered encoding is
-         *                     structural.
+         * @param isGeneral Whether or not the registered encoding is general-
+         *                  purpose, as defined in the {@link Encoding} class
+         *                  description.
          * @return This registration form.
          */
-        public Registration isStructural(final boolean isStructural) {
-            this.isStructural = isStructural;
+        public Registration isGeneral(final boolean isGeneral) {
+            this.isGeneral = isGeneral;
             return this;
         }
 

@@ -34,6 +34,7 @@ public class DefaultHttpConsumer implements HttpConsumer {
     ) {
         this.system = Objects.requireNonNull(system, "system");
         this.service = Objects.requireNonNull(service, "service");
+        Objects.requireNonNull(encodings, "encodings");
 
         client = HttpClient.from(system);
 

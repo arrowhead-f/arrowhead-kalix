@@ -4,6 +4,7 @@ import se.arkalix.net._internal.DefaultMessageOutgoing;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.HttpVersion;
+import se.arkalix.net.http._internal.NettyHttpHeaders;
 import se.arkalix.net.http.service.HttpServiceResponse;
 import se.arkalix.util.annotation.Internal;
 
@@ -14,7 +15,7 @@ public class DefaultHttpServiceResponse
     extends DefaultMessageOutgoing<HttpServiceResponse>
     implements HttpServiceResponse
 {
-    private final HttpHeaders headers = new HttpHeaders();
+    private final HttpHeaders headers = new NettyHttpHeaders();
 
     private HttpStatus status = null;
     private HttpVersion version = null;

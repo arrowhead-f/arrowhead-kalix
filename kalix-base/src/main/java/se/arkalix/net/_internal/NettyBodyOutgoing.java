@@ -3,91 +3,72 @@ package se.arkalix.net._internal;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.DefaultFileRegion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import se.arkalix.encoding.Encoding;
-import se.arkalix.dto.DtoWritable;
-import se.arkalix.dto.DtoWriteException;
 import se.arkalix.encoding.binary._internal.ByteBufWriter;
-import se.arkalix.net.MessageEncodingUnspecified;
-import se.arkalix.net.MessageEncodingUnsupported;
-import se.arkalix.net.MessageOutgoing;
+import se.arkalix.net.BodyOutgoing;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public class NettyBodyOutgoing {
-    private final Object content;
+    private static final Logger logger = LoggerFactory.getLogger(BodyOutgoing.class);
+
+    private final Encoding encoding;
     private final long length;
+    private final Object content;
 
-    @SuppressWarnings("unchecked")
-    public static NettyBodyOutgoing from(
-        final MessageOutgoing<?> message,
-        final ByteBufAllocator alloc,
-        final Encoding defaultEncoding
-    ) throws DtoWriteException, IOException {
+    public static NettyBodyOutgoing from(final BodyOutgoing body, final ByteBufAllocator allocator) throws IOException {
+        Objects.requireNonNull(allocator, "allocator");
 
-        final var body = message.body().orElse(null);
-
-        final long length;
+        final Encoding encoding;
         final Object content;
+        final long length;
 
         if (body == null) {
+            encoding = null;
             length = 0;
             content = Unpooled.EMPTY_BUFFER;
         }
-        else if (body instanceof byte[]) {
-            length = ((byte[]) body).length;
-            content = Unpooled.wrappedBuffer((byte[]) body);
-        }
-        else if (body instanceof DtoWritable || body instanceof List) {
-            final var encoding = message.encoding().orElse(defaultEncoding);
-            if (encoding == null) {
-                throw new MessageEncodingUnspecified(message);
-            }
-            final var dtoEncoding = encoding.reader()
-                .orElseThrow(() -> new MessageEncodingUnsupported(message, encoding));
-
-            final var buffer = alloc.buffer();
+        else if (body.asEncodable().isPresent()) {
+            final var encodable = body.asEncodable().get();
+            final var buffer = allocator.buffer();
             final var bufferWriter = new ByteBufWriter(buffer);
-            final var writer = dtoEncoding.writer();
-            if (body instanceof DtoWritable) {
-                writer.writeOne((DtoWritable) body, bufferWriter);
-            }
-            else {
-                writer.writeMany((List<DtoWritable>) body, bufferWriter);
-            }
+            encoding = encodable.encode(bufferWriter).orElse(null);
             length = buffer.readableBytes();
             content = buffer;
         }
-        else if (body instanceof Path) {
-            final var path = (Path) body;
+        else if (body.asPath().isPresent()) {
+            final var path = body.asPath().get();
             final var file = new RandomAccessFile(path.toFile(), "r");
+            encoding = null;
             length = file.length();
             content = new DefaultFileRegion(file.getChannel(), 0, length);
         }
-        else if (body instanceof String) {
-            final var string = ((String) body);
-            final var charset = message.charset().orElse(StandardCharsets.UTF_8);
-
-            final var buffer = alloc.buffer(string.length());
-            buffer.writeCharSequence(string, charset);
-
-            length = buffer.readableBytes();
-            content = buffer;
-        }
         else {
-            throw new InternalError("Invalid outgoing body: " + body);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Outgoing message body did not contain any " +
+                    "supported kind of content; ignoring {}", body);
+            }
+            encoding = null;
+            length = 0;
+            content = Unpooled.EMPTY_BUFFER;
         }
 
-        return new NettyBodyOutgoing(content, length);
+        return new NettyBodyOutgoing(encoding, length, content);
     }
 
-    public NettyBodyOutgoing(final Object content, final long length) {
-        this.content = Objects.requireNonNull(content);
+    public NettyBodyOutgoing(final Encoding encoding, final long length, final Object content) {
+        this.encoding = encoding;
         this.length = length;
+        this.content = Objects.requireNonNull(content, "content");
+    }
+
+    public Optional<Encoding> encoding() {
+        return Optional.ofNullable(encoding);
     }
 
     public long length() {

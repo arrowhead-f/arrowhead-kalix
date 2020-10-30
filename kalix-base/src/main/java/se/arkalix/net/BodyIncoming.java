@@ -46,6 +46,7 @@ public interface BodyIncoming {
      * incoming message body is fully received and written to the file at that
      * path.
      * @throws IllegalStateException If the body has already been requested.
+     * @throws NullPointerException  If {@code path} is {@code null}.
      */
     Future<?> writeTo(final Path path, boolean append);
 

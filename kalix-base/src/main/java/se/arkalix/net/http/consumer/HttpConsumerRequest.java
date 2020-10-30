@@ -1,7 +1,7 @@
 package se.arkalix.net.http.consumer;
 
 import se.arkalix.encoding.Encoding;
-import se.arkalix.dto.DtoWritable;
+import se.arkalix.net.BodyOutgoing;
 import se.arkalix.net.MessageOutgoingWithImplicitEncoding;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpMethod;
@@ -77,25 +77,19 @@ public class HttpConsumerRequest
     }
 
     @Override
-    public Optional<Object> body() {
+    public Optional<BodyOutgoing> body() {
         return inner.body();
+    }
+
+    @Override
+    public HttpConsumerRequest body(final BodyOutgoing body) {
+        inner.body(body);
+        return this;
     }
 
     @Override
     public HttpConsumerRequest body(final byte[] byteArray) {
         inner.body(byteArray);
-        return this;
-    }
-
-    @Override
-    public HttpConsumerRequest body(final DtoEncoding encoding, final DtoWritable data) {
-        inner.body(encoding, data);
-        return this;
-    }
-
-    @Override
-    public <L extends List<? extends DtoWritable>> HttpConsumerRequest body(final DtoEncoding encoding, final L data) {
-        inner.body(encoding, data);
         return this;
     }
 
@@ -126,11 +120,6 @@ public class HttpConsumerRequest
     public HttpConsumerRequest clearHeaders() {
         inner.clearHeaders();
         return this;
-    }
-
-    @Override
-    public Optional<Charset> charset() {
-        return inner.charset();
     }
 
     @Override
