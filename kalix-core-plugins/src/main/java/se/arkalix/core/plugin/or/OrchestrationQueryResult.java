@@ -4,7 +4,7 @@ import se.arkalix.core.plugin.ServiceConsumable;
 import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoToString;
-import se.arkalix.dto.json.JsonName;
+import se.arkalix.dto.json.DtoJsonName;
 
 import java.util.List;
 
@@ -20,6 +20,6 @@ public interface OrchestrationQueryResult {
     /**
      * Services the querying system may consume.
      */
-    @JsonName("response")
+    @DtoJsonName("response")
     List<ServiceConsumable> services();
 }

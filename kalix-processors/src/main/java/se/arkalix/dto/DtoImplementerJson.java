@@ -6,14 +6,13 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import se.arkalix.encoding.binary.BinaryReader;
 import se.arkalix.encoding.binary.BinaryWriter;
-import se.arkalix.dto.json.*;
 import se.arkalix.dto.types.*;
 import se.arkalix.dto.util.BinaryWriterWriteCache;
 import se.arkalix.dto.util.Expander;
-import se.arkalix.dto.json._internal.JsonTokenBuffer;
-import se.arkalix.dto.json._internal.JsonTokenizer;
-import se.arkalix.dto.json.value.JsonType;
-import se.arkalix.dto.json._internal.JsonWrite;
+import se.arkalix.encoding.json._internal.JsonTokenBuffer;
+import se.arkalix.encoding.json._internal.JsonTokenizer;
+import se.arkalix.encoding.json.JsonType;
+import se.arkalix.encoding.json._internal.JsonWrite;
 import se.arkalix.util.annotation.Internal;
 
 import javax.lang.model.element.Modifier;

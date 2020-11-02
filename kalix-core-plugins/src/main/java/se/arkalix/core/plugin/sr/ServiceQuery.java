@@ -5,7 +5,7 @@ import se.arkalix.ServiceInterface;
 import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
-import se.arkalix.dto.json.JsonName;
+import se.arkalix.dto.json.DtoJsonName;
 
 import java.util.List;
 import java.util.Map;
@@ -24,50 +24,50 @@ public interface ServiceQuery {
     /**
      * Service name. <b>Must be specified.</b>
      */
-    @JsonName("serviceDefinitionRequirement")
+    @DtoJsonName("serviceDefinitionRequirement")
     String name();
 
     /**
      * Supported service interfaces.
      */
-    @JsonName("interfaceRequirements")
+    @DtoJsonName("interfaceRequirements")
     List<ServiceInterface> interfaces();
 
     /**
      * Permitted security/authentication modes.
      */
-    @JsonName("securityRequirements")
+    @DtoJsonName("securityRequirements")
     List<AccessType> securityModes();
 
     /**
      * Required metadata pairs.
      */
-    @JsonName("metadataRequirements")
+    @DtoJsonName("metadataRequirements")
     Map<String, String> metadata();
 
     /**
      * Desired exact service version.
      */
-    @JsonName("versionRequirement")
+    @DtoJsonName("versionRequirement")
     Optional<Integer> version();
 
     /**
      * The highest permitted service version.
      */
-    @JsonName("maxVersionRequirement")
+    @DtoJsonName("maxVersionRequirement")
     Optional<Integer> versionMax();
 
     /**
      * The lowest permitted service version.
      */
-    @JsonName("minVersionRequirement")
+    @DtoJsonName("minVersionRequirement")
     Optional<Integer> versionMin();
 
     /**
      * Whether or not to test if matching services are live before returning
      * {@link ServiceQueryResult}.
      */
-    @JsonName("pingProviders")
+    @DtoJsonName("pingProviders")
     Optional<Boolean> triggerPing();
 
     static ServiceQueryDto from(final se.arkalix.query.ServiceQuery query) {

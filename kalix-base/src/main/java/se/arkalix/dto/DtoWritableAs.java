@@ -12,6 +12,9 @@ public @interface DtoWritableAs {
     /**
      * Encodings to which {@link se.arkalix.dto DTO class} instances should be
      * writable.
+     * <p>
+     * See {@link DtoEncoding} for a description of what encoding names may be
+     * used here.
      */
     String[] value();
 }

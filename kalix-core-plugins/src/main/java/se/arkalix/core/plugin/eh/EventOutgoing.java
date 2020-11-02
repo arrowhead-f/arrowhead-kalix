@@ -5,7 +5,7 @@ import se.arkalix.core.plugin._internal.Instants;
 import se.arkalix.core.plugin.SystemDetails;
 import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
-import se.arkalix.dto.json.JsonName;
+import se.arkalix.dto.json.DtoJsonName;
 
 import java.util.Map;
 import java.util.Optional;
@@ -22,25 +22,25 @@ public interface EventOutgoing {
     /**
      * Category of event.
      */
-    @JsonName("eventType")
+    @DtoJsonName("eventType")
     String topic();
 
     /**
      * Information about the system publishing this event.
      */
-    @JsonName("source")
+    @DtoJsonName("source")
     SystemDetails publisher();
 
     /**
      * Arbitrary details about this event.
      */
-    @JsonName("metaData")
+    @DtoJsonName("metaData")
     Map<String, String> metadata();
 
     /**
      * An arbitrary string payload associated with this event.
      */
-    @JsonName("payload")
+    @DtoJsonName("payload")
     String data();
 
     /**
@@ -48,6 +48,6 @@ public interface EventOutgoing {
      *
      * @see Instants#fromAitiaDateTimeString(String)
      */
-    @JsonName("timeStamp")
+    @DtoJsonName("timeStamp")
     Optional<String> createdAt();
 }

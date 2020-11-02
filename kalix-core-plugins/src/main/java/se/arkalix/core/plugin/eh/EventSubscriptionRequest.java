@@ -5,7 +5,7 @@ import se.arkalix.core.plugin._internal.Instants;
 import se.arkalix.core.plugin.SystemDetails;
 import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
-import se.arkalix.dto.json.JsonName;
+import se.arkalix.dto.json.DtoJsonName;
 
 import java.util.List;
 import java.util.Map;
@@ -25,20 +25,20 @@ public interface EventSubscriptionRequest {
     /**
      * Identifies the general category of events being subscribed to.
      */
-    @JsonName("eventType")
+    @DtoJsonName("eventType")
     String topic();
 
     /**
      * Information about the subscribing system.
      */
-    @JsonName("subscriberSystem")
+    @DtoJsonName("subscriberSystem")
     SystemDetails subscriber();
 
     /**
      * Metadata key/value pairs that must exist in each {@link EventOutgoing} matched
      * by this subscription.
      */
-    @JsonName("filterMetaData")
+    @DtoJsonName("filterMetaData")
     Map<String, String> metadata();
 
     /**
@@ -50,7 +50,7 @@ public interface EventSubscriptionRequest {
      * #subscriber() subscriber} will be sent an HTTP POST message with this
      * URI, containing the matching {@link EventIncoming} as message body.
      */
-    @JsonName("notifyUri")
+    @DtoJsonName("notifyUri")
     String sendToUri();
 
     /**
@@ -58,7 +58,7 @@ public interface EventSubscriptionRequest {
      * when deciding what {@link EventOutgoing events} to forward to the {@link
      * #subscriber() subscriber}.
      */
-    @JsonName("matchMetaData")
+    @DtoJsonName("matchMetaData")
     boolean useMetadata();
 
     /**
@@ -67,7 +67,7 @@ public interface EventSubscriptionRequest {
      *
      * @see Instants#fromAitiaDateTimeString(String)
      */
-    @JsonName("startDate")
+    @DtoJsonName("startDate")
     Optional<String> startsAt();
 
     /**
@@ -75,7 +75,7 @@ public interface EventSubscriptionRequest {
      *
      * @see Instants#fromAitiaDateTimeString(String)
      */
-    @JsonName("endDate")
+    @DtoJsonName("endDate")
     Optional<String> stopsAt();
 
     /**
@@ -84,6 +84,6 @@ public interface EventSubscriptionRequest {
      * If no publishers are specified at all, this list will be treated as if
      * containing all possible publishers.
      */
-    @JsonName("sources")
+    @DtoJsonName("sources")
     List<SystemDetails> publishers();
 }

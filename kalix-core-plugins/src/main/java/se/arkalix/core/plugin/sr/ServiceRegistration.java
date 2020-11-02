@@ -7,7 +7,7 @@ import se.arkalix.ServiceInterface;
 import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
-import se.arkalix.dto.json.JsonName;
+import se.arkalix.dto.json.DtoJsonName;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,13 +26,13 @@ public interface ServiceRegistration {
     /**
      * Unique service name.
      */
-    @JsonName("serviceDefinition")
+    @DtoJsonName("serviceDefinition")
     String name();
 
     /**
      * The system providing the service.
      */
-    @JsonName("providerSystem")
+    @DtoJsonName("providerSystem")
     SystemDetails provider();
 
     /**
@@ -43,13 +43,13 @@ public interface ServiceRegistration {
      * For example, if this service uses HTTP, then the qualifier is a URL base
      * path, such as {@code "/base/path"}.
      */
-    @JsonName("serviceUri")
+    @DtoJsonName("serviceUri")
     String uri();
 
     /**
      * The access policy employed by the service.
      */
-    @JsonName("secure")
+    @DtoJsonName("secure")
     Optional<AccessType> security();
 
     /**

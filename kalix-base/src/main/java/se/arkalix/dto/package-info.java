@@ -63,7 +63,7 @@
  *                 <i>not</i> supported.</li>
  *             <li>So-called custom types, which typically are exclusive to a
  *                 particular encoding, such as {@link
- *                 se.arkalix.dto.json.value.JsonObject JsonObject}, which may
+ *                 se.arkalix.encoding.json.JsonObject JsonObject}, which may
  *                 only be used by DTO interfaces that can only be read/written
  *                 from/to {@link se.arkalix.dto.DtoEncoding#JSON JSON}.</li>
  *         </ol>

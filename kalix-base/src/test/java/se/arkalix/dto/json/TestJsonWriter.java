@@ -3,9 +3,8 @@ package se.arkalix.dto.json;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import se.arkalix.dto.DtoWriteException;
 import se.arkalix.encoding.binary.ByteArrayWriter;
-import se.arkalix.dto.json.value.*;
+import se.arkalix.encoding.json.*;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;

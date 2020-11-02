@@ -4,7 +4,7 @@ import se.arkalix.ServiceInterface;
 import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoToString;
-import se.arkalix.dto.json.JsonName;
+import se.arkalix.dto.json.DtoJsonName;
 
 import static se.arkalix.dto.DtoEncoding.JSON;
 
@@ -18,6 +18,6 @@ public interface InterfaceName {
     /**
      * Interface triplet.
      */
-    @JsonName("interfaceName")
+    @DtoJsonName("interfaceName")
     ServiceInterface name();
 }

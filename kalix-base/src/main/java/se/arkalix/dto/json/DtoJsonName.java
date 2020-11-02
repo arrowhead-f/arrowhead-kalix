@@ -12,10 +12,10 @@ import java.lang.annotation.Target;
  *      &#64;DtoReadableAs(JSON)
  *      &#64;DtoWritableAs(JSON)
  *      public interface Rectangle {
- *          &#64;JsonName("w")
+ *          &#64;DtoJsonName("w")
  *          double width();
  *
- *          &#64;JsonName("h")
+ *          &#64;DtoJsonName("h")
  *          double height();
  *      }
  * </pre>
@@ -24,8 +24,8 @@ import java.lang.annotation.Target;
  * <pre>
  *     {"w":100,"h":400}
  * </pre>
- * Without the &#64;JsonName annotation, the same object would be represented
- * as
+ * Without the &#64;DtoJsonName annotation, the same object would be
+ * represented as
  * <pre>
  *     {"width":100,"height":400}
  * </pre>
@@ -33,6 +33,6 @@ import java.lang.annotation.Target;
  * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
  */
 @Target(ElementType.METHOD)
-public @interface JsonName {
+public @interface DtoJsonName {
     String value();
 }

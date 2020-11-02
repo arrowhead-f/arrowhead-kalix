@@ -6,7 +6,7 @@ import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
-import se.arkalix.dto.json.JsonName;
+import se.arkalix.dto.json.DtoJsonName;
 import se.arkalix.security.identity._internal.X509Keys;
 
 import java.net.InetSocketAddress;
@@ -27,13 +27,13 @@ public interface SystemDetails {
     /**
      * Name of system.
      */
-    @JsonName("systemName")
+    @DtoJsonName("systemName")
     String name();
 
     /**
      * Hostname or textual representation of IP address of system.
      */
-    @JsonName("address")
+    @DtoJsonName("address")
     String hostname();
 
     /**
@@ -46,7 +46,7 @@ public interface SystemDetails {
      * <p>
      * Must be the Base64 encoded variant of a DER-encoded PKCS#8 private key.
      */
-    @JsonName("authenticationInfo")
+    @DtoJsonName("authenticationInfo")
     Optional<String> publicKeyBase64();
 
     /**

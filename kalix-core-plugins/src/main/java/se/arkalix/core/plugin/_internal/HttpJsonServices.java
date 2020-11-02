@@ -2,7 +2,6 @@ package se.arkalix.core.plugin._internal;
 
 import se.arkalix.core.plugin.ErrorResponseDto;
 import se.arkalix.core.plugin.ErrorResponseException;
-import se.arkalix.dto.DtoReadable;
 import se.arkalix.net.http.HttpIncomingResponse;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.util.annotation.Internal;
@@ -24,7 +23,7 @@ public class HttpJsonServices {
         return handleError(response);
     }
 
-    public static <T extends DtoReadable> Future<T> unwrap(final HttpIncomingResponse<?, ?> response, final Class<T> class_) {
+    public static <T> Future<T> unwrap(final HttpIncomingResponse<?, ?> response, final Class<T> class_) {
         Objects.requireNonNull(response, "Expected response");
         Objects.requireNonNull(class_, "Expected class");
 
@@ -34,7 +33,7 @@ public class HttpJsonServices {
         return handleError(response);
     }
 
-    public static <T extends DtoReadable> Future<Optional<T>> unwrapOptional(
+    public static <T> Future<Optional<T>> unwrapOptional(
         final HttpIncomingResponse<?, ?> response,
         final Class<T> class_)
     {

@@ -11,6 +11,9 @@ import java.lang.annotation.Target;
 public @interface DtoExclusive {
     /**
      * The DTO encoding the annotated type is exclusive to.
+     * <p>
+     * See {@link DtoEncoding} for a description of what encoding names may be
+     * used here.
      */
     String value();
 }

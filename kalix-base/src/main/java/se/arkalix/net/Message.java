@@ -12,7 +12,7 @@ public interface Message {
      * Encoding used to encode the contents of this message, if specified.
      *
      * @return Message encoding, if specified.
-     * @throws MessageEncodingInvalid If a message encoding is specified in the
+     * @throws MessageEncodingMisspecified If a message encoding is specified in the
      *                                message, but it cannot be interpreted.
      */
     Optional<Encoding> encoding();

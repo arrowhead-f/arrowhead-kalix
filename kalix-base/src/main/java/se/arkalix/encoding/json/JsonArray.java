@@ -1,12 +1,11 @@
-package se.arkalix.dto.json.value;
+package se.arkalix.encoding.json;
 
 import se.arkalix.dto.DtoExclusive;
-import se.arkalix.dto.DtoReadException;
-import se.arkalix.dto.DtoWriteException;
+import se.arkalix.encoding.Encoding;
 import se.arkalix.encoding.binary.BinaryReader;
 import se.arkalix.encoding.binary.BinaryWriter;
-import se.arkalix.dto.json._internal.JsonTokenBuffer;
-import se.arkalix.dto.json._internal.JsonTokenizer;
+import se.arkalix.encoding.json._internal.JsonTokenBuffer;
+import se.arkalix.encoding.json._internal.JsonTokenizer;
 import se.arkalix.util.annotation.Internal;
 
 import java.util.*;
@@ -110,8 +109,7 @@ public class JsonArray implements JsonCollection<Integer>, Iterable<JsonValue> {
         return new JsonArray(elements);
     }
 
-    @Override
-    public void writeJson(final BinaryWriter writer) throws DtoWriteException {
+    public Optional<Encoding> writeJson(final BinaryWriter writer) throws DtoWriteException {
         writer.write((byte) '[');
         var isFirst = true;
         for (final var element : elements) {
@@ -124,6 +122,7 @@ public class JsonArray implements JsonCollection<Integer>, Iterable<JsonValue> {
             element.writeJson(writer);
         }
         writer.write((byte) ']');
+        return Optional.of(Encoding.JSON);
     }
 
     @Override

@@ -1,9 +1,8 @@
-package se.arkalix.dto.json._internal;
+package se.arkalix.encoding.json._internal;
 
-import se.arkalix.dto.DtoReadException;
 import se.arkalix.encoding.binary.BinaryReader;
-import se.arkalix.dto.json.value.JsonString;
-import se.arkalix.dto.json.value.JsonType;
+import se.arkalix.encoding.json.JsonString;
+import se.arkalix.encoding.json.JsonType;
 import se.arkalix.util.annotation.Internal;
 
 import java.math.BigDecimal;

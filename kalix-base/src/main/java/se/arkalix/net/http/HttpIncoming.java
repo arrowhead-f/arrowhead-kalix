@@ -1,9 +1,8 @@
 package se.arkalix.net.http;
 
 import se.arkalix.encoding.Encoding;
-import se.arkalix.encoding.ToEncoding;
 import se.arkalix.net.MediaType;
-import se.arkalix.net.MessageEncodingInvalid;
+import se.arkalix.net.MessageEncodingMisspecified;
 import se.arkalix.net.MessageIncoming;
 
 import java.util.Optional;
@@ -21,7 +20,7 @@ public interface HttpIncoming<Self> extends HttpMessage<Self>, MessageIncoming {
                 .map(MediaType::toEncoding);
         }
         catch (final HttpHeaderInvalid exception) {
-            throw new MessageEncodingInvalid(this, exception.value(), exception);
+            throw new MessageEncodingMisspecified(this, exception.value(), exception);
         }
     }
 

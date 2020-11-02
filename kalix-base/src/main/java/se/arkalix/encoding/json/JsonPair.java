@@ -1,4 +1,4 @@
-package se.arkalix.dto.json.value;
+package se.arkalix.encoding.json;
 
 import java.util.Objects;
 

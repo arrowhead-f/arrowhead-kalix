@@ -7,7 +7,7 @@ import se.arkalix.ServiceInterface;
 import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoToString;
-import se.arkalix.dto.json.JsonName;
+import se.arkalix.dto.json.DtoJsonName;
 import se.arkalix.core.plugin._internal.Instants;
 
 import java.util.List;
@@ -27,7 +27,7 @@ public interface ServiceDetails {
     /**
      * Service name.
      */
-    @JsonName("serviceDefinition")
+    @DtoJsonName("serviceDefinition")
     ServiceName name();
 
     /**
@@ -42,20 +42,20 @@ public interface ServiceDetails {
      * transport protocol employed by the service. If, for example, HTTP is
      * used, then this is a base path.
      */
-    @JsonName("serviceUri")
+    @DtoJsonName("serviceUri")
     String uri();
 
     /**
      * The date and time at which the service definition entry expires, if
      * ever.
      */
-    @JsonName("endOfValidity")
+    @DtoJsonName("endOfValidity")
     Optional<String> expiresAt();
 
     /**
      * The security/authentication mode supported by the service.
      */
-    @JsonName("secure")
+    @DtoJsonName("secure")
     AccessType security();
 
     /**

@@ -1,16 +1,12 @@
 package se.arkalix.net.http;
 
-import se.arkalix.dto.DtoReadable;
 import se.arkalix.encoding.Decoder;
 import se.arkalix.encoding.MultiDecoder;
-import se.arkalix.net.MessageEncodingInvalid;
+import se.arkalix.net.MessageEncodingMisspecified;
 import se.arkalix.net.MessageEncodingUnspecified;
 import se.arkalix.net.MessageEncodingUnsupported;
-import se.arkalix.net.MessageException;
 import se.arkalix.encoding.ToEncoding;
 import se.arkalix.util.concurrent.Future;
-
-import java.util.List;
 
 /**
  * An incoming HTTP response.
@@ -34,7 +30,7 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
      * @throws IllegalStateException If the body has already been consumed.
      * @throws NullPointerException  If {@code decoder} is {@code null}.
      */
-    default <T extends DtoReadable> Future<T> bodyAsIfSuccess(final Decoder<T> decoder) {
+    default <T> Future<T> bodyAsIfSuccess(final Decoder<T> decoder) {
         if (status().isSuccess()) {
             return bodyAs(decoder);
         }
@@ -54,7 +50,7 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
      * @param decoder Function to use for decoding the message body.
      * @return Future completed when the incoming message body has been fully
      * received and decoded.
-     * @throws MessageEncodingInvalid     If an encoding is specified in the
+     * @throws MessageEncodingMisspecified     If an encoding is specified in the
      *                                    message, but it cannot be interpreted.
      * @throws MessageEncodingUnspecified If no encoding is specified in this
      *                                    message.
@@ -64,7 +60,7 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
      * @throws IllegalStateException      If the body has already been consumed.
      * @throws NullPointerException       If {@code decoder} is {@code null}.
      */
-    default <T extends DtoReadable> Future<T> bodyAsIfSuccess(final MultiDecoder<T> decoder) {
+    default <T> Future<T> bodyAsIfSuccess(final MultiDecoder<T> decoder) {
         if (status().isSuccess()) {
             return bodyAs(decoder);
         }
@@ -91,7 +87,7 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
      * @throws NullPointerException       If {@code decoder} or {@code encoding}
      *                                    is {@code null}.
      */
-    default <T extends DtoReadable> Future<T> bodyAsIfSuccess(
+    default <T> Future<T> bodyAsIfSuccess(
         final MultiDecoder<T> decoder,
         final ToEncoding encoding
     ) {

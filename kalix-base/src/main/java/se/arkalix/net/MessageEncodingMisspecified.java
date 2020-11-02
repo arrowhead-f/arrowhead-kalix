@@ -4,9 +4,9 @@ import java.util.Objects;
 
 /**
  * Represents the inability to encode or decode a {@link Message}, caused by
- * an encoding being specified with an unexpected format.
+ * an encoding being specified incorrectly.
  */
-public class MessageEncodingInvalid extends MessageException {
+public class MessageEncodingMisspecified extends MessageException {
     private final Object encoding;
 
     /**
@@ -15,7 +15,7 @@ public class MessageEncodingInvalid extends MessageException {
      * @param message  Offending message.
      * @param encoding Unexpectedly formatted encoding.
      */
-    public MessageEncodingInvalid(final Message message, final Object encoding) {
+    public MessageEncodingMisspecified(final Message message, final Object encoding) {
         this(message, encoding, null);
     }
 
@@ -26,7 +26,7 @@ public class MessageEncodingInvalid extends MessageException {
      * @param encoding Unexpectedly formatted encoding.
      * @param cause    Description of formatting error, if any.
      */
-    public MessageEncodingInvalid(final Message message, final Object encoding, final Throwable cause) {
+    public MessageEncodingMisspecified(final Message message, final Object encoding, final Throwable cause) {
         super(message, cause);
         this.encoding = Objects.requireNonNull(encoding, "encoding");
     }

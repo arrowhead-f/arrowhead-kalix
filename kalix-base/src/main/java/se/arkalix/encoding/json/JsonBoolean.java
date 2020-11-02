@@ -1,11 +1,10 @@
-package se.arkalix.dto.json.value;
+package se.arkalix.encoding.json;
 
 import se.arkalix.dto.DtoExclusive;
-import se.arkalix.dto.DtoReadException;
 import se.arkalix.encoding.binary.BinaryReader;
 import se.arkalix.encoding.binary.BinaryWriter;
-import se.arkalix.dto.json._internal.JsonTokenBuffer;
-import se.arkalix.dto.json._internal.JsonTokenizer;
+import se.arkalix.encoding.json._internal.JsonTokenBuffer;
+import se.arkalix.encoding.json._internal.JsonTokenizer;
 import se.arkalix.util.annotation.Internal;
 
 import java.util.Optional;

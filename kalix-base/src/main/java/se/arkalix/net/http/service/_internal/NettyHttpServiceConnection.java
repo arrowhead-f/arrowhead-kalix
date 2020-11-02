@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.ArSystem;
 import se.arkalix.SystemRecordWithIdentity;
-import se.arkalix.dto.DtoReadException;
 import se.arkalix.encoding.Encoding;
 import se.arkalix.net.MediaType;
 import se.arkalix.net._internal.NettyBodyOutgoing;

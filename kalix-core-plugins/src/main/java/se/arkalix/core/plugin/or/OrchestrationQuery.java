@@ -6,7 +6,7 @@ import se.arkalix.core.plugin.sr.ServiceQuery;
 import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
-import se.arkalix.dto.json.JsonName;
+import se.arkalix.dto.json.DtoJsonName;
 
 import java.util.List;
 import java.util.Map;
@@ -27,26 +27,26 @@ public interface OrchestrationQuery {
     /**
      * Details about the system making the orchestration query.
      */
-    @JsonName("requesterSystem")
+    @DtoJsonName("requesterSystem")
     SystemDetails requester();
 
     /**
      * Description of the specific kind of service the querying system desires
      * to consume.
      */
-    @JsonName("requestedService")
+    @DtoJsonName("requestedService")
     Optional<ServiceQuery> service();
 
     /**
      * A list of systems the querying system prefers to provide the requested
      * service.
      */
-    @JsonName("preferredProviders")
+    @DtoJsonName("preferredProviders")
     List<ServiceProvider> providers();
 
     /**
      * A map of orchestration {@link OrchestrationOption options}.
      */
-    @JsonName("orchestrationFlags")
+    @DtoJsonName("orchestrationFlags")
     Map<OrchestrationOption, Boolean> options();
 }

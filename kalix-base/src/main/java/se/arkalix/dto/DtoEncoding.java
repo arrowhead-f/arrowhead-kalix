@@ -1,12 +1,13 @@
 package se.arkalix.dto;
 
 /**
- * Contains names of all encoding implementations that are provided by a Kalix
- * package.
+ * Contains names of all encoding implementations that are provided by any
+ * Kalix annotation processor.
  * <p>
- * These names are suitable as arguments to the {@link
+ * The contained names are suitable as arguments to the {@link
  * DtoReadableAs @DtoReadableAs} and {@link DtoWritableAs @DtoWritableAs}
- * annotations.
+ * annotations, given that an annotation processing facility is available for
+ * generating DTO classes for the names.
  *
  * @see se.arkalix.dto
  */
@@ -20,8 +21,7 @@ public final class DtoEncoding {
      * DtoReadableAs @DtoReadableAs} and {@link DtoWritableAs @DtoWritableAs}
      * annotations.
      *
-     * @see se.arkalix.dto.json.JsonEncoding JsonEncoding
      * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
      */
-    public static final String JSON = "se.arkalix.dto.json.JsonEncoding";
+    public static final String JSON = "se.arkalix.dto.json";
 }

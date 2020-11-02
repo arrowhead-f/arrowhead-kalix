@@ -1,6 +1,6 @@
 package se.arkalix.dto;
 
-import se.arkalix.dto.json.JsonName;
+import se.arkalix.dto.json.DtoJsonName;
 import se.arkalix.dto.types.*;
 
 import javax.lang.model.element.*;
@@ -160,7 +160,7 @@ public class DtoPropertyFactory {
 
     private Map<String, String> collectEncodingNamesFrom(final Element method) {
         final var encodingNames = new HashMap<String, String>();
-        final var nameJSON = method.getAnnotation(JsonName.class);
+        final var nameJSON = method.getAnnotation(DtoJsonName.class);
         if (nameJSON != null) {
             encodingNames.put(DtoEncoding.JSON, nameJSON.value());
         }

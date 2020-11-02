@@ -1,11 +1,7 @@
-package se.arkalix.dto.json._internal;
+package se.arkalix.encoding.json._internal;
 
-import se.arkalix.dto.DtoReadException;
-import se.arkalix.dto.DtoReadUnexpectedToken;
-import se.arkalix.dto.DtoReadable;
 import se.arkalix.encoding.binary.BinaryReader;
-import se.arkalix.dto.json.JsonEncoding;
-import se.arkalix.dto.json.value.*;
+import se.arkalix.encoding.json.*;
 import se.arkalix.util.annotation.Internal;
 
 import java.nio.charset.StandardCharsets;

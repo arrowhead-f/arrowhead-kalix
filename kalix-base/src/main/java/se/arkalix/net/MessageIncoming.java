@@ -56,7 +56,7 @@ public interface MessageIncoming extends Message {
      * @param decoder Function to use for decoding the message body.
      * @return Future completed when the incoming message body has been fully
      * received and decoded.
-     * @throws MessageEncodingInvalid     If an encoding is specified in the
+     * @throws MessageEncodingMisspecified     If an encoding is specified in the
      *                                    message, but it cannot be interpreted.
      * @throws MessageEncodingUnspecified If no encoding is specified in this
      *                                    message.

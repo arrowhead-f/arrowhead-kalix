@@ -1,8 +1,8 @@
 /**
  * <h1>JSON Value Types</h1>
  * This package contains classes useful for manually constructing JSON values.
- * The {@link se.arkalix.dto.json.value.JsonArray JsonArray} and {@link
- * se.arkalix.dto.json.value.JsonObject JsonObject} classes may, in particular,
+ * The {@link se.arkalix.encoding.json.JsonArray JsonArray} and {@link
+ * se.arkalix.encoding.json.JsonObject JsonObject} classes may, in particular,
  * be used as-is as {@link se.arkalix.dto DTOs}. The other classes may be used
  * as members in {@link se.arkalix.dto DTO interfaces} that only need to ever
  * deal with JSON input.
@@ -16,4 +16,4 @@
  *
  * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
  */
-package se.arkalix.dto.json.value;
+package se.arkalix.encoding.json;
