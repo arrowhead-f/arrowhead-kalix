@@ -32,7 +32,7 @@ public interface BinaryWriter {
      * <p>
      * The underlying target might be able to allocate more memory as it fills
      * up. The number returned by this method may or may not represent a final
-     * amount of remaning space.
+     * amount of remaining space.
      *
      * @return Remaining number of writable bytes.
      */

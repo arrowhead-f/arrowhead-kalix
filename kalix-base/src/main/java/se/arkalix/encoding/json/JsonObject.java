@@ -5,9 +5,9 @@ import se.arkalix.encoding.DecoderReadUnexpectedToken;
 import se.arkalix.encoding.Encoding;
 import se.arkalix.encoding.binary.BinaryReader;
 import se.arkalix.encoding.binary.BinaryWriter;
+import se.arkalix.encoding.json._internal.JsonPrimitives;
 import se.arkalix.encoding.json._internal.JsonTokenBuffer;
 import se.arkalix.encoding.json._internal.JsonTokenizer;
-import se.arkalix.encoding.json._internal.JsonWrite;
 import se.arkalix.util.annotation.Internal;
 
 import java.util.*;
@@ -107,7 +107,7 @@ public class JsonObject implements JsonCollection<String>, Iterable<JsonPair> {
             throw new DecoderReadUnexpectedToken(
                 Encoding.JSON,
                 reader,
-                token.readStringRaw(reader),
+                JsonPrimitives.readStringRaw(token, reader),
                 token.begin(),
                 "expected object");
         }
@@ -115,7 +115,7 @@ public class JsonObject implements JsonCollection<String>, Iterable<JsonPair> {
         for (var n = token.nChildren(); n-- != 0; ) {
             final var name = buffer.next();
             final var value = JsonValue.readJson(buffer);
-            pairs.add(new JsonPair(name.readString(reader), value));
+            pairs.add(new JsonPair(JsonPrimitives.readString(token, reader), value));
         }
         return new JsonObject(pairs);
     }
@@ -132,7 +132,7 @@ public class JsonObject implements JsonCollection<String>, Iterable<JsonPair> {
                 writer.write((byte) ',');
             }
             writer.write((byte) '"');
-            JsonWrite.write(pair.name(), writer);
+            JsonPrimitives.write(pair.name(), writer);
             writer.write(new byte[]{'"', ':'});
             pair.value().writeJson(writer);
         }

@@ -5,6 +5,7 @@ import se.arkalix.encoding.Encoding;
 import se.arkalix.encoding.DecoderReadUnexpectedToken;
 import se.arkalix.encoding.binary.BinaryReader;
 import se.arkalix.encoding.binary.BinaryWriter;
+import se.arkalix.encoding.json._internal.JsonPrimitives;
 import se.arkalix.encoding.json._internal.JsonTokenBuffer;
 import se.arkalix.encoding.json._internal.JsonTokenizer;
 import se.arkalix.util.annotation.Internal;
@@ -103,7 +104,7 @@ public class JsonArray implements JsonCollection<Integer>, Iterable<JsonValue> {
             throw new DecoderReadUnexpectedToken(
                 Encoding.JSON,
                 reader,
-                token.readStringRaw(reader),
+                JsonPrimitives.readStringRaw(token, reader),
                 token.begin(),
                 "expected array");
         }

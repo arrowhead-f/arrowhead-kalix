@@ -5,6 +5,7 @@ import se.arkalix.encoding.DecoderReadUnexpectedToken;
 import se.arkalix.encoding.Encoding;
 import se.arkalix.encoding.binary.BinaryReader;
 import se.arkalix.encoding.binary.BinaryWriter;
+import se.arkalix.encoding.json._internal.JsonPrimitives;
 import se.arkalix.encoding.json._internal.JsonTokenBuffer;
 import se.arkalix.encoding.json._internal.JsonTokenizer;
 import se.arkalix.util.annotation.Internal;
@@ -289,7 +290,7 @@ public class JsonNumber implements JsonValue {
     public static JsonNumber readJson(final JsonTokenBuffer buffer) {
         final var reader = buffer.reader();
         final var token = buffer.next();
-        final var string = token.readStringRaw(reader);
+        final var string = JsonPrimitives.readStringRaw(token, reader);
         if (token.type() != JsonType.NUMBER) {
             throw new DecoderReadUnexpectedToken(
                 Encoding.JSON,

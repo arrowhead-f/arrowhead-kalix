@@ -7,7 +7,7 @@ import se.arkalix.encoding.binary.BinaryReader;
 import se.arkalix.encoding.binary.BinaryWriter;
 import se.arkalix.encoding.json._internal.JsonTokenBuffer;
 import se.arkalix.encoding.json._internal.JsonTokenizer;
-import se.arkalix.encoding.json._internal.JsonWrite;
+import se.arkalix.encoding.json._internal.JsonPrimitives;
 import se.arkalix.util.annotation.Internal;
 
 import java.time.*;
@@ -180,17 +180,17 @@ public class JsonString implements JsonValue {
             throw new DecoderReadUnexpectedToken(
                 Encoding.JSON,
                 reader,
-                token.readStringRaw(reader),
+                JsonPrimitives.readStringRaw(token, reader),
                 token.begin(),
                 "expected string");
         }
-        return new JsonString(token.readString(reader));
+        return new JsonString(JsonPrimitives.readString(token, reader));
     }
 
     @Override
     public Encoding writeJson(final BinaryWriter writer) {
         writer.write((byte) '"');
-        JsonWrite.write(string, writer);
+        JsonPrimitives.write(string, writer);
         writer.write((byte) '"');
         return Encoding.JSON;
     }
