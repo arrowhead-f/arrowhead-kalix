@@ -1,8 +1,10 @@
 package se.arkalix.encoding.json;
 
+import se.arkalix.encoding.Encoding;
+import se.arkalix.encoding.binary.BinaryReader;
+import se.arkalix.encoding.binary.BinaryWriter;
 import se.arkalix.encoding.json._internal.JsonTokenBuffer;
 import se.arkalix.encoding.json._internal.JsonTokenizer;
-import se.arkalix.encoding.binary.BinaryReader;
 import se.arkalix.util.annotation.Internal;
 
 import java.util.Optional;
@@ -64,17 +66,22 @@ public interface JsonValue {
     }
 
     /**
-     * Reads JSON value from given {@code source}.
+     * Writes JSON value to given {@code reader}.
      *
-     * @param source Source containing JSON value at the current read offset,
+     * @param writer Writer to which this JSON value will be written.
+     * @return {@link Encoding#JSON}.
+     */
+    Encoding writeJson(final BinaryWriter writer);
+
+    /**
+     * Reads JSON value from given {@code reader}.
+     *
+     * @param reader Reader containing JSON value at the current read offset,
      *               ignoring any whitespace.
      * @return Decoded JSON value.
-     * @throws DtoReadException If the source does not contain a valid JSON
-     *                          value at the current read offset, or if the
-     *                          source could not be read.
      */
-    static JsonValue readJson(final BinaryReader source) throws DtoReadException {
-        return readJson(JsonTokenizer.tokenize(source));
+    static JsonValue readJson(final BinaryReader reader) {
+        return readJson(JsonTokenizer.tokenize(reader));
     }
 
     /**
@@ -82,7 +89,7 @@ public interface JsonValue {
      * versions of the Kalix library. Use is not advised.
      */
     @Internal
-    static JsonValue readJson(final JsonTokenBuffer buffer) throws DtoReadException {
+    static JsonValue readJson(final JsonTokenBuffer buffer) {
         var token = buffer.peek();
         switch (token.type()) {
         case OBJECT:

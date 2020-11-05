@@ -1,6 +1,8 @@
 package se.arkalix.encoding.json;
 
 import se.arkalix.dto.DtoExclusive;
+import se.arkalix.encoding.DecoderReadUnexpectedToken;
+import se.arkalix.encoding.Encoding;
 import se.arkalix.encoding.binary.BinaryReader;
 import se.arkalix.encoding.binary.BinaryWriter;
 import se.arkalix.encoding.json._internal.JsonTokenBuffer;
@@ -80,17 +82,17 @@ public class JsonObject implements JsonCollection<String>, Iterable<JsonPair> {
     }
 
     /**
-     * Reads JSON object from given {@code source}.
+     * Reads JSON object from given {@code reader}.
      *
-     * @param source Source containing JSON object at the current read offset,
+     * @param reader Source containing JSON object at the current read offset,
      *               ignoring any whitespace.
      * @return Decoded JSON object.
-     * @throws DtoReadException If the source does not contain a valid JSON
-     *                          object at the current read offset, or if the
-     *                          source could not be read.
+     * @throws DecoderReadUnexpectedToken If the reader does not contain a
+     *                                    valid JSON object at the current read
+     *                                    offset.
      */
-    public static JsonObject readJson(final BinaryReader source) throws DtoReadException {
-        return readJson(JsonTokenizer.tokenize(source));
+    public static JsonObject readJson(final BinaryReader reader) {
+        return readJson(JsonTokenizer.tokenize(reader));
     }
 
     /**
@@ -98,24 +100,28 @@ public class JsonObject implements JsonCollection<String>, Iterable<JsonPair> {
      * versions of the Kalix library. Use is not advised.
      */
     @Internal
-    public static JsonObject readJson(final JsonTokenBuffer buffer) throws DtoReadException {
-        final var source = buffer.source();
+    public static JsonObject readJson(final JsonTokenBuffer buffer) {
+        final var reader = buffer.reader();
         var token = buffer.next();
         if (token.type() != JsonType.OBJECT) {
-            throw new DtoReadException(JsonObject.class, DtoEncoding.JSON,
-                "expected object", token.readStringRaw(source), token.begin());
+            throw new DecoderReadUnexpectedToken(
+                Encoding.JSON,
+                reader,
+                token.readStringRaw(reader),
+                token.begin(),
+                "expected object");
         }
         final var pairs = new ArrayList<JsonPair>(token.nChildren());
         for (var n = token.nChildren(); n-- != 0; ) {
             final var name = buffer.next();
             final var value = JsonValue.readJson(buffer);
-            pairs.add(new JsonPair(name.readString(source), value));
+            pairs.add(new JsonPair(name.readString(reader), value));
         }
         return new JsonObject(pairs);
     }
 
     @Override
-    public void writeJson(final BinaryWriter writer) throws DtoWriteException {
+    public Encoding writeJson(final BinaryWriter writer) {
         writer.write((byte) '{');
         var isFirst = true;
         for (final var pair : pairs) {
@@ -131,6 +137,7 @@ public class JsonObject implements JsonCollection<String>, Iterable<JsonPair> {
             pair.value().writeJson(writer);
         }
         writer.write((byte) '}');
+        return Encoding.JSON;
     }
 
     @Override

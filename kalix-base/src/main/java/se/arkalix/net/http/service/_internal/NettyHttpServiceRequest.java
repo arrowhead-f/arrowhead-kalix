@@ -36,8 +36,8 @@ public class NettyHttpServiceRequest extends NettyMessageIncoming implements Htt
         super(
             builder.alloc
         );
-        connection = Objects.requireNonNull(builder.connection, "Expected connection");
-        queryStringDecoder = Objects.requireNonNull(builder.queryStringDecoder, "Expected queryStringDecoder");
+        connection = Objects.requireNonNull(builder.connection, "connection");
+        queryStringDecoder = Objects.requireNonNull(builder.queryStringDecoder, "queryStringDecoder");
         request = builder.request;
         consumer = builder.consumer;
     }

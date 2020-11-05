@@ -1,17 +1,16 @@
 package se.arkalix.dto;
 
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterSpec;
-import com.squareup.javapoet.TypeName;
-import com.squareup.javapoet.TypeSpec;
-import se.arkalix.encoding.binary.BinaryReader;
-import se.arkalix.encoding.binary.BinaryWriter;
+import com.squareup.javapoet.*;
 import se.arkalix.dto.types.*;
 import se.arkalix.dto.util.BinaryWriterWriteCache;
 import se.arkalix.dto.util.Expander;
+import se.arkalix.encoding.DecoderReadUnexpectedToken;
+import se.arkalix.encoding.Encoding;
+import se.arkalix.encoding.binary.BinaryReader;
+import se.arkalix.encoding.binary.BinaryWriter;
+import se.arkalix.encoding.json.JsonType;
 import se.arkalix.encoding.json._internal.JsonTokenBuffer;
 import se.arkalix.encoding.json._internal.JsonTokenizer;
-import se.arkalix.encoding.json.JsonType;
 import se.arkalix.encoding.json._internal.JsonWrite;
 import se.arkalix.util.annotation.Internal;
 
@@ -21,7 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class DtoImplementerJson implements DtoImplementer {
-    private final BinaryWriterWriteCache writeCache = new BinaryWriterWriteCache("target");
+    private final BinaryWriterWriteCache writeCache = new BinaryWriterWriteCache("writer");
 
     private int level = 0;
 
@@ -33,34 +32,31 @@ public class DtoImplementerJson implements DtoImplementer {
     @Override
     public void implementFor(final DtoTarget target, final TypeSpec.Builder implementation) throws DtoException {
         if (target.interfaceType().isReadable(DtoEncoding.JSON)) {
-            implementation.addSuperinterface(JsonReadable.class);
             implementReadMethodsFor(target, implementation);
         }
         if (target.interfaceType().isWritable(DtoEncoding.JSON)) {
-            implementation.addSuperinterface(JsonWritable.class);
             implementWriteMethodFor(target, implementation);
         }
     }
 
-    private void implementReadMethodsFor(final DtoTarget target, final TypeSpec.Builder implementation) throws DtoException {
+    private void implementReadMethodsFor(final DtoTarget target, final TypeSpec.Builder implementation)
+        throws DtoException {
         final var dataTypeName = target.dataTypeName();
         final var properties = target.properties();
 
         implementation.addMethod(MethodSpec.methodBuilder("readJson")
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
             .returns(dataTypeName)
-            .addParameter(BinaryReader.class, "source", Modifier.FINAL)
-            .addException(DtoReadException.class)
-            .addStatement("return readJson($T.tokenize(source))", JsonTokenizer.class)
+            .addParameter(BinaryReader.class, "reader", Modifier.FINAL)
+            .addStatement("return readJson($T.tokenize(reader))", JsonTokenizer.class)
             .build());
 
         final var builder = MethodSpec.methodBuilder("readJson")
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
             .returns(dataTypeName)
             .addParameter(JsonTokenBuffer.class, "buffer", Modifier.FINAL)
-            .addException(DtoReadException.class)
             .addAnnotation(Internal.class)
-            .addStatement("final var source = buffer.source()")
+            .addStatement("final var reader = buffer.reader()")
             .addStatement("var token = buffer.next()")
             .addStatement("var type = ($T) null", JsonType.class)
             .addStatement("var errorMessage = \"\"")
@@ -87,13 +83,13 @@ public class DtoImplementerJson implements DtoImplementer {
             .endControlFlow()
             .addStatement("final var builder = new $N()", builderName)
             .beginControlFlow("for (n = token.nChildren(); n != 0; --n)")
-            .beginControlFlow("switch (buffer.next().readString(source))");
+            .beginControlFlow("switch (buffer.next().readString(reader))");
 
         for (final var property : properties) {
             try {
                 builder.beginControlFlow("case $S:", property.nameFor(DtoEncoding.JSON));
                 final var name = property.name();
-                readValue(property.type(), x -> "builder." + name + "(" + x + ")", builder);
+                readValue(target, property.type(), x -> "builder." + name + "(" + x + ")", builder);
                 builder.endControlFlow("break");
             }
             catch (final IllegalStateException exception) {
@@ -114,7 +110,7 @@ public class DtoImplementerJson implements DtoImplementer {
 
         if (hasInterface) {
             builder
-                .beginControlFlow("catch (final $T exception)", DtoReadException.class)
+                .beginControlFlow("catch (final $T exception)", DecoderReadUnexpectedToken.class)
                 .addStatement("errorMessage = \"failed to read child object\"")
                 .addStatement("errorCause = exception")
                 .endControlFlow();
@@ -130,7 +126,7 @@ public class DtoImplementerJson implements DtoImplementer {
             builder
                 .beginControlFlow("catch (final $T exception)", NullPointerException.class)
                 .addStatement("errorMessage = \"required field '\" + exception.getMessage() + " +
-                        "\"' not specified\"")
+                    "\"' not specified\"")
                 .addStatement("errorCause = exception")
                 .endControlFlow();
         }
@@ -144,20 +140,25 @@ public class DtoImplementerJson implements DtoImplementer {
 
         builder
             .addStatement("final var atEnd = n == 0")
-            .addStatement("throw new $1T($2T.class, $3T.JSON, errorMessage, " +
-                    "atEnd ? \"{\" : token.readStringRaw(source), atEnd ? 0 " +
-                    ": token.begin(), errorCause)",
-                DtoReadException.class, dataTypeName, DtoEncoding.class);
+            .addStatement("throw new $1T($2T.JSON, reader, " +
+                    "atEnd ? \"{\" : token.readStringRaw(reader), atEnd ? 0 " +
+                    ": token.begin(), errorMessage, errorCause)",
+                DecoderReadUnexpectedToken.class, Encoding.class);
 
         implementation.addMethod(builder.build());
     }
 
-    private void readValue(final DtoType type, final Expander assignment, final MethodSpec.Builder builder) {
+    private void readValue(
+        final DtoTarget target,
+        final DtoType type,
+        final Expander assignment,
+        final MethodSpec.Builder builder
+    ) throws DtoException {
         final var descriptor = type.descriptor();
         switch (descriptor) {
         case ARRAY:
         case LIST:
-            readArray((DtoSequence) type, assignment, builder);
+            readArray(target, (DtoSequence) type, assignment, builder);
             break;
 
         case BIG_DECIMAL:
@@ -183,7 +184,7 @@ public class DtoImplementerJson implements DtoImplementer {
             throw characterTypesNotSupportedException();
 
         case CUSTOM:
-            readCustom((DtoElement) type, assignment, builder);
+            readCustom(target, (DtoCustom) type, assignment, builder);
             break;
 
         case DOUBLE_BOXED:
@@ -223,7 +224,7 @@ public class DtoImplementerJson implements DtoImplementer {
             break;
 
         case MAP:
-            readMap((DtoMap) type, assignment, builder);
+            readMap(target, (DtoMap) type, assignment, builder);
             break;
 
         case MONTH_DAY:
@@ -276,7 +277,12 @@ public class DtoImplementerJson implements DtoImplementer {
         }
     }
 
-    private void readArray(final DtoSequence type, final Expander assignment, final MethodSpec.Builder builder) {
+    private void readArray(
+        final DtoTarget target,
+        final DtoSequence type,
+        final Expander assignment,
+        final MethodSpec.Builder builder
+    ) throws DtoException {
         final var element = type.element();
         final var elementTypeName = element.inputTypeName();
 
@@ -315,7 +321,7 @@ public class DtoImplementerJson implements DtoImplementer {
         }
 
         level += 1;
-        readValue(element, assignment0, builder);
+        readValue(target, element, assignment0, builder);
         level -= 1;
 
         builder
@@ -341,7 +347,22 @@ public class DtoImplementerJson implements DtoImplementer {
             .addStatement(assignment.expand("value$L"), level);
     }
 
-    private void readCustom(final DtoElement type, final Expander assignment, final MethodSpec.Builder builder) {
+    private void readCustom(
+        final DtoTarget target,
+        final DtoCustom type,
+        final Expander assignment,
+        final MethodSpec.Builder builder
+    )
+        throws DtoException
+    {
+        final var returnType = target.interfaceType().type().toString();
+        final var parameter = JsonTokenBuffer.class.getCanonicalName();
+        if (!type.containsPublicStaticMethod(returnType, "readJson", parameter)) {
+            throw new DtoException(type.typeElement(), "No public static " +
+                "readJson(JsonTokenBuffer) method available; required for " +
+                "this class/interface to be useful as a custom JSON DTO");
+        }
+
         if (level == 0) {
             builder
                 .beginControlFlow("if (buffer.peek().type() == $T.NULL)", JsonType.class)
@@ -368,7 +389,7 @@ public class DtoImplementerJson implements DtoImplementer {
             .addStatement("errorMessage = \"expected number\"")
             .addStatement("break error")
             .endControlFlow()
-            .addStatement(assignment.expand("$T.valueOf(token.readString(source))"), type.inputTypeName());
+            .addStatement(assignment.expand("$T.valueOf(token.readString(reader))"), type.inputTypeName());
     }
 
     private void readInterface(final DtoInterface type, final Expander assignment, final MethodSpec.Builder builder) {
@@ -388,7 +409,14 @@ public class DtoImplementerJson implements DtoImplementer {
         builder.addStatement(assignment.expand("$T.readJson(buffer)"), type.inputTypeName());
     }
 
-    private void readMap(final DtoMap type, final Expander assignment, final MethodSpec.Builder builder) {
+    private void readMap(
+        final DtoTarget target,
+        final DtoMap type,
+        final Expander assignment,
+        final MethodSpec.Builder builder
+    )
+        throws DtoException
+    {
         final var key = type.key();
         final var value = type.value();
 
@@ -410,11 +438,11 @@ public class DtoImplementerJson implements DtoImplementer {
             .addStatement("final var entries$1L = new $2T<$3T, $4T>(n$1L)",
                 level, HashMap.class, key.inputTypeName(), value.inputTypeName())
             .beginControlFlow("while (n$L-- != 0)", level)
-            .addStatement("final var key$L = buffer.next().readString(source)", level);
+            .addStatement("final var key$L = buffer.next().readString(reader)", level);
 
         final var leader = "final var value" + level + " = ";
         level += 1;
-        readValue(value, x -> leader + x, builder);
+        readValue(target, value, x -> leader + x, builder);
         level -= 1;
 
         if (key.descriptor() == DtoDescriptor.ENUM) {
@@ -444,7 +472,7 @@ public class DtoImplementerJson implements DtoImplementer {
             .addStatement("errorMessage = \"expected number\"")
             .addStatement("break error")
             .endControlFlow()
-            .addStatement(assignment.expand("token.read" + type + "(source)"));
+            .addStatement(assignment.expand("token.read" + type + "(reader)"));
     }
 
     private void readString(final Expander assignment, final MethodSpec.Builder builder) {
@@ -462,21 +490,21 @@ public class DtoImplementerJson implements DtoImplementer {
             .addStatement("errorMessage = \"expected string\"")
             .addStatement("break error")
             .endControlFlow()
-            .addStatement(assignment.expand("token.readString(source)"));
+            .addStatement(assignment.expand("token.readString(reader)"));
     }
 
     public void readTemporal(
         final Class<?> class_,
         final boolean asNumber, final Expander assignment,
-        final MethodSpec.Builder builder)
-    {
+        final MethodSpec.Builder builder
+    ) {
         builder.addStatement("token = buffer.next()");
         if (asNumber) {
             builder
                 .addStatement("$T value$L", class_, level)
                 .beginControlFlow("switch (token.type())")
-                .addStatement("case NUMBER: value$L = token.read$TNumber(source); break", level, class_)
-                .addStatement("case STRING: value$L = token.read$T(source); break", level, class_);
+                .addStatement("case NUMBER: value$L = token.read$TNumber(reader); break", level, class_)
+                .addStatement("case STRING: value$L = token.read$T(reader); break", level, class_);
             if (level == 0) {
                 builder.addStatement("case NULL: continue");
             }
@@ -498,7 +526,7 @@ public class DtoImplementerJson implements DtoImplementer {
                 .addStatement("errorMessage = \"expected string\"")
                 .addStatement("break error")
                 .endControlFlow()
-                .addStatement(assignment.expand("token.read$T(source)"), class_);
+                .addStatement(assignment.expand("token.read$T(reader)"), class_);
         }
     }
 
@@ -506,10 +534,9 @@ public class DtoImplementerJson implements DtoImplementer {
         throws DtoException
     {
         final var builder = MethodSpec.methodBuilder("writeJson")
-            .addAnnotation(Override.class)
             .addModifiers(Modifier.PUBLIC)
-            .addException(DtoWriteException.class)
-            .addParameter(ParameterSpec.builder(TypeName.get(BinaryWriter.class), "target")
+            .returns(TypeName.get(Encoding.class))
+            .addParameter(ParameterSpec.builder(TypeName.get(BinaryWriter.class), "writer")
                 .addModifiers(Modifier.FINAL)
                 .build());
 
@@ -589,10 +616,14 @@ public class DtoImplementerJson implements DtoImplementer {
 
         writeCache.append('}').addWriteIfNotEmpty(builder);
 
+        builder.addStatement("return $T.JSON", Encoding.class);
+
         implementation.addMethod(builder.build());
     }
 
-    private void writeValue(final DtoType type, final String name, final MethodSpec.Builder builder) {
+    private void writeValue(final DtoType type, final String name, final MethodSpec.Builder builder)
+        throws DtoException
+    {
         final var descriptor = type.descriptor();
         switch (descriptor) {
         case ARRAY:
@@ -624,7 +655,7 @@ public class DtoImplementerJson implements DtoImplementer {
             throw characterTypesNotSupportedException();
 
         case CUSTOM:
-            writeCustom(name, builder);
+            writeCustom((DtoCustom) type, name, builder);
             break;
 
         case DURATION:
@@ -659,7 +690,9 @@ public class DtoImplementerJson implements DtoImplementer {
         }
     }
 
-    private void writeArray(final DtoType type, final String name, final MethodSpec.Builder builder) {
+    private void writeArray(final DtoType type, final String name, final MethodSpec.Builder builder)
+        throws DtoException
+    {
         if (level > 0) {
             builder.beginControlFlow("");
         }
@@ -670,7 +703,7 @@ public class DtoImplementerJson implements DtoImplementer {
             .addStatement("var i$L = 0", level)
             .beginControlFlow("for (final var item$L : $N)", level, name)
             .beginControlFlow("if (i$L++ != 0)", level)
-            .addStatement("target.write((byte) ',')")
+            .addStatement("writer.write((byte) ',')")
             .endControlFlow();
 
         final var itemName = "item" + level;
@@ -688,14 +721,28 @@ public class DtoImplementerJson implements DtoImplementer {
         }
     }
 
-    private void writeCustom(final String name, final MethodSpec.Builder builder) {
+    private void writeCustom(
+        final DtoCustom type,
+        final String name,
+        final MethodSpec.Builder builder
+    )
+        throws DtoException
+    {
+        final var returnType = Encoding.class.getCanonicalName();
+        final var parameter = BinaryWriter.class.getCanonicalName();
+        if (!type.containsPublicMethod(returnType, "writeJson", parameter)) {
+            throw new DtoException(type.typeElement(), "No public " +
+                "writeJson(BinaryWriter) method available; required for " +
+                "this class/interface to be useful as a custom JSON DTO");
+        }
+
         writeCache.addWriteIfNotEmpty(builder);
-        builder.addStatement("$N.writeJson(target)", name);
+        builder.addStatement("$N.writeJson(writer)", name);
     }
 
     private void writeEnum(final String name, final MethodSpec.Builder builder) {
         writeCache.append('"').addWrite(builder);
-        builder.addStatement("$T.write($N.toString(), target)", JsonWrite.class, name);
+        builder.addStatement("$T.write($N.toString(), writer)", JsonWrite.class, name);
         writeCache.append('"');
     }
 
@@ -706,10 +753,12 @@ public class DtoImplementerJson implements DtoImplementer {
                 "annotation argument");
         }
         writeCache.addWriteIfNotEmpty(builder);
-        builder.addStatement("$N.writeJson(target)", name);
+        builder.addStatement("$N.writeJson(writer)", name);
     }
 
-    private void writeMap(final DtoType type, final String name, final MethodSpec.Builder builder) {
+    private void writeMap(final DtoType type, final String name, final MethodSpec.Builder builder)
+        throws DtoException
+    {
         if (level > 0) {
             builder.beginControlFlow("");
         }
@@ -722,7 +771,7 @@ public class DtoImplementerJson implements DtoImplementer {
             .addStatement("var i$L = 0", level)
             .beginControlFlow("for (final var entry$1L : entrySet$1L)", level)
             .beginControlFlow("if (i$L++ != 0)", level)
-            .addStatement("target.write((byte) ',')")
+            .addStatement("writer.write((byte) ',')")
             .endControlFlow();
 
         writeValue(map.key(), "entry" + level + ".getKey()", builder);
@@ -746,12 +795,12 @@ public class DtoImplementerJson implements DtoImplementer {
 
     private void writeOther(final String name, final MethodSpec.Builder builder) {
         writeCache.addWriteIfNotEmpty(builder);
-        builder.addStatement("$T.write($N, target)", JsonWrite.class, name);
+        builder.addStatement("$T.write($N, writer)", JsonWrite.class, name);
     }
 
     private void writeString(final String name, final MethodSpec.Builder builder) {
         writeCache.append('"').addWrite(builder);
-        builder.addStatement("$T.write($N, target)", JsonWrite.class, name);
+        builder.addStatement("$T.write($N, writer)", JsonWrite.class, name);
         writeCache.append('"');
     }
 

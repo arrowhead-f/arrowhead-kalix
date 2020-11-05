@@ -59,7 +59,7 @@ public interface MessageOutgoing<Self> extends Message {
         Objects.requireNonNull(byteArray, "byteArray");
         return body(BodyOutgoing.create(writer -> {
             writer.write(byteArray);
-            return Optional.empty();
+            return Encoding.NONE;
         }));
     }
 
@@ -91,7 +91,7 @@ public interface MessageOutgoing<Self> extends Message {
         final var encoding0 = encoding.toEncoding();
         return body(BodyOutgoing.create(writer -> {
             encodable.encodeUsing(writer, encoding0);
-            return Optional.of(encoding0);
+            return Encoding.NONE;
         }));
     }
 
@@ -130,7 +130,7 @@ public interface MessageOutgoing<Self> extends Message {
         final var encoding = Encoding.getOrRegister(charset);
         return body(BodyOutgoing.create(writer -> {
             writer.write(string.getBytes(charset));
-            return Optional.of(encoding);
+            return encoding;
         }));
     }
 

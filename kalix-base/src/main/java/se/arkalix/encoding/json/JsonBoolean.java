@@ -1,6 +1,8 @@
 package se.arkalix.encoding.json;
 
 import se.arkalix.dto.DtoExclusive;
+import se.arkalix.encoding.DecoderReadUnexpectedToken;
+import se.arkalix.encoding.Encoding;
 import se.arkalix.encoding.binary.BinaryReader;
 import se.arkalix.encoding.binary.BinaryWriter;
 import se.arkalix.encoding.json._internal.JsonTokenBuffer;
@@ -56,17 +58,17 @@ public class JsonBoolean implements JsonValue {
     }
 
     /**
-     * Reads "false" from given {@code source}.
+     * Reads "false" from given {@code reader}.
      *
-     * @param source Source containing "false" at the current read offset,
+     * @param reader Source containing "false" at the current read offset,
      *               ignoring any whitespace.
      * @return Decoded JSON false.
-     * @throws DtoReadException If the source does not contain the word "false"
-     *                          at the current read offset, or if the source
-     *                          could not be read.
+     * @throws DecoderReadUnexpectedToken If the reader does not contain a
+     *                                    valid JSON boolean at the current
+     *                                    read offset.
      */
-    public static JsonBoolean readJson(final BinaryReader source) throws DtoReadException {
-        return readJson(JsonTokenizer.tokenize(source));
+    public static JsonBoolean readJson(final BinaryReader reader) {
+        return readJson(JsonTokenizer.tokenize(reader));
     }
 
     /**
@@ -74,20 +76,26 @@ public class JsonBoolean implements JsonValue {
      * versions of the Kalix library. Use is not advised.
      */
     @Internal
-    public static JsonBoolean readJson(final JsonTokenBuffer buffer) throws DtoReadException {
+    public static JsonBoolean readJson(final JsonTokenBuffer buffer) {
         var token = buffer.next();
         switch (token.type()) {
         case TRUE: return TRUE;
         case FALSE: return FALSE;
         default:
-            throw new DtoReadException(JsonBoolean.class, DtoEncoding.JSON,
-                "expected 'true' or 'false'", token.readStringRaw(buffer.source()), token.begin());
+            final var reader = buffer.reader();
+            throw new DecoderReadUnexpectedToken(
+                Encoding.JSON,
+                reader,
+                token.readStringRaw(reader),
+                token.begin(),
+                "expected 'true' or 'false'");
         }
     }
 
     @Override
-    public void writeJson(final BinaryWriter writer) {
+    public Encoding writeJson(final BinaryWriter writer) {
         writer.write(value ? BYTES_TRUE : BYTES_FALSE);
+        return Encoding.JSON;
     }
 
     @Override

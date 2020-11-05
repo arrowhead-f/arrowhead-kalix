@@ -22,8 +22,8 @@ public class DtoTarget {
         final boolean isComparable,
         final boolean isPrintable)
     {
-        this.interfaceType = Objects.requireNonNull(interfaceType, "Expected interfaceType");
-        this.properties = Objects.requireNonNull(properties, "Expected properties");
+        this.interfaceType = Objects.requireNonNull(interfaceType, "interfaceType");
+        this.properties = Objects.requireNonNull(properties, "properties");
         this.isComparable = isComparable;
         this.isPrintable = isPrintable;
     }

@@ -6,7 +6,6 @@ import se.arkalix.encoding.MultiEncodable;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * An outgoing network message not always required to always have its body
@@ -37,8 +36,7 @@ public interface MessageOutgoingWithImplicitEncoding<Self> extends MessageOutgoi
                 .orElseThrow(() -> new MessageEncodingUnspecified(this));
 
             encodable.encodeUsing(writer, encoding0);
-
-            return Optional.of(encoding0);
+            return encoding0;
         }));
     }
 
@@ -69,7 +67,7 @@ public interface MessageOutgoingWithImplicitEncoding<Self> extends MessageOutgoi
             }
 
             writer.write(string.getBytes(charset));
-            return Optional.of(encoding);
+            return encoding;
         }));
     }
 }

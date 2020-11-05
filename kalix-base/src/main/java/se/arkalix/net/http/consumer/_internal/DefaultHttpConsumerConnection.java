@@ -2,7 +2,7 @@ package se.arkalix.net.http.consumer._internal;
 
 import se.arkalix.ArSystem;
 import se.arkalix.encoding.Encoding;
-import se.arkalix.net.MediaType;
+import se.arkalix.encoding.MediaType;
 import se.arkalix.net.http.client.HttpClientConnection;
 import se.arkalix.net.http.consumer.HttpConsumerConnection;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;

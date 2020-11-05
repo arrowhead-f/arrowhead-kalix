@@ -73,7 +73,7 @@ public class OrchestrationStrategy {
      * @param patterns Requests to attempt.
      */
     public OrchestrationStrategy(final List<OrchestrationPattern> patterns) {
-        this.patterns = Objects.requireNonNull(patterns, "Expected requests");
+        this.patterns = Objects.requireNonNull(patterns, "requests");
     }
 
     /**

@@ -31,8 +31,8 @@ public class PluginNotifier {
     private List<PluginHandler> handlers;
 
     public PluginNotifier(final ArSystem system, final Collection<Plugin> plugins) {
-        this.system = Objects.requireNonNull(system, "Expected system");
-        this.plugins = Objects.requireNonNull(plugins, "Expected plugins");
+        this.system = Objects.requireNonNull(system, "system");
+        this.plugins = Objects.requireNonNull(plugins, "plugins");
     }
 
     public Future<Map<Class<? extends Plugin>, PluginFacade>> onAttach() {
@@ -238,8 +238,8 @@ public class PluginNotifier {
         private final Plugin plugin;
 
         private PluginHandler(final PluginAttached attached, final Plugin plugin) {
-            this.attached = Objects.requireNonNull(attached, "Expected attached");
-            this.plugin = Objects.requireNonNull(plugin, "Expected plugin");
+            this.attached = Objects.requireNonNull(attached, "attached");
+            this.plugin = Objects.requireNonNull(plugin, "plugin");
         }
 
         public PluginAttached attached() {

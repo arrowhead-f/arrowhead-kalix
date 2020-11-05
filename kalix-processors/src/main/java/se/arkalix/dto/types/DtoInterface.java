@@ -16,6 +16,7 @@ public class DtoInterface implements DtoType {
     private final Set<String> writableDtoEncodings;
     private final Set<String> dtoEncodings;
 
+    private final DeclaredType interfaceType;
     private final String simpleName;
     private final String dataSimpleName;
     private final String builderSimpleName;
@@ -27,6 +28,7 @@ public class DtoInterface implements DtoType {
         final String[] readableDtoEncodings,
         final String[] writableDtoEncodings
     ) {
+        this.interfaceType = interfaceType;
         this.readableDtoEncodings = Stream.of(readableDtoEncodings).collect(Collectors.toSet());
         this.writableDtoEncodings = Stream.of(writableDtoEncodings).collect(Collectors.toSet());
 
@@ -62,6 +64,10 @@ public class DtoInterface implements DtoType {
             }
         }
         return qualifiedName.subSequence(0, qx).toString();
+    }
+
+    public DeclaredType type() {
+        return interfaceType;
     }
 
     public String simpleName() {

@@ -1,7 +1,5 @@
-package se.arkalix.net;
+package se.arkalix.encoding;
 
-import se.arkalix.encoding.Encoding;
-import se.arkalix.encoding.ToEncoding;
 import se.arkalix.util.annotation.ThreadSafe;
 
 import java.nio.charset.Charset;
@@ -73,10 +71,9 @@ public final class MediaType implements ToEncoding {
         {
             if (!encoding.isGeneral() && encoding.isTextual()) {
                 type = "text";
-                final var charset = encoding.charset().orElse(null);
-                if (charset != null) {
+                if (encoding.isCharset()) {
                     subtype = "plain";
-                    final var charsetName = charset.name().toLowerCase();
+                    final var charsetName = encoding.name().toLowerCase();
                     original = "text/plain;charset=" + charsetName;
                     parameters = Map.of("charset", charsetName);
                     break done;

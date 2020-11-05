@@ -2,6 +2,7 @@ package se.arkalix.encoding.json;
 
 import se.arkalix.dto.DtoExclusive;
 import se.arkalix.encoding.Encoding;
+import se.arkalix.encoding.DecoderReadUnexpectedToken;
 import se.arkalix.encoding.binary.BinaryReader;
 import se.arkalix.encoding.binary.BinaryWriter;
 import se.arkalix.encoding.json._internal.JsonTokenBuffer;
@@ -77,17 +78,17 @@ public class JsonArray implements JsonCollection<Integer>, Iterable<JsonValue> {
     }
 
     /**
-     * Reads JSON array from given {@code source}.
+     * Reads JSON array from given {@code reader}.
      *
-     * @param source Source containing JSON array at the current read offset,
+     * @param reader Source containing JSON array at the current read offset,
      *               ignoring any whitespace.
      * @return Decoded JSON array.
-     * @throws DtoReadException If the source does not contain a valid JSON
-     *                          array at the current read offset, or if the
-     *                          source could not be read.
+     * @throws DecoderReadUnexpectedToken If the reader does not contain a
+     *                                    valid JSON array at the current read
+     *                                    offset.
      */
-    public static JsonArray readJson(final BinaryReader source) throws DtoReadException {
-        return readJson(JsonTokenizer.tokenize(source));
+    public static JsonArray readJson(final BinaryReader reader) {
+        return readJson(JsonTokenizer.tokenize(reader));
     }
 
     /**
@@ -95,12 +96,16 @@ public class JsonArray implements JsonCollection<Integer>, Iterable<JsonValue> {
      * versions of the Kalix library. Use is not advised.
      */
     @Internal
-    public static JsonArray readJson(final JsonTokenBuffer buffer) throws DtoReadException {
-        final var source = buffer.source();
+    public static JsonArray readJson(final JsonTokenBuffer buffer) {
+        final var reader = buffer.reader();
         var token = buffer.next();
         if (token.type() != JsonType.ARRAY) {
-            throw new DtoReadException(JsonArray.class, JSON, "expected array",
-                token.readStringRaw(source), token.begin());
+            throw new DecoderReadUnexpectedToken(
+                Encoding.JSON,
+                reader,
+                token.readStringRaw(reader),
+                token.begin(),
+                "expected array");
         }
         final var elements = new ArrayList<JsonValue>(token.nChildren());
         for (var n = token.nChildren(); n-- != 0; ) {
@@ -109,7 +114,8 @@ public class JsonArray implements JsonCollection<Integer>, Iterable<JsonValue> {
         return new JsonArray(elements);
     }
 
-    public Optional<Encoding> writeJson(final BinaryWriter writer) throws DtoWriteException {
+    @Override
+    public Encoding writeJson(final BinaryWriter writer) {
         writer.write((byte) '[');
         var isFirst = true;
         for (final var element : elements) {
@@ -122,7 +128,7 @@ public class JsonArray implements JsonCollection<Integer>, Iterable<JsonValue> {
             element.writeJson(writer);
         }
         writer.write((byte) ']');
-        return Optional.of(Encoding.JSON);
+        return Encoding.JSON;
     }
 
     @Override

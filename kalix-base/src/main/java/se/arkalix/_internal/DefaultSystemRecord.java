@@ -20,9 +20,9 @@ public class DefaultSystemRecord implements SystemRecord {
         final PublicKey publicKey,
         final InetSocketAddress socketAddress
     ) {
-        this.name = Objects.requireNonNull(name, "Expected name");
+        this.name = Objects.requireNonNull(name, "name");
         this.publicKey = publicKey;
-        this.socketAddress = Objects.requireNonNull(socketAddress, "Expected remoteSocketAddress");
+        this.socketAddress = Objects.requireNonNull(socketAddress, "remoteSocketAddress");
     }
 
     @Override
@@ -67,7 +67,7 @@ public class DefaultSystemRecord implements SystemRecord {
 
     @Override
     public String toString() {
-        return "DefaultSystemDescription{" +
+        return "DefaultSystemRecord{" +
             "name='" + name + '\'' +
             ", socketAddress=" + socketAddress +
             ", publicKey='base64:" + Base64.getEncoder().encodeToString(publicKey.getEncoded()) + '\'' +

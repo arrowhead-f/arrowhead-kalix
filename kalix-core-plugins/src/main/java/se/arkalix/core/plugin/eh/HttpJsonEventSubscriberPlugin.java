@@ -106,7 +106,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
 
                         .post("/#topic", (request, response) -> {
                             final var topicName = request.pathParameter(0);
-                            return request.bodyAs(EventIncomingDto.class)
+                            return request.bodyAs(EventIncomingDto::readJson)
                                 .ifSuccess(event -> {
                                     try {
                                         final var topic = nameToTopic.get(topicName.toLowerCase());
@@ -294,8 +294,8 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
         private final Set<Handle> handles = Collections.synchronizedSet(new HashSet<>());
 
         private Topic(final String name, final Consumer<String> onEmpty) {
-            this.name = Objects.requireNonNull(name, "Expected name");
-            this.onEmpty = Objects.requireNonNull(onEmpty, "Expected onEmpty");
+            this.name = Objects.requireNonNull(name, "name");
+            this.onEmpty = Objects.requireNonNull(onEmpty, "onEmpty");
         }
 
         public String name() {
@@ -341,8 +341,8 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
             final EventSubscription subscription,
             final Consumer<Handle> onUnsubscribe)
         {
-            Objects.requireNonNull(subscription, "Expected subscription");
-            this.onUnsubscribe = Objects.requireNonNull(onUnsubscribe, "Expected onUnsubscribe");
+            Objects.requireNonNull(subscription, "subscription");
+            this.onUnsubscribe = Objects.requireNonNull(onUnsubscribe, "onUnsubscribe");
 
             handler = subscription.handler()
                 .orElseThrow(() -> new IllegalArgumentException(subscription +

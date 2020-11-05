@@ -28,8 +28,8 @@ public class HttpJsonServiceDiscoveryService implements ArServiceDiscoveryServic
     private final String pathUnregister;
 
     public HttpJsonServiceDiscoveryService(final ArSystem system, final ServiceRecord service) {
-        Objects.requireNonNull(system, "Expected system");
-        Objects.requireNonNull(service, "Expected service");
+        Objects.requireNonNull(system, "system");
+        Objects.requireNonNull(service, "service");
 
         consumer = HttpConsumer.create(system, service, Collections.singleton(Encoding.JSON));
 
@@ -50,8 +50,8 @@ public class HttpJsonServiceDiscoveryService implements ArServiceDiscoveryServic
             .send(new HttpConsumerRequest()
                 .method(POST)
                 .path(pathQuery)
-                .body(query))
-            .flatMap(response -> unwrap(response, ServiceQueryResultDto.class));
+                .body(query::writeJson))
+            .flatMap(response -> unwrap(response, ServiceQueryResultDto::readJson));
     }
 
     @Override
@@ -60,7 +60,7 @@ public class HttpJsonServiceDiscoveryService implements ArServiceDiscoveryServic
             .send(new HttpConsumerRequest()
                 .method(POST)
                 .path(pathRegister)
-                .body(registration))
+                .body(registration::writeJson))
             .flatMap(HttpJsonServices::unwrap);
     }
 

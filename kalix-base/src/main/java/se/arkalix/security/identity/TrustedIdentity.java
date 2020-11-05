@@ -52,7 +52,7 @@ public class TrustedIdentity {
      * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      */
     public TrustedIdentity(final Certificate[] chain) {
-        Objects.requireNonNull(chain, "Expected chain");
+        Objects.requireNonNull(chain, "chain");
         final var minimumChainLength = minimumChainLength();
         if (chain.length < minimumChainLength) {
             throw new IllegalArgumentException("Expected chain.length >= " + minimumChainLength);
@@ -93,7 +93,7 @@ public class TrustedIdentity {
      * @see <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      */
     public TrustedIdentity(final X509Certificate[] chain) {
-        this.chain = Objects.requireNonNull(chain, "Expected chain");
+        this.chain = Objects.requireNonNull(chain, "chain");
         final var minimumChainLength = minimumChainLength();
         if (chain.length < minimumChainLength) {
             throw new IllegalArgumentException("Expected chain.length >= " + minimumChainLength);

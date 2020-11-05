@@ -698,7 +698,7 @@ public interface Future<V> {
      * @throws NullPointerException If {@code mapper} is {@code null}.
      */
     default <U> Future<U> flatMap(final ThrowingFunction<? super V, ? extends Future<U>> mapper) {
-        Objects.requireNonNull(mapper, "Expected mapper");
+        Objects.requireNonNull(mapper, "mapper");
         final var source = this;
         return new Future<>() {
             private Future<?> cancelTarget = source;
@@ -774,8 +774,8 @@ public interface Future<V> {
         final Class<T> class_,
         final ThrowingFunction<T, ? extends Future<V>> mapper
     ) {
-        Objects.requireNonNull(class_, "Expected class_");
-        Objects.requireNonNull(mapper, "Expected mapper");
+        Objects.requireNonNull(class_, "class_");
+        Objects.requireNonNull(mapper, "mapper");
         final var source = this;
         return new Future<>() {
             private Future<?> cancelTarget = source;
@@ -862,8 +862,8 @@ public interface Future<V> {
         final Class<T> class_,
         final ThrowingFunction<Throwable, ? extends Future<Throwable>> mapper
     ) {
-        Objects.requireNonNull(class_, "Expected class_");
-        Objects.requireNonNull(mapper, "Expected mapper");
+        Objects.requireNonNull(class_, "class_");
+        Objects.requireNonNull(mapper, "mapper");
         final var source = this;
         return new Future<>() {
             private Future<?> cancelTarget = source;
@@ -941,7 +941,7 @@ public interface Future<V> {
      * @throws NullPointerException If {@code mapper} is {@code null}.
      */
     default <U> Future<U> flatMapResult(final ThrowingFunction<Result<V>, ? extends Future<U>> mapper) {
-        Objects.requireNonNull(mapper, "Expected mapper");
+        Objects.requireNonNull(mapper, "mapper");
         final var source = this;
         return new Future<>() {
             private Future<?> cancelTarget = source;
@@ -1006,7 +1006,7 @@ public interface Future<V> {
      * @throws NullPointerException If {@code mapper} is {@code null}.
      */
     default Future<V> flatMapThrow(final ThrowingFunction<V, ? extends Future<? extends Throwable>> mapper) {
-        Objects.requireNonNull(mapper, "Expected mapper");
+        Objects.requireNonNull(mapper, "mapper");
         final var source = this;
         return new Future<>() {
             private Future<?> cancelTarget = source;
@@ -1095,7 +1095,7 @@ public interface Future<V> {
      * @throws NullPointerException If {@code throwable} is {@code null}.
      */
     default <U> Future<U> fail(final Throwable throwable) {
-        Objects.requireNonNull(throwable, "Expected throwable");
+        Objects.requireNonNull(throwable, "throwable");
         final var source = this;
         return new Future<>() {
             @Override
@@ -1140,7 +1140,7 @@ public interface Future<V> {
      * this {@code Future}.
      */
     default Future<V> delay(final Duration duration) {
-        Objects.requireNonNull(duration, "Expected duration");
+        Objects.requireNonNull(duration, "duration");
         final var source = this;
         return new Future<>() {
             private Future<?> cancelTarget = source;
@@ -1181,7 +1181,7 @@ public interface Future<V> {
      * this {@code Future}.
      */
     default Future<V> delayUntil(final Instant baseline) {
-        Objects.requireNonNull(baseline, "Expected baseline");
+        Objects.requireNonNull(baseline, "baseline");
         final var source = this;
         return new Future<>() {
             private Future<?> cancelTarget = source;

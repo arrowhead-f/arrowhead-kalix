@@ -45,7 +45,7 @@ public class HttpJsonEventSubscribeService implements ArConsumer, ArEventSubscri
         return consumer.send(new HttpConsumerRequest()
             .method(POST)
             .path(service().uri())
-            .body(subscription))
+            .body(subscription::writeJson))
             .flatMap(HttpJsonServices::unwrap);
     }
 

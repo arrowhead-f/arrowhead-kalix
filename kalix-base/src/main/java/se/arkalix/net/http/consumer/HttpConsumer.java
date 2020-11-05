@@ -91,7 +91,7 @@ public interface HttpConsumer extends ArConsumer {
      *                              {@code request} is {@code null}.
      */
     default Future<HttpConsumerResponse> send(final HttpConsumerRequest request) {
-        Objects.requireNonNull(request, "Expected request");
+        Objects.requireNonNull(request, "request");
         return connect()
             .flatMap(connection -> connection.sendAndClose(request));
     }

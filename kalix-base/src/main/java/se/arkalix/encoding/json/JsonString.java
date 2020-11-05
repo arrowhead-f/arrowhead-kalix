@@ -1,6 +1,8 @@
 package se.arkalix.encoding.json;
 
 import se.arkalix.dto.DtoExclusive;
+import se.arkalix.encoding.DecoderReadUnexpectedToken;
+import se.arkalix.encoding.Encoding;
 import se.arkalix.encoding.binary.BinaryReader;
 import se.arkalix.encoding.binary.BinaryWriter;
 import se.arkalix.encoding.json._internal.JsonTokenBuffer;
@@ -153,17 +155,17 @@ public class JsonString implements JsonValue {
     }
 
     /**
-     * Reads JSON string from given {@code source}.
+     * Reads JSON string from given {@code reader}.
      *
-     * @param source Source containing JSON string at the current read offset,
+     * @param reader Source containing JSON string at the current read offset,
      *               ignoring any whitespace.
      * @return Decoded JSON string.
-     * @throws DtoReadException If the source does not contain a valid JSON
-     *                          string at the current read offset, or if the
-     *                          source could not be read.
+     * @throws DecoderReadUnexpectedToken If the reader does not contain a
+     *                                    valid JSON string at the current read
+     *                                    offset.
      */
-    public static JsonString readJson(final BinaryReader source) throws DtoReadException {
-        return readJson(JsonTokenizer.tokenize(source));
+    public static JsonString readJson(final BinaryReader reader) {
+        return readJson(JsonTokenizer.tokenize(reader));
     }
 
     /**
@@ -171,21 +173,26 @@ public class JsonString implements JsonValue {
      * versions of the Kalix library. Use is not advised.
      */
     @Internal
-    public static JsonString readJson(final JsonTokenBuffer buffer) throws DtoReadException {
-        final var source = buffer.source();
+    public static JsonString readJson(final JsonTokenBuffer buffer) {
+        final var reader = buffer.reader();
         var token = buffer.next();
         if (token.type() != JsonType.STRING) {
-            throw new DtoReadException(JsonString.class, DtoEncoding.JSON,
-                "expected string", token.readStringRaw(source), token.begin());
+            throw new DecoderReadUnexpectedToken(
+                Encoding.JSON,
+                reader,
+                token.readStringRaw(reader),
+                token.begin(),
+                "expected string");
         }
-        return new JsonString(token.readString(source));
+        return new JsonString(token.readString(reader));
     }
 
     @Override
-    public void writeJson(final BinaryWriter writer) {
+    public Encoding writeJson(final BinaryWriter writer) {
         writer.write((byte) '"');
         JsonWrite.write(string, writer);
         writer.write((byte) '"');
+        return Encoding.JSON;
     }
 
     @Override

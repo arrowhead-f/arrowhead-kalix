@@ -45,8 +45,8 @@ public class SimplifiedContractCounterOffer {
     private SimplifiedContractCounterOffer(final Builder builder) {
         offeredAt = Instant.now();
         validAfter = Objects.requireNonNullElse(builder.validAfter, offeredAt);
-        validUntil = Objects.requireNonNull(builder.validUntil, "Expected validUntil");
-        Objects.requireNonNull(builder.contracts, "Expected contracts");
+        validUntil = Objects.requireNonNull(builder.validUntil, "validUntil");
+        Objects.requireNonNull(builder.contracts, "contracts");
         if (builder.contracts.isEmpty()) {
             throw new IllegalArgumentException("Expected contracts.size() > 0");
         }

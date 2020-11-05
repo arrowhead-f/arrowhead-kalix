@@ -37,7 +37,7 @@ public class NettyBodyOutgoing {
             final var encodable = body.asEncodable().get();
             final var buffer = allocator.buffer();
             final var bufferWriter = new ByteBufWriter(buffer);
-            encoding = encodable.encode(bufferWriter).orElse(null);
+            encoding = encodable.encode(bufferWriter);
             length = buffer.readableBytes();
             content = buffer;
         }
@@ -62,7 +62,7 @@ public class NettyBodyOutgoing {
     }
 
     public NettyBodyOutgoing(final Encoding encoding, final long length, final Object content) {
-        this.encoding = encoding;
+        this.encoding = encoding == Encoding.NONE ? null : encoding;
         this.length = length;
         this.content = Objects.requireNonNull(content, "content");
     }

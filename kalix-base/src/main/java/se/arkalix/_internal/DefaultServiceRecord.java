@@ -27,28 +27,28 @@ public class DefaultServiceRecord implements ServiceRecord {
     private final Map<ServiceInterface, String> interfaceTokens;
 
     private DefaultServiceRecord(final Builder builder) {
-        name = Objects.requireNonNull(builder.name, "Expected name");
+        name = Objects.requireNonNull(builder.name, "name");
         if (!DnsNames.isLabel(name)) {
             throw new IllegalArgumentException("Name \"" + name + "\" is " +
                 "not a valid DNS label; such a label may only contain the " +
                 "characters `0-9 A-Z a-z -`, must not start with a digit or " +
                 "a dash, and must not end with a dash");
         }
-        provider = Objects.requireNonNull(builder.provider, "Expected provider");
-        uri = Objects.requireNonNull(builder.uri, "Expected uri");
+        provider = Objects.requireNonNull(builder.provider, "provider");
+        uri = Objects.requireNonNull(builder.uri, "uri");
         if (uri.isBlank()) {
             throw new IllegalArgumentException("Blank or null URI" +
                 "qualifiers are not permitted");
         }
         receivedAt = Objects.requireNonNullElseGet(builder.receivedAt, Instant::now);
         expiresAt = Objects.requireNonNullElse(builder.expiresAt, Instant.MAX);
-        security = Objects.requireNonNull(builder.security, "Expected security");
+        security = Objects.requireNonNull(builder.security, "security");
         metadata = builder.metadata == null
             ? Collections.emptyMap()
             : Collections.unmodifiableMap(builder.metadata);
         version = builder.version;
         interfaceTokens = Collections.unmodifiableMap(
-            Objects.requireNonNull(builder.interfaceTokens, "Expected interfaceTokens"));
+            Objects.requireNonNull(builder.interfaceTokens, "interfaceTokens"));
         if (interfaceTokens.size() == 0) {
             throw new IllegalArgumentException("At least one supported interface must be specified");
         }
@@ -152,7 +152,7 @@ public class DefaultServiceRecord implements ServiceRecord {
 
     @Override
     public String toString() {
-        return "DefaultServiceDescription{" +
+        return "DefaultServiceRecord{" +
             "name='" + name + '\'' +
             ", provider=" + provider +
             ", uri='" + uri + '\'' +

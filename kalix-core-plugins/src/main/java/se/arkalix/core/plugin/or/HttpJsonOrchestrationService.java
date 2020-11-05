@@ -19,7 +19,7 @@ public class HttpJsonOrchestrationService implements ArConsumer, ArOrchestration
     private final HttpConsumer consumer;
 
     public HttpJsonOrchestrationService(final HttpConsumer consumer) {
-        this.consumer = Objects.requireNonNull(consumer, "Expected consumer");
+        this.consumer = Objects.requireNonNull(consumer, "consumer");
     }
 
     @Override
@@ -33,7 +33,7 @@ public class HttpJsonOrchestrationService implements ArConsumer, ArOrchestration
             .send(new HttpConsumerRequest()
                 .method(POST)
                 .path(service().uri())
-                .body(query))
-            .flatMap(response -> unwrap(response, OrchestrationQueryResultDto.class));
+                .body(query::writeJson))
+            .flatMap(response -> unwrap(response, OrchestrationQueryResultDto::readJson));
     }
 }

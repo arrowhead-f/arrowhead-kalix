@@ -23,7 +23,7 @@ public class DtoProcessor extends AbstractProcessor {
     private Elements elementUtils;
 
     private DtoTargetFactory targetFactory;
-    private DtoImplementerFactory specificationFactory;
+    private DtoImplementerFactory implementerFactory;
 
     @Override
     public synchronized void init(final ProcessingEnvironment processingEnv) {
@@ -34,7 +34,7 @@ public class DtoProcessor extends AbstractProcessor {
         elementUtils = processingEnv.getElementUtils();
 
         targetFactory = new DtoTargetFactory(elementUtils, processingEnv.getTypeUtils());
-        specificationFactory = new DtoImplementerFactory(
+        implementerFactory = new DtoImplementerFactory(
             new DtoImplementerJson()
         );
     }
@@ -48,7 +48,7 @@ public class DtoProcessor extends AbstractProcessor {
             final var interfaceTypes = findAnnotatedInterfaces(roundEnv);
             for (final var interfaceType : interfaceTypes) {
                 final var target = targetFactory.createFromInterface(interfaceType);
-                final var specification = specificationFactory.createForTarget(target);
+                final var specification = implementerFactory.createForTarget(target);
 
                 final var packageName = elementUtils.getPackageOf(interfaceType)
                     .getQualifiedName().toString();

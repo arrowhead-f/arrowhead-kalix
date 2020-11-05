@@ -81,7 +81,7 @@ public class TestHttpPattern {
     void shouldFailToParsePattern(final String pattern) {
         assertThrows(
             IllegalArgumentException.class, () -> HttpPattern.valueOf(pattern),
-            "Expected pattern `" + pattern + "` to be invalid."
+            "pattern `" + pattern + "` to be invalid."
         );
     }
 

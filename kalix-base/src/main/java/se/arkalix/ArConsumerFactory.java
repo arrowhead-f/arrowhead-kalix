@@ -3,10 +3,7 @@ package se.arkalix;
 import se.arkalix.encoding.Encoding;
 import se.arkalix.net.Transport;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * A factory useful for creating {@link ArConsumer} instances.
@@ -37,7 +34,7 @@ public interface ArConsumerFactory<C extends ArConsumer> {
      * factory.
      */
     default Collection<Encoding> serviceEncodings() {
-        return Encoding.allReadable();
+        return List.of(Encoding.JSON); // TODO: Make configurable, somehow?
     }
 
     /**

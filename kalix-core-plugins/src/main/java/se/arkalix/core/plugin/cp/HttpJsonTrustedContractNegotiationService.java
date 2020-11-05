@@ -66,7 +66,7 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
         return consumer.send(new HttpConsumerRequest()
             .method(POST)
             .path(pathAccept)
-            .body(acceptance))
+            .body(acceptance::writeJson))
             .flatMap(result -> {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Sent acceptance resulted in {}", result);
@@ -83,7 +83,7 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
         return consumer.send(new HttpConsumerRequest()
             .method(POST)
             .path(pathOffer)
-            .body(offer))
+            .body(offer::writeJson))
             .flatMapResult(result -> {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Sent offer resulted in {}", result);
@@ -131,7 +131,7 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
         return consumer.send(new HttpConsumerRequest()
             .method(POST)
             .path(pathCounterOffer)
-            .body(counterOffer))
+            .body(counterOffer::writeJson))
             .flatMap(result -> {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Sent counter-offer resulted in {}", result);
@@ -148,7 +148,7 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
         return consumer.send(new HttpConsumerRequest()
             .method(POST)
             .path(pathReject)
-            .body(rejection))
+            .body(rejection::writeJson))
             .flatMap(result -> {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Sent rejection resulted in {}", result);

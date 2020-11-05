@@ -1,7 +1,7 @@
 package se.arkalix.net.http;
 
 import se.arkalix.encoding.Encoding;
-import se.arkalix.net.MediaType;
+import se.arkalix.encoding.MediaType;
 import se.arkalix.net.MessageEncodingMisspecified;
 import se.arkalix.net.MessageIncoming;
 

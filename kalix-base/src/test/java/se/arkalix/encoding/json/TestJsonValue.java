@@ -1,31 +1,28 @@
-package se.arkalix.dto.json;
+package se.arkalix.encoding.json;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import se.arkalix.encoding.Encoding;
 import se.arkalix.encoding.binary.ByteArrayReader;
-import se.arkalix.encoding.json.*;
+import se.arkalix.encoding.binary.ByteArrayWriter;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
-import static se.arkalix.dto.DtoEncoding.JSON;
 
-public class TestJsonReader {
+public class TestJsonValue {
     @ParameterizedTest
-    @MethodSource("objectsToRead")
-    void shouldReadOne(final JsonReadable expected, final String input)
-        throws DtoReadException
-    {
+    @MethodSource("valuesToRead")
+    void shouldReadOne(final JsonValue expected, final String input) {
         final var reader = new ByteArrayReader(input.getBytes(StandardCharsets.UTF_8));
-        Assertions.assertEquals(expected, JSON.reader().readOne(expected.getClass(), reader));
+        Assertions.assertEquals(expected, JsonValue.readJson(reader));
     }
 
-    static Stream<Arguments> objectsToRead() {
+    static Stream<Arguments> valuesToRead() {
         return Stream.of(
             arguments(new JsonArray(), "[]"),
             arguments(new JsonObject(new JsonPair("x", new JsonNumber(1))), "{\"x\":1}"),
@@ -73,21 +70,19 @@ public class TestJsonReader {
     }
 
     @ParameterizedTest
-    @MethodSource("manyObjectsToRead")
-    void shouldReadMany(final List<? extends JsonReadable> expected, final String input)
-        throws DtoReadException
-    {
-        final var reader = new ByteArrayReader(input.getBytes(StandardCharsets.UTF_8));
-        final var class_ = expected.get(0).getClass();
-        assertEquals(expected, JSON.reader().readMany(class_, reader));
+    @MethodSource("valuesToWrite")
+    void shouldWriteOne(final String expected, final JsonValue input) {
+        final var writer = new ByteArrayWriter(new byte[expected.getBytes(StandardCharsets.UTF_8).length]);
+        final var encoding = input.writeJson(writer);
+
+        assertEquals(Encoding.JSON, encoding);
+        assertEquals(expected, new String(writer.asByteArray(), StandardCharsets.UTF_8));
     }
 
-    static Stream<Arguments> manyObjectsToRead() {
+    static Stream<Arguments> valuesToWrite() {
         return Stream.of(
-            arguments(List.of(new JsonArray()), "[[]]"),
-            arguments(List.of(new JsonObject(new JsonPair("x", new JsonNumber(1)))), "[{\"x\":1}]"),
-            arguments(List.of(new JsonArray(JsonNull.instance), new JsonArray(JsonBoolean.TRUE)),
-                "[[null],[true]]")
+            arguments("[]", new JsonArray()),
+            arguments("{\"x\":1}", new JsonObject(new JsonPair("x", new JsonNumber(1))))
         );
     }
 }

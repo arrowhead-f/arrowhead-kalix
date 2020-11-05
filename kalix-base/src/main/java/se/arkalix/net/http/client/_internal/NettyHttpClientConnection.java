@@ -8,7 +8,7 @@ import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.arkalix.net.MediaType;
+import se.arkalix.encoding.MediaType;
 import se.arkalix.net._internal.NettyBodyOutgoing;
 import se.arkalix.net._internal.NettySimpleChannelInboundHandler;
 import se.arkalix.net.http._internal.NettyHttpConverters;
@@ -62,7 +62,7 @@ public class NettyHttpClientConnection
         final FutureCompletion<HttpClientConnection> futureConnection,
         final SslHandler sslHandler
     ) {
-        this.futureConnection = Objects.requireNonNull(futureConnection, "Expected futureConnection");
+        this.futureConnection = Objects.requireNonNull(futureConnection, "futureConnection");
         this.sslHandler = sslHandler;
     }
 

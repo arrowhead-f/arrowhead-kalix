@@ -54,7 +54,7 @@ public class HttpMediaTypes {
         final List<Encoding> encodings,
         final String contentType
     ) {
-        Objects.requireNonNull(encodings, "Expected encodings");
+        Objects.requireNonNull(encodings, "encodings");
         if (encodings.size() == 0) {
             throw new IllegalArgumentException("Expected encodings.size() > 0");
         }
@@ -152,7 +152,7 @@ public class HttpMediaTypes {
         final List<Encoding> encodings,
         final List<String> acceptHeaders
     ) {
-        Objects.requireNonNull(encodings, "Expected encodings");
+        Objects.requireNonNull(encodings, "encodings");
         if (encodings.size() == 0) {
             throw new IllegalArgumentException("Expected encodings.size() > 0");
         }

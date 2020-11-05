@@ -33,8 +33,8 @@ public class NettyHttpClientResponse extends NettyMessageIncoming implements Htt
         final HttpResponse inner
     ) {
         super(allocator);
-        this.connection = Objects.requireNonNull(connection, "Expected connection");
-        this.request = Objects.requireNonNull(request, "Expected request");
+        this.connection = Objects.requireNonNull(connection, "connection");
+        this.request = Objects.requireNonNull(request, "request");
         this.inner = inner;
     }
 

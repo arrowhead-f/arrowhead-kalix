@@ -45,7 +45,7 @@ public class HttpJsonEventPublishService implements ArConsumer, ArEventPublishSe
         return consumer.send(new HttpConsumerRequest()
             .method(POST)
             .path(service().uri())
-            .body(event))
+            .body(event::writeJson))
             .flatMap(HttpJsonServices::unwrap);
     }
 

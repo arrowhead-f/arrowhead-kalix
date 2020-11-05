@@ -56,8 +56,6 @@ public class DtoPropertyFactory {
     // Other types.
     private final DeclaredType optionalType;
     private final DeclaredType stringType;
-    private final DeclaredType dtoReadable;
-    private final DeclaredType dtoWritable;
 
     private final Set<Modifier> publicStaticModifiers;
 
@@ -97,8 +95,6 @@ public class DtoPropertyFactory {
 
         optionalType = getDeclaredType.apply(Optional.class);
         stringType = getDeclaredType.apply(String.class);
-        dtoReadable = getDeclaredType.apply(DtoReadable.class);
-        dtoWritable = getDeclaredType.apply(DtoWritable.class);
 
         publicStaticModifiers = Stream.of(Modifier.PUBLIC, Modifier.STATIC)
             .collect(Collectors.toSet());
@@ -343,14 +339,11 @@ public class DtoPropertyFactory {
                     "or @DtoWritableAs; rather use the interface types from " +
                     "which those DTO classes were generated");
             }
-            if (typeUtils.isAssignable(type, dtoReadable) && typeUtils.isAssignable(type, dtoWritable)) {
-                return new DtoElement(type, DtoDescriptor.CUSTOM);
+            if (!element.getKind().isClass() && !element.getKind().isInterface()) {
+                throw new DtoException(method, "Only class and interface " +
+                    "types may be used as custom DTO classes");
             }
-            throw new DtoException(method, "Invalid getter return type; " +
-                "please refer to the `se.arkalix.dto` package documentation " +
-                "for a complete list of supported return types (type: " + type
-                + "/" + element.asType() + ", annotations: " +
-                elementUtils.getAllAnnotationMirrors(element) + ")");
+            return new DtoCustom(type, (TypeElement) element, typeUtils, elementUtils);
         }
 
         final var readableEncodings = readable != null ? readable.value() : new String[0];

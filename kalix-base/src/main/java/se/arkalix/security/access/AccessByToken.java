@@ -85,8 +85,8 @@ public class AccessByToken implements AccessPolicy {
         final String token)
         throws AccessTokenException
     {
-        Objects.requireNonNull(consumer, "Expected consumer");
-        Objects.requireNonNull(service, "Expected service");
+        Objects.requireNonNull(consumer, "consumer");
+        Objects.requireNonNull(service, "service");
 
         if (token == null) {
             return false;

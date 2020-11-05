@@ -32,8 +32,8 @@ public class AccessByCloudCertificate implements AccessPolicy {
         final ServiceRecord service,
         final String token)
     {
-        Objects.requireNonNull(consumer, "Expected consumer");
-        Objects.requireNonNull(service, "Expected service");
+        Objects.requireNonNull(consumer, "consumer");
+        Objects.requireNonNull(service, "service");
 
         return Objects.equals(consumer.identity().cloud(), provider.identity().cloud());
     }

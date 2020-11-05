@@ -16,7 +16,7 @@ public class DefaultServiceRecordCache implements ArServiceRecordCache {
     private final Duration entryLifetimeLimit;
 
     public DefaultServiceRecordCache(final Duration entryLifetimeLimit) {
-        this.entryLifetimeLimit = Objects.requireNonNull(entryLifetimeLimit, "Expected entryLifetimeLimit");
+        this.entryLifetimeLimit = Objects.requireNonNull(entryLifetimeLimit, "entryLifetimeLimit");
     }
 
     @Override

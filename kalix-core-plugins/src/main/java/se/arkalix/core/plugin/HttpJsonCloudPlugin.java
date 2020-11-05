@@ -72,7 +72,7 @@ public class HttpJsonCloudPlugin implements Plugin {
         serviceRegistrationPredicate = Objects.requireNonNullElse(builder.serviceRegistrationPredicate, service -> true);
         serviceDiscoveryBasePath = Objects.requireNonNullElse(builder.serviceDiscoveryBasePath, "/serviceregistry");
         serviceRegistrySocketAddress = Objects.requireNonNull(builder.serviceRegistrySocketAddress,
-            "Expected serviceRegistrySocketAddress");
+            "serviceRegistrySocketAddress");
         orchestrationStrategy = Objects.requireNonNullElse(builder.orchestrationStrategy,
             OrchestrationStrategy.STORED_ONLY);
     }

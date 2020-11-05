@@ -13,9 +13,9 @@ public interface Encodable {
      * Encodes implicit class instance and writes it to {@code writer}.
      *
      * @param writer Binary data writer.
-     * @return Encoding applied by this encoder, if it is relevant to identify
-     * it.
+     * @return Encoding applied by this encoder, or {@link Encoding#NONE} if
+     * not relevant.
      * @throws NullPointerException If {@code writer} is {@code null}.
      */
-    Optional<Encoding> encode(BinaryWriter writer);
+    Encoding encode(BinaryWriter writer);
 }

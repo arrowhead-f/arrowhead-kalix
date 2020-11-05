@@ -14,18 +14,19 @@ import java.util.concurrent.ConcurrentHashMap;
  * to be general-purpose and/or textual.
  * <p>
  * A general-purpose encoding can represent arbitrary data structures, such as
- * associative arrays (a.k.a. maps or dictionaries) and lists. Examples include
- * {@link #JSON} and {@link #XML}. Encodings not being general-purpose are
- * interpreted as being protocol-specific, such as {@link #HTML} or {@link
- * #CSS}.
+ * associative arrays (a.k.a. maps or dictionaries) and lists, with the syntax
+ * already defined for the encoding. Examples of such encodings include
+ * {@link #JSON}, {@link #XML} and {@code CBOR}. Encodings not being
+ * general-purpose are interpreted as being protocol-specific, such as
+ * {@link #HTML} or {@link #CSS}.
  * <p>
  * A textual encoding is such that is fully compatible with one or more
  * character sets, while a binary encoding is not. Textual encodings can, as a
  * consequence, be treated as strings of text, even if they are general-
  * purpose. Note that only the encodings with a single associated character set
- * might make that available via the {@link #charset()} method. Note that both
- * encodings such as {@link #JSON} or {@link #CBOR} match this definition, as
- * well as plain character sets, such as {@link #US_ASCII} or {@link #UTF_8}.
+ * might make that available via the {@link #charset()} method. {@link #JSON}
+ * and YAML match this definition, as well as plain character sets, such as
+ * {@link #US_ASCII} or {@link #UTF_8}.
  */
 public final class Encoding implements ToEncoding {
     private static final ConcurrentHashMap<String, Encoding> nameToEncoding = new ConcurrentHashMap<>();
@@ -34,6 +35,7 @@ public final class Encoding implements ToEncoding {
     private final boolean isRegistered;
     private final boolean isGeneral;
     private final boolean isTextual;
+    private final boolean isCharset;
     private final Charset charset;
 
     private Encoding(final String name) {
@@ -41,6 +43,7 @@ public final class Encoding implements ToEncoding {
         this.isRegistered = false;
         this.isGeneral = false;
         this.isTextual = false;
+        this.isCharset = false;
         this.charset = null;
     }
 
@@ -48,7 +51,8 @@ public final class Encoding implements ToEncoding {
         this.name = Objects.requireNonNull(registration.name, "name");
         this.isRegistered = true;
         this.isGeneral = registration.isGeneral;
-        this.isTextual = registration.isTextual;
+        this.isTextual = registration.isTextual || registration.charset != null;
+        this.isCharset = registration.isCharset || registration.charset != null;
         this.charset = registration.charset;
     }
 
@@ -88,10 +92,7 @@ public final class Encoding implements ToEncoding {
             .toUpperCase();
 
         return nameToEncoding.computeIfAbsent(name, name0 ->
-            new Encoding(new Registration()
-                .name(name0)
-                .isTextual(true)
-                .charset(charset)));
+            new Encoding(new Registration().name(name0).charset(charset)));
     }
 
     /**
@@ -114,7 +115,8 @@ public final class Encoding implements ToEncoding {
             }
             return new Encoding(new Registration()
                 .name(name)
-                .isTextual(true)
+                .textual()
+                .charset()
                 .charset(charset));
         });
     }
@@ -184,11 +186,27 @@ public final class Encoding implements ToEncoding {
     }
 
     /**
+     * Determines weather or not this encoding <i>is</i> a character set.
+     * <p>
+     * This method returning {@code true} does <i>not</i> guarantee that the
+     * {@link #charset()} method will return a non-empty result. Even though
+     * this encoding is known to be a character set, it is not guaranteed that
+     * this system knows how to interpret it.
+     *
+     * @return {@code true} only if this encoding is a charset.
+     */
+    public boolean isCharset() {
+        return isCharset;
+    }
+
+    /**
      * Gets the one character set associated with this encoding.
      * <p>
-     * This method might return a non-empty result if this encoding {@link
-     * #isTextual() is textual} and it is associated with only one possible
-     * character set.
+     * This method might return an empty result even if this encoding {@link
+     * #isTextual() is textual} or {@link #isCharset() represents only a
+     * character set}. Reasons could include the textual encoding being
+     * representable with more than one encoding, or the current system not
+     * having support for the character set in question.
      *
      * @return Character set associated with this encoding, if any.
      */
@@ -197,27 +215,37 @@ public final class Encoding implements ToEncoding {
     }
 
     /**
+     * No encoding at all. This encoding is to be used when the encoding is
+     * completely unknown or is not relevant.
+     * <p>
+     * This {@link Encoding} instance cannot be acquired via {@link
+     * #get(String)}, {@link #getOrCreate(String)} or {@link
+     * #getOrRegister(Charset)}.
+     */
+    public static final Encoding NONE = new Encoding("none");
+
+    /**
      * Concise Binary Object Representation (CBOR).
      *
      * @see <a href="https://tools.ietf.org/html/rfc7049">RFC 7049</a>
      */
     public static final Encoding CBOR = register(new Registration()
         .name("CBOR")
-        .isGeneral(true));
+        .general());
 
     /**
      * Cascading Style Sheet (CSS).
      */
     public static final Encoding CSS = register(new Registration()
         .name("CSS")
-        .isTextual(true));
+        .textual());
 
     /**
      * Hyper-Text Markup Language (HTML).
      */
     public static final Encoding HTML = register(new Registration()
         .name("HTML")
-        .isTextual(true));
+        .textual());
 
     /**
      * JavaScript Object Notation (JSON).
@@ -226,8 +254,8 @@ public final class Encoding implements ToEncoding {
      */
     public static final Encoding JSON = register(new Registration()
         .name("JSON")
-        .isGeneral(true)
-        .isTextual(true)
+        .general()
+        .textual()
         .charset(StandardCharsets.UTF_8));
 
     /**
@@ -238,8 +266,8 @@ public final class Encoding implements ToEncoding {
      */
     public static final Encoding XML = register(new Registration()
         .name("XML")
-        .isGeneral(true)
-        .isTextual(true));
+        .general()
+        .textual());
 
     /**
      * Efficient XML Interchange (EXI).
@@ -248,7 +276,7 @@ public final class Encoding implements ToEncoding {
      */
     public static final Encoding EXI = register(new Registration()
         .name("EXI")
-        .isGeneral(true));
+        .general());
 
     /**
      * The Seven-bit ASCII or ISO-646-US character set, which is also the
@@ -323,7 +351,8 @@ public final class Encoding implements ToEncoding {
     public static class Registration {
         private String name;
         private boolean isGeneral = false;
-        private boolean isTextual = false;
+        private Boolean isTextual = null;
+        private boolean isCharset = false;
         private Charset charset = null;
 
         /**
@@ -338,28 +367,27 @@ public final class Encoding implements ToEncoding {
         }
 
         /**
-         * Sets weather or not the registered encoding is to be considered as
-         * being general-purpose. <b>Defaults to false.</b>
+         * Marks registered encoding as known to be general-purpose.
          *
-         * @param isGeneral Whether or not the registered encoding is general-
-         *                  purpose, as defined in the {@link Encoding} class
-         *                  description.
          * @return This registration form.
          */
-        public Registration isGeneral(final boolean isGeneral) {
-            this.isGeneral = isGeneral;
+        public Registration general() {
+            this.isGeneral = true;
             return this;
         }
 
         /**
-         * Sets weather or not the registered encoding is to be considered as
-         * being textual. <b>Defaults to false.</b>
+         * Marks registered encoding as known to be textual.
          *
-         * @param isTextual Whether or not the registered encoding is textual.
          * @return This registration form.
          */
-        public Registration isTextual(final boolean isTextual) {
-            this.isTextual = isTextual;
+        public Registration textual() {
+            this.isTextual = true;
+            return this;
+        }
+
+        private Registration charset() {
+            this.isCharset = true;
             return this;
         }
 

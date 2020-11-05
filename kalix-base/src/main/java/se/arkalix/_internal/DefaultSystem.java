@@ -206,7 +206,7 @@ public class DefaultSystem implements ArSystem {
 
     @Override
     public Future<ArServiceHandle> provide(final ArService service) {
-        Objects.requireNonNull(service, "Expected service");
+        Objects.requireNonNull(service, "service");
 
         if (isShuttingDown.get()) {
             return Future.failure(new IllegalStateException("System is shutting down; cannot " +

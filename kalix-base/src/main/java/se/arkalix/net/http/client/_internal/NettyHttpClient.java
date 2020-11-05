@@ -149,7 +149,7 @@ public class NettyHttpClient implements HttpClient {
         final InetSocketAddress remoteSocketAddress,
         final InetSocketAddress localSocketAddress
     ) {
-        Objects.requireNonNull(remoteSocketAddress, "Expected remoteSocketAddress");
+        Objects.requireNonNull(remoteSocketAddress, "remoteSocketAddress");
 
         final var futureConnection = new FutureCompletion<HttpClientConnection>();
         return adapt(bootstrap.clone()

@@ -11,7 +11,7 @@ public class ByteBufWriter implements BinaryWriter {
     private final ByteBuf byteBuf;
 
     public ByteBufWriter(final ByteBuf byteBuf) {
-        this.byteBuf = Objects.requireNonNull(byteBuf, "Expected byteBuf");
+        this.byteBuf = Objects.requireNonNull(byteBuf, "byteBuf");
     }
 
     @Override

@@ -1,6 +1,7 @@
 package se.arkalix.net.http.consumer;
 
 import se.arkalix.encoding.Encoding;
+import se.arkalix.encoding.ToEncoding;
 import se.arkalix.net.BodyOutgoing;
 import se.arkalix.net.MessageOutgoingWithImplicitEncoding;
 import se.arkalix.net.http.HttpHeaders;
@@ -73,6 +74,12 @@ public class HttpConsumerRequest
     @Override
     public HttpConsumerRequest version(final HttpVersion version) {
         inner.version(version);
+        return this;
+    }
+
+    @Override
+    public HttpConsumerRequest encoding(final ToEncoding encoding) {
+        inner.encoding(encoding);
         return this;
     }
 

@@ -29,7 +29,7 @@ public class X509Keys {
      *                                 identified.
      */
     public static PublicKey parsePublicKey(final String publicKeyBase64) {
-        Objects.requireNonNull(publicKeyBase64, "Expected publicKeyBase64");
+        Objects.requireNonNull(publicKeyBase64, "publicKeyBase64");
         final var publicKeyDer = Base64.getDecoder().decode(publicKeyBase64);
         final var algorithm = X509Keys.identifyPublicKeyAlgorithm(publicKeyDer);
         if (algorithm.isEmpty()) {

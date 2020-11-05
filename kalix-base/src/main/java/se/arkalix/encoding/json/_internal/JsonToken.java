@@ -1,7 +1,8 @@
 package se.arkalix.encoding.json._internal;
 
+import se.arkalix.encoding.DecoderReadUnexpectedToken;
+import se.arkalix.encoding.Encoding;
 import se.arkalix.encoding.binary.BinaryReader;
-import se.arkalix.encoding.json.JsonString;
 import se.arkalix.encoding.json.JsonType;
 import se.arkalix.util.annotation.Internal;
 
@@ -48,82 +49,82 @@ public final class JsonToken {
         this.nChildren = nChildren;
     }
 
-    public BigDecimal readBigDecimal(final BinaryReader source) {
-        return new BigDecimal(readStringRaw(source));
+    public BigDecimal readBigDecimal(final BinaryReader reader) {
+        return new BigDecimal(readStringRaw(reader));
     }
 
-    public BigInteger readBigInteger(final BinaryReader source) {
-        return new BigInteger(readStringRaw(source));
+    public BigInteger readBigInteger(final BinaryReader reader) {
+        return new BigInteger(readStringRaw(reader));
     }
 
-    public byte readByte(final BinaryReader source) {
-        return Byte.parseByte(requireNotHex(readStringRaw(source)));
+    public byte readByte(final BinaryReader reader) {
+        return Byte.parseByte(requireNotHex(readStringRaw(reader)));
     }
 
-    public double readDouble(final BinaryReader source) {
-        return Double.parseDouble(requireNotHex(readStringRaw(source)));
+    public double readDouble(final BinaryReader reader) {
+        return Double.parseDouble(requireNotHex(readStringRaw(reader)));
     }
 
-    public Duration readDuration(final BinaryReader source) {
-        return Duration.parse(readStringRaw(source));
+    public Duration readDuration(final BinaryReader reader) {
+        return Duration.parse(readStringRaw(reader));
     }
 
-    public Duration readDurationNumber(final BinaryReader source) {
-        final var number = Double.parseDouble(readStringRaw(source));
+    public Duration readDurationNumber(final BinaryReader reader) {
+        final var number = Double.parseDouble(readStringRaw(reader));
         final long integer = (long) number;
         return Duration.ofSeconds(integer, (long) ((number - integer) * 1e9));
     }
 
-    public float readFloat(final BinaryReader source) {
-        return Float.parseFloat(requireNotHex(readStringRaw(source)));
+    public float readFloat(final BinaryReader reader) {
+        return Float.parseFloat(requireNotHex(readStringRaw(reader)));
     }
 
-    public int readInteger(final BinaryReader source) {
-        return Integer.parseInt(requireNotHex(readStringRaw(source)));
+    public int readInteger(final BinaryReader reader) {
+        return Integer.parseInt(requireNotHex(readStringRaw(reader)));
     }
 
-    public Instant readInstant(final BinaryReader source) {
-        return Instant.parse(readStringRaw(source));
+    public Instant readInstant(final BinaryReader reader) {
+        return Instant.parse(readStringRaw(reader));
     }
 
-    public Instant readInstantNumber(final BinaryReader source) {
-        final var number = Double.parseDouble(readStringRaw(source));
+    public Instant readInstantNumber(final BinaryReader reader) {
+        final var number = Double.parseDouble(readStringRaw(reader));
         final long integer = (long) number;
         return Instant.ofEpochSecond(integer, (long) ((number - integer) * 1e9));
     }
 
-    public long readLong(final BinaryReader source) {
-        return Long.parseLong(requireNotHex(readStringRaw(source)));
+    public long readLong(final BinaryReader reader) {
+        return Long.parseLong(requireNotHex(readStringRaw(reader)));
     }
 
-    public MonthDay readMonthDay(final BinaryReader source) {
-        return MonthDay.parse(readStringRaw(source));
+    public MonthDay readMonthDay(final BinaryReader reader) {
+        return MonthDay.parse(readStringRaw(reader));
     }
 
-    public OffsetDateTime readOffsetDateTime(final BinaryReader source) {
-        return OffsetDateTime.parse(readStringRaw(source));
+    public OffsetDateTime readOffsetDateTime(final BinaryReader reader) {
+        return OffsetDateTime.parse(readStringRaw(reader));
     }
 
-    public OffsetDateTime readOffsetDateTimeNumber(final BinaryReader source) {
-        return OffsetDateTime.ofInstant(readInstantNumber(source), ZoneId.systemDefault());
+    public OffsetDateTime readOffsetDateTimeNumber(final BinaryReader reader) {
+        return OffsetDateTime.ofInstant(readInstantNumber(reader), ZoneId.systemDefault());
     }
 
-    public OffsetTime readOffsetTime(final BinaryReader source) {
-        return OffsetTime.parse(readStringRaw(source));
+    public OffsetTime readOffsetTime(final BinaryReader reader) {
+        return OffsetTime.parse(readStringRaw(reader));
     }
 
-    public Period readPeriod(final BinaryReader source) {
-        return Period.parse(readStringRaw(source));
+    public Period readPeriod(final BinaryReader reader) {
+        return Period.parse(readStringRaw(reader));
     }
 
-    public short readShort(final BinaryReader source) {
-        return Short.parseShort(requireNotHex(readStringRaw(source)));
+    public short readShort(final BinaryReader reader) {
+        return Short.parseShort(requireNotHex(readStringRaw(reader)));
     }
 
-    public String readString(final BinaryReader source) throws DtoReadException {
-        var p0 = begin; // Index of first non-appended byte in source.
-        var p1 = begin; // Current source offset.
-        final var p2 = end; // End of string source region.
+    public String readString(final BinaryReader reader) {
+        var p0 = begin; // Index of first non-appended byte in reader.
+        var p1 = begin; // Current reader offset.
+        final var p2 = end; // End of string reader region.
 
         final var buffer = new byte[p2 - p1];
         var b0 = 0; // Index of first unwritten byte in buffer.
@@ -132,13 +133,13 @@ public final class JsonToken {
         error:
         {
             while (p1 < p2) {
-                var b = source.getByte(p1);
+                var b = reader.getByte(p1);
                 if (b == '\\') {
                     // Collect bytes before escape sequence into buffer.
                     {
                         final var length = p1 - p0;
                         if (length > 0) {
-                            source.getBytes(p0, buffer, b0, length);
+                            reader.getBytes(p0, buffer, b0, length);
                             b0 += length;
                         }
                         p0 = ++p1;
@@ -149,7 +150,7 @@ public final class JsonToken {
                         break error;
                     }
 
-                    b = source.getByte(p1++);
+                    b = reader.getByte(p1++);
                     switch (b) {
                     case '\"':
                     case '/':
@@ -166,7 +167,7 @@ public final class JsonToken {
                         final var uBuffer = new byte[4];
                         if (p1 + 4 <= p2) {
                             try {
-                                source.getBytes(p1, uBuffer);
+                                reader.getBytes(p1, uBuffer);
                                 final var uString = new String(uBuffer, StandardCharsets.ISO_8859_1);
                                 final var uNumber = Integer.parseUnsignedInt(uString, 16);
                                 final var uBytes = Character.toString(uNumber)
@@ -181,7 +182,7 @@ public final class JsonToken {
                             catch (final NumberFormatException ignored) {}
                         }
                         else {
-                            source.getBytes(p1, uBuffer, 0, p2 - p1);
+                            reader.getBytes(p1, uBuffer, 0, p2 - p1);
                         }
                         badEscapeBuilder.append("\\u").append(new String(uBuffer, StandardCharsets.US_ASCII));
                         break error;
@@ -199,7 +200,7 @@ public final class JsonToken {
             }
             final var length = p1 - p0;
             if (length > 0) {
-                source.getBytes(p0, buffer, b0, length);
+                reader.getBytes(p0, buffer, b0, length);
                 b0 += length;
             }
             return new String(b0 < buffer.length
@@ -207,47 +208,46 @@ public final class JsonToken {
                 : buffer,
                 StandardCharsets.UTF_8);
         }
-        throw new DtoReadException(JsonString.class, DtoEncoding.JSON,
-            "Bad escape", badEscapeBuilder.toString(), p1);
+        throw new DecoderReadUnexpectedToken(Encoding.JSON, reader, badEscapeBuilder.toString(), p1, "Bad escape");
     }
 
-    public String readStringRaw(final BinaryReader source) {
+    public String readStringRaw(final BinaryReader reader) {
         final var buffer = new byte[length()];
-        source.getBytes(begin, buffer);
+        reader.getBytes(begin, buffer);
         return new String(buffer, StandardCharsets.ISO_8859_1);
     }
 
-    public Year readYear(final BinaryReader source) {
-        return Year.parse(readStringRaw(source));
+    public Year readYear(final BinaryReader reader) {
+        return Year.parse(readStringRaw(reader));
     }
 
-    public Year readYearNumber(final BinaryReader source) {
-        final var number = Double.parseDouble(readStringRaw(source));
+    public Year readYearNumber(final BinaryReader reader) {
+        final var number = Double.parseDouble(readStringRaw(reader));
         return Year.of((int) number);
     }
 
-    public YearMonth readYearMonth(final BinaryReader source) {
-        return YearMonth.parse(readStringRaw(source));
+    public YearMonth readYearMonth(final BinaryReader reader) {
+        return YearMonth.parse(readStringRaw(reader));
     }
 
-    public ZonedDateTime readZonedDateTime(final BinaryReader source) {
-        return ZonedDateTime.parse(readStringRaw(source));
+    public ZonedDateTime readZonedDateTime(final BinaryReader reader) {
+        return ZonedDateTime.parse(readStringRaw(reader));
     }
 
-    public ZonedDateTime readZonedDateTimeNumber(final BinaryReader source) {
-        return ZonedDateTime.ofInstant(readInstantNumber(source), ZoneOffset.UTC);
+    public ZonedDateTime readZonedDateTimeNumber(final BinaryReader reader) {
+        return ZonedDateTime.ofInstant(readInstantNumber(reader), ZoneOffset.UTC);
     }
 
-    public ZoneId readZoneId(final BinaryReader source) {
-        return ZoneId.of(readStringRaw(source));
+    public ZoneId readZoneId(final BinaryReader reader) {
+        return ZoneId.of(readStringRaw(reader));
     }
 
-    public ZoneOffset readZoneOffset(final BinaryReader source) {
-        return ZoneOffset.of(readStringRaw(source));
+    public ZoneOffset readZoneOffset(final BinaryReader reader) {
+        return ZoneOffset.of(readStringRaw(reader));
     }
 
-    public ZoneOffset readZoneOffsetNumber(final BinaryReader source) {
-        final var number = Double.parseDouble(readStringRaw(source));
+    public ZoneOffset readZoneOffsetNumber(final BinaryReader reader) {
+        final var number = Double.parseDouble(readStringRaw(reader));
         return ZoneOffset.ofTotalSeconds((int) number);
     }
 

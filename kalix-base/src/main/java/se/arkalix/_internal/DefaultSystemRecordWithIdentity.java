@@ -19,9 +19,9 @@ public class DefaultSystemRecordWithIdentity implements SystemRecordWithIdentity
         final SystemIdentity identity,
         final InetSocketAddress socketAddress
     ) {
-        this.name = Objects.requireNonNull(name, "Expected name");
+        this.name = Objects.requireNonNull(name, "name");
         this.identity = identity;
-        this.socketAddress = Objects.requireNonNull(socketAddress, "Expected socketAddress");
+        this.socketAddress = Objects.requireNonNull(socketAddress, "socketAddress");
 
     }
 
@@ -67,7 +67,7 @@ public class DefaultSystemRecordWithIdentity implements SystemRecordWithIdentity
 
     @Override
     public String toString() {
-        return "DefaultPeerDescription{" +
+        return "DefaultSystemRecordWithIdentity{" +
             "name=" + name +
             ", identity='" + identity + '\'' +
             ", socketAddress=" + socketAddress +

@@ -9,12 +9,12 @@ import java.util.List;
 @Internal
 public class JsonTokenBuffer {
     private final List<JsonToken> tokens;
-    private final BinaryReader source;
+    private final BinaryReader reader;
     private int offset;
 
-    JsonTokenBuffer(final List<JsonToken> tokens, final BinaryReader source) {
+    JsonTokenBuffer(final List<JsonToken> tokens, final BinaryReader reader) {
         this.tokens = tokens;
-        this.source = source;
+        this.reader = reader;
 
         offset = 0;
     }
@@ -54,7 +54,7 @@ public class JsonTokenBuffer {
         }
     }
 
-    public BinaryReader source() {
-        return source;
+    public BinaryReader reader() {
+        return reader;
     }
 }

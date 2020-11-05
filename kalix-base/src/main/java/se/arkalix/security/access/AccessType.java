@@ -13,7 +13,7 @@ public final class AccessType {
     private final String name;
 
     private AccessType(final String name) {
-        this.name = Objects.requireNonNull(name, "Expected name");
+        this.name = Objects.requireNonNull(name, "name");
     }
 
     /**
@@ -75,7 +75,7 @@ public final class AccessType {
      * @return Cached or new {@link AccessType}.
      */
     public static AccessType valueOf(String name) {
-        name = Objects.requireNonNull(name, "Expected name").toUpperCase();
+        name = Objects.requireNonNull(name, "name").toUpperCase();
         switch (name) {
         case "CERTIFICATE": return CERTIFICATE;
         case "NOT_SECURE": return NOT_SECURE;

@@ -14,7 +14,7 @@ import java.util.function.Consumer;
  *
  * @param <V> Type of value that is included if the result is successful.
  */
-class FutureResult<V> implements FutureProgress<V> {
+class FutureResult<V> implements Future<V> {
     private final Result<V> result;
 
     /**
@@ -44,13 +44,6 @@ class FutureResult<V> implements FutureProgress<V> {
         if (result.isFailure()) {
             consumer.accept(result.fault());
         }
-    }
-
-    @Override
-    public Future<V> addProgressListener(final Listener listener) {
-        Objects.requireNonNull(listener, "listener");
-        // Does nothing.
-        return this;
     }
 
     @Override

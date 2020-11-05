@@ -28,7 +28,7 @@ public class AccessByCloudWhitelist implements AccessPolicy {
      */
     public AccessByCloudWhitelist(final Collection<String> whitelist) {
         this.whitelist = Collections.synchronizedSet(new HashSet<>(
-            Objects.requireNonNull(whitelist, "Expected whitelist")));
+            Objects.requireNonNull(whitelist, "whitelist")));
     }
 
     /**
@@ -52,8 +52,8 @@ public class AccessByCloudWhitelist implements AccessPolicy {
         final ServiceRecord service,
         final String token)
     {
-        Objects.requireNonNull(consumer, "Expected consumer");
-        Objects.requireNonNull(service, "Expected service");
+        Objects.requireNonNull(consumer, "consumer");
+        Objects.requireNonNull(service, "service");
 
         return Objects.equals(consumer.identity().cloud(), provider.identity().cloud()) &&
             whitelist.contains(consumer.name());

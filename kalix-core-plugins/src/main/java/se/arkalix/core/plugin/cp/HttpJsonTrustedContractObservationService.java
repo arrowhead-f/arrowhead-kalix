@@ -60,7 +60,7 @@ public class HttpJsonTrustedContractObservationService implements ArConsumer, Ar
             .queryParameter("name1", name1)
             .queryParameter("name2", name2)
             .queryParameter("id", "" + id))
-            .flatMap(response -> unwrapOptional(response, TrustedContractNegotiationDto.class));
+            .flatMap(response -> unwrapOptional(response, TrustedContractNegotiationDto::readJson));
     }
 
     private static class Factory implements ArConsumerFactory<HttpJsonTrustedContractObservationService> {

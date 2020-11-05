@@ -14,7 +14,7 @@ import java.util.function.Consumer;
  *
  * @param <V> Type of value.
  */
-class FutureSuccess<V> implements FutureProgress<V> {
+class FutureSuccess<V> implements Future<V> {
     static final FutureSuccess<?> NULL = new FutureSuccess<>(null);
 
     private final V value;
@@ -43,13 +43,6 @@ class FutureSuccess<V> implements FutureProgress<V> {
     public void onFailure(final Consumer<Throwable> consumer) {
         Objects.requireNonNull(consumer);
         // Does nothing.
-    }
-
-    @Override
-    public FutureProgress<V> addProgressListener(final Listener listener) {
-        Objects.requireNonNull(listener, "listener");
-        // Does nothing.
-        return this;
     }
 
     @Override

@@ -23,7 +23,7 @@ public class NettyHttpClientConnectionInitializer extends ChannelInitializer<Soc
         final FutureCompletion<HttpClientConnection> futureConnection,
         final SslContext sslContext
     ) {
-        this.futureConnection = Objects.requireNonNull(futureConnection, "Expected futureConnection");
+        this.futureConnection = Objects.requireNonNull(futureConnection, "futureConnection");
         this.sslContext = sslContext;
     }
 
