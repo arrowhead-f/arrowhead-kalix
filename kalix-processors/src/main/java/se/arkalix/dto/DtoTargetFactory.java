@@ -25,7 +25,7 @@ public class DtoTargetFactory {
         propertyFactory = new DtoPropertyFactory(elementUtils, typeUtils);
     }
 
-    public DtoTarget createFromInterface(final TypeElement interfaceElement) throws DtoException {
+    public DtoTarget createFromInterface(final TypeElement interfaceElement) {
         if (interfaceElement.getKind() != ElementKind.INTERFACE) {
             throw new DtoException(interfaceElement, "Only interfaces may " +
                 "be annotated with @DtoReadableAs and/or @DtoWritableAs");
@@ -83,8 +83,8 @@ public class DtoTargetFactory {
     private void verifyAnyExclusivityConstraints(
         final String[] readable,
         final String[] writable,
-        final ExecutableElement executable) throws DtoException
-    {
+        final ExecutableElement executable
+    ) {
         final var type = executable.getReturnType();
         if (type.getKind() != TypeKind.DECLARED) {
             return;

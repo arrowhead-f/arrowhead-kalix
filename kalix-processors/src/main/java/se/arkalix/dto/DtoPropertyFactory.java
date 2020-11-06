@@ -100,7 +100,7 @@ public class DtoPropertyFactory {
             .collect(Collectors.toSet());
     }
 
-    public DtoProperty createFromMethod(final ExecutableElement method) throws DtoException {
+    public DtoProperty createFromMethod(final ExecutableElement method) {
         assert method.getKind() == ElementKind.METHOD;
         assert method.getEnclosingElement().getKind() == ElementKind.INTERFACE;
         assert !method.getModifiers().contains(Modifier.DEFAULT);
@@ -163,7 +163,7 @@ public class DtoPropertyFactory {
         return encodingNames;
     }
 
-    private DtoType resolveDtoType(final ExecutableElement method, final TypeMirror type) throws DtoException {
+    private DtoType resolveDtoType(final ExecutableElement method, final TypeMirror type) {
         if (type.getKind().isPrimitive()) {
             return toElementType(type, DtoDescriptor.valueOf(type.getKind()));
         }
@@ -319,13 +319,13 @@ public class DtoPropertyFactory {
         return hasEquals && hasHashCode && hasToString && hasValueOf;
     }
 
-    private DtoSequence toArrayType(final ExecutableElement method, final TypeMirror type) throws DtoException {
+    private DtoSequence toArrayType(final ExecutableElement method, final TypeMirror type) {
         final var arrayType = (ArrayType) type;
         final var element = resolveDtoType(method, arrayType.getComponentType());
         return DtoSequence.newArray(arrayType, element);
     }
 
-    private DtoType toInterfaceOrCustomType(final ExecutableElement method, final TypeMirror type) throws DtoException {
+    private DtoType toInterfaceOrCustomType(final ExecutableElement method, final TypeMirror type) {
         final var declaredType = (DeclaredType) type;
         var element = typeUtils.asElement(type);
 
@@ -352,13 +352,13 @@ public class DtoPropertyFactory {
         return new DtoInterface(declaredType, readableEncodings, writableEncodings);
     }
 
-    private DtoSequence toListType(final ExecutableElement method, final TypeMirror type) throws DtoException {
+    private DtoSequence toListType(final ExecutableElement method, final TypeMirror type) {
         final var declaredType = (DeclaredType) type;
         final var element = resolveDtoType(method, declaredType.getTypeArguments().get(0));
         return DtoSequence.newList(declaredType, element);
     }
 
-    private DtoMap toMapType(final ExecutableElement method, final TypeMirror type) throws DtoException {
+    private DtoMap toMapType(final ExecutableElement method, final TypeMirror type) {
         final var declaredType = (DeclaredType) type;
         final var typeArguments = declaredType.getTypeArguments();
         final var key = resolveDtoType(method, typeArguments.get(0));

@@ -2,7 +2,7 @@ package se.arkalix.dto;
 
 import javax.lang.model.element.Element;
 
-public class DtoException extends Exception {
+public class DtoException extends RuntimeException {
     private final Element offendingElement;
 
     public DtoException(final Element offendingElement, final String message) {

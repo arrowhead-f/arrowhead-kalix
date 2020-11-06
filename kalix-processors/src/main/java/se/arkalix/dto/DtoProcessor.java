@@ -4,12 +4,15 @@ import com.squareup.javapoet.JavaFile;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.HashMap;
@@ -62,19 +65,20 @@ public class DtoProcessor extends AbstractProcessor {
                     .writeTo(filer);
             }
         }
-        catch (final DtoException e) {
-            messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage(), e.offendingElement());
-        }
-        catch (final IOException exception) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "" +
-                "@DtoReadableAs/@DtoWritableAs class could not be generated; " +
-                "reason: " + exception);
+        catch (final DtoException exception) {
+            print(exception, exception.offendingElement());
         }
         catch (final Throwable throwable) {
-            throwable.printStackTrace();
-            throw throwable;
+            print(throwable, null);
         }
         return true;
+    }
+
+    private void print(final Throwable throwable, final Element offendingElement) {
+        final var writer = new StringWriter();
+        final var printer = new PrintWriter(writer);
+        throwable.printStackTrace(printer);
+        messager.printMessage(Diagnostic.Kind.ERROR, writer.toString(), offendingElement);
     }
 
     private Collection<TypeElement> findAnnotatedInterfaces(final RoundEnvironment roundEnv) {

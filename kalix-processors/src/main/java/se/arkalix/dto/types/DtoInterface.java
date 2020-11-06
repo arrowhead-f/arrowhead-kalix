@@ -3,6 +3,7 @@ package se.arkalix.dto.types;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.TypeName;
 import se.arkalix.dto.DtoEncodingSpec;
+import se.arkalix.dto.DtoException;
 import se.arkalix.dto.DtoTarget;
 
 import javax.lang.model.element.TypeElement;
@@ -28,22 +29,8 @@ public class DtoInterface implements DtoType {
         final String[] writableDtoEncodings
     ) {
         this.interfaceType = Objects.requireNonNull(interfaceType, "interfaceType");
-
-        this.readableDtoEncodings = Optional.ofNullable(readableDtoEncodings)
-            .map(readable -> Arrays.stream(readable)
-                .map(DtoEncodingSpec::getByDtoName)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toUnmodifiableSet()))
-            .orElse(Collections.emptySet());
-
-        this.writableDtoEncodings = Optional.ofNullable(writableDtoEncodings)
-            .map(writable -> Arrays.stream(writable)
-                .map(DtoEncodingSpec::getByDtoName)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toUnmodifiableSet()))
-            .orElse(Collections.emptySet());
+        this.readableDtoEncodings = encodingSpecsFrom(readableDtoEncodings, interfaceType);
+        this.writableDtoEncodings = encodingSpecsFrom(writableDtoEncodings, interfaceType);
 
         dtoEncodings = new HashSet<>();
         dtoEncodings.addAll(this.readableDtoEncodings);
@@ -55,6 +42,18 @@ public class DtoInterface implements DtoType {
         builderSimpleName = simpleName + DtoTarget.BUILDER_SUFFIX;
         inputTypeName = ClassName.get(packageNameOf(interfaceElement.getQualifiedName()), dataSimpleName);
         outputTypeName = TypeName.get(interfaceType);
+    }
+
+    private static Set<DtoEncodingSpec> encodingSpecsFrom(final String[] dtoNames, final DeclaredType interfaceType) {
+        if (dtoNames == null) {
+            return Collections.emptySet();
+        }
+        return Arrays.stream(dtoNames)
+            .map(dtoName -> DtoEncodingSpec.getByDtoName(dtoName)
+                .orElseThrow(() -> new DtoException(interfaceType.asElement(), "" +
+                    "No DtoImplementer available for encoding \"" + dtoName
+                    + "\"; cannot generate DTO class for " + interfaceType)))
+            .collect(Collectors.toUnmodifiableSet());
     }
 
     private String packageNameOf(final CharSequence qualifiedName) {

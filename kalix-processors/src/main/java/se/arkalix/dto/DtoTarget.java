@@ -63,4 +63,9 @@ public class DtoTarget {
     public TypeName dataTypeName() {
         return interfaceType.inputTypeName();
     }
+
+    @Override
+    public String toString() {
+        return interfaceType.inputTypeName().toString();
+    }
 }

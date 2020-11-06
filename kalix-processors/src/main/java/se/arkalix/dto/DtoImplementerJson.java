@@ -1,6 +1,9 @@
 package se.arkalix.dto;
 
-import com.squareup.javapoet.*;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.TypeSpec;
 import se.arkalix.dto.types.*;
 import se.arkalix.dto.util.BinaryWriterWriteCache;
 import se.arkalix.dto.util.Expander;
@@ -30,7 +33,7 @@ public class DtoImplementerJson implements DtoImplementer {
     }
 
     @Override
-    public void implementFor(final DtoTarget target, final TypeSpec.Builder implementation) throws DtoException {
+    public void implementFor(final DtoTarget target, final TypeSpec.Builder implementation) {
         if (target.interfaceType().isReadable(DtoEncodingSpec.JSON)) {
             implementReadMethodsFor(target, implementation);
         }
@@ -39,8 +42,7 @@ public class DtoImplementerJson implements DtoImplementer {
         }
     }
 
-    private void implementReadMethodsFor(final DtoTarget target, final TypeSpec.Builder implementation)
-        throws DtoException {
+    private void implementReadMethodsFor(final DtoTarget target, final TypeSpec.Builder implementation) {
         final var dataTypeName = target.dataTypeName();
         final var properties = target.properties();
 
@@ -153,7 +155,7 @@ public class DtoImplementerJson implements DtoImplementer {
         final DtoType type,
         final Expander assignment,
         final MethodSpec.Builder builder
-    ) throws DtoException {
+    ) {
         final var descriptor = type.descriptor();
         switch (descriptor) {
         case ARRAY:
@@ -282,7 +284,7 @@ public class DtoImplementerJson implements DtoImplementer {
         final DtoSequence type,
         final Expander assignment,
         final MethodSpec.Builder builder
-    ) throws DtoException {
+    ) {
         final var element = type.element();
         final var elementTypeName = element.inputTypeName();
 
@@ -352,8 +354,7 @@ public class DtoImplementerJson implements DtoImplementer {
         final DtoCustom type,
         final Expander assignment,
         final MethodSpec.Builder builder
-    )
-        throws DtoException {
+    ) {
         final var returnType = target.interfaceType().type().toString();
         final var parameter = JsonTokenBuffer.class.getCanonicalName();
         if (!type.containsPublicStaticMethod(returnType, encoding().decoderMethodName(), parameter)) {
@@ -418,8 +419,7 @@ public class DtoImplementerJson implements DtoImplementer {
         final DtoMap type,
         final Expander assignment,
         final MethodSpec.Builder builder
-    )
-        throws DtoException {
+    ) {
         final var key = type.key();
         final var value = type.value();
 
@@ -535,8 +535,7 @@ public class DtoImplementerJson implements DtoImplementer {
         }
     }
 
-    private void implementWriteMethodFor(final DtoTarget target, final TypeSpec.Builder implementation)
-        throws DtoException {
+    private void implementWriteMethodFor(final DtoTarget target, final TypeSpec.Builder implementation) {
         final var builder = MethodSpec.methodBuilder(encoding().encoderMethodName())
             .addModifiers(Modifier.PUBLIC)
             .returns(TypeName.get(Encoding.class))
@@ -625,8 +624,7 @@ public class DtoImplementerJson implements DtoImplementer {
         implementation.addMethod(builder.build());
     }
 
-    private void writeValue(final DtoType type, final String name, final MethodSpec.Builder builder)
-        throws DtoException {
+    private void writeValue(final DtoType type, final String name, final MethodSpec.Builder builder) {
         final var descriptor = type.descriptor();
         switch (descriptor) {
         case ARRAY:
@@ -693,8 +691,7 @@ public class DtoImplementerJson implements DtoImplementer {
         }
     }
 
-    private void writeArray(final DtoType type, final String name, final MethodSpec.Builder builder)
-        throws DtoException {
+    private void writeArray(final DtoType type, final String name, final MethodSpec.Builder builder) {
         if (level > 0) {
             builder.beginControlFlow("");
         }
@@ -727,8 +724,7 @@ public class DtoImplementerJson implements DtoImplementer {
         final DtoCustom type,
         final String name,
         final MethodSpec.Builder builder
-    )
-        throws DtoException {
+    ) {
         final var returnType = Encoding.class.getCanonicalName();
         final var parameter = BinaryWriter.class.getCanonicalName();
         if (!type.containsPublicMethod(returnType, encoding().encoderMethodName(), parameter)) {
@@ -758,8 +754,7 @@ public class DtoImplementerJson implements DtoImplementer {
         builder.addStatement("$N.$N(writer)", name, encoding().encoderMethodName());
     }
 
-    private void writeMap(final DtoType type, final String name, final MethodSpec.Builder builder)
-        throws DtoException {
+    private void writeMap(final DtoType type, final String name, final MethodSpec.Builder builder) {
         if (level > 0) {
             builder.beginControlFlow("");
         }

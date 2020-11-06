@@ -17,7 +17,6 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 
-
 public class DtoImplementerFactory {
     private final DtoImplementer[] implementers;
 
@@ -25,7 +24,7 @@ public class DtoImplementerFactory {
         this.implementers = implementers;
     }
 
-    public DtoTargetSpecification createForTarget(final DtoTarget target) throws DtoException {
+    public DtoTargetSpecification createForTarget(final DtoTarget target) {
         final var interfaceType = target.interfaceType();
 
         final var implementationClassName = ClassName.bestGuess(target.dataSimpleName());
@@ -313,6 +312,7 @@ public class DtoImplementerFactory {
                     .build());
         }
 
+        // TODO: Make it possible to provide custom DtoImplementer classes, somehow.
         final var targetEncodings = target.encodings();
         for (final var implementer : implementers) {
             if (targetEncodings.contains(implementer.encoding())) {
