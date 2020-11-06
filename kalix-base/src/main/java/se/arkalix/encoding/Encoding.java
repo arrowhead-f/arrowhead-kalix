@@ -7,11 +7,13 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Names an <i>encoding</i>.
- * <p>
- * An encoding is understood to be a routine used for assigning meaning to
- * certain bit patterns in strings of bytes. Each encoding can be <i>known</i>
- * to be general-purpose and/or textual.
+ * Names any out of a set of known <i>encodings</i>.
+ * <h1>What is an encoding?</h1>
+ * An encoding is understood to be set of rules used for assigning meaning to
+ * certain bit patterns in strings of bytes, which then can be followed to
+ * construct Java objects from such bit patterns and to represent Java objects
+ * as bit patterns. Each encoding can be <i>known</i> to be general-purpose
+ * and/or textual.
  * <p>
  * A general-purpose encoding can represent arbitrary data structures, such as
  * associative arrays (a.k.a. maps or dictionaries) and lists, with the syntax
@@ -27,6 +29,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * might make that available via the {@link #charset()} method. {@link #JSON}
  * and YAML match this definition, as well as plain character sets, such as
  * {@link #US_ASCII} or {@link #UTF_8}.
+ * <h1>Encoding Registration</h1>
+ * This class functions both as an enumerator and as an encoding registry.
  */
 public final class Encoding implements ToEncoding {
     private static final ConcurrentHashMap<String, Encoding> nameToEncoding = new ConcurrentHashMap<>();
@@ -191,7 +195,7 @@ public final class Encoding implements ToEncoding {
      * This method returning {@code true} does <i>not</i> guarantee that the
      * {@link #charset()} method will return a non-empty result. Even though
      * this encoding is known to be a character set, it is not guaranteed that
-     * this system knows how to interpret it.
+     * this system knows how to interpret that character set.
      *
      * @return {@code true} only if this encoding is a charset.
      */

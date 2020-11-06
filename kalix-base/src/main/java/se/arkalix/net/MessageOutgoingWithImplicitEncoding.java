@@ -35,7 +35,7 @@ public interface MessageOutgoingWithImplicitEncoding<Self> extends MessageOutgoi
             final var encoding0 = encoding()
                 .orElseThrow(() -> new MessageEncodingUnspecified(this));
 
-            encodable.encodeUsing(writer, encoding0);
+            encodable.encode(writer, encoding0);
             return encoding0;
         }));
     }

@@ -20,5 +20,5 @@ public interface MultiEncodable {
      * @throws NullPointerException If {@code writer} or {@code encoding} is
      *                              {@code null}.
      */
-    void encodeUsing(BinaryWriter writer, Encoding encoding);
+    void encode(BinaryWriter writer, Encoding encoding);
 }

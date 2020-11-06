@@ -90,7 +90,7 @@ public interface MessageOutgoing<Self> extends Message {
 
         final var encoding0 = encoding.toEncoding();
         return body(BodyOutgoing.create(writer -> {
-            encodable.encodeUsing(writer, encoding0);
+            encodable.encode(writer, encoding0);
             return Encoding.NONE;
         }));
     }

@@ -106,7 +106,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
 
                         .post("/#topic", (request, response) -> {
                             final var topicName = request.pathParameter(0);
-                            return request.bodyAs(EventIncomingDto::readJson)
+                            return request.bodyAs(EventIncomingDto::decodeJson)
                                 .ifSuccess(event -> {
                                     try {
                                         final var topic = nameToTopic.get(topicName.toLowerCase());

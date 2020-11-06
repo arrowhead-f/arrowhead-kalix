@@ -5,6 +5,11 @@ import se.arkalix.dto.types.DtoCollection;
 import se.arkalix.dto.types.DtoDescriptor;
 import se.arkalix.dto.types.DtoSequence;
 import se.arkalix.dto.util.Expander;
+import se.arkalix.encoding.Encoding;
+import se.arkalix.encoding.EncodingUnsupported;
+import se.arkalix.encoding.MultiEncodable;
+import se.arkalix.encoding.binary.BinaryReader;
+import se.arkalix.encoding.binary.BinaryWriter;
 
 import javax.lang.model.element.Modifier;
 import java.util.Arrays;
@@ -23,7 +28,8 @@ public class DtoImplementerFactory {
     public DtoTargetSpecification createForTarget(final DtoTarget target) throws DtoException {
         final var interfaceType = target.interfaceType();
 
-        final var implementation = TypeSpec.classBuilder(target.dataSimpleName())
+        final var implementationClassName = ClassName.bestGuess(target.dataSimpleName());
+        final var implementation = TypeSpec.classBuilder(implementationClassName)
             .addJavadoc("{@link $N} Data Transfer Object (DTO).", interfaceType.simpleName())
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
             .addSuperinterface(interfaceType.outputTypeName());
@@ -264,6 +270,47 @@ public class DtoImplementerFactory {
             implementation.addMethod(toString
                 .addCode("    '}';\n")
                 .build());
+        }
+
+        if (target.isReadable()) {
+            final var decode = MethodSpec.methodBuilder("decode")
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+                .returns(implementationClassName)
+                .addParameter(ClassName.get(BinaryReader.class), "reader", Modifier.FINAL)
+                .addParameter(ClassName.get(Encoding.class), "encoding", Modifier.FINAL);
+
+            for (final var encoding : target.interfaceType().readableEncodings()) {
+                decode
+                    .beginControlFlow("if (encoding == $T.$N)", Encoding.class, encoding.name())
+                    .addStatement("return $N(reader)", encoding.decoderMethodName())
+                    .endControlFlow();
+            }
+
+            implementation.addMethod(decode
+                .addStatement("throw new $T(encoding)", EncodingUnsupported.class)
+                .build());
+        }
+
+        if (target.isWritable()) {
+            final var encode = MethodSpec.methodBuilder("encode")
+                .addAnnotation(Override.class)
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(ClassName.get(BinaryWriter.class), "writer", Modifier.FINAL)
+                .addParameter(ClassName.get(Encoding.class), "encoding", Modifier.FINAL);
+
+            for (final var encoding : target.interfaceType().writableEncodings()) {
+                encode
+                    .beginControlFlow("if (encoding == $T.$N)", Encoding.class, encoding.name())
+                    .addStatement("$N(writer)", encoding.encoderMethodName())
+                    .addStatement("return")
+                    .endControlFlow();
+            }
+
+            implementation
+                .addSuperinterface(ClassName.get(MultiEncodable.class))
+                .addMethod(encode
+                    .addStatement("throw new $T(encoding)", EncodingUnsupported.class)
+                    .build());
         }
 
         final var targetEncodings = target.encodings();

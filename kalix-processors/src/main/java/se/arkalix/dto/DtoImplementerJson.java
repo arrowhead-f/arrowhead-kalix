@@ -25,16 +25,16 @@ public class DtoImplementerJson implements DtoImplementer {
     private int level = 0;
 
     @Override
-    public String encoding() {
-        return DtoEncoding.JSON;
+    public DtoEncodingSpec encoding() {
+        return DtoEncodingSpec.JSON;
     }
 
     @Override
     public void implementFor(final DtoTarget target, final TypeSpec.Builder implementation) throws DtoException {
-        if (target.interfaceType().isReadable(DtoEncoding.JSON)) {
+        if (target.interfaceType().isReadable(DtoEncodingSpec.JSON)) {
             implementReadMethodsFor(target, implementation);
         }
-        if (target.interfaceType().isWritable(DtoEncoding.JSON)) {
+        if (target.interfaceType().isWritable(DtoEncodingSpec.JSON)) {
             implementWriteMethodFor(target, implementation);
         }
     }
@@ -44,14 +44,14 @@ public class DtoImplementerJson implements DtoImplementer {
         final var dataTypeName = target.dataTypeName();
         final var properties = target.properties();
 
-        implementation.addMethod(MethodSpec.methodBuilder("readJson")
+        implementation.addMethod(MethodSpec.methodBuilder(encoding().decoderMethodName())
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
             .returns(dataTypeName)
             .addParameter(BinaryReader.class, "reader", Modifier.FINAL)
-            .addStatement("return readJson($T.tokenize(reader))", JsonTokenizer.class)
+            .addStatement("return $N($T.tokenize(reader))", encoding().decoderMethodName(), JsonTokenizer.class)
             .build());
 
-        final var builder = MethodSpec.methodBuilder("readJson")
+        final var builder = MethodSpec.methodBuilder(encoding().decoderMethodName())
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
             .returns(dataTypeName)
             .addParameter(JsonTokenBuffer.class, "buffer", Modifier.FINAL)
@@ -356,10 +356,11 @@ public class DtoImplementerJson implements DtoImplementer {
         throws DtoException {
         final var returnType = target.interfaceType().type().toString();
         final var parameter = JsonTokenBuffer.class.getCanonicalName();
-        if (!type.containsPublicStaticMethod(returnType, "readJson", parameter)) {
+        if (!type.containsPublicStaticMethod(returnType, encoding().decoderMethodName(), parameter)) {
             throw new DtoException(type.typeElement(), "No public static " +
-                "readJson(JsonTokenBuffer) method available; required for " +
-                "this class/interface to be useful as a custom JSON DTO");
+                returnType + " " + encoding().decoderMethodName() +
+                "(JsonTokenBuffer) method available; required for this " +
+                "class/interface to be useful as a custom JSON DTO");
         }
 
         if (level == 0) {
@@ -370,7 +371,8 @@ public class DtoImplementerJson implements DtoImplementer {
                 .endControlFlow();
         }
 
-        builder.addStatement(assignment.expand("$T.readJson(buffer)"), type.inputTypeName());
+        builder.addStatement(assignment.expand("$T.$N(buffer)"),
+            encoding().decoderMethodName(), type.inputTypeName());
     }
 
     private void readEnum(final DtoType type, final Expander assignment, final MethodSpec.Builder builder) {
@@ -393,9 +395,10 @@ public class DtoImplementerJson implements DtoImplementer {
     }
 
     private void readInterface(final DtoInterface type, final Expander assignment, final MethodSpec.Builder builder) {
-        if (!type.isReadable(DtoEncoding.JSON)) {
-            throw new IllegalStateException(type.simpleName() + " is not annotated with " +
-                "@DtoReadableAs, or lacks DataEncoding.JSON as annotation argument");
+        if (!type.isReadable(DtoEncodingSpec.JSON)) {
+            throw new IllegalStateException(type.simpleName() + " is not " +
+                "annotated with @DtoReadableAs, or lacks DtoEncoding.JSON as " +
+                "annotation argument");
         }
 
         if (level == 0) {
@@ -406,7 +409,8 @@ public class DtoImplementerJson implements DtoImplementer {
                 .endControlFlow();
         }
 
-        builder.addStatement(assignment.expand("$T.readJson(buffer)"), type.inputTypeName());
+        builder.addStatement(assignment.expand("$T.$N(buffer)"),
+            type.inputTypeName(), encoding().decoderMethodName());
     }
 
     private void readMap(
@@ -533,7 +537,7 @@ public class DtoImplementerJson implements DtoImplementer {
 
     private void implementWriteMethodFor(final DtoTarget target, final TypeSpec.Builder implementation)
         throws DtoException {
-        final var builder = MethodSpec.methodBuilder("writeJson")
+        final var builder = MethodSpec.methodBuilder(encoding().encoderMethodName())
             .addModifiers(Modifier.PUBLIC)
             .returns(TypeName.get(Encoding.class))
             .addParameter(ParameterSpec.builder(TypeName.get(BinaryWriter.class), "writer")
@@ -727,14 +731,15 @@ public class DtoImplementerJson implements DtoImplementer {
         throws DtoException {
         final var returnType = Encoding.class.getCanonicalName();
         final var parameter = BinaryWriter.class.getCanonicalName();
-        if (!type.containsPublicMethod(returnType, "writeJson", parameter)) {
+        if (!type.containsPublicMethod(returnType, encoding().encoderMethodName(), parameter)) {
             throw new DtoException(type.typeElement(), "No public " +
-                "writeJson(BinaryWriter) method available; required for " +
-                "this class/interface to be useful as a custom JSON DTO");
+                returnType + " " + encoding().encoderMethodName() +
+                "(BinaryWriter) method available; required for this " +
+                "class/interface to be useful as a custom JSON DTO");
         }
 
         writeCache.addWriteIfNotEmpty(builder);
-        builder.addStatement("$N.writeJson(writer)", name);
+        builder.addStatement("$N.$N(writer)", name, encoding().encoderMethodName());
     }
 
     private void writeEnum(final String name, final MethodSpec.Builder builder) {
@@ -744,13 +749,13 @@ public class DtoImplementerJson implements DtoImplementer {
     }
 
     private void writeInterface(final DtoInterface type, final String name, final MethodSpec.Builder builder) {
-        if (!type.isWritable(DtoEncoding.JSON)) {
+        if (!type.isWritable(DtoEncodingSpec.JSON)) {
             throw new IllegalStateException(type.simpleName() + " is not " +
                 "annotated with @DtoWritableAs, or lacks DataEncoding.JSON as " +
                 "annotation argument");
         }
         writeCache.addWriteIfNotEmpty(builder);
-        builder.addStatement("$N.writeJson(writer)", name);
+        builder.addStatement("$N.$N(writer)", name, encoding().encoderMethodName());
     }
 
     private void writeMap(final DtoType type, final String name, final MethodSpec.Builder builder)

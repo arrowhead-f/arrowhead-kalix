@@ -346,8 +346,8 @@ public class DtoPropertyFactory {
             return new DtoCustom(type, (TypeElement) element, typeUtils, elementUtils);
         }
 
-        final var readableEncodings = readable != null ? readable.value() : new String[0];
-        final var writableEncodings = writable != null ? writable.value() : new String[0];
+        final var readableEncodings = readable != null ? readable.value() : null;
+        final var writableEncodings = writable != null ? writable.value() : null;
 
         return new DtoInterface(declaredType, readableEncodings, writableEncodings);
     }

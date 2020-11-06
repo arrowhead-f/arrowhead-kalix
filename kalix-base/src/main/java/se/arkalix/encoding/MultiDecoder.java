@@ -22,5 +22,5 @@ public interface MultiDecoder<T> {
      * @throws NullPointerException If {@code reader} or {@code encoding} is
      *                              {@code null}.
      */
-    T decodeUsing(BinaryReader reader, Encoding encoding);
+    T decode(BinaryReader reader, Encoding encoding);
 }

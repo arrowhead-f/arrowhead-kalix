@@ -50,8 +50,8 @@ public class HttpJsonServiceDiscoveryService implements ArServiceDiscoveryServic
             .send(new HttpConsumerRequest()
                 .method(POST)
                 .path(pathQuery)
-                .body(query::writeJson))
-            .flatMap(response -> unwrap(response, ServiceQueryResultDto::readJson));
+                .body(query::encodeJson))
+            .flatMap(response -> unwrap(response, ServiceQueryResultDto::decodeJson));
     }
 
     @Override
@@ -60,7 +60,7 @@ public class HttpJsonServiceDiscoveryService implements ArServiceDiscoveryServic
             .send(new HttpConsumerRequest()
                 .method(POST)
                 .path(pathRegister)
-                .body(registration::writeJson))
+                .body(registration::encodeJson))
             .flatMap(HttpJsonServices::unwrap);
     }
 

@@ -33,7 +33,7 @@ public class HttpJsonOrchestrationService implements ArConsumer, ArOrchestration
             .send(new HttpConsumerRequest()
                 .method(POST)
                 .path(service().uri())
-                .body(query::writeJson))
-            .flatMap(response -> unwrap(response, OrchestrationQueryResultDto::readJson));
+                .body(query::encodeJson))
+            .flatMap(response -> unwrap(response, OrchestrationQueryResultDto::decodeJson));
     }
 }

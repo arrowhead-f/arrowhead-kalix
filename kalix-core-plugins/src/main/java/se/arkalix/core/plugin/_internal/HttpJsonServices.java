@@ -54,7 +54,7 @@ public class HttpJsonServices {
         if (response.status().isClientError()) {
             final var headers = response.headers();
             if (headers.get("content-type").orElse("").startsWith("application/json")) {
-                return response.bodyAs(ErrorResponseDto::readJson)
+                return response.bodyAs(ErrorResponseDto::decode)
                     .mapThrow(error -> new ErrorResponseException(response, error));
             }
         }

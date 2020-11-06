@@ -44,7 +44,15 @@ public class DtoTarget {
         return isPrintable;
     }
 
-    public Set<String> encodings() {
+    public boolean isReadable() {
+        return interfaceType.isReadable();
+    }
+
+    public boolean isWritable() {
+        return interfaceType.isWritable();
+    }
+
+    public Set<DtoEncodingSpec> encodings() {
         return interfaceType.encodings();
     }
 

@@ -2,19 +2,18 @@ package se.arkalix.dto.types;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.TypeName;
+import se.arkalix.dto.DtoEncodingSpec;
 import se.arkalix.dto.DtoTarget;
 
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class DtoInterface implements DtoType {
-    private final Set<String> readableDtoEncodings;
-    private final Set<String> writableDtoEncodings;
-    private final Set<String> dtoEncodings;
+    private final Set<DtoEncodingSpec> readableDtoEncodings;
+    private final Set<DtoEncodingSpec> writableDtoEncodings;
+    private final Set<DtoEncodingSpec> dtoEncodings;
 
     private final DeclaredType interfaceType;
     private final String simpleName;
@@ -28,9 +27,23 @@ public class DtoInterface implements DtoType {
         final String[] readableDtoEncodings,
         final String[] writableDtoEncodings
     ) {
-        this.interfaceType = interfaceType;
-        this.readableDtoEncodings = Stream.of(readableDtoEncodings).collect(Collectors.toSet());
-        this.writableDtoEncodings = Stream.of(writableDtoEncodings).collect(Collectors.toSet());
+        this.interfaceType = Objects.requireNonNull(interfaceType, "interfaceType");
+
+        this.readableDtoEncodings = Optional.ofNullable(readableDtoEncodings)
+            .map(readable -> Arrays.stream(readable)
+                .map(DtoEncodingSpec::getByDtoName)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toUnmodifiableSet()))
+            .orElse(Collections.emptySet());
+
+        this.writableDtoEncodings = Optional.ofNullable(writableDtoEncodings)
+            .map(writable -> Arrays.stream(writable)
+                .map(DtoEncodingSpec::getByDtoName)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toUnmodifiableSet()))
+            .orElse(Collections.emptySet());
 
         dtoEncodings = new HashSet<>();
         dtoEncodings.addAll(this.readableDtoEncodings);
@@ -82,8 +95,16 @@ public class DtoInterface implements DtoType {
         return builderSimpleName;
     }
 
-    public Set<String> encodings() {
+    public Set<DtoEncodingSpec> encodings() {
         return dtoEncodings;
+    }
+
+    public Set<DtoEncodingSpec> readableEncodings() {
+        return readableDtoEncodings;
+    }
+
+    public Set<DtoEncodingSpec> writableEncodings() {
+        return writableDtoEncodings;
     }
 
     @Override
@@ -101,11 +122,19 @@ public class DtoInterface implements DtoType {
         return outputTypeName;
     }
 
-    public boolean isReadable(final String dtoEncoding) {
+    public boolean isReadable() {
+        return !readableDtoEncodings.isEmpty();
+    }
+
+    public boolean isReadable(final DtoEncodingSpec dtoEncoding) {
         return readableDtoEncodings.contains(dtoEncoding);
     }
 
-    public boolean isWritable(final String dtoEncoding) {
+    public boolean isWritable() {
+        return !writableDtoEncodings.isEmpty();
+    }
+
+    public boolean isWritable(final DtoEncodingSpec dtoEncoding) {
         return writableDtoEncodings.contains(dtoEncoding);
     }
 

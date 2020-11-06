@@ -95,7 +95,7 @@ public interface MessageIncoming extends Message {
         final var encoding0 = encoding.toEncoding();
         return body()
             .buffer()
-            .map(reader -> decoder.decodeUsing(reader, encoding0));
+            .map(reader -> decoder.decode(reader, encoding0));
     }
 
     /**
