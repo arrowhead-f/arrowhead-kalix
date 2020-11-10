@@ -8,18 +8,18 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Names any out of a set of known <i>encodings</i>.
- * <h1>What is an encoding?</h1>
+ * <p>
  * An encoding is understood to be set of rules used for assigning meaning to
  * certain bit patterns in strings of bytes, which then can be followed to
- * construct Java objects from such bit patterns and to represent Java objects
- * as bit patterns. Each encoding can be <i>known</i> to be general-purpose
- * and/or textual.
+ * construct Java objects from such bit patterns and to turn Java objects into
+ * bit patterns. Each encoding can be <i>known</i> to be general-purpose,
+ * textual and/or a character set.
  * <p>
  * A general-purpose encoding can represent arbitrary data structures, such as
  * associative arrays (a.k.a. maps or dictionaries) and lists, with the syntax
  * already defined for the encoding. Examples of such encodings include
  * {@link #JSON}, {@link #XML} and {@code CBOR}. Encodings not being
- * general-purpose are interpreted as being protocol-specific, such as
+ * general-purpose are interpreted as being application-specific, such as
  * {@link #HTML} or {@link #CSS}.
  * <p>
  * A textual encoding is such that is fully compatible with one or more
@@ -28,9 +28,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * purpose. Note that only the encodings with a single associated character set
  * might make that available via the {@link #charset()} method. {@link #JSON}
  * and YAML match this definition, as well as plain character sets, such as
- * {@link #US_ASCII} or {@link #UTF_8}.
- * <h1>Encoding Registration</h1>
- * This class functions both as an enumerator and as an encoding registry.
+ * {@link #US_ASCII} or {@link #UTF_8}. However, {@link #XML} does not, as it
+ * can be encoded using both UTF-8 and UTF-16.
  */
 public final class Encoding implements ToEncoding {
     private static final ConcurrentHashMap<String, Encoding> nameToEncoding = new ConcurrentHashMap<>();
@@ -355,7 +354,7 @@ public final class Encoding implements ToEncoding {
     public static class Registration {
         private String name;
         private boolean isGeneral = false;
-        private Boolean isTextual = null;
+        private boolean isTextual = false;
         private boolean isCharset = false;
         private Charset charset = null;
 

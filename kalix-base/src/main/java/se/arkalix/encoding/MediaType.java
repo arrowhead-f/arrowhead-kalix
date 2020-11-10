@@ -11,9 +11,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * Media type specifiers differ from {@link Encoding} instances in two major
  * ways. Firstly, each media type always specifies a major type, which
- * classifies the described as a member of a abstract type category. Secondly,
- * they can include so-called <i>type parameters</i>, which allow for
- * additional type information to be specified, such as used character sets.
+ * classifies it as a member of a abstract type category. Secondly, they can
+ * include so-called <i>type parameters</i>, which allow for additional type
+ * information to be specified, such as used character sets.
  *
  * @see <a href="https://tools.ietf.org/html/rfc6838">IETF RFC 6838</a>
  * @see <a href="https://tools.ietf.org/html/rfc4855">IETF RFC 4855</a>
@@ -31,7 +31,7 @@ public final class MediaType implements ToEncoding {
 
     private final Encoding encoding;
 
-    private MediaType(
+    MediaType(
         final String original,
         final String type,
         final String subtype,
@@ -39,12 +39,12 @@ public final class MediaType implements ToEncoding {
         final Map<String, String> parameters,
         final Encoding encoding
     ) {
-        this.original = original;
-        this.type = Objects.requireNonNull(type);
-        this.subtype = Objects.requireNonNull(subtype);
+        this.original = Objects.requireNonNull(original, "original");
+        this.type = Objects.requireNonNull(type, "type");
+        this.subtype = Objects.requireNonNull(subtype, "subtype");
         this.suffix = suffix;
         this.parameters = Objects.requireNonNullElse(parameters, Collections.emptyMap());
-        this.encoding = encoding;
+        this.encoding = Objects.requireNonNull(encoding, "encoding");
     }
 
     /**
@@ -52,14 +52,14 @@ public final class MediaType implements ToEncoding {
      * using a simple heuristic.
      *
      * @param encoding Encoding associated with desired media type.
-     * @return Existing encoding, if any matches {@code name}.
+     * @return Cached or new encoding.
      */
     @ThreadSafe
-    public static Optional<MediaType> getOrCreate(final Encoding encoding) {
+    public static MediaType getOrCreate(final Encoding encoding) {
         Objects.requireNonNull(encoding, "encoding");
         final var mediaType = encodingToMediaType.get(encoding);
         if (mediaType != null) {
-            return Optional.of(mediaType);
+            return mediaType;
         }
 
         final String type;
@@ -90,7 +90,7 @@ public final class MediaType implements ToEncoding {
         final var newMediaType = new MediaType(original, type, subtype, null, parameters, encoding);
         final var oldMediaType = encodingToMediaType.putIfAbsent(encoding, newMediaType);
 
-        return Optional.of(oldMediaType == null ? newMediaType : oldMediaType);
+        return oldMediaType == null ? newMediaType : oldMediaType;
     }
 
     /**
@@ -176,12 +176,29 @@ public final class MediaType implements ToEncoding {
         return original;
     }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) { return true; }
+        if (o == null || getClass() != o.getClass()) { return false; }
+        final MediaType mediaType = (MediaType) o;
+        return type.equals(mediaType.type) &&
+            subtype.equals(mediaType.subtype) &&
+            Objects.equals(suffix, mediaType.suffix) &&
+            parameters.equals(mediaType.parameters);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, subtype, suffix, parameters);
+    }
+
     /**
      * Concise Binary Object Representation (CBOR).
      *
      * @see <a href="https://tools.ietf.org/html/rfc7049">RFC 7049</a>
      */
-    public static final MediaType APPLICATION_CBOR = register(new MediaType("application/cbor",
+    public static final MediaType APPLICATION_CBOR = register(new MediaType(
+        "application/cbor",
         "application",
         "cbor",
         null,
@@ -319,10 +336,10 @@ public final class MediaType implements ToEncoding {
         Encoding.UTF_16LE));
 
     /**
-     * Creates or looks up {@link MediaType} from given {@code string}.
+     * Creates {@link MediaType} from given {@code string}.
      *
      * @param string String to interpret as media type.
-     * @return Cached or new {@link MediaType}.
+     * @return New {@link MediaType}.
      * @throws NullPointerException If {@code string} is {@code null}.
      * @see <a href="https://tools.ietf.org/html/rfc6838">IETF RFC 6838</a>
      */
@@ -333,8 +350,8 @@ public final class MediaType implements ToEncoding {
         error:
         {
             final int s4 = string.length();
-            // s0 = end of type, s1 = start of suffix, s2 = end of subtype
-            int s0 = 0, s1 = 0, s2 = 0, s3;
+            // s0 = start of subtype, s1 = end of subtype (excluding suffix), s2 = start of suffix, s3 = end of suffix
+            int s0 = 0, s1, s2 = 0, s3;
 
             // Type.
             char ch;
@@ -360,46 +377,45 @@ public final class MediaType implements ToEncoding {
             }
 
             // Subtype.
-            int sx = s0;
+            s1 = s0;
             outer:
-            while (sx < s4) {
-                ch = string.charAt(sx++);
+            while (s1 < s4) {
+                ch = string.charAt(s1);
                 if (isNotRestrictedNameFirst(ch)) {
                     error = "Invalid subtype or facet lead character '" + ch + "'";
                     break error;
                 }
-                while (sx < s4) {
-                    ch = string.charAt(sx);
+                while (++s1 < s4) {
+                    ch = string.charAt(s1);
                     if (ch == '.') {
                         continue outer;
                     }
                     if (ch == '+') {
-                        s1 = sx;
+                        s2 = s1 + 1;
                         break outer;
                     }
                     if (ch == ';' || isWhitespace(ch)) {
-                        s2 = sx;
                         break outer;
                     }
                     if (isNotRestrictedNameChar(ch)) {
                         error = "Invalid subtype or facet character '" + ch + "'";
                         break error;
                     }
-                    sx++;
                 }
             }
 
             // Suffix.
-            if (s1 != 0) {
+            if (s2 != 0) {
+                s3 = s2;
                 outer:
-                while (s2 < s4) {
-                    ch = string.charAt(s2++);
+                while (s3 < s4) {
+                    ch = string.charAt(s3++);
                     if (isNotRestrictedNameFirst(ch)) {
                         error = "Invalid suffix lead character '" + ch + "'";
                         break error;
                     }
-                    while (s2 < s4) {
-                        ch = string.charAt(s2);
+                    while (s3 < s4) {
+                        ch = string.charAt(s3);
                         if (ch == ';' || isWhitespace(ch)) {
                             break outer;
                         }
@@ -407,96 +423,102 @@ public final class MediaType implements ToEncoding {
                             error = "Invalid suffix character '" + ch + "'";
                             break error;
                         }
-                        s2++;
+                        s3++;
                     }
                 }
-                if (s2 - s1 == 0) {
+                if (s3 - s2 == 0) {
                     error = "Empty suffixes not permitted";
                     break error;
                 }
             }
-
-            final String type;
-            final String subtype;
-            final String suffix;
-
-            type = string.substring(0, s0 - 1);
-            if (s1 == 0) {
-                subtype = string.substring(s0, s2);
-                suffix = null;
-            }
             else {
-                subtype = string.substring(s0, s1);
-                suffix = string.substring(s1, s2);
+                s3 = s1;
+            }
+
+            final var type = string.substring(0, s0 - 1).toLowerCase();
+            final var subtype = string.substring(s0, s1).toLowerCase();
+            final var suffix = s2 == 0 ? null : string.substring(s2, s3).toLowerCase();
+
+            // Skip whitespace until parameters or end.
+            var hasParameters = false;
+            while (s3 < s4) {
+                ch = string.charAt(s3++);
+                if (!isWhitespace(ch)) {
+                    if (ch != ';') {
+                        break error;
+                    }
+                    hasParameters = true;
+                    break;
+                }
             }
 
             final Map<String, String> parameters;
-            s3 = s2;
-            if (s3 < s4) {
-
+            if (hasParameters) {
                 // s0 = start of parameter name, s1 = end of parameter name, s3 = start of value, s4 = end of value
+                s0 = s3;
 
                 final var parameters0 = new HashMap<String, String>();
                 do {
-                    s0 = s3;
-
                     // Skip whitespace.
                     do {
-                        ch = string.charAt(s0++);
+                        ch = string.charAt(s0);
                         if (!isWhitespace(ch)) {
                             break;
                         }
+                        s0++;
                     } while (s0 < s4);
                     if (s0 == s4) {
                         break;
                     }
 
-                    if (ch != ';') {
-                        break error;
-                    }
-
                     // Parameter name.
                     s1 = s0;
-                    ch = string.charAt(s1++);
                     if (isNotRestrictedNameFirst(ch)) {
                         error = "Invalid parameter lead character '" + ch + "'";
                         break error;
                     }
-                    while (s1 < s4) {
+                    while (++s1 < s4) {
                         ch = string.charAt(s1);
-                        if (ch == '=' || isWhitespace(ch)) {
+                        if (ch == '=') {
+                            s2 = s1 + 1;
+                            break;
+                        }
+                        if (isWhitespace(ch)) {
+                            s2 = s1 + 1;
+                            do {
+                                ch = string.charAt(s2);
+                                if (!isWhitespace(ch)) {
+                                    break;
+                                }
+                            } while (++s2 < s4);
+                            if (s2 == s4 || ch != '=') {
+                                break error;
+                            }
+                            s2++;
                             break;
                         }
                         if (isNotRestrictedNameChar(ch)) {
                             error = "Invalid parameter character '" + ch + "'";
                             break error;
                         }
-                        s1++;
-                    }
-
-                    // Skip whitespace.
-                    s2 = s1;
-                    do {
-                        ch = string.charAt(s2++);
-                        if (!isWhitespace(ch)) {
-                            break;
-                        }
-                    } while (s2 < s4);
-                    if (s2 == s4) {
-                        break error;
                     }
 
                     // Value.
                     s3 = s2;
                     while (s3 < s4) {
-                        ch = string.charAt(s3++);
+                        ch = string.charAt(s3);
                         if (ch == ';') {
                             break;
                         }
+                        s3++;
                     }
 
-                    parameters0.put(string.substring(s0, s1), string.substring(s2, s3));
-                } while (s3 < s4);
+                    final var key = string.substring(s0, s1).toLowerCase();
+                    final var value = string.substring(s2, s3).trim();
+                    parameters0.put(key, value);
+                    s0 = s3 + 1;
+
+                } while (s0 < s4);
 
                 parameters = Collections.unmodifiableMap(parameters0);
             }
