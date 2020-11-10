@@ -1,9 +1,9 @@
 package se.arkalix.net;
 
-import se.arkalix.encoding.Decoder;
-import se.arkalix.encoding.MultiDecoder;
-import se.arkalix.encoding.Encoding;
-import se.arkalix.encoding.ToEncoding;
+import se.arkalix.codec.CodecType;
+import se.arkalix.codec.Decoder;
+import se.arkalix.codec.MultiDecoder;
+import se.arkalix.codec.ToCodecType;
 import se.arkalix.util.concurrent.Future;
 
 import java.nio.charset.Charset;
@@ -47,7 +47,7 @@ public interface MessageIncoming extends Message {
     /**
      * Collects and then converts the incoming message body using the provided
      * {@code decoder}, which will attempt to select an appropriate decoder
-     * function from any {@link #encoding() encoding} specified in the message.
+     * function from any {@link #codecType() codec} specified in the message.
      * <p>
      * Calling this method consumes the body associated with this message. Any
      * further attempts to consume the body will cause exceptions to be thrown.
@@ -56,24 +56,24 @@ public interface MessageIncoming extends Message {
      * @param decoder Function to use for decoding the message body.
      * @return Future completed when the incoming message body has been fully
      * received and decoded.
-     * @throws MessageEncodingMisspecified     If an encoding is specified in the
+     * @throws MessageCodecMisspecified     If an codec is specified in the
      *                                    message, but it cannot be interpreted.
-     * @throws MessageEncodingUnspecified If no encoding is specified in this
+     * @throws MessageCodecUnspecified If no codec is specified in this
      *                                    message.
-     * @throws MessageEncodingUnsupported If the encoding specified in the
+     * @throws MessageCodecUnsupported If the codec specified in the
      *                                    message is not supported by the given
      *                                    {@code decoder}.
      * @throws IllegalStateException      If the body has already been consumed.
      * @throws NullPointerException       If {@code decoder} is {@code null}.
      */
     default <T> Future<T> bodyAs(final MultiDecoder<T> decoder) {
-        return bodyAs(decoder, encoding().orElseThrow(() -> new MessageEncodingUnspecified(this)));
+        return bodyAs(decoder, codecType().orElseThrow(() -> new MessageCodecUnspecified(this)));
     }
 
     /**
      * Collects and then converts the incoming message body using the provided
      * {@code decoder}, which will attempt to select an appropriate decoder
-     * function from any {@link #encoding() encoding} specified in the message.
+     * function from any {@link #codecType() codec} specified in the message.
      * <p>
      * Calling this method consumes the body associated with this message. Any
      * further attempts to consume the body will cause exceptions to be thrown.
@@ -82,20 +82,20 @@ public interface MessageIncoming extends Message {
      * @param decoder Function to use for decoding the message body.
      * @return Future completed when the incoming message body has been fully
      * received and decoded.
-     * @throws MessageEncodingUnsupported If the given encoding is not
+     * @throws MessageCodecUnsupported If the given codec is not
      *                                    supported by the given {@code
      *                                    decoder}.
      * @throws IllegalStateException      If the body has already been consumed.
-     * @throws NullPointerException       If {@code decoder} or {@code encoding}
+     * @throws NullPointerException       If {@code decoder} or {@code codec}
      *                                    is {@code null}.
      */
-    default <T> Future<T> bodyAs(final MultiDecoder<T> decoder, final ToEncoding encoding) {
+    default <T> Future<T> bodyAs(final MultiDecoder<T> decoder, final ToCodecType codec) {
         Objects.requireNonNull(decoder, "decoder");
-        Objects.requireNonNull(encoding, "encoding");
-        final var encoding0 = encoding.toEncoding();
+        Objects.requireNonNull(codec, "codec");
+        final var codec0 = codec.toCodecType();
         return body()
             .buffer()
-            .map(reader -> decoder.decode(reader, encoding0));
+            .map(reader -> decoder.decode(reader, codec0));
     }
 
     /**
@@ -123,7 +123,7 @@ public interface MessageIncoming extends Message {
      * Requests that the incoming message body be decoded into a regular Java
      * {@code String}.
      * <p>
-     * If a character encoding supported by Java is specified in the message,
+     * If a character codec supported by Java is specified in the message,
      * it will be used when decoding the body into a {@code String}. In any
      * other case, UTF-8 will be assumed to be adequate.
      * <p>
@@ -135,9 +135,9 @@ public interface MessageIncoming extends Message {
      * @throws IllegalStateException If the body has already been requested.
      */
     default Future<String> bodyAsString() {
-        return bodyAsString(encoding()
-            .map(ToEncoding::toEncoding)
-            .flatMap(Encoding::charset)
+        return bodyAsString(codecType()
+            .map(ToCodecType::toCodecType)
+            .flatMap(CodecType::charset)
             .orElse(StandardCharsets.UTF_8));
     }
 

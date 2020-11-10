@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static se.arkalix.dto.DtoEncoding.JSON;
+import static se.arkalix.dto.DtoCodec.JSON;
 
 /**
  * A service definition, as it appears in a {@link ServiceQueryResult}.
@@ -38,9 +38,8 @@ public interface ServiceDetails {
     /**
      * Service qualifier, also referred to as service URI.
      * <p>
-     * The significance of this value depends on the application-level
-     * transport protocol employed by the service. If, for example, HTTP is
-     * used, then this is a base path.
+     * The significance of this value depends on the network protocol employed
+     * by the service. If, for example, HTTP is used, then this is a base path.
      */
     @DtoJsonName("serviceUri")
     String uri();

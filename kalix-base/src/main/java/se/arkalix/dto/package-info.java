@@ -5,10 +5,10 @@
  * Data Transfer Objects (DTOs). In essence, a DTO is a well-defined set of
  * data that needs to be represented on an external medium, such as a hard
  * drive or a network wire. As such, a DTO must be readable and/or writable
- * from/to a particular machine-independent representation, or <i>encoding</i>.
+ * from/to a particular machine-independent representation, or <i>codec</i>.
  * <p>
  * While there are many libraries and other solutions for dealing with the
- * problem of encoding and decoding what practically amounts to Plain-Old Java
+ * problem of codec and decoding what practically amounts to Plain-Old Java
  * Objects (POJOs), this particular package distinguishes itself from many of
  * them by centering around the idea that as much as possible of the cost of
  * converting POJOs to and from their encoded forms should be paid at compile-
@@ -16,7 +16,7 @@
  * availability of the <i>kalix-processors</i> package, which concretely looks
  * up the annotations of this package and uses whatever is annotated as input
  * for generating the code required for reading and/or writing POJOs with
- * certain encodings.
+ * certain codecs.
  * <p>
  * Using the DTO code generation capabilities entails defining so-called,
  * <i>DTO interface types</i> and then using the DTO interface (1)
@@ -31,7 +31,7 @@
  *     <li>It is annotated with either {@link se.arkalix.dto.DtoReadableAs
  *         &#64;DtoReadableAs} or {@link se.arkalix.dto.DtoWritableAs
  *         &#64;DtoWritableAs}, and whichever of those annotations are present
- *         are given at least one {@link se.arkalix.dto.DtoEncoding DtoEncoding}
+ *         are given at least one {@link se.arkalix.dto.DtoCodec DtoCodec}
  *         as arguments.</li>
  *     <li>It contains only static, default and getter methods, where a getter
  *         is a method that takes no arguments and returns a type that is not
@@ -62,16 +62,16 @@
  *                 Instant} and {@code Duration}. Note that {@code Date} is
  *                 <i>not</i> supported.</li>
  *             <li>So-called custom types, which typically are exclusive to a
- *                 particular encoding, such as {@link
- *                 se.arkalix.encoding.json.JsonObject JsonObject}, which may
+ *                 particular codec, such as {@link
+ *                 se.arkalix.codec.json.JsonObject JsonObject}, which may
  *                 only be used by DTO interfaces that can only be read/written
- *                 from/to {@link se.arkalix.dto.DtoEncoding#JSON JSON}.</li>
+ *                 from/to {@link se.arkalix.dto.DtoCodec#JSON JSON}.</li>
  *         </ol>
  *     </li>
  * </ol>
  * The following is an example of a valid DTO interface declaration:
  * <pre>
- *     &#64;DtoReadableAs(DtoEncoding.JSON)
+ *     &#64;DtoReadableAs(DtoCodec.JSON)
  *     public interface Message {
  *         String title();
  *         List&lt;String&gt; texts();

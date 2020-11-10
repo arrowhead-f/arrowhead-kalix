@@ -7,14 +7,14 @@ import com.squareup.javapoet.TypeSpec;
 import se.arkalix.dto.types.*;
 import se.arkalix.dto.util.BinaryWriterWriteCache;
 import se.arkalix.dto.util.Expander;
-import se.arkalix.encoding.DecoderReadUnexpectedToken;
-import se.arkalix.encoding.Encoding;
-import se.arkalix.encoding.binary.BinaryReader;
-import se.arkalix.encoding.binary.BinaryWriter;
-import se.arkalix.encoding.json.JsonType;
-import se.arkalix.encoding.json._internal.JsonPrimitives;
-import se.arkalix.encoding.json._internal.JsonTokenBuffer;
-import se.arkalix.encoding.json._internal.JsonTokenizer;
+import se.arkalix.codec.CodecType;
+import se.arkalix.codec.DecoderReadUnexpectedToken;
+import se.arkalix.codec.binary.BinaryReader;
+import se.arkalix.codec.binary.BinaryWriter;
+import se.arkalix.codec.json.JsonType;
+import se.arkalix.codec.json._internal.JsonPrimitives;
+import se.arkalix.codec.json._internal.JsonTokenBuffer;
+import se.arkalix.codec.json._internal.JsonTokenizer;
 import se.arkalix.util.annotation.Internal;
 
 import javax.lang.model.element.Modifier;
@@ -28,16 +28,16 @@ public class DtoImplementerJson implements DtoImplementer {
     private int level = 0;
 
     @Override
-    public DtoEncodingSpec encoding() {
-        return DtoEncodingSpec.JSON;
+    public DtoCodecSpec codec() {
+        return DtoCodecSpec.JSON;
     }
 
     @Override
     public void implementFor(final DtoTarget target, final TypeSpec.Builder implementation) {
-        if (target.interfaceType().isReadable(DtoEncodingSpec.JSON)) {
+        if (target.interfaceType().isReadable(DtoCodecSpec.JSON)) {
             implementReadMethodsFor(target, implementation);
         }
-        if (target.interfaceType().isWritable(DtoEncodingSpec.JSON)) {
+        if (target.interfaceType().isWritable(DtoCodecSpec.JSON)) {
             implementWriteMethodFor(target, implementation);
         }
     }
@@ -46,14 +46,14 @@ public class DtoImplementerJson implements DtoImplementer {
         final var dataTypeName = target.dataTypeName();
         final var properties = target.properties();
 
-        implementation.addMethod(MethodSpec.methodBuilder(encoding().decoderMethodName())
+        implementation.addMethod(MethodSpec.methodBuilder(codec().decoderMethodName())
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
             .returns(dataTypeName)
             .addParameter(BinaryReader.class, "reader", Modifier.FINAL)
-            .addStatement("return $N($T.tokenize(reader))", encoding().decoderMethodName(), JsonTokenizer.class)
+            .addStatement("return $N($T.tokenize(reader))", codec().decoderMethodName(), JsonTokenizer.class)
             .build());
 
-        final var builder = MethodSpec.methodBuilder(encoding().decoderMethodName())
+        final var builder = MethodSpec.methodBuilder(codec().decoderMethodName())
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
             .returns(dataTypeName)
             .addParameter(JsonTokenBuffer.class, "buffer", Modifier.FINAL)
@@ -89,7 +89,7 @@ public class DtoImplementerJson implements DtoImplementer {
 
         for (final var property : properties) {
             try {
-                builder.beginControlFlow("case $S:", property.nameFor(DtoEncoding.JSON));
+                builder.beginControlFlow("case $S:", property.nameFor(DtoCodec.JSON));
                 final var name = property.name();
                 readValue(target, property.type(), x -> "builder." + name + "(" + x + ")", builder);
                 builder.endControlFlow("break");
@@ -145,7 +145,7 @@ public class DtoImplementerJson implements DtoImplementer {
             .addStatement("throw new $1T($2T.JSON, reader, " +
                     "atEnd ? \"{\" : $3T.readStringRaw(token, reader), atEnd ? 0 " +
                     ": token.begin(), errorMessage, errorCause)",
-                DecoderReadUnexpectedToken.class, Encoding.class, JsonPrimitives.class);
+                DecoderReadUnexpectedToken.class, CodecType.class, JsonPrimitives.class);
 
         implementation.addMethod(builder.build());
     }
@@ -357,9 +357,9 @@ public class DtoImplementerJson implements DtoImplementer {
     ) {
         final var returnType = target.interfaceType().type().toString();
         final var parameter = JsonTokenBuffer.class.getCanonicalName();
-        if (!type.containsPublicStaticMethod(returnType, encoding().decoderMethodName(), parameter)) {
+        if (!type.containsPublicStaticMethod(returnType, codec().decoderMethodName(), parameter)) {
             throw new DtoException(type.typeElement(), "No public static " +
-                returnType + " " + encoding().decoderMethodName() +
+                returnType + " " + codec().decoderMethodName() +
                 "(JsonTokenBuffer) method available; required for this " +
                 "class/interface to be useful as a custom JSON DTO");
         }
@@ -373,7 +373,7 @@ public class DtoImplementerJson implements DtoImplementer {
         }
 
         builder.addStatement(assignment.expand("$T.$N(buffer)"),
-            encoding().decoderMethodName(), type.inputTypeName());
+            codec().decoderMethodName(), type.inputTypeName());
     }
 
     private void readEnum(final DtoType type, final Expander assignment, final MethodSpec.Builder builder) {
@@ -396,9 +396,9 @@ public class DtoImplementerJson implements DtoImplementer {
     }
 
     private void readInterface(final DtoInterface type, final Expander assignment, final MethodSpec.Builder builder) {
-        if (!type.isReadable(DtoEncodingSpec.JSON)) {
+        if (!type.isReadable(DtoCodecSpec.JSON)) {
             throw new IllegalStateException(type.simpleName() + " is not " +
-                "annotated with @DtoReadableAs, or lacks DtoEncoding.JSON as " +
+                "annotated with @DtoReadableAs, or lacks DtoCodec.JSON as " +
                 "annotation argument");
         }
 
@@ -411,7 +411,7 @@ public class DtoImplementerJson implements DtoImplementer {
         }
 
         builder.addStatement(assignment.expand("$T.$N(buffer)"),
-            type.inputTypeName(), encoding().decoderMethodName());
+            type.inputTypeName(), codec().decoderMethodName());
     }
 
     private void readMap(
@@ -536,9 +536,9 @@ public class DtoImplementerJson implements DtoImplementer {
     }
 
     private void implementWriteMethodFor(final DtoTarget target, final TypeSpec.Builder implementation) {
-        final var builder = MethodSpec.methodBuilder(encoding().encoderMethodName())
+        final var builder = MethodSpec.methodBuilder(codec().encoderMethodName())
             .addModifiers(Modifier.PUBLIC)
-            .returns(TypeName.get(Encoding.class))
+            .returns(TypeName.get(CodecType.class))
             .addParameter(ParameterSpec.builder(TypeName.get(BinaryWriter.class), "writer")
                 .addModifiers(Modifier.FINAL)
                 .build());
@@ -599,7 +599,7 @@ public class DtoImplementerJson implements DtoImplementer {
 
                 writeCache
                     .append('"')
-                    .append(property.nameFor(DtoEncoding.JSON))
+                    .append(property.nameFor(DtoCodec.JSON))
                     .append("\":");
 
                 writeValue(property.type(), name, builder);
@@ -619,7 +619,7 @@ public class DtoImplementerJson implements DtoImplementer {
 
         writeCache.append('}').addWriteIfNotEmpty(builder);
 
-        builder.addStatement("return $T.JSON", Encoding.class);
+        builder.addStatement("return $T.JSON", CodecType.class);
 
         implementation.addMethod(builder.build());
     }
@@ -725,17 +725,17 @@ public class DtoImplementerJson implements DtoImplementer {
         final String name,
         final MethodSpec.Builder builder
     ) {
-        final var returnType = Encoding.class.getCanonicalName();
+        final var returnType = CodecType.class.getCanonicalName();
         final var parameter = BinaryWriter.class.getCanonicalName();
-        if (!type.containsPublicMethod(returnType, encoding().encoderMethodName(), parameter)) {
+        if (!type.containsPublicMethod(returnType, codec().encoderMethodName(), parameter)) {
             throw new DtoException(type.typeElement(), "No public " +
-                returnType + " " + encoding().encoderMethodName() +
+                returnType + " " + codec().encoderMethodName() +
                 "(BinaryWriter) method available; required for this " +
                 "class/interface to be useful as a custom JSON DTO");
         }
 
         writeCache.addWriteIfNotEmpty(builder);
-        builder.addStatement("$N.$N(writer)", name, encoding().encoderMethodName());
+        builder.addStatement("$N.$N(writer)", name, codec().encoderMethodName());
     }
 
     private void writeEnum(final String name, final MethodSpec.Builder builder) {
@@ -745,13 +745,13 @@ public class DtoImplementerJson implements DtoImplementer {
     }
 
     private void writeInterface(final DtoInterface type, final String name, final MethodSpec.Builder builder) {
-        if (!type.isWritable(DtoEncodingSpec.JSON)) {
+        if (!type.isWritable(DtoCodecSpec.JSON)) {
             throw new IllegalStateException(type.simpleName() + " is not " +
-                "annotated with @DtoWritableAs, or lacks DataEncoding.JSON as " +
+                "annotated with @DtoWritableAs, or lacks DtoCodec.JSON as " +
                 "annotation argument");
         }
         writeCache.addWriteIfNotEmpty(builder);
-        builder.addStatement("$N.$N(writer)", name, encoding().encoderMethodName());
+        builder.addStatement("$N.$N(writer)", name, codec().encoderMethodName());
     }
 
     private void writeMap(final DtoType type, final String name, final MethodSpec.Builder builder) {
@@ -803,7 +803,7 @@ public class DtoImplementerJson implements DtoImplementer {
     private static IllegalStateException characterTypesNotSupportedException() {
         return new IllegalStateException("The char and Character types " +
             "cannot be represented as JSON; either change the type or " +
-            "remove DataEncoding.JSON from the array of encodings " +
+            "remove DtoCodec.JSON from the array of codecs " +
             "provided to the @DtoReadableAs/@DtoWritableAs annotation(s)");
     }
 }

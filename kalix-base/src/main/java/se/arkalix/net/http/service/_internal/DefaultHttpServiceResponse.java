@@ -1,9 +1,9 @@
 package se.arkalix.net.http.service._internal;
 
-import se.arkalix.net._internal.DefaultMessageOutgoing;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.HttpVersion;
+import se.arkalix.net.http._internal.DefaultHttpOutgoing;
 import se.arkalix.net.http._internal.NettyHttpHeaders;
 import se.arkalix.net.http.service.HttpServiceResponse;
 import se.arkalix.util.annotation.Internal;
@@ -12,7 +12,7 @@ import java.util.Optional;
 
 @Internal
 public class DefaultHttpServiceResponse
-    extends DefaultMessageOutgoing<HttpServiceResponse>
+    extends DefaultHttpOutgoing<HttpServiceResponse>
     implements HttpServiceResponse
 {
     private final HttpHeaders headers = new NettyHttpHeaders();

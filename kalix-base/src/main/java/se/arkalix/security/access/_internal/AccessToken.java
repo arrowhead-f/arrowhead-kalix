@@ -69,7 +69,7 @@ public final class AccessToken {
         }
         catch (final IllegalArgumentException exception) {
             throw new AccessTokenException("Malformed \"iid\"; expected " +
-                "<protocol>-<security>-<encoding>, got \"" + iid + "\"");
+                "<protocol>-<security>-<codec>, got \"" + iid + "\"");
         }
 
         // Collect service identifier.

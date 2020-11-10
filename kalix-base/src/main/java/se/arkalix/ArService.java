@@ -1,7 +1,7 @@
 package se.arkalix;
 
-import se.arkalix.encoding.Encoding;
-import se.arkalix.net.Transport;
+import se.arkalix.codec.CodecType;
+import se.arkalix.net.ProtocolType;
 import se.arkalix.security.access.AccessPolicy;
 
 import java.util.List;
@@ -28,12 +28,12 @@ public interface ArService {
     String uri();
 
     /**
-     * Gets descriptor for application-level transport protocol through which
-     * service is made available to other systems.
+     * Gets identifier for network protocol stack through which this service is
+     * made available to other systems.
      *
-     * @return Service transport descriptor.
+     * @return Service protocol type.
      */
-    Transport transport();
+    ProtocolType protocolType();
 
     /**
      * Gets access policy enforced by this service.
@@ -43,11 +43,11 @@ public interface ArService {
     AccessPolicy accessPolicy();
 
     /**
-     * Gets encodings the service can read and write.
+     * Gets codecs this service can read and write.
      *
-     * @return Unmodifiable list of supported encodings.
+     * @return Unmodifiable list of supported codecs.
      */
-    List<Encoding> encodings();
+    List<CodecType> codecType();
 
     /**
      * Gets service metadata.
@@ -88,8 +88,8 @@ public interface ArService {
             .security(accessPolicy().descriptor())
             .metadata(metadata())
             .version(version())
-            .interfaces(encodings().stream()
-                .map(encoding -> ServiceInterface.getOrCreate(transport(), isSecure, encoding))
+            .interfaces(codecType().stream()
+                .map(codec -> ServiceInterface.getOrCreate(protocolType(), isSecure, codec))
                 .collect(Collectors.toUnmodifiableList()))
             .build();
     }

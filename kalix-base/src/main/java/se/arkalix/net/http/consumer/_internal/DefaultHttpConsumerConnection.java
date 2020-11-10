@@ -1,8 +1,8 @@
 package se.arkalix.net.http.consumer._internal;
 
 import se.arkalix.ArSystem;
-import se.arkalix.encoding.Encoding;
-import se.arkalix.encoding.MediaType;
+import se.arkalix.codec.CodecType;
+import se.arkalix.codec.MediaType;
 import se.arkalix.net.http.client.HttpClientConnection;
 import se.arkalix.net.http.consumer.HttpConsumerConnection;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
@@ -15,20 +15,20 @@ import java.util.Objects;
 
 class DefaultHttpConsumerConnection implements HttpConsumerConnection {
     private final ArSystem localSystem;
-    private final Encoding encoding;
+    private final CodecType codecType;
     private final String authorization;
     private final SystemIdentity remoteIdentity;
     private final HttpClientConnection connection;
 
     DefaultHttpConsumerConnection(
         final ArSystem localSystem,
-        final Encoding encoding,
+        final CodecType codecType,
         final String authorization,
         final SystemIdentity remoteIdentity,
         final HttpClientConnection connection
     ) {
         this.localSystem = Objects.requireNonNull(localSystem, "localSystem");
-        this.encoding = Objects.requireNonNull(encoding, "encoding");
+        this.codecType = Objects.requireNonNull(codecType, "codec");
         this.authorization = authorization;
         this.remoteIdentity = remoteIdentity;
         this.connection = Objects.requireNonNull(connection, "connection");
@@ -83,11 +83,11 @@ class DefaultHttpConsumerConnection implements HttpConsumerConnection {
 
         final var headers = request.headers();
         if (!headers.contains("accept")) {
-            headers.set("accept", MediaType.getOrCreate(encoding).toString());
+            headers.set("accept", MediaType.getOrCreate(codecType).toString());
         }
 
-        if (request.encoding().isEmpty()) {
-            request.body().ifPresent(body -> request.encoding(encoding));
+        if (request.codecType().isEmpty()) {
+            request.body().ifPresent(body -> request.codecType(codecType));
         }
 
         if (authorization != null) {

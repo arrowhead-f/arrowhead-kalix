@@ -16,7 +16,7 @@
  * <pre>
  *     system.consume()
  *         .name("the-service-name")
- *         .encoding(EncodingDescriptor.JSON)
+ *         .codec(CodecType.JSON)
  *         .oneUsing(HttpConsumer.factory())
  *         .flatMap(consumer -&gt; consumer.send(new HttpConsumerRequest()
  *            {...})

@@ -1,11 +1,11 @@
 package se.arkalix.net.http.client;
 
-import se.arkalix.net._internal.DefaultMessageOutgoing;
 import se.arkalix.net.Uris;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.net.http.HttpOutgoingRequest;
 import se.arkalix.net.http.HttpVersion;
+import se.arkalix.net.http._internal.DefaultHttpOutgoing;
 import se.arkalix.net.http._internal.NettyHttpHeaders;
 
 import java.util.*;
@@ -14,7 +14,7 @@ import java.util.*;
  * An HTTP request that can be sent to an HTTP server via an {@link HttpClient}.
  */
 public class HttpClientRequest
-    extends DefaultMessageOutgoing<HttpClientRequest>
+    extends DefaultHttpOutgoing<HttpClientRequest>
     implements HttpOutgoingRequest<HttpClientRequest>
 {
     private final HttpHeaders headers = new NettyHttpHeaders();

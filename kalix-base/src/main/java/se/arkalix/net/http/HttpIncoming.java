@@ -1,8 +1,8 @@
 package se.arkalix.net.http;
 
-import se.arkalix.encoding.Encoding;
-import se.arkalix.encoding.MediaType;
-import se.arkalix.net.MessageEncodingMisspecified;
+import se.arkalix.codec.CodecType;
+import se.arkalix.codec.MediaType;
+import se.arkalix.net.MessageCodecMisspecified;
 import se.arkalix.net.MessageIncoming;
 
 import java.util.Optional;
@@ -14,13 +14,12 @@ import java.util.Optional;
  */
 public interface HttpIncoming<Self> extends HttpMessage<Self>, MessageIncoming {
     @Override
-    default Optional<Encoding> encoding() {
+    default Optional<MediaType> contentType() {
         try {
-            return headers().getAs("content-type", MediaType::valueOf)
-                .map(MediaType::toEncoding);
+            return headers().getAs("content-type", MediaType::valueOf);
         }
         catch (final HttpHeaderInvalid exception) {
-            throw new MessageEncodingMisspecified(this, exception.value(), exception);
+            throw new MessageCodecMisspecified(this, exception.value(), exception);
         }
     }
 

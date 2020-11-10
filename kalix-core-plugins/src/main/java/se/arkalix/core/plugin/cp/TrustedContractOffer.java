@@ -9,7 +9,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
-import static se.arkalix.dto.DtoEncoding.JSON;
+import static se.arkalix.dto.DtoCodec.JSON;
 
 /**
  * A concrete offer for two parties to enter into a legally binding contract.

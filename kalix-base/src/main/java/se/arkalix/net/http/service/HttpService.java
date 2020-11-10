@@ -1,8 +1,8 @@
 package se.arkalix.net.http.service;
 
 import se.arkalix.ArService;
-import se.arkalix.encoding.Encoding;
-import se.arkalix.net.Transport;
+import se.arkalix.codec.CodecType;
+import se.arkalix.net.ProtocolType;
 import se.arkalix._internal.ArServerRegistry;
 import se.arkalix.net.http.service._internal.HttpServer;
 import se.arkalix.net.http.HttpMethod;
@@ -10,7 +10,7 @@ import se.arkalix.security.access.AccessPolicy;
 
 import java.util.*;
 
-import static se.arkalix.net.Transport.HTTP;
+import static se.arkalix.net.ProtocolType.HTTP;
 
 /**
  * A concrete Arrowhead service, exposing its functions as HTTP endpoints.
@@ -30,7 +30,7 @@ public final class HttpService implements ArService {
 
     private String name;
     private String basePath;
-    private List<Encoding> encodings;
+    private List<CodecType> codecTypes;
     private AccessPolicy accessPolicy;
     private Map<String, String> metadata;
     private int version = 0;
@@ -65,7 +65,7 @@ public final class HttpService implements ArService {
      * <pre>
      *     A–Z a–z 0–9 - . _ ~ ! $ &amp; ' ( ) * + , ; / = : @
      * </pre>
-     * Percent encodings may not be used. If the given path is the root path,
+     * Percent codecs may not be used. If the given path is the root path,
      * which consists only of a forward slash, the requirement of there being
      * no trailing slash is ignored.
      * <p>
@@ -84,11 +84,11 @@ public final class HttpService implements ArService {
     }
 
     /**
-     * Declares what data encodings this service can read and write. <b>Must be
-     * specified.</b>
+     * Declares what codecs (i.e. data formats) this service can read and write.
+     * <b>Must be specified.</b>
      * <p>
      * While this service will prevent messages claimed to be encoded with
-     * other encodings from being received, stating that an encoding can be
+     * other codecs from being received, stating that an codec can be
      * read and written does not itself guarantee it. It is up to the service
      * creator to ensure that such capabilities are indeed available. For most
      * intents and purposes, the most adequate way of achieving this is by
@@ -96,15 +96,15 @@ public final class HttpService implements ArService {
      * about in the package documentation for the
      * {@code se.arkalix.dto} package.
      *
-     * @param encodings Encodings declared to be supported. At least one must
-     *                  be provided. The first specified encoding is used by
+     * @param codecTypes Codecs declared to be supported. At least one must
+     *                  be provided. The first specified codec is used by
      *                  default when received requests do not include enough
      *                  details about their bodies.
      * @return This service.
      * @see se.arkalix.dto Data Transfer Object Utilities
      */
-    public HttpService encodings(final Encoding... encodings) {
-        this.encodings = Arrays.asList(encodings.clone());
+    public HttpService codecs(final CodecType... codecTypes) {
+        this.codecTypes = Arrays.asList(codecTypes.clone());
         return this;
     }
 
@@ -782,7 +782,7 @@ public final class HttpService implements ArService {
     }
 
     @Override
-    public Transport transport() {
+    public ProtocolType protocolType() {
         return HTTP;
     }
 
@@ -799,11 +799,11 @@ public final class HttpService implements ArService {
     /**
      * {@inheritDoc}
      *
-     * @see #encodings(Encoding...)
+     * @see #codecs(CodecType...)
      */
     @Override
-    public List<Encoding> encodings() {
-        return Collections.unmodifiableList(encodings);
+    public List<CodecType> codecType() {
+        return Collections.unmodifiableList(codecTypes);
     }
 
     /**

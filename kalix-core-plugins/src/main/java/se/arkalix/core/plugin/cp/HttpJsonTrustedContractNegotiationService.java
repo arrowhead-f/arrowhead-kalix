@@ -7,8 +7,8 @@ import se.arkalix.ArConsumerFactory;
 import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
 import se.arkalix.core.plugin._internal.HttpJsonServices;
-import se.arkalix.encoding.Encoding;
-import se.arkalix.net.Transport;
+import se.arkalix.codec.CodecType;
+import se.arkalix.net.ProtocolType;
 import se.arkalix.net.Uris;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
@@ -19,8 +19,8 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 
-import static se.arkalix.encoding.Encoding.JSON;
-import static se.arkalix.net.Transport.HTTP;
+import static se.arkalix.codec.CodecType.JSON;
+import static se.arkalix.net.ProtocolType.HTTP;
 import static se.arkalix.net.http.HttpMethod.POST;
 
 /**
@@ -164,12 +164,12 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
         }
 
         @Override
-        public Collection<Transport> serviceTransports() {
+        public Collection<ProtocolType> serviceProtocolTypes() {
             return Collections.singleton(HTTP);
         }
 
         @Override
-        public Collection<Encoding> serviceEncodings() {
+        public Collection<CodecType> serviceCodecTypes() {
             return Collections.singleton(JSON);
         }
 
@@ -177,9 +177,9 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
         public HttpJsonTrustedContractNegotiationService create(
             final ArSystem system,
             final ServiceRecord service,
-            final Collection<Encoding> encodings
+            final Collection<CodecType> codecTypes
         ) {
-            final var consumer = HttpConsumer.create(system, service, encodings);
+            final var consumer = HttpConsumer.create(system, service, codecTypes);
             return new HttpJsonTrustedContractNegotiationService(consumer);
         }
     }

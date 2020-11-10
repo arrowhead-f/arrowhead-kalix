@@ -30,8 +30,8 @@ public interface ServiceRecord extends Comparable<ServiceRecord> {
 
     /**
      * Qualifier that distinguishes this service from other such provided by
-     * the same system. How it is used depends on the application-level
-     * transport protocol employed by the service.
+     * the same system. How it is used depends on the network protocol
+     * employed by the service.
      * <p>
      * For example, if this service uses HTTP, then the qualifier is a URL base
      * path, such as {@code "/base/path"}.

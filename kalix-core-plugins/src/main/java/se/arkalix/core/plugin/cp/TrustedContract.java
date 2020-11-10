@@ -7,7 +7,7 @@ import se.arkalix.dto.DtoWritableAs;
 
 import java.util.Map;
 
-import static se.arkalix.dto.DtoEncoding.JSON;
+import static se.arkalix.dto.DtoCodec.JSON;
 
 /**
  * A parameterized reference to a contract template.

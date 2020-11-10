@@ -8,7 +8,7 @@ import se.arkalix.dto.json.DtoJsonName;
 
 import java.util.List;
 
-import static se.arkalix.dto.DtoEncoding.JSON;
+import static se.arkalix.dto.DtoCodec.JSON;
 
 /**
  * The successful result of a {@link ServiceQuery}.

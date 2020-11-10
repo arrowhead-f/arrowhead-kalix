@@ -3,7 +3,7 @@ package se.arkalix.core.plugin.sr;
 import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
 import se.arkalix.core.plugin._internal.HttpJsonServices;
-import se.arkalix.encoding.Encoding;
+import se.arkalix.codec.CodecType;
 import se.arkalix.net.Uris;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
@@ -31,7 +31,7 @@ public class HttpJsonServiceDiscoveryService implements ArServiceDiscoveryServic
         Objects.requireNonNull(system, "system");
         Objects.requireNonNull(service, "service");
 
-        consumer = HttpConsumer.create(system, service, Collections.singleton(Encoding.JSON));
+        consumer = HttpConsumer.create(system, service, Collections.singleton(CodecType.JSON));
 
         final var basePath = service.uri();
         pathQuery = Uris.pathOf(basePath, "query");

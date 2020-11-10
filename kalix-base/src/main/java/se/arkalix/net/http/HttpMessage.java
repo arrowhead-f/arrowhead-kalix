@@ -1,5 +1,7 @@
 package se.arkalix.net.http;
 
+import se.arkalix.codec.CodecType;
+import se.arkalix.codec.MediaType;
 import se.arkalix.net.Message;
 
 import java.util.List;
@@ -42,4 +44,16 @@ public interface HttpMessage<Self> extends Message {
      * @return This response.
      */
     Self clearHeaders();
+
+    @Override
+    default Optional<CodecType> codecType() {
+        return contentType().map(MediaType::toCodecType);
+    }
+
+    /**
+     * Gets content type associated with this HTTP message, if any.
+     *
+     * @return Content type associated with message, if any.
+     */
+    Optional<MediaType> contentType();
 }

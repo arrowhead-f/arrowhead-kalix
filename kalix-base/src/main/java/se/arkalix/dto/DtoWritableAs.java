@@ -5,16 +5,16 @@ import java.lang.annotation.Target;
 
 /**
  * Used on a {@link se.arkalix.dto DTO interface} to signify that the DTO class
- * generated from that interface should be writable to certain encodings.
+ * generated from that interface should be writable to certain codecs.
  */
 @Target(ElementType.TYPE)
 public @interface DtoWritableAs {
     /**
-     * Encodings to which {@link se.arkalix.dto DTO class} instances should be
+     * Codecs to which {@link se.arkalix.dto DTO class} instances should be
      * writable.
      * <p>
-     * See {@link DtoEncoding} for a description of what encoding names may be
+     * See {@link DtoCodec} for a description of what codec names may be
      * used here.
      */
-    String[] value();
+    DtoCodec[] value();
 }

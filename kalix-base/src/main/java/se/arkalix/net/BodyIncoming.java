@@ -1,6 +1,6 @@
 package se.arkalix.net;
 
-import se.arkalix.encoding.binary.BinaryReader;
+import se.arkalix.codec.binary.BinaryReader;
 import se.arkalix.util.concurrent.Future;
 
 import java.nio.file.Path;

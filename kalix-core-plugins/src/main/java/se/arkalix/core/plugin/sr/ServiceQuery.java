@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static se.arkalix.dto.DtoEncoding.JSON;
+import static se.arkalix.dto.DtoCodec.JSON;
 
 /**
  * A search query for service definitions.
@@ -74,11 +74,11 @@ public interface ServiceQuery {
         final var isSecure = query.isSecure();
         return new ServiceQueryBuilder()
             .name(query.name().orElse(null))
-            .interfaces(query.transports()
+            .interfaces(query.protocolTypes()
                 .stream()
-                .flatMap(transport -> query.encodings()
+                .flatMap(protocolType -> query.codecTypes()
                     .stream()
-                    .map(encoding -> ServiceInterface.getOrCreate(transport, isSecure, encoding)))
+                    .map(codec -> ServiceInterface.getOrCreate(protocolType, isSecure, codec)))
                 .collect(Collectors.toUnmodifiableList()))
             .metadata(query.metadata())
             .version(query.version().orElse(null))

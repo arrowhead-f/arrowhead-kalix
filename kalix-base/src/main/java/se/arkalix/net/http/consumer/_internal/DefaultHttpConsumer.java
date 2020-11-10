@@ -2,7 +2,7 @@ package se.arkalix.net.http.consumer._internal;
 
 import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
-import se.arkalix.encoding.Encoding;
+import se.arkalix.codec.CodecType;
 import se.arkalix.security.access.AccessType;
 import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.consumer.HttpConsumer;
@@ -17,24 +17,24 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static se.arkalix.net.Transport.HTTP;
+import static se.arkalix.net.ProtocolType.HTTP;
 
 @Internal
 public class DefaultHttpConsumer implements HttpConsumer {
     private final ArSystem system;
     private final HttpClient client;
     private final ServiceRecord service;
-    private final Encoding encoding;
+    private final CodecType codecType;
     private final String authorization;
 
     public DefaultHttpConsumer(
         final ArSystem system,
         final ServiceRecord service,
-        final Collection<Encoding> encodings
+        final Collection<CodecType> codecTypes
     ) {
         this.system = Objects.requireNonNull(system, "system");
         this.service = Objects.requireNonNull(service, "service");
-        Objects.requireNonNull(encodings, "encodings");
+        Objects.requireNonNull(codecTypes, "codecs");
 
         client = HttpClient.from(system);
 
@@ -59,21 +59,21 @@ public class DefaultHttpConsumer implements HttpConsumer {
             .stream()
             .filter(entry -> {
                 final var descriptor = entry.getKey();
-                return descriptor.transport() == HTTP &&
+                return descriptor.protocolType() == HTTP &&
                     descriptor.isSecure() == isSecure &&
-                    encodings.contains(descriptor.encoding());
+                    codecTypes.contains(descriptor.codecType());
             })
             .sorted((a, b) -> b.getValue().length() - a.getValue().length())
             .findAny()
             .orElseThrow(() -> new IllegalStateException("The service \"" +
                 service.name() + "\" does not support any " +
                 (isSecure ? "secure" : "insecure") + " HTTP interface with " +
-                "any of the encodings " + encodings.stream()
-                .map(Encoding::name)
+                "any of the codecs " + codecTypes.stream()
+                .map(CodecType::name)
                 .collect(Collectors.joining(", ", "[", "]")) +
                 "; cannot consume service"));
 
-        encoding = compatibleInterfaceEntry.getKey().encoding();
+        codecType = compatibleInterfaceEntry.getKey().codecType();
 
         final var token = compatibleInterfaceEntry.getValue();
         authorization = token != null && token.length() > 0
@@ -111,7 +111,7 @@ public class DefaultHttpConsumer implements HttpConsumer {
                 else {
                     identity = null;
                 }
-                return Future.success(new DefaultHttpConsumerConnection(system, encoding, authorization, identity, connection));
+                return Future.success(new DefaultHttpConsumerConnection(system, codecType, authorization, identity, connection));
             });
     }
 }

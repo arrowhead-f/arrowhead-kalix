@@ -1,9 +1,10 @@
 package se.arkalix.net.http.consumer;
 
-import se.arkalix.encoding.Encoding;
-import se.arkalix.encoding.ToEncoding;
+import se.arkalix.codec.CodecType;
+import se.arkalix.codec.MediaType;
+import se.arkalix.codec.ToCodecType;
 import se.arkalix.net.BodyOutgoing;
-import se.arkalix.net.MessageOutgoingWithImplicitEncoding;
+import se.arkalix.net.MessageOutgoingWithImplicitCodec;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.net.http.HttpOutgoingRequest;
@@ -23,7 +24,7 @@ import java.util.Optional;
  */
 @SuppressWarnings("unused")
 public class HttpConsumerRequest
-    implements HttpOutgoingRequest<HttpConsumerRequest>, MessageOutgoingWithImplicitEncoding<HttpConsumerRequest>
+    implements HttpOutgoingRequest<HttpConsumerRequest>, MessageOutgoingWithImplicitCodec<HttpConsumerRequest>
 {
     private final HttpClientRequest inner = new HttpClientRequest();
 
@@ -78,8 +79,14 @@ public class HttpConsumerRequest
     }
 
     @Override
-    public HttpConsumerRequest encoding(final ToEncoding encoding) {
-        inner.encoding(encoding);
+    public HttpConsumerRequest codecType(final ToCodecType codecType) {
+        inner.codecType(codecType);
+        return this;
+    }
+
+    @Override
+    public HttpConsumerRequest contentType(final MediaType mediaType) {
+        inner.contentType(mediaType);
         return this;
     }
 
@@ -130,8 +137,13 @@ public class HttpConsumerRequest
     }
 
     @Override
-    public Optional<Encoding> encoding() {
-        return inner.encoding();
+    public Optional<CodecType> codecType() {
+        return inner.codecType();
+    }
+
+    @Override
+    public Optional<MediaType> contentType() {
+        return inner.contentType();
     }
 
     /**

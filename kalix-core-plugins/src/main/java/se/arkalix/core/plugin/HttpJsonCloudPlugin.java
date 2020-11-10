@@ -12,7 +12,7 @@ import se.arkalix.core.plugin.sr.ServiceQueryBuilder;
 import se.arkalix.core.plugin.sr.ServiceRegistration;
 import se.arkalix.SystemRecord;
 import se.arkalix.ServiceRecord;
-import se.arkalix.encoding.Encoding;
+import se.arkalix.codec.CodecType;
 import se.arkalix.ServiceInterface;
 import se.arkalix.security.identity._internal.X509Keys;
 import se.arkalix.net.http.client.HttpClient;
@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 
 import static se.arkalix.security.access.AccessType.CERTIFICATE;
 import static se.arkalix.security.access.AccessType.NOT_SECURE;
-import static se.arkalix.net.Transport.HTTP;
+import static se.arkalix.net.ProtocolType.HTTP;
 import static se.arkalix.util.concurrent.Future.done;
 
 /**
@@ -346,7 +346,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                                 .provider(provider)
                                 .uri(serviceDiscoveryBasePath)
                                 .security(isSecure ? CERTIFICATE : NOT_SECURE)
-                                .interfaces(ServiceInterface.getOrCreate(HTTP, isSecure, Encoding.JSON))
+                                .interfaces(ServiceInterface.getOrCreate(HTTP, isSecure, CodecType.JSON))
                                 .build());
 
                         connection.close();
@@ -447,7 +447,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                 orchestrationAnnouncement = requestServiceDiscovery()
                     .flatMap(serviceDiscovery -> serviceDiscovery.query(new ServiceQueryBuilder()
                         .name("orchestration-service")
-                        .interfaces(ServiceInterface.getOrCreate(HTTP, isSecure, Encoding.JSON))
+                        .interfaces(ServiceInterface.getOrCreate(HTTP, isSecure, CodecType.JSON))
                         .securityModes(isSecure ? CERTIFICATE : NOT_SECURE)
                         .build()))
                     .flatMapResult(result -> {
@@ -464,7 +464,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                         final var orchestration = new HttpJsonOrchestrationService(HttpConsumer.create(
                             system,
                             services.get(0).toServiceDescription(),
-                            Collections.singleton(Encoding.JSON)));
+                            Collections.singleton(CodecType.JSON)));
 
                         if (logger.isInfoEnabled()) {
                             logger.info("HTTP/JSON cloud plugin resolved " +

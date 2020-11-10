@@ -42,20 +42,20 @@ public class DtoTargetFactory {
 
         final var readable = interfaceElement.getAnnotation(DtoReadableAs.class);
         final var writable = interfaceElement.getAnnotation(DtoWritableAs.class);
-        final var readableEncodings = readable != null ? readable.value() : new String[0];
-        final var writableEncodings = writable != null ? writable.value() : new String[0];
-        Arrays.sort(readableEncodings);
-        Arrays.sort(writableEncodings);
+        final var readableCodecs = readable != null ? readable.value() : new DtoCodec[0];
+        final var writableCodecs = writable != null ? writable.value() : new DtoCodec[0];
+        Arrays.sort(readableCodecs);
+        Arrays.sort(writableCodecs);
 
-        if (readableEncodings.length == 0 && writableEncodings.length == 0) {
+        if (readableCodecs.length == 0 && writableCodecs.length == 0) {
             throw new DtoException(interfaceElement, "@DtoReadableAs/@DtoWritableAs " +
                 "interfaces must have at least one readable or writable " +
-                "encodings, specified as @DtoReadableAs/@DtoWritableAs annotation " +
+                "codecs, specified as @DtoReadableAs/@DtoWritableAs annotation " +
                 "arguments");
         }
 
         final var declaredType = (DeclaredType) interfaceElement.asType();
-        final var interfaceType = new DtoInterface(declaredType, readableEncodings, writableEncodings);
+        final var interfaceType = new DtoInterface(declaredType, readableCodecs, writableCodecs);
 
         final var properties = new ArrayList<DtoProperty>();
         for (final var element : elementUtils.getAllMembers(interfaceElement)) {
@@ -69,7 +69,7 @@ public class DtoTargetFactory {
                 continue;
             }
             final var executable = (ExecutableElement) element;
-            verifyAnyExclusivityConstraints(readableEncodings, writableEncodings, executable);
+            verifyAnyExclusivityConstraints(readableCodecs, writableCodecs, executable);
             final var property = propertyFactory.createFromMethod(executable);
             properties.add(property);
         }
@@ -81,8 +81,8 @@ public class DtoTargetFactory {
     }
 
     private void verifyAnyExclusivityConstraints(
-        final String[] readable,
-        final String[] writable,
+        final DtoCodec[] readable,
+        final DtoCodec[] writable,
         final ExecutableElement executable
     ) {
         final var type = executable.getReturnType();
@@ -93,24 +93,24 @@ public class DtoTargetFactory {
         if (exclusive == null) {
             return;
         }
-        final var exclusiveEncoding = exclusive.value();
-        final var isExclusiveEncodingReadable = Arrays.binarySearch(readable, exclusiveEncoding) >= 0;
-        if (!isExclusiveEncodingReadable || readable.length != 1) {
+        final var exclusiveCodec = exclusive.value();
+        final var isExclusiveCodecReadable = Arrays.binarySearch(readable, exclusiveCodec) >= 0;
+        if (!isExclusiveCodecReadable || readable.length != 1) {
             throw new DtoException(executable, "The type " + type + " is " +
-                "annotated with @DtoExclusive(" + exclusiveEncoding + ") " +
+                "annotated with @DtoExclusive(" + exclusiveCodec + ") " +
                 "while the DTO interface " + executable.getEnclosingElement() +
                 " is annotated with @DtoReadableAs(" + Stream.of(readable)
                 .map(String::valueOf).collect(Collectors.joining(", ")) +
-                "); " + exclusiveEncoding + " exclusivity constraint violated");
+                "); " + exclusiveCodec + " exclusivity constraint violated");
         }
-        final var isExclusiveEncodingWritable = Arrays.binarySearch(writable, exclusiveEncoding) >= 0;
-        if (!isExclusiveEncodingWritable || writable.length != 1) {
+        final var isExclusiveCodecWritable = Arrays.binarySearch(writable, exclusiveCodec) >= 0;
+        if (!isExclusiveCodecWritable || writable.length != 1) {
             throw new DtoException(executable, "The type " + type + " is " +
-                "annotated with @DtoExclusive(" + exclusiveEncoding + ") " +
+                "annotated with @DtoExclusive(" + exclusiveCodec + ") " +
                 "while the DTO interface " + executable.getEnclosingElement() +
                 " is annotated with @DtoWritableAs(" + Stream.of(writable)
                 .map(String::valueOf).collect(Collectors.joining(", ")) +
-                "); " + exclusiveEncoding + " exclusivity constraint violated");
+                "); " + exclusiveCodec + " exclusivity constraint violated");
         }
     }
 }

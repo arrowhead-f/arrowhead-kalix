@@ -4,8 +4,8 @@ import se.arkalix.ArConsumer;
 import se.arkalix.ArConsumerFactory;
 import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
-import se.arkalix.encoding.Encoding;
-import se.arkalix.net.Transport;
+import se.arkalix.codec.CodecType;
+import se.arkalix.net.ProtocolType;
 import se.arkalix.net.http.consumer._internal.DefaultHttpConsumer;
 import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.util.concurrent.Future;
@@ -15,26 +15,26 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
 
-import static se.arkalix.net.Transport.HTTP;
+import static se.arkalix.net.ProtocolType.HTTP;
 
 /**
  * Client useful for consuming an {@link se.arkalix.security secure or
  * insecure} HTTP {@link se.arkalix service}.
  * <p>
  * This class provides similar functionality to {@link HttpClient}, with the
- * exception that hostnames, encodings, authorization tokens and other
+ * exception that hostnames, codecs, authorization tokens and other
  * details may be managed automatically.
  */
 public interface HttpConsumer extends ArConsumer {
     /**
      * Creates new service consumer, limiting itself to a subset of the
-     * encodings supported by {@code service}.
+     * codecs supported by {@code service}.
      *
      * @param system    Arrowhead system consuming {@code service}.
      * @param service   Service to be consumed.
-     * @param encodings Supported request/response encodings.
+     * @param codecTypes Supported request/response codecs.
      * @throws NullPointerException     If {@code system}, {@code service} or
-     *                                  {@code encodings} is {@code null}.
+     *                                  {@code codecs} is {@code null}.
      * @throws IllegalArgumentException If the security modes of {@code system}
      *                                  and {@code service} do not match (e.g.
      *                                  the system is secure but the service is
@@ -43,9 +43,9 @@ public interface HttpConsumer extends ArConsumer {
     static HttpConsumer create(
         final ArSystem system,
         final ServiceRecord service,
-        final Collection<Encoding> encodings
+        final Collection<CodecType> codecTypes
     ) {
-        return factory().create(system, service, encodings);
+        return factory().create(system, service, codecTypes);
     }
 
     /**
@@ -122,7 +122,7 @@ public interface HttpConsumer extends ArConsumer {
         private static final Factory instance = new Factory();
 
         @Override
-        public Collection<Transport> serviceTransports() {
+        public Collection<ProtocolType> serviceProtocolTypes() {
             return Collections.singleton(HTTP);
         }
 
@@ -130,9 +130,9 @@ public interface HttpConsumer extends ArConsumer {
         public HttpConsumer create(
             final ArSystem system,
             final ServiceRecord service,
-            final Collection<Encoding> encodings
+            final Collection<CodecType> codecTypes
         ) {
-            return new DefaultHttpConsumer(system, service, encodings);
+            return new DefaultHttpConsumer(system, service, codecTypes);
         }
     }
 }

@@ -5,8 +5,8 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.DefaultFileRegion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.arkalix.encoding.Encoding;
-import se.arkalix.encoding.binary._internal.ByteBufWriter;
+import se.arkalix.codec.CodecType;
+import se.arkalix.codec.binary._internal.ByteBufWriter;
 import se.arkalix.net.BodyOutgoing;
 
 import java.io.IOException;
@@ -17,19 +17,19 @@ import java.util.Optional;
 public class NettyBodyOutgoing {
     private static final Logger logger = LoggerFactory.getLogger(BodyOutgoing.class);
 
-    private final Encoding encoding;
+    private final CodecType codecType;
     private final long length;
     private final Object content;
 
     public static NettyBodyOutgoing from(final BodyOutgoing body, final ByteBufAllocator allocator) throws IOException {
         Objects.requireNonNull(allocator, "allocator");
 
-        final Encoding encoding;
+        final CodecType codecType;
         final Object content;
         final long length;
 
         if (body == null) {
-            encoding = null;
+            codecType = null;
             length = 0;
             content = Unpooled.EMPTY_BUFFER;
         }
@@ -37,14 +37,14 @@ public class NettyBodyOutgoing {
             final var encodable = body.asEncodable().get();
             final var buffer = allocator.buffer();
             final var bufferWriter = new ByteBufWriter(buffer);
-            encoding = encodable.encode(bufferWriter);
+            codecType = encodable.encode(bufferWriter);
             length = buffer.readableBytes();
             content = buffer;
         }
         else if (body.asPath().isPresent()) {
             final var path = body.asPath().get();
             final var file = new RandomAccessFile(path.toFile(), "r");
-            encoding = null;
+            codecType = null;
             length = file.length();
             content = new DefaultFileRegion(file.getChannel(), 0, length);
         }
@@ -53,22 +53,22 @@ public class NettyBodyOutgoing {
                 logger.debug("Outgoing message body did not contain any " +
                     "supported kind of content; ignoring {}", body);
             }
-            encoding = null;
+            codecType = null;
             length = 0;
             content = Unpooled.EMPTY_BUFFER;
         }
 
-        return new NettyBodyOutgoing(encoding, length, content);
+        return new NettyBodyOutgoing(codecType, length, content);
     }
 
-    public NettyBodyOutgoing(final Encoding encoding, final long length, final Object content) {
-        this.encoding = encoding == Encoding.NONE ? null : encoding;
+    public NettyBodyOutgoing(final CodecType codecType, final long length, final Object content) {
+        this.codecType = codecType == CodecType.NONE ? null : codecType;
         this.length = length;
         this.content = Objects.requireNonNull(content, "content");
     }
 
-    public Optional<Encoding> encoding() {
-        return Optional.ofNullable(encoding);
+    public Optional<CodecType> codec() {
+        return Optional.ofNullable(codecType);
     }
 
     public long length() {

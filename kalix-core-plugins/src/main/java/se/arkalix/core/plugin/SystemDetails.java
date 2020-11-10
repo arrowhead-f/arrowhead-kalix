@@ -13,7 +13,7 @@ import java.net.InetSocketAddress;
 import java.util.Base64;
 import java.util.Optional;
 
-import static se.arkalix.dto.DtoEncoding.JSON;
+import static se.arkalix.dto.DtoCodec.JSON;
 
 /**
  * Details about an Arrowhead system, as they appear in various core service

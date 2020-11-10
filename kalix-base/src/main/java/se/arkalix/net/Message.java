@@ -1,6 +1,6 @@
 package se.arkalix.net;
 
-import se.arkalix.encoding.Encoding;
+import se.arkalix.codec.CodecType;
 
 import java.util.Optional;
 
@@ -9,11 +9,11 @@ import java.util.Optional;
  */
 public interface Message {
     /**
-     * Encoding used to encode the contents of this message, if specified.
+     * Codec used to encode the contents of this message, if specified.
      *
-     * @return Message encoding, if specified.
-     * @throws MessageEncodingMisspecified If a message encoding is specified in the
-     *                                message, but it cannot be interpreted.
+     * @return Message codec, if specified.
+     * @throws MessageCodecMisspecified If a message codec is specified in the
+     *                                  message, but it cannot be interpreted.
      */
-    Optional<Encoding> encoding();
+    Optional<CodecType> codecType();
 }

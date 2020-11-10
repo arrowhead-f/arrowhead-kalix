@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static se.arkalix.dto.DtoEncoding.JSON;
+import static se.arkalix.dto.DtoCodec.JSON;
 
 /**
  * A service registration request.
@@ -37,8 +37,8 @@ public interface ServiceRegistration {
 
     /**
      * Qualifier that distinguishes this service from other such provided by
-     * the same system. How it is used depends on the application-level
-     * transport protocol employed by the service.
+     * the same system. How it is used depends on the network protocol
+     * employed by the service.
      * <p>
      * For example, if this service uses HTTP, then the qualifier is a URL base
      * path, such as {@code "/base/path"}.

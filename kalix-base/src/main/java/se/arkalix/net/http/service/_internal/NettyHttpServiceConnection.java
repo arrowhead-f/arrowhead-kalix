@@ -12,9 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.ArSystem;
 import se.arkalix.SystemRecordWithIdentity;
-import se.arkalix.encoding.DecoderReadUnexpectedToken;
-import se.arkalix.encoding.Encoding;
-import se.arkalix.encoding.MediaType;
+import se.arkalix.codec.DecoderReadUnexpectedToken;
+import se.arkalix.codec.CodecType;
+import se.arkalix.codec.MediaType;
 import se.arkalix.net._internal.NettyBodyOutgoing;
 import se.arkalix.net._internal.NettySimpleChannelInboundHandler;
 import se.arkalix.net.http.HttpStatus;
@@ -150,22 +150,22 @@ public class NettyHttpServiceConnection
             }
         }
 
-        // Resolve default response encoding.
-        final Encoding defaultEncoding;
+        // Resolve default response codec.
+        final CodecType defaultCodecType;
         {
             final var headers = nettyRequest.headers();
-            final var encodings = service.encodings();
+            final var codecs = service.codecs();
 
             final var acceptHeaders = headers.getAll("accept");
             if (acceptHeaders != null && acceptHeaders.size() > 0) {
-                defaultEncoding = HttpMediaTypes.findEncodingCompatibleWithAcceptHeaders(encodings, acceptHeaders)
-                    .orElse(service.defaultEncoding());
+                defaultCodecType = HttpMediaTypes.findCodecTypeCompatibleWithAcceptHeaders(codecs, acceptHeaders)
+                    .orElse(service.defaultCodecType());
             }
             else {
                 final var contentType = headers.get("content-type");
                 if (contentType != null) {
-                    defaultEncoding = HttpMediaTypes.findEncodingCompatibleWithContentType(encodings, contentType)
-                        .orElse(service.defaultEncoding());
+                    defaultCodecType = HttpMediaTypes.findCodecTypeCompatibleWithContentType(codecs, contentType)
+                        .orElse(service.defaultCodecType());
                 }
                 else {
                     sendEmptyResponseAndCleanup(ctx, UNSUPPORTED_MEDIA_TYPE);
@@ -213,7 +213,7 @@ public class NettyHttpServiceConnection
 
         service
             .handle(this.kalixRequest, kalixResponse)
-            .ifSuccess(ignored -> sendKalixResponseAndCleanup(kalixResponse, defaultEncoding))
+            .ifSuccess(ignored -> sendKalixResponseAndCleanup(kalixResponse, defaultCodecType))
             .onFailure(fault -> {
                 if (fault instanceof HttpServiceRequestException) {
                     final var exception = (HttpServiceRequestException) fault;
@@ -247,7 +247,7 @@ public class NettyHttpServiceConnection
         }
     }
 
-    private void sendKalixResponseAndCleanup(final DefaultHttpServiceResponse response, final Encoding defaultEncoding)
+    private void sendKalixResponseAndCleanup(final DefaultHttpServiceResponse response, final CodecType defaultCodecType)
         throws IOException
     {
         final var status = response.status()
@@ -268,8 +268,8 @@ public class NettyHttpServiceConnection
         HttpUtil.setKeepAlive(nettyHeaders, nettyVersion, !isClosing);
 
         if (!nettyHeaders.contains(CONTENT_TYPE)) {
-            final var encoding = body.encoding().orElse(defaultEncoding);
-            nettyHeaders.set(CONTENT_TYPE, MediaType.getOrCreate(encoding));
+            final var codec = body.codec().orElse(defaultCodecType);
+            nettyHeaders.set(CONTENT_TYPE, MediaType.getOrCreate(codec));
         }
 
         channel.write(new DefaultHttpResponse(nettyVersion, nettyStatus, nettyHeaders));

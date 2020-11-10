@@ -7,7 +7,7 @@ import se.arkalix.dto.DtoWritableAs;
 
 import java.time.Instant;
 
-import static se.arkalix.dto.DtoEncoding.JSON;
+import static se.arkalix.dto.DtoCodec.JSON;
 
 /**
  * Signals the desire to end a contract negotiation.

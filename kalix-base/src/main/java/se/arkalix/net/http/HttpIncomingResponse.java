@@ -1,11 +1,11 @@
 package se.arkalix.net.http;
 
-import se.arkalix.encoding.Decoder;
-import se.arkalix.encoding.MultiDecoder;
-import se.arkalix.net.MessageEncodingMisspecified;
-import se.arkalix.net.MessageEncodingUnspecified;
-import se.arkalix.net.MessageEncodingUnsupported;
-import se.arkalix.encoding.ToEncoding;
+import se.arkalix.codec.Decoder;
+import se.arkalix.codec.MultiDecoder;
+import se.arkalix.net.MessageCodecMisspecified;
+import se.arkalix.net.MessageCodecUnspecified;
+import se.arkalix.net.MessageCodecUnsupported;
+import se.arkalix.codec.ToCodecType;
 import se.arkalix.util.concurrent.Future;
 
 /**
@@ -41,7 +41,7 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
      * If the status code of this message is between 200 and 299, this method
      * collects and then converts the incoming message body using the provided
      * {@code decoder}, which will attempt to select an appropriate decoder
-     * function from any {@link #encoding() encoding} specified in the message.
+     * function from any {@link #codecType() codec} specified in the message.
      * <p>
      * Calling this method consumes the body associated with this message. Any
      * further attempts to consume the body will cause exceptions to be thrown.
@@ -50,11 +50,11 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
      * @param decoder Function to use for decoding the message body.
      * @return Future completed when the incoming message body has been fully
      * received and decoded.
-     * @throws MessageEncodingMisspecified     If an encoding is specified in the
+     * @throws MessageCodecMisspecified     If an codec is specified in the
      *                                    message, but it cannot be interpreted.
-     * @throws MessageEncodingUnspecified If no encoding is specified in this
+     * @throws MessageCodecUnspecified If no codec is specified in this
      *                                    message.
-     * @throws MessageEncodingUnsupported If the encoding specified in the
+     * @throws MessageCodecUnsupported If the codec specified in the
      *                                    message is not supported by the given
      *                                    {@code decoder}.
      * @throws IllegalStateException      If the body has already been consumed.
@@ -71,7 +71,7 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
      * If the status code of this message is between 200 and 299, this method
      * collects and then converts the incoming message body using the provided
      * {@code decoder}, which will attempt to select an appropriate decoder
-     * function from any {@link #encoding() encoding} specified in the message.
+     * function from any {@link #codecType() codec} specified in the message.
      * <p>
      * Calling this method consumes the body associated with this message. Any
      * further attempts to consume the body will cause exceptions to be thrown.
@@ -80,19 +80,19 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
      * @param decoder Function to use for decoding the message body.
      * @return Future completed when the incoming message body has been fully
      * received and decoded.
-     * @throws MessageEncodingUnsupported If the given encoding is not
+     * @throws MessageCodecUnsupported If the given codec is not
      *                                    supported by the given {@code
      *                                    decoder}.
      * @throws IllegalStateException      If the body has already been consumed.
-     * @throws NullPointerException       If {@code decoder} or {@code encoding}
+     * @throws NullPointerException       If {@code decoder} or {@code codec}
      *                                    is {@code null}.
      */
     default <T> Future<T> bodyAsIfSuccess(
         final MultiDecoder<T> decoder,
-        final ToEncoding encoding
+        final ToCodecType codec
     ) {
         if (status().isSuccess()) {
-            return bodyAs(decoder, encoding);
+            return bodyAs(decoder, codec);
         }
         return Future.failure(reject());
     }

@@ -2,7 +2,8 @@ package se.arkalix.dto.types;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.TypeName;
-import se.arkalix.dto.DtoEncodingSpec;
+import se.arkalix.dto.DtoCodec;
+import se.arkalix.dto.DtoCodecSpec;
 import se.arkalix.dto.DtoException;
 import se.arkalix.dto.DtoTarget;
 
@@ -12,9 +13,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class DtoInterface implements DtoType {
-    private final Set<DtoEncodingSpec> readableDtoEncodings;
-    private final Set<DtoEncodingSpec> writableDtoEncodings;
-    private final Set<DtoEncodingSpec> dtoEncodings;
+    private final Set<DtoCodecSpec> readableCodecs;
+    private final Set<DtoCodecSpec> writableCodecs;
+    private final Set<DtoCodecSpec> dtoCodecs;
 
     private final DeclaredType interfaceType;
     private final String simpleName;
@@ -25,16 +26,16 @@ public class DtoInterface implements DtoType {
 
     public DtoInterface(
         final DeclaredType interfaceType,
-        final String[] readableDtoEncodings,
-        final String[] writableDtoEncodings
+        final DtoCodec[] readableCodecs,
+        final DtoCodec[] writableCodecs
     ) {
         this.interfaceType = Objects.requireNonNull(interfaceType, "interfaceType");
-        this.readableDtoEncodings = encodingSpecsFrom(readableDtoEncodings, interfaceType);
-        this.writableDtoEncodings = encodingSpecsFrom(writableDtoEncodings, interfaceType);
+        this.readableCodecs = codecSpecsFrom(readableCodecs, interfaceType);
+        this.writableCodecs = codecSpecsFrom(writableCodecs, interfaceType);
 
-        dtoEncodings = new HashSet<>();
-        dtoEncodings.addAll(this.readableDtoEncodings);
-        dtoEncodings.addAll(this.writableDtoEncodings);
+        dtoCodecs = new HashSet<>();
+        dtoCodecs.addAll(this.readableCodecs);
+        dtoCodecs.addAll(this.writableCodecs);
 
         final TypeElement interfaceElement = (TypeElement) interfaceType.asElement();
         simpleName = interfaceElement.getSimpleName().toString();
@@ -44,14 +45,14 @@ public class DtoInterface implements DtoType {
         outputTypeName = TypeName.get(interfaceType);
     }
 
-    private static Set<DtoEncodingSpec> encodingSpecsFrom(final String[] dtoNames, final DeclaredType interfaceType) {
-        if (dtoNames == null) {
+    private static Set<DtoCodecSpec> codecSpecsFrom(final DtoCodec[] dtoCodecs, final DeclaredType interfaceType) {
+        if (dtoCodecs == null) {
             return Collections.emptySet();
         }
-        return Arrays.stream(dtoNames)
-            .map(dtoName -> DtoEncodingSpec.getByDtoName(dtoName)
+        return Arrays.stream(dtoCodecs)
+            .map(dtoName -> DtoCodecSpec.getByDtoCodec(dtoName)
                 .orElseThrow(() -> new DtoException(interfaceType.asElement(), "" +
-                    "No DtoImplementer available for encoding \"" + dtoName
+                    "No DtoImplementer available for codec \"" + dtoName
                     + "\"; cannot generate DTO class for " + interfaceType)))
             .collect(Collectors.toUnmodifiableSet());
     }
@@ -94,16 +95,16 @@ public class DtoInterface implements DtoType {
         return builderSimpleName;
     }
 
-    public Set<DtoEncodingSpec> encodings() {
-        return dtoEncodings;
+    public Set<DtoCodecSpec> codecs() {
+        return dtoCodecs;
     }
 
-    public Set<DtoEncodingSpec> readableEncodings() {
-        return readableDtoEncodings;
+    public Set<DtoCodecSpec> readableCodecs() {
+        return readableCodecs;
     }
 
-    public Set<DtoEncodingSpec> writableEncodings() {
-        return writableDtoEncodings;
+    public Set<DtoCodecSpec> writableCodecs() {
+        return writableCodecs;
     }
 
     @Override
@@ -122,19 +123,19 @@ public class DtoInterface implements DtoType {
     }
 
     public boolean isReadable() {
-        return !readableDtoEncodings.isEmpty();
+        return !readableCodecs.isEmpty();
     }
 
-    public boolean isReadable(final DtoEncodingSpec dtoEncoding) {
-        return readableDtoEncodings.contains(dtoEncoding);
+    public boolean isReadable(final DtoCodecSpec dtoCodec) {
+        return readableCodecs.contains(dtoCodec);
     }
 
     public boolean isWritable() {
-        return !writableDtoEncodings.isEmpty();
+        return !writableCodecs.isEmpty();
     }
 
-    public boolean isWritable(final DtoEncodingSpec dtoEncoding) {
-        return writableDtoEncodings.contains(dtoEncoding);
+    public boolean isWritable(final DtoCodecSpec dtoCodec) {
+        return writableCodecs.contains(dtoCodec);
     }
 
     @Override

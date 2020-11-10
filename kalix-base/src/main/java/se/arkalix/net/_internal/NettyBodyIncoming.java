@@ -2,7 +2,7 @@ package se.arkalix.net._internal;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import se.arkalix.encoding.binary.BinaryReader;
+import se.arkalix.codec.binary.BinaryReader;
 import se.arkalix.net.BodyIncoming;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;

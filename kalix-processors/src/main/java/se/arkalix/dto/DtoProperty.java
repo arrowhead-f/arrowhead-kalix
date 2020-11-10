@@ -11,15 +11,15 @@ import java.util.Objects;
 public class DtoProperty implements DtoType {
     private final ExecutableElement parentElement;
     private final String name;
-    private final Map<String, String> encodingNames;
+    private final Map<DtoCodec, String> dtoCodecToName;
     private final DtoType type;
     private final boolean isOptional;
 
     private DtoProperty(final Builder builder) {
-        parentElement = Objects.requireNonNull(builder.parentElement, "Expected parentElement");
-        name = Objects.requireNonNull(builder.name, "Expected name");
-        encodingNames = Objects.requireNonNull(builder.encodingNames, "Expected encodingNames");
-        type = Objects.requireNonNull(builder.type, "Expected type");
+        parentElement = Objects.requireNonNull(builder.parentElement, "parentElement");
+        name = Objects.requireNonNull(builder.name, "name");
+        dtoCodecToName = Objects.requireNonNull(builder.dtoCodecToName, "dtoCodecToName");
+        type = Objects.requireNonNull(builder.type, "type");
         isOptional = builder.isOptional;
     }
 
@@ -31,8 +31,8 @@ public class DtoProperty implements DtoType {
         return name;
     }
 
-    public String nameFor(final String dtoEncoding) {
-        return encodingNames.getOrDefault(dtoEncoding, name);
+    public String nameFor(final DtoCodec codecType) {
+        return dtoCodecToName.getOrDefault(codecType, name);
     }
 
     public DtoType type() {
@@ -61,7 +61,7 @@ public class DtoProperty implements DtoType {
     public static class Builder {
         private ExecutableElement parentElement;
         private String name;
-        private Map<String, String> encodingNames;
+        private Map<DtoCodec, String> dtoCodecToName;
         private DtoType type;
         private boolean isOptional;
 
@@ -75,8 +75,8 @@ public class DtoProperty implements DtoType {
             return this;
         }
 
-        public Builder encodingNames(final Map<String, String> encodingNames) {
-            this.encodingNames = encodingNames;
+        public Builder dtoCodecToName(final Map<DtoCodec, String> dtoCodecToName) {
+            this.dtoCodecToName = dtoCodecToName;
             return this;
         }
 

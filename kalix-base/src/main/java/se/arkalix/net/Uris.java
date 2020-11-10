@@ -17,9 +17,9 @@ public class Uris {
      *     A–Z a–z 0–9 - . _ ~ ! $ &amp; ' ( ) * + , ; / = : @
      * </pre>
      * As an exception, strings are allowed to contain arbitrary percent
-     * encodings on the form {@code %<hex-digit><hex-digit>} (e.g. {@code %20}).
+     * codecs on the form {@code %<hex-digit><hex-digit>} (e.g. {@code %20}).
      * <p>
-     * No checks are made to determine whether any percent encodings actually
+     * No checks are made to determine whether any percent codecs actually
      * conform to any character set, ASCII or otherwise. This might change in
      * the future, given that a strong enough cause for it can be presented.
      *
@@ -56,7 +56,7 @@ public class Uris {
 
     /**
      * Tests whether given string {@code path} is a valid RFC 3986 path, as
-     * well as not including any percent encodings.
+     * well as not including any percent codecs.
      * <p>
      * Concretely, this means that {@code path} must begin with a forward slash
      * ({@code /}) and then consist of only the following characters:

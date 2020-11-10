@@ -2,7 +2,7 @@ package se.arkalix.core.plugin._internal;
 
 import se.arkalix.core.plugin.ErrorResponseDto;
 import se.arkalix.core.plugin.ErrorResponseException;
-import se.arkalix.encoding.Decoder;
+import se.arkalix.codec.Decoder;
 import se.arkalix.net.http.HttpIncomingResponse;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.util.annotation.Internal;

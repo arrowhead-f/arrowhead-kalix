@@ -1,9 +1,9 @@
 package se.arkalix.net;
 
-import se.arkalix.encoding.Encodable;
-import se.arkalix.encoding.Encoding;
-import se.arkalix.encoding.MultiEncodable;
-import se.arkalix.encoding.ToEncoding;
+import se.arkalix.codec.Encodable;
+import se.arkalix.codec.CodecType;
+import se.arkalix.codec.MultiEncodable;
+import se.arkalix.codec.ToCodecType;
 
 import java.nio.charset.Charset;
 import java.nio.file.Path;
@@ -18,17 +18,17 @@ import java.util.Optional;
 @SuppressWarnings("UnusedReturnValue")
 public interface MessageOutgoing<Self> extends Message {
     /**
-     * Sets name of encoding used to represent the body of this message.
+     * Sets type of codec used to represent the body of this message.
      * <p>
-     * This method only needs to be called if the encoding cannot be determined
+     * This method only needs to be called if the codec cannot be determined
      * automatically from the set {@link #body(BodyOutgoing) body}, such as
-     * when using {@link #body(byte[])}. Note that the message sender might set
-     * the encoding automatically when required.
+     * when using {@link #body(byte[])}. Note that whatever object is sending
+     * this message might set the codec automatically if required.
      *
-     * @param encoding Encoding to set.
+     * @param codecType Codec to set.
      * @return This message.
      */
-    Self encoding(final ToEncoding encoding);
+    Self codecType(final ToCodecType codecType);
 
     /**
      * Gets outgoing message body, if any is set.
@@ -59,7 +59,7 @@ public interface MessageOutgoing<Self> extends Message {
         Objects.requireNonNull(byteArray, "byteArray");
         return body(BodyOutgoing.create(writer -> {
             writer.write(byteArray);
-            return Encoding.NONE;
+            return CodecType.NONE;
         }));
     }
 
@@ -76,22 +76,22 @@ public interface MessageOutgoing<Self> extends Message {
 
     /**
      * Sets given {@code encodable} as outgoing message body, to be encoded
-     * using given {@code encoding}.
+     * using given {@code codec}.
      *
      * @param encodable Object to use, in encoded form, as message body.
-     * @param encoding  Encoding to use when encoding {@code encodable}.
+     * @param codec  Codec to use when codec {@code encodable}.
      * @return This message.
-     * @throws NullPointerException If {@code encoding} or {@code encodable} is
+     * @throws NullPointerException If {@code codec} or {@code encodable} is
      *                              {@code null}.
      */
-    default Self body(final MultiEncodable encodable, final ToEncoding encoding) {
+    default Self body(final MultiEncodable encodable, final ToCodecType codec) {
         Objects.requireNonNull(encodable, "encodable");
-        Objects.requireNonNull(encoding, "encoding");
+        Objects.requireNonNull(codec, "codec");
 
-        final var encoding0 = encoding.toEncoding();
+        final var codec0 = codec.toCodecType();
         return body(BodyOutgoing.create(writer -> {
-            encodable.encode(writer, encoding0);
-            return Encoding.NONE;
+            encodable.encode(writer, codec0);
+            return CodecType.NONE;
         }));
     }
 
@@ -118,7 +118,7 @@ public interface MessageOutgoing<Self> extends Message {
      * receiver knows how to interpret the body.
      *
      * @param string  String to send to message receiver.
-     * @param charset Character set to use for encoding {@code string}.
+     * @param charset Character set to use for codec {@code string}.
      * @return This message.
      * @throws NullPointerException If {@code string} or {@code charset} is
      *                              {@code null}.
@@ -127,10 +127,10 @@ public interface MessageOutgoing<Self> extends Message {
         Objects.requireNonNull(string, "string");
         Objects.requireNonNull(charset, "charset");
 
-        final var encoding = Encoding.getOrRegister(charset);
+        final var codec = CodecType.getOrRegister(charset);
         return body(BodyOutgoing.create(writer -> {
             writer.write(string.getBytes(charset));
-            return encoding;
+            return codec;
         }));
     }
 

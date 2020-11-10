@@ -1,15 +1,15 @@
 package se.arkalix.dto;
 
 import com.squareup.javapoet.*;
+import se.arkalix.codec.CodecUnsupported;
 import se.arkalix.dto.types.DtoCollection;
 import se.arkalix.dto.types.DtoDescriptor;
 import se.arkalix.dto.types.DtoSequence;
 import se.arkalix.dto.util.Expander;
-import se.arkalix.encoding.Encoding;
-import se.arkalix.encoding.EncodingUnsupported;
-import se.arkalix.encoding.MultiEncodable;
-import se.arkalix.encoding.binary.BinaryReader;
-import se.arkalix.encoding.binary.BinaryWriter;
+import se.arkalix.codec.CodecType;
+import se.arkalix.codec.MultiEncodable;
+import se.arkalix.codec.binary.BinaryReader;
+import se.arkalix.codec.binary.BinaryWriter;
 
 import javax.lang.model.element.Modifier;
 import java.util.Arrays;
@@ -276,17 +276,17 @@ public class DtoImplementerFactory {
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .returns(implementationClassName)
                 .addParameter(ClassName.get(BinaryReader.class), "reader", Modifier.FINAL)
-                .addParameter(ClassName.get(Encoding.class), "encoding", Modifier.FINAL);
+                .addParameter(ClassName.get(CodecType.class), "codec", Modifier.FINAL);
 
-            for (final var encoding : target.interfaceType().readableEncodings()) {
+            for (final var codec : target.interfaceType().readableCodecs()) {
                 decode
-                    .beginControlFlow("if (encoding == $T.$N)", Encoding.class, encoding.name())
-                    .addStatement("return $N(reader)", encoding.decoderMethodName())
+                    .beginControlFlow("if (codec == $T.$N)", CodecType.class, codec.name())
+                    .addStatement("return $N(reader)", codec.decoderMethodName())
                     .endControlFlow();
             }
 
             implementation.addMethod(decode
-                .addStatement("throw new $T(encoding)", EncodingUnsupported.class)
+                .addStatement("throw new $T(codec)", CodecUnsupported.class)
                 .build());
         }
 
@@ -295,12 +295,12 @@ public class DtoImplementerFactory {
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(ClassName.get(BinaryWriter.class), "writer", Modifier.FINAL)
-                .addParameter(ClassName.get(Encoding.class), "encoding", Modifier.FINAL);
+                .addParameter(ClassName.get(CodecType.class), "codec", Modifier.FINAL);
 
-            for (final var encoding : target.interfaceType().writableEncodings()) {
+            for (final var codec : target.interfaceType().writableCodecs()) {
                 encode
-                    .beginControlFlow("if (encoding == $T.$N)", Encoding.class, encoding.name())
-                    .addStatement("$N(writer)", encoding.encoderMethodName())
+                    .beginControlFlow("if (codec == $T.$N)", CodecType.class, codec.name())
+                    .addStatement("$N(writer)", codec.encoderMethodName())
                     .addStatement("return")
                     .endControlFlow();
             }
@@ -308,14 +308,14 @@ public class DtoImplementerFactory {
             implementation
                 .addSuperinterface(ClassName.get(MultiEncodable.class))
                 .addMethod(encode
-                    .addStatement("throw new $T(encoding)", EncodingUnsupported.class)
+                    .addStatement("throw new $T(codec)", CodecUnsupported.class)
                     .build());
         }
 
         // TODO: Make it possible to provide custom DtoImplementer classes, somehow.
-        final var targetEncodings = target.encodings();
+        final var targetCodecs = target.codecs();
         for (final var implementer : implementers) {
-            if (targetEncodings.contains(implementer.encoding())) {
+            if (targetCodecs.contains(implementer.codec())) {
                 implementer.implementFor(target, implementation);
             }
         }

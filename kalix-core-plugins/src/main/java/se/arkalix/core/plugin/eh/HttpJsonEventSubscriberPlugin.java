@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import static se.arkalix.encoding.Encoding.JSON;
+import static se.arkalix.codec.CodecType.JSON;
 
 /**
  * HTTP/JSON event subscriber plugin.
@@ -102,7 +102,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
                         .name("event-subscriber")
                         .basePath(basePath)
                         .accessPolicy(AccessPolicy.whitelist(eventSubscribe.service().provider().name()))
-                        .encodings(JSON)
+                        .codecs(JSON)
 
                         .post("/#topic", (request, response) -> {
                             final var topicName = request.pathParameter(0);

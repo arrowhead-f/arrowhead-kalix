@@ -10,7 +10,7 @@ import se.arkalix.dto.json.DtoJsonName;
 import java.util.Map;
 import java.util.Optional;
 
-import static se.arkalix.dto.DtoEncoding.JSON;
+import static se.arkalix.dto.DtoCodec.JSON;
 
 /**
  * An event description, as received.

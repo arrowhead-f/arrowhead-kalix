@@ -52,8 +52,8 @@ public class DtoTarget {
         return interfaceType.isWritable();
     }
 
-    public Set<DtoEncodingSpec> encodings() {
-        return interfaceType.encodings();
+    public Set<DtoCodecSpec> codecs() {
+        return interfaceType.codecs();
     }
 
     public String dataSimpleName() {

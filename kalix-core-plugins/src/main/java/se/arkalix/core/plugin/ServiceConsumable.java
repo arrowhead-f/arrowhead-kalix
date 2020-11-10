@@ -16,7 +16,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static se.arkalix.dto.DtoEncoding.JSON;
+import static se.arkalix.dto.DtoCodec.JSON;
 
 /**
  * Details about some {@link ServiceDetails service} with additional
@@ -42,7 +42,7 @@ public interface ServiceConsumable {
      * Service qualifier, also referred to as service URI.
      * <p>
      * The significance of this value depends on the application-level
-     * transport protocol employed by the service. If, for example, HTTP is
+     * network protocol employed by the service. If, for example, HTTP is
      * used, then this is a base path.
      */
     @DtoJsonName("serviceUri")

@@ -3,7 +3,7 @@ package se.arkalix.net.http._internal;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import se.arkalix.encoding.Encoding;
+import se.arkalix.codec.CodecType;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -15,173 +15,174 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class TestHttpMediaTypes {
     @ParameterizedTest
-    @MethodSource("compatibleContentTypeEncodingArguments")
-    void shouldFindCompatibleEncoding(
+    @MethodSource("compatibleContentTypeCodecArguments")
+    void shouldFindCompatibleCodec(
         final String contentType,
-        final Encoding[] encodings,
-        final Encoding expected
+        final CodecType[] codecTypes,
+        final CodecType expected
     ) {
-        final var actual = HttpMediaTypes.findEncodingCompatibleWithContentType(Arrays.asList(encodings), contentType);
+        final var actual = HttpMediaTypes.findCodecTypeCompatibleWithContentType(Arrays.asList(codecTypes), contentType);
         assertTrue(actual.isPresent());
         assertEquals(expected, actual.get());
     }
 
-    static Stream<Arguments> compatibleContentTypeEncodingArguments() {
+    static Stream<Arguments> compatibleContentTypeCodecArguments() {
         return Stream.of(
-            arguments("application/json", new Encoding[]{
-                Encoding.JSON, Encoding.XML
-            }, Encoding.JSON),
+            arguments("application/json", new CodecType[]{
+                CodecType.JSON, CodecType.XML
+            }, CodecType.JSON),
 
-            arguments("application/json; charset=utf-8", new Encoding[]{
-                Encoding.EXI, Encoding.JSON, Encoding.XML
-            }, Encoding.JSON),
+            arguments("application/json; charset=utf-8", new CodecType[]{
+                CodecType.EXI, CodecType.JSON, CodecType.XML
+            }, CodecType.JSON),
 
-            arguments("application/senml-exi", new Encoding[]{
-                Encoding.EXI, Encoding.JSON, Encoding.XML
-            }, Encoding.EXI),
+            arguments("application/senml-exi", new CodecType[]{
+                CodecType.EXI, CodecType.JSON, CodecType.XML
+            }, CodecType.EXI),
 
-            arguments("application/jose+json", new Encoding[]{
-                Encoding.JSON, Encoding.XML
-            }, Encoding.JSON),
+            arguments("application/jose+json", new CodecType[]{
+                CodecType.JSON, CodecType.XML
+            }, CodecType.JSON),
 
-            arguments("text/xml; charset=utf-8", new Encoding[]{
-                Encoding.JSON, Encoding.XML
-            }, Encoding.XML),
+            arguments("text/xml; charset=utf-8", new CodecType[]{
+                CodecType.JSON, CodecType.XML
+            }, CodecType.XML),
 
-            arguments("application/xml; charset=utf-16", new Encoding[]{
-                Encoding.JSON, Encoding.XML
-            }, Encoding.XML),
+            arguments("application/xml; charset=utf-16", new CodecType[]{
+                CodecType.JSON, CodecType.XML
+            }, CodecType.XML),
 
-            arguments("application/sensml+xml", new Encoding[]{
-                Encoding.JSON, Encoding.XML, Encoding.CBOR,
-            }, Encoding.XML),
+            arguments("application/sensml+xml", new CodecType[]{
+                CodecType.JSON, CodecType.XML, CodecType.CBOR,
+            }, CodecType.XML),
 
-            arguments("application/senml+cbor", new Encoding[]{
-                Encoding.CBOR, Encoding.XML
-            }, Encoding.CBOR)
+            arguments("application/senml+cbor", new CodecType[]{
+                CodecType.CBOR, CodecType.XML
+            }, CodecType.CBOR)
         );
     }
 
     @ParameterizedTest
-    @MethodSource("incompatibleContentTypeEncodingArguments")
-    void shouldNotFindCompatibleEncoding(final String contentType, final Encoding[] encodings) {
-        final var actual = HttpMediaTypes.findEncodingCompatibleWithContentType(Arrays.asList(encodings), contentType);
+    @MethodSource("incompatibleContentTypeCodecArguments")
+    void shouldNotFindCompatibleCodec(final String contentType, final CodecType[] codecTypes) {
+        final var actual = HttpMediaTypes.findCodecTypeCompatibleWithContentType(Arrays.asList(codecTypes), contentType);
         assertFalse(actual.isPresent());
     }
 
-    static Stream<Arguments> incompatibleContentTypeEncodingArguments() {
+    static Stream<Arguments> incompatibleContentTypeCodecArguments() {
         return Stream.of(
-            arguments("application/json", new Encoding[]{
-                Encoding.XML
+            arguments("application/json", new CodecType[]{
+                CodecType.XML
             }),
 
-            arguments("application/json; charset=utf-8", new Encoding[]{
-                Encoding.EXI, Encoding.XML
+            arguments("application/json; charset=utf-8", new CodecType[]{
+                CodecType.EXI, CodecType.XML
             }),
 
-            arguments("application/senml-exi", new Encoding[]{
-                Encoding.JSON, Encoding.XML
+            arguments("application/senml-exi", new CodecType[]{
+                CodecType.JSON, CodecType.XML
             }),
 
-            arguments("application/jose+json", new Encoding[]{
-                Encoding.XML
+            arguments("application/jose+json", new CodecType[]{
+                CodecType.XML
             }),
 
-            arguments("text/xml", new Encoding[]{
-                Encoding.JSON
+            arguments("text/xml", new CodecType[]{
+                CodecType.JSON
             }),
 
-            arguments("application/sensml+xml", new Encoding[]{
-                Encoding.JSON, Encoding.CBOR,
+            arguments("application/sensml+xml", new CodecType[]{
+                CodecType.JSON, CodecType.CBOR,
             }),
 
-            arguments("application/senml+cbor", new Encoding[]{
-                Encoding.XML
+            arguments("application/senml+cbor", new CodecType[]{
+                CodecType.XML
             })
         );
     }
 
     @ParameterizedTest
-    @MethodSource("compatibleAcceptFieldsEncodingArguments")
-    void shouldFindCompatibleEncodingAmongAcceptFields(
+    @MethodSource("compatibleAcceptFieldsCodecArguments")
+    void shouldFindCompatibleCodecAmongAcceptFields(
         final List<String> headers,
-        final Encoding[] encodings,
-        final Encoding expected)
+        final CodecType[] codecTypes,
+        final CodecType expected)
     {
-        final var actual = HttpMediaTypes.findEncodingCompatibleWithAcceptHeaders(Arrays.asList(encodings), headers);
+        final var actual = HttpMediaTypes.findCodecTypeCompatibleWithAcceptHeaders(Arrays.asList(codecTypes), headers);
         assertTrue(actual.isPresent());
         assertEquals(expected, actual.get());
     }
 
-    static Stream<Arguments> compatibleAcceptFieldsEncodingArguments() {
+    static Stream<Arguments> compatibleAcceptFieldsCodecArguments() {
         return Stream.of(
-            arguments(Collections.singletonList("*/*"), new Encoding[]{
-                Encoding.JSON, Encoding.XML
-            }, Encoding.JSON),
+            arguments(Collections.singletonList("*/*"), new CodecType[]{
+                CodecType.JSON, CodecType.XML
+            }, CodecType.JSON),
 
-            arguments(Collections.singletonList("*/senml+json"), new Encoding[]{
-                Encoding.JSON, Encoding.XML
-            }, Encoding.JSON),
+            arguments(Collections.singletonList("*/senml+json"), new CodecType[]{
+                CodecType.JSON, CodecType.XML
+            }, CodecType.JSON),
 
-            arguments(Collections.singletonList("application/*"), new Encoding[]{
-                Encoding.JSON, Encoding.XML
-            }, Encoding.JSON),
+            arguments(Collections.singletonList("application/*"), new CodecType[]{
+                CodecType.JSON, CodecType.XML
+            }, CodecType.JSON),
 
-            arguments(Collections.singletonList("text/*"), new Encoding[]{
-                Encoding.XML, Encoding.JSON
-            }, Encoding.XML),
+            arguments(Collections.singletonList("text/*"), new CodecType[]{
+                CodecType.XML, CodecType.JSON
+            }, CodecType.XML),
 
-            arguments(Arrays.asList("*/json", "*/cbor"), new Encoding[]{
-                Encoding.EXI, Encoding.CBOR
-            }, Encoding.CBOR),
+            arguments(Arrays.asList("*/json", "*/cbor"), new CodecType[]{
+                CodecType.EXI, CodecType.CBOR
+            }, CodecType.CBOR),
 
-            arguments(Arrays.asList("*/json, */senml-exi", "*/cbor"), new Encoding[]{
-                Encoding.EXI, Encoding.CBOR
-            }, Encoding.EXI),
+            arguments(Arrays.asList("*/json, */senml-exi", "*/cbor"), new CodecType[]{
+                CodecType.EXI, CodecType.CBOR
+            }, CodecType.EXI),
 
-            arguments(Arrays.asList("*/json;q=1.0", "*/cbor;q=0.9"), new Encoding[]{
-                Encoding.EXI, Encoding.CBOR
-            }, Encoding.CBOR),
+            arguments(Arrays.asList("*/json;q=1.0", "*/cbor;q=0.9"), new CodecType[]{
+                CodecType.EXI, CodecType.CBOR
+            }, CodecType.CBOR),
 
-            arguments(Arrays.asList("*/json;q=1.0, */exi;q=0.9", "*/cbor;q=0.8"), new Encoding[]{
-                Encoding.EXI, Encoding.CBOR
-            }, Encoding.EXI)
+            arguments(Arrays.asList("*/json;q=1.0, */exi;q=0.9", "*/cbor;q=0.8"), new CodecType[]{
+                CodecType.EXI, CodecType.CBOR
+            }, CodecType.EXI)
         );
     }
 
     @ParameterizedTest
-    @MethodSource("incompatibleAcceptFieldsEncodingArguments")
-    void shouldNotFindCompatibleEncodingAmongAcceptFields(
+    @MethodSource("incompatibleAcceptFieldsCodecArguments")
+    void shouldNotFindCompatibleCodecAmongAcceptFields(
         final List<String> headers,
-        final Encoding[] encodings)
+        final CodecType[] codecTypes
+    )
     {
-        final var actual = HttpMediaTypes.findEncodingCompatibleWithAcceptHeaders(Arrays.asList(encodings), headers);
+        final var actual = HttpMediaTypes.findCodecTypeCompatibleWithAcceptHeaders(Arrays.asList(codecTypes), headers);
         assertFalse(actual.isPresent());
     }
 
-    static Stream<Arguments> incompatibleAcceptFieldsEncodingArguments() {
+    static Stream<Arguments> incompatibleAcceptFieldsCodecArguments() {
         return Stream.of(
-            arguments(Collections.singletonList("*/cbor"), new Encoding[]{
-                Encoding.JSON, Encoding.XML
+            arguments(Collections.singletonList("*/cbor"), new CodecType[]{
+                CodecType.JSON, CodecType.XML
             }),
 
-            arguments(Collections.singletonList("application/exi"), new Encoding[]{
-                Encoding.JSON, Encoding.XML
+            arguments(Collections.singletonList("application/exi"), new CodecType[]{
+                CodecType.JSON, CodecType.XML
             }),
-            arguments(Arrays.asList("*/json", "*/cbor"), new Encoding[]{
-                Encoding.EXI, Encoding.XML
-            }),
-
-            arguments(Arrays.asList("*/json, */exi", "*/cbor"), new Encoding[]{
-                Encoding.XML,
+            arguments(Arrays.asList("*/json", "*/cbor"), new CodecType[]{
+                CodecType.EXI, CodecType.XML
             }),
 
-            arguments(Arrays.asList("*/json;q=1.0", "*/cbor;q=0.9"), new Encoding[]{
-                Encoding.EXI, Encoding.XML
+            arguments(Arrays.asList("*/json, */exi", "*/cbor"), new CodecType[]{
+                CodecType.XML,
             }),
 
-            arguments(Arrays.asList("*/json;q=1.0, */exi;q=0.9", "*/cbor;q=0.8"), new Encoding[]{
-                Encoding.XML,
+            arguments(Arrays.asList("*/json;q=1.0", "*/cbor;q=0.9"), new CodecType[]{
+                CodecType.EXI, CodecType.XML
+            }),
+
+            arguments(Arrays.asList("*/json;q=1.0, */exi;q=0.9", "*/cbor;q=0.8"), new CodecType[]{
+                CodecType.XML,
             })
         );
     }

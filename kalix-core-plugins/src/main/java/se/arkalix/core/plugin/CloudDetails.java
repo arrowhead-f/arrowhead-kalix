@@ -7,7 +7,7 @@ import se.arkalix.dto.json.DtoJsonName;
 
 import java.util.Optional;
 
-import static se.arkalix.dto.DtoEncoding.JSON;
+import static se.arkalix.dto.DtoCodec.JSON;
 
 /**
  * Details about an Arrowhead local cloud, as they appear in various core

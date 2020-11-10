@@ -8,7 +8,7 @@ import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.arkalix.encoding.MediaType;
+import se.arkalix.codec.MediaType;
 import se.arkalix.net._internal.NettyBodyOutgoing;
 import se.arkalix.net._internal.NettySimpleChannelInboundHandler;
 import se.arkalix.net.http._internal.NettyHttpConverters;
@@ -330,8 +330,8 @@ public class NettyHttpClientConnection
             HttpUtil.setKeepAlive(nettyHeaders, nettyVersion, !close);
 
             if (!nettyHeaders.contains(CONTENT_TYPE)) {
-                body.encoding()
-                    .ifPresent(encoding -> nettyHeaders.set(CONTENT_TYPE, MediaType.getOrCreate(encoding)));
+                body.codec()
+                    .ifPresent(codec -> nettyHeaders.set(CONTENT_TYPE, MediaType.getOrCreate(codec)));
             }
 
             channel.write(new DefaultHttpRequest(nettyVersion, nettyMethod, uri, nettyHeaders));

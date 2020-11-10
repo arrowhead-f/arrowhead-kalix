@@ -7,7 +7,7 @@ import se.arkalix.dto.DtoWritableAs;
 
 import java.time.Instant;
 
-import static se.arkalix.dto.DtoEncoding.JSON;
+import static se.arkalix.dto.DtoCodec.JSON;
 
 /**
  * An acceptance of an offer to enter into one or more legally binding contacts.

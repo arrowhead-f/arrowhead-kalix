@@ -4,8 +4,8 @@ import se.arkalix.ArConsumer;
 import se.arkalix.ArConsumerFactory;
 import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
-import se.arkalix.encoding.Encoding;
-import se.arkalix.net.Transport;
+import se.arkalix.codec.CodecType;
+import se.arkalix.net.ProtocolType;
 import se.arkalix.core.plugin._internal.HttpJsonServices;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
@@ -15,8 +15,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 
-import static se.arkalix.encoding.Encoding.JSON;
-import static se.arkalix.net.Transport.HTTP;
+import static se.arkalix.codec.CodecType.JSON;
+import static se.arkalix.net.ProtocolType.HTTP;
 import static se.arkalix.net.http.HttpMethod.POST;
 
 /**
@@ -61,12 +61,12 @@ public class HttpJsonEventSubscribeService implements ArConsumer, ArEventSubscri
         }
 
         @Override
-        public Collection<Transport> serviceTransports() {
+        public Collection<ProtocolType> serviceProtocolTypes() {
             return Collections.singleton(HTTP);
         }
 
         @Override
-        public Collection<Encoding> serviceEncodings() {
+        public Collection<CodecType> serviceCodecTypes() {
             return Collections.singleton(JSON);
         }
 
@@ -74,9 +74,9 @@ public class HttpJsonEventSubscribeService implements ArConsumer, ArEventSubscri
         public HttpJsonEventSubscribeService create(
             final ArSystem system,
             final ServiceRecord service,
-            final Collection<Encoding> encodings
+            final Collection<CodecType> codecTypes
         ) {
-            return new HttpJsonEventSubscribeService(HttpConsumer.create(system, service, encodings));
+            return new HttpJsonEventSubscribeService(HttpConsumer.create(system, service, codecTypes));
         }
     }
 }

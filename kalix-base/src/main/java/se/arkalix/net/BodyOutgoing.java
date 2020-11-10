@@ -1,6 +1,6 @@
 package se.arkalix.net;
 
-import se.arkalix.encoding.Encodable;
+import se.arkalix.codec.Encodable;
 
 import java.nio.file.Path;
 import java.util.Objects;

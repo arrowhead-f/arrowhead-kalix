@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import se.arkalix.ArService;
 import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
-import se.arkalix.encoding.Encoding;
+import se.arkalix.codec.CodecType;
 import se.arkalix.net.Uris;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.service.*;
@@ -22,7 +22,7 @@ public class HttpServerService {
     private final AccessPolicy accessPolicy;
     private final String basePath;
     private final ArService service;
-    private final List<Encoding> encodings;
+    private final List<CodecType> codecTypes;
     private final ArSystem provider;
     private final HttpRouteSequence[] routeSequences;
 
@@ -45,9 +45,9 @@ public class HttpServerService {
         }
         this.basePath = !Objects.equals(basePath, "/") ? basePath : null;
 
-        encodings = service.encodings();
-        if (encodings.size() == 0) {
-            throw new IllegalArgumentException("Expected HttpService encodings.size() > 0");
+        codecTypes = service.codecType();
+        if (codecTypes.size() == 0) {
+            throw new IllegalArgumentException("Expected HttpService codecs.size() > 0");
         }
 
         final var routeSequenceFactory = new HttpRouteSequenceFactory(service.catchers(), service.filters());
@@ -79,17 +79,17 @@ public class HttpServerService {
     }
 
     /**
-     * @return The encoding to use by default.
+     * @return The codec to use by default.
      */
-    public Encoding defaultEncoding() {
-        return encodings.get(0);
+    public CodecType defaultCodecType() {
+        return codecTypes.get(0);
     }
 
     /**
-     * @return Data encodings supported by this service.
+     * @return Data codecs supported by this service.
      */
-    public List<Encoding> encodings() {
-        return encodings;
+    public List<CodecType> codecs() {
+        return codecTypes;
     }
 
     /**

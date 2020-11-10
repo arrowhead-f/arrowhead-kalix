@@ -8,10 +8,6 @@ import se.arkalix.util.concurrent.Future;
 
 import java.util.Collection;
 
-/**
- * A server, making an {@link ArSystem} able to provide {@link ArService}s
- * relying on a particular application-level transport protocol.
- */
 @Internal
 public interface ArServer {
     /**

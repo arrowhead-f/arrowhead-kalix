@@ -121,7 +121,7 @@ public class DtoPropertyFactory {
         final var builder = new DtoProperty.Builder()
             .parentElement(method)
             .name(method.getSimpleName().toString())
-            .encodingNames(collectEncodingNamesFrom(method));
+            .dtoCodecToName(collectDtoCodecNamesFrom(method));
 
         var type = method.getReturnType();
 
@@ -154,13 +154,13 @@ public class DtoPropertyFactory {
             .build();
     }
 
-    private Map<String, String> collectEncodingNamesFrom(final Element method) {
-        final var encodingNames = new HashMap<String, String>();
+    private Map<DtoCodec, String> collectDtoCodecNamesFrom(final Element method) {
+        final var codecNames = new HashMap<DtoCodec, String>();
         final var nameJSON = method.getAnnotation(DtoJsonName.class);
         if (nameJSON != null) {
-            encodingNames.put(DtoEncoding.JSON, nameJSON.value());
+            codecNames.put(DtoCodec.JSON, nameJSON.value());
         }
-        return encodingNames;
+        return codecNames;
     }
 
     private DtoType resolveDtoType(final ExecutableElement method, final TypeMirror type) {
@@ -346,10 +346,10 @@ public class DtoPropertyFactory {
             return new DtoCustom(type, (TypeElement) element, typeUtils, elementUtils);
         }
 
-        final var readableEncodings = readable != null ? readable.value() : null;
-        final var writableEncodings = writable != null ? writable.value() : null;
+        final var readableCodecs = readable != null ? readable.value() : null;
+        final var writableCodecs = writable != null ? writable.value() : null;
 
-        return new DtoInterface(declaredType, readableEncodings, writableEncodings);
+        return new DtoInterface(declaredType, readableCodecs, writableCodecs);
     }
 
     private DtoSequence toListType(final ExecutableElement method, final TypeMirror type) {

@@ -1,7 +1,7 @@
 package se.arkalix;
 
-import se.arkalix.encoding.Encoding;
-import se.arkalix.net.Transport;
+import se.arkalix.codec.CodecType;
+import se.arkalix.net.ProtocolType;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -11,13 +11,13 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
- * Names a network interface protocol triplet.
+ * A network interface type triplet.
  * <p>
  * Each provided Arrowhead {@link se.arkalix.ArService service} exposes its
  * functionality via at least one <i>interface</i>. An interface consists of a
- * {@link Transport transport protocol}, a requirement to either use
+ * {@link ProtocolType protocol}, a requirement to either use
  * or not to use <a href="https://tools.ietf.org/html/rfc7925">TLS/DTLS</a>, as
- * well as a {@link Encoding payload encoding}. When it is advertised what
+ * well as a {@link CodecType payload codec}. When it is advertised what
  * interfaces a certain service supports, each of those interfaces will be
  * represented by an instance of this descriptor.
  */
@@ -25,61 +25,65 @@ import java.util.regex.Pattern;
 public final class ServiceInterface implements Comparable<ServiceInterface> {
     private static final Pattern TRIPLET_PATTERN = Pattern.compile("^([0-9A-Z_]+)-(IN)?SECURE-([0-9A-Z_]+)$");
 
-    private static final HashMap<Transport, List<ServiceInterface>> CACHE;
+    private static final HashMap<ProtocolType, List<ServiceInterface>> CACHE;
 
-    private final Transport transport;
+    private final ProtocolType protocolType;
     private final boolean isSecure;
-    private final Encoding encoding;
-    private final String text;
+    private final CodecType codecType;
+    private final String name;
 
     private ServiceInterface(
-        final Transport transport,
+        final ProtocolType protocolType,
         final boolean isSecure,
-        final Encoding encoding,
-        final String text)
-    {
-        this.transport = transport;
+        final CodecType codecType,
+        final String name
+    ) {
+        this.protocolType = protocolType;
         this.isSecure = isSecure;
-        this.encoding = encoding;
-        this.text = text;
+        this.codecType = codecType;
+        this.name = name;
     }
 
     /**
      * Either acquires a cached interface descriptor matching the given
      * arguments, or uses them to create a new descriptor.
      *
-     * @param transport Transport descriptor.
-     * @param isSecure  Whether transport security is to be used.
-     * @param encoding  Encoding descriptor.
+     * @param protocolType Protocol type.
+     * @param isSecure     Whether transport security is to be used.
+     * @param codecType    Codec type.
      * @return New or existing interface descriptor.
      */
     public static ServiceInterface getOrCreate(
-        final Transport transport,
+        final ProtocolType protocolType,
         final boolean isSecure,
-        final Encoding encoding)
-    {
+        final CodecType codecType
+    ) {
         if (isSecure) {
-            final var candidates = CACHE.get(transport);
+            final var candidates = CACHE.get(protocolType);
             if (candidates != null) {
                 for (final var candidate : candidates) {
-                    if (candidate.encoding == encoding) {
+                    if (candidate.codecType == codecType) {
                         return candidate;
                     }
                 }
             }
         }
-        return new ServiceInterface(transport, isSecure, encoding,
-            transport + (isSecure ? "-SECURE-" : "-INSECURE-") + encoding);
+        return new ServiceInterface(protocolType, isSecure, codecType,
+            protocolType + (isSecure ? "-SECURE-" : "-INSECURE-") + codecType);
     }
 
     /**
-     * @return Transport protocol descriptor.
+     * Gets interface protocol type.
+     *
+     * @return Protocol type.
      */
-    public Transport transport() {
-        return transport;
+    public ProtocolType protocolType() {
+        return protocolType;
     }
 
     /**
+     * Gets interface security mode.
+     *
      * @return Whether or not transport security is to be used.
      */
     public boolean isSecure() {
@@ -87,197 +91,201 @@ public final class ServiceInterface implements Comparable<ServiceInterface> {
     }
 
     /**
-     * @return Message encoding descriptor.
+     * Gets interface codec type.
+     *
+     * @return Message codec descriptor.
      */
-    public Encoding encoding() {
-        return encoding;
+    public CodecType codecType() {
+        return codecType;
     }
 
     /**
+     * Gets textual description of this interface.
+     *
      * @return Textual description of interface, such as "HTTP-SECURE-JSON".
      */
-    public String text() {
-        return text;
+    public String name() {
+        return name;
     }
 
     /**
      * AMPQ over TLS with CBOR payloads.
      *
-     * @see Transport#AMPQ
-     * @see Encoding#CBOR
+     * @see ProtocolType#AMPQ
+     * @see CodecType#CBOR
      */
     public static final ServiceInterface AMPQ_SECURE_CBOR = new ServiceInterface(
-        Transport.AMPQ, true, Encoding.CBOR, "AMPQ-SECURE-CBOR");
+        ProtocolType.AMPQ, true, CodecType.CBOR, "AMPQ-SECURE-CBOR");
 
     /**
      * AMPQ over TLS with JSON payloads.
      *
-     * @see Transport#AMPQ
-     * @see Encoding#JSON
+     * @see ProtocolType#AMPQ
+     * @see CodecType#JSON
      */
     public static final ServiceInterface AMPQ_SECURE_JSON = new ServiceInterface(
-        Transport.AMPQ, true, Encoding.JSON, "AMPQ-SECURE-JSON");
+        ProtocolType.AMPQ, true, CodecType.JSON, "AMPQ-SECURE-JSON");
 
     /**
      * AMPQ over TLS with XML payloads.
      *
-     * @see Transport#AMPQ
-     * @see Encoding#XML
+     * @see ProtocolType#AMPQ
+     * @see CodecType#XML
      */
     public static final ServiceInterface AMPQ_SECURE_XML = new ServiceInterface(
-        Transport.AMPQ, true, Encoding.XML, "AMPQ-SECURE-XML");
+        ProtocolType.AMPQ, true, CodecType.XML, "AMPQ-SECURE-XML");
 
     /**
      * AMPQ over TLS with XSI payloads.
      *
-     * @see Transport#AMPQ
-     * @see Encoding#EXI
+     * @see ProtocolType#AMPQ
+     * @see CodecType#EXI
      */
     public static final ServiceInterface AMPQ_SECURE_XSI = new ServiceInterface(
-        Transport.AMPQ, true, Encoding.EXI, "AMPQ-SECURE-XSI");
+        ProtocolType.AMPQ, true, CodecType.EXI, "AMPQ-SECURE-XSI");
 
     /**
      * CoAP over TLS with CBOR payloads.
      *
-     * @see Transport#COAP
-     * @see Encoding#CBOR
+     * @see ProtocolType#COAP
+     * @see CodecType#CBOR
      */
     public static final ServiceInterface COAP_SECURE_CBOR = new ServiceInterface(
-        Transport.COAP, true, Encoding.CBOR, "COAP-SECURE-CBOR");
+        ProtocolType.COAP, true, CodecType.CBOR, "COAP-SECURE-CBOR");
 
     /**
      * CoAP over TLS with JSON payloads.
      *
-     * @see Transport#COAP
-     * @see Encoding#JSON
+     * @see ProtocolType#COAP
+     * @see CodecType#JSON
      */
     public static final ServiceInterface COAP_SECURE_JSON = new ServiceInterface(
-        Transport.COAP, true, Encoding.JSON, "COAP-SECURE-JSON");
+        ProtocolType.COAP, true, CodecType.JSON, "COAP-SECURE-JSON");
 
     /**
      * CoAP over TLS with XML payloads.
      *
-     * @see Transport#COAP
-     * @see Encoding#XML
+     * @see ProtocolType#COAP
+     * @see CodecType#XML
      */
     public static final ServiceInterface COAP_SECURE_XML = new ServiceInterface(
-        Transport.COAP, true, Encoding.XML, "COAP-SECURE-XML");
+        ProtocolType.COAP, true, CodecType.XML, "COAP-SECURE-XML");
 
     /**
      * CoAP over TLS with XSI payloads.
      *
-     * @see Transport#COAP
-     * @see Encoding#EXI
+     * @see ProtocolType#COAP
+     * @see CodecType#EXI
      */
     public static final ServiceInterface COAP_SECURE_XSI = new ServiceInterface(
-        Transport.COAP, true, Encoding.EXI, "COAP-SECURE-XSI");
+        ProtocolType.COAP, true, CodecType.EXI, "COAP-SECURE-XSI");
 
     /**
      * HTTPS with CBOR payloads.
      *
-     * @see Transport#HTTP
-     * @see Encoding#CBOR
+     * @see ProtocolType#HTTP
+     * @see CodecType#CBOR
      */
     public static final ServiceInterface HTTP_SECURE_CBOR = new ServiceInterface(
-        Transport.HTTP, true, Encoding.CBOR, "HTTP-SECURE-CBOR");
+        ProtocolType.HTTP, true, CodecType.CBOR, "HTTP-SECURE-CBOR");
 
     /**
      * HTTPS with JSON payloads.
      *
-     * @see Transport#HTTP
-     * @see Encoding#JSON
+     * @see ProtocolType#HTTP
+     * @see CodecType#JSON
      */
     public static final ServiceInterface HTTP_SECURE_JSON = new ServiceInterface(
-        Transport.HTTP, true, Encoding.JSON, "HTTP-SECURE-JSON");
+        ProtocolType.HTTP, true, CodecType.JSON, "HTTP-SECURE-JSON");
 
     /**
      * HTTPS with XML payloads.
      *
-     * @see Transport#HTTP
-     * @see Encoding#XML
+     * @see ProtocolType#HTTP
+     * @see CodecType#XML
      */
     public static final ServiceInterface HTTP_SECURE_XML = new ServiceInterface(
-        Transport.HTTP, true, Encoding.XML, "HTTP-SECURE-XML");
+        ProtocolType.HTTP, true, CodecType.XML, "HTTP-SECURE-XML");
 
     /**
      * HTTPS with XSI payloads.
      *
-     * @see Transport#HTTP
-     * @see Encoding#EXI
+     * @see ProtocolType#HTTP
+     * @see CodecType#EXI
      */
     public static final ServiceInterface HTTP_SECURE_XSI = new ServiceInterface(
-        Transport.HTTP, true, Encoding.EXI, "HTTP-SECURE-XSI");
+        ProtocolType.HTTP, true, CodecType.EXI, "HTTP-SECURE-XSI");
 
     /**
      * MQTT over TLS with CBOR payloads.
      *
-     * @see Transport#MQTT
-     * @see Encoding#CBOR
+     * @see ProtocolType#MQTT
+     * @see CodecType#CBOR
      */
     public static final ServiceInterface MQTT_SECURE_CBOR = new ServiceInterface(
-        Transport.MQTT, true, Encoding.CBOR, "MQTT-SECURE-CBOR");
+        ProtocolType.MQTT, true, CodecType.CBOR, "MQTT-SECURE-CBOR");
     /**
      * MQTT over TLS with JSON payloads.
      *
-     * @see Transport#MQTT
-     * @see Encoding#JSON
+     * @see ProtocolType#MQTT
+     * @see CodecType#JSON
      */
     public static final ServiceInterface MQTT_SECURE_JSON = new ServiceInterface(
-        Transport.MQTT, true, Encoding.JSON, "MQTT-SECURE-JSON");
+        ProtocolType.MQTT, true, CodecType.JSON, "MQTT-SECURE-JSON");
 
     /**
      * MQTT over TLS with XML payloads.
      *
-     * @see Transport#MQTT
-     * @see Encoding#XML
+     * @see ProtocolType#MQTT
+     * @see CodecType#XML
      */
     public static final ServiceInterface MQTT_SECURE_XML = new ServiceInterface(
-        Transport.MQTT, true, Encoding.XML, "MQTT-SECURE-XML");
+        ProtocolType.MQTT, true, CodecType.XML, "MQTT-SECURE-XML");
 
     /**
      * MQTT over TLS with XSI payloads.
      *
-     * @see Transport#MQTT
-     * @see Encoding#EXI
+     * @see ProtocolType#MQTT
+     * @see CodecType#EXI
      */
     public static final ServiceInterface MQTT_SECURE_XSI = new ServiceInterface(
-        Transport.MQTT, true, Encoding.EXI, "MQTT-SECURE-XSI");
+        ProtocolType.MQTT, true, CodecType.EXI, "MQTT-SECURE-XSI");
 
     /**
      * XMPP over TLS with CBOR payloads.
      *
-     * @see Transport#XMPP
-     * @see Encoding#CBOR
+     * @see ProtocolType#XMPP
+     * @see CodecType#CBOR
      */
     public static final ServiceInterface XMPP_SECURE_CBOR = new ServiceInterface(
-        Transport.XMPP, true, Encoding.CBOR, "XMPP-SECURE-CBOR");
+        ProtocolType.XMPP, true, CodecType.CBOR, "XMPP-SECURE-CBOR");
 
     /**
      * XMPP over TLS with JSON payloads.
      *
-     * @see Transport#XMPP
-     * @see Encoding#JSON
+     * @see ProtocolType#XMPP
+     * @see CodecType#JSON
      */
     public static final ServiceInterface XMPP_SECURE_JSON = new ServiceInterface(
-        Transport.XMPP, true, Encoding.JSON, "XMPP-SECURE-JSON");
+        ProtocolType.XMPP, true, CodecType.JSON, "XMPP-SECURE-JSON");
 
     /**
      * XMPP over TLS with XML payloads.
      *
-     * @see Transport#XMPP
-     * @see Encoding#XML
+     * @see ProtocolType#XMPP
+     * @see CodecType#XML
      */
     public static final ServiceInterface XMPP_SECURE_XML = new ServiceInterface(
-        Transport.XMPP, true, Encoding.XML, "XMPP-SECURE-XML");
+        ProtocolType.XMPP, true, CodecType.XML, "XMPP-SECURE-XML");
 
     /**
      * XMPP over TLS with XSI payloads.
      *
-     * @see Transport#XMPP
-     * @see Encoding#EXI
+     * @see ProtocolType#XMPP
+     * @see CodecType#EXI
      */
     public static final ServiceInterface XMPP_SECURE_XSI = new ServiceInterface(
-        Transport.XMPP, true, Encoding.EXI, "XMPP-SECURE-XSI");
+        ProtocolType.XMPP, true, CodecType.EXI, "XMPP-SECURE-XSI");
 
     /**
      * Parses given string into interface triplet.
@@ -322,9 +330,9 @@ public final class ServiceInterface implements Comparable<ServiceInterface> {
                 + "\"; must match \"" + TRIPLET_PATTERN + "\"");
         }
         return new ServiceInterface(
-            Transport.valueOf(matcher.group(1)),
+            ProtocolType.valueOf(matcher.group(1)),
             matcher.group(2) == null,
-            Encoding.valueOf(matcher.group(3)),
+            CodecType.valueOf(matcher.group(3)),
             triplet
         );
     }
@@ -334,33 +342,33 @@ public final class ServiceInterface implements Comparable<ServiceInterface> {
         if (this == other) { return true; }
         if (other == null || getClass() != other.getClass()) { return false; }
         final var triplet = (ServiceInterface) other;
-        return transport.equals(triplet.transport) &&
+        return protocolType.equals(triplet.protocolType) &&
             isSecure == triplet.isSecure &&
-            encoding.equals(triplet.encoding);
+            codecType.equals(triplet.codecType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(transport, isSecure, encoding);
+        return Objects.hash(protocolType, isSecure, codecType);
     }
 
     @Override
     public String toString() {
-        return text;
+        return name;
     }
 
     @Override
     public int compareTo(final ServiceInterface other) {
-        return text.compareTo(other.text);
+        return name.compareTo(other.name);
     }
 
     static {
         CACHE = new HashMap<>();
         try {
             for (final var field : ServiceInterface.class.getFields()) {
-                if (Modifier.isStatic(field.getModifiers()) && field.getType() == Transport.class) {
+                if (Modifier.isStatic(field.getModifiers()) && field.getType() == ProtocolType.class) {
                     final var descriptor = (ServiceInterface) field.get(null);
-                    CACHE.compute(descriptor.transport, (key, value) -> {
+                    CACHE.compute(descriptor.protocolType, (key, value) -> {
                         if (value == null) {
                             value = new ArrayList<>();
                         }
