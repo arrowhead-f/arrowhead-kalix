@@ -38,7 +38,7 @@ public class DefaultHttpConsumer implements HttpConsumer {
 
         client = HttpClient.from(system);
 
-        final var isSecure = service.security() != AccessType.NOT_SECURE;
+        final var isSecure = service.accessType() != AccessType.NOT_SECURE;
         if (isSecure != system.isSecure()) {
             if (isSecure) {
                 throw new IllegalStateException("The provided system is " +

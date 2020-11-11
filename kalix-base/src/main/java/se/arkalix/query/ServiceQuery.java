@@ -503,7 +503,7 @@ public class ServiceQuery {
             return false;
         }
 
-        return service.security().isSecure() == isSecure();
+        return service.accessType().isSecure() == isSecure();
     }
 
     @Override

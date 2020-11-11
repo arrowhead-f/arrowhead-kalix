@@ -115,7 +115,7 @@ public interface ServiceConsumable {
             .expiresAt(expiresAt()
                 .map(Instants::fromAitiaDateTimeString)
                 .orElse(null))
-            .security(security())
+            .accessType(security())
             .metadata(metadata())
             .version(version())
             .interfaceTokens(Stream.concat(

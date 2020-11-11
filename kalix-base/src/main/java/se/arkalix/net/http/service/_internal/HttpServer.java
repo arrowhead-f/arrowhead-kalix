@@ -89,7 +89,7 @@ public class HttpServer implements ArServer {
             throw new IllegalArgumentException("Expected service to be HttpService");
         }
 
-        if (service.accessPolicy().descriptor() == AccessType.NOT_SECURE) {
+        if (service.accessPolicy().type() == AccessType.NOT_SECURE) {
             if (system.isSecure()) {
                 throw new IllegalStateException("System \"" + system.name() +
                     "\" is running in secure mode; services with the " +

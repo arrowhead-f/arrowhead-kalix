@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  */
 public interface ServiceRecord extends Comparable<ServiceRecord> {
     /**
-     * Gets name, or <i>service definition</i>, of this service
+     * Gets name, or <i>service definition</i>, of this service.
      *
      * @return Service name.
      */
@@ -56,11 +56,12 @@ public interface ServiceRecord extends Comparable<ServiceRecord> {
     Instant expiresAt();
 
     /**
-     * Gets security schema used to authenticate and authorize service users.
+     * Gets type of access policy, or <i>security mode</i>, enforced by this
+     * service.
      *
-     * @return Service security schema descriptor.
+     * @return Service access policy type.
      */
-    AccessType security();
+    AccessType accessType();
 
     /**
      * Gets metadata associated with this service. Their significance and use
@@ -104,7 +105,8 @@ public interface ServiceRecord extends Comparable<ServiceRecord> {
         private final DefaultServiceRecord.Builder inner = new DefaultServiceRecord.Builder();
 
         /**
-         * Service name. <b>Must be specified.</b>
+         * Sets service name, or <i>service definition</i>. <b>Must be
+         * specified.</b>
          *
          * @param name Service name.
          * @return This builder.
@@ -115,7 +117,7 @@ public interface ServiceRecord extends Comparable<ServiceRecord> {
         }
 
         /**
-         * Description of system providing this service. <b>Must be
+         * Sets description of system providing this service. <b>Must be
          * specified.</b>
          *
          * @param provider Providing system description.
@@ -164,13 +166,14 @@ public interface ServiceRecord extends Comparable<ServiceRecord> {
         }
 
         /**
-         * Sets security descriptor. <b>Must be specified.</b>
+         * Sets access policy type, or <i>security mode</i>, enforced by this
+         * service. <b>Must be specified.</b>
          *
-         * @param security Security descriptor.
+         * @param accessType Access policy type.
          * @return This builder.
          */
-        public Builder security(final AccessType security) {
-            inner.security(security);
+        public Builder accessType(final AccessType accessType) {
+            inner.accessType(accessType);
             return this;
         }
 

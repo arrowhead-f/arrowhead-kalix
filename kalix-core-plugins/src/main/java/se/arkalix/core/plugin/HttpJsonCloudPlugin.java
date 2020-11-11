@@ -345,7 +345,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                                 .name("service-discovery")
                                 .provider(provider)
                                 .uri(serviceDiscoveryBasePath)
-                                .security(isSecure ? CERTIFICATE : NOT_SECURE)
+                                .accessType(isSecure ? CERTIFICATE : NOT_SECURE)
                                 .interfaces(ServiceInterface.getOrCreate(HTTP, isSecure, CodecType.JSON))
                                 .build());
 

@@ -61,8 +61,7 @@ public interface SystemRecord {
     /**
      * Determines whether the described service is known to be running in
      * secure mode, in which cause {@link #publicKey()} ()} is guaranteed not
-     * to
-     * throw when called.
+     * to throw when called.
      *
      * @return {@code true} only if the described service is known to be
      * running in secure mode.

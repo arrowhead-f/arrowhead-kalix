@@ -802,7 +802,7 @@ public final class HttpService implements ArService {
      * @see #codecs(CodecType...)
      */
     @Override
-    public List<CodecType> codecType() {
+    public List<CodecType> codecTypes() {
         return Collections.unmodifiableList(codecTypes);
     }
 

@@ -47,7 +47,7 @@ public interface ArService {
      *
      * @return Unmodifiable list of supported codecs.
      */
-    List<CodecType> codecType();
+    List<CodecType> codecTypes();
 
     /**
      * Gets service metadata.
@@ -85,10 +85,10 @@ public interface ArService {
             .name(name())
             .provider(system.description())
             .uri(uri())
-            .security(accessPolicy().descriptor())
+            .accessType(accessPolicy().type())
             .metadata(metadata())
             .version(version())
-            .interfaces(codecType().stream()
+            .interfaces(codecTypes().stream()
                 .map(codec -> ServiceInterface.getOrCreate(protocolType(), isSecure, codec))
                 .collect(Collectors.toUnmodifiableList()))
             .build();

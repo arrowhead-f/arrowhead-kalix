@@ -45,7 +45,7 @@ public class HttpServerService {
         }
         this.basePath = !Objects.equals(basePath, "/") ? basePath : null;
 
-        codecTypes = service.codecType();
+        codecTypes = service.codecTypes();
         if (codecTypes.size() == 0) {
             throw new IllegalArgumentException("Expected HttpService codecs.size() > 0");
         }

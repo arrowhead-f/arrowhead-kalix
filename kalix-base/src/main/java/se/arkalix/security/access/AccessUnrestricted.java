@@ -22,7 +22,7 @@ public class AccessUnrestricted implements AccessPolicy {
     static final AccessUnrestricted instance = new AccessUnrestricted();
 
     @Override
-    public AccessType descriptor() {
+    public AccessType type() {
         return AccessType.NOT_SECURE;
     }
 

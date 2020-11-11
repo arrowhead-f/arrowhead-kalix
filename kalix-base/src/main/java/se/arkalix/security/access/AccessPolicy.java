@@ -23,10 +23,12 @@ import java.util.List;
  */
 public interface AccessPolicy {
     /**
-     * @return Access policy descriptor.
+     * Gets type of access policy.
+     *
+     * @return Access policy type.
      */
     @ThreadSafe
-    AccessType descriptor();
+    AccessType type();
 
     /**
      * Determines whether or not the described {@code system} may consume the

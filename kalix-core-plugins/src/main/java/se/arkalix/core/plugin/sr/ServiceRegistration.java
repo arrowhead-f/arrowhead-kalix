@@ -75,7 +75,7 @@ public interface ServiceRegistration {
             .name(description.name())
             .provider(SystemDetails.from(description.provider()))
             .uri(description.uri())
-            .security(description.security())
+            .security(description.accessType())
             .metadata(description.metadata())
             .version(description.version())
             .interfaces(new ArrayList<>(description.interfaces()))

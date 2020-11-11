@@ -21,7 +21,7 @@ public class DefaultServiceRecord implements ServiceRecord {
     private final String uri;
     private final Instant receivedAt;
     private final Instant expiresAt;
-    private final AccessType security;
+    private final AccessType accessType;
     private final Map<String, String> metadata;
     private final int version;
     private final Map<ServiceInterface, String> interfaceTokens;
@@ -42,7 +42,7 @@ public class DefaultServiceRecord implements ServiceRecord {
         }
         receivedAt = Objects.requireNonNullElseGet(builder.receivedAt, Instant::now);
         expiresAt = Objects.requireNonNullElse(builder.expiresAt, Instant.MAX);
-        security = Objects.requireNonNull(builder.security, "security");
+        accessType = Objects.requireNonNull(builder.accessType, "security");
         metadata = builder.metadata == null
             ? Collections.emptyMap()
             : Collections.unmodifiableMap(builder.metadata);
@@ -80,8 +80,8 @@ public class DefaultServiceRecord implements ServiceRecord {
     }
 
     @Override
-    public AccessType security() {
-        return security;
+    public AccessType accessType() {
+        return accessType;
     }
 
     @Override
@@ -140,14 +140,14 @@ public class DefaultServiceRecord implements ServiceRecord {
             uri.equals(that.uri()) &&
             receivedAt.equals(that.receivedAt()) &&
             expiresAt.equals(that.expiresAt()) &&
-            security.equals(that.security()) &&
+            accessType.equals(that.accessType()) &&
             metadata.equals(that.metadata()) &&
             interfaceTokens.equals(that.interfaceTokens());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, provider, uri, receivedAt, expiresAt, security, metadata, version, interfaceTokens);
+        return Objects.hash(name, provider, uri, receivedAt, expiresAt, accessType, metadata, version, interfaceTokens);
     }
 
     @Override
@@ -158,7 +158,7 @@ public class DefaultServiceRecord implements ServiceRecord {
             ", uri='" + uri + '\'' +
             ", receivedAt=" + receivedAt +
             ", expiresAt=" + expiresAt +
-            ", security=" + security +
+            ", accessType=" + accessType +
             ", metadata=" + metadata +
             ", version=" + version +
             ", interfaceTokens=" + stringifyTokens() +
@@ -182,7 +182,7 @@ public class DefaultServiceRecord implements ServiceRecord {
         private String uri;
         private Instant receivedAt;
         private Instant expiresAt;
-        private AccessType security;
+        private AccessType accessType;
         private Map<String, String> metadata;
         private int version;
 
@@ -206,8 +206,8 @@ public class DefaultServiceRecord implements ServiceRecord {
             this.expiresAt = renewAt;
         }
 
-        public void security(final AccessType security) {
-            this.security = security;
+        public void accessType(final AccessType accessType) {
+            this.accessType = accessType;
         }
 
         public void metadata(final Map<String, String> metadata) {
