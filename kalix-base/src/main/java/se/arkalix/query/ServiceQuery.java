@@ -33,7 +33,7 @@ import java.util.stream.Stream;
  *         {@link ServiceQuery#resolveOne() resolveOne()} are used to complete
  *         the query and start service resolution. If any of the {@link
  *         ServiceQuery#oneUsing(ArConsumerFactory) oneUsing()} or {@link
- *         ServiceQuery#allUsing(ArConsumerFactory) allUsing()} method are
+ *         ServiceQuery#allUsing(ArConsumerFactory) allUsing()} methods are
  *         used, the provided factory automatically provides additional details
  *         to the query before it is executed. Make sure to read the
  *         documentation for the {@link ArConsumerFactory} you want to use with
@@ -512,7 +512,7 @@ public class ServiceQuery {
             "consumer=" + consumer +
             ", resolver=" + resolver +
             ", name='" + name + '\'' +
-            ", codecs=" + codecTypes +
+            ", codecTypes=" + codecTypes +
             ", protocolTypes=" + protocolTypes +
             ", metadata=" + metadata +
             ", version=" + version +
