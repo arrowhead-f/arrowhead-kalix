@@ -1,6 +1,6 @@
 package se.arkalix.core.plugin.sr;
 
-import se.arkalix.security.access.AccessType;
+import se.arkalix.security.access.AccessPolicyType;
 import se.arkalix.core.plugin.SystemDetails;
 import se.arkalix.ServiceRecord;
 import se.arkalix.ServiceInterface;
@@ -50,7 +50,7 @@ public interface ServiceRegistration {
      * The access policy employed by the service.
      */
     @DtoJsonName("secure")
-    Optional<AccessType> security();
+    Optional<AccessPolicyType> security();
 
     /**
      * Arbitrary metadata to associate with registered service.
@@ -75,7 +75,7 @@ public interface ServiceRegistration {
             .name(description.name())
             .provider(SystemDetails.from(description.provider()))
             .uri(description.uri())
-            .security(description.accessType())
+            .security(description.accessPolicyType())
             .metadata(description.metadata())
             .version(description.version())
             .interfaces(new ArrayList<>(description.interfaces()))

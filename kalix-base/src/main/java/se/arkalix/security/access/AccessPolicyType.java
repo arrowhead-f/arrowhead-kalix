@@ -5,14 +5,14 @@ import se.arkalix.security.identity.SystemIdentity;
 import java.util.Objects;
 
 /**
- * Names an {@link se.arkalix.security.access.AccessPolicy access policy} that
- * Arrowhead services can be configured to use.
+ * Names a type of authorization strategy that Arrowhead services can be
+ * configured to use.
  */
 @SuppressWarnings("unused")
-public final class AccessType {
+public final class AccessPolicyType {
     private final String name;
 
-    private AccessType(final String name) {
+    private AccessPolicyType(final String name) {
         this.name = Objects.requireNonNull(name, "name");
     }
 
@@ -23,7 +23,7 @@ public final class AccessType {
      * @param name Desired security descriptor name.
      * @return New or existing security descriptor.
      */
-    public static AccessType getOrCreate(final String name) {
+    public static AccessPolicyType getOrCreate(final String name) {
         return valueOf(name);
     }
 
@@ -44,7 +44,7 @@ public final class AccessType {
      * {@link se.arkalix.security.identity system name} of that certificate is
      * white-listed, if required, by the service.
      */
-    public static final AccessType CERTIFICATE = new AccessType("CERTIFICATE");
+    public static final AccessPolicyType CERTIFICATE = new AccessPolicyType("CERTIFICATE");
 
     /**
      * Unrestricted {@link se.arkalix.security.access.AccessUnrestricted access
@@ -55,7 +55,7 @@ public final class AccessType {
      * services being provided by systems running in {@link se.arkalix.security
      * insecure mode}.
      */
-    public static final AccessType NOT_SECURE = new AccessType("NOT_SECURE");
+    public static final AccessPolicyType NOT_SECURE = new AccessPolicyType("NOT_SECURE");
 
     /**
      * Token access policy.
@@ -66,29 +66,29 @@ public final class AccessType {
      * certificate as a provider, as well as (2) present a token originating
      * from a designated authorization system.
      */
-    public static final AccessType TOKEN = new AccessType("TOKEN");
+    public static final AccessPolicyType TOKEN = new AccessPolicyType("TOKEN");
 
     /**
-     * Resolves {@link AccessType} from given {@code name}.
+     * Resolves {@link AccessPolicyType} from given {@code name}.
      *
      * @param name Name to resolve. Case insensitive.
-     * @return Cached or new {@link AccessType}.
+     * @return Cached or new {@link AccessPolicyType}.
      */
-    public static AccessType valueOf(String name) {
+    public static AccessPolicyType valueOf(String name) {
         name = Objects.requireNonNull(name, "name").toUpperCase();
         switch (name) {
         case "CERTIFICATE": return CERTIFICATE;
         case "NOT_SECURE": return NOT_SECURE;
         case "TOKEN": return TOKEN;
         }
-        return new AccessType(name);
+        return new AccessPolicyType(name);
     }
 
     @Override
     public boolean equals(Object other) {
         if (this == other) { return true; }
         if (other == null || getClass() != other.getClass()) { return false; }
-        final var accessDescriptor = (AccessType) other;
+        final var accessDescriptor = (AccessPolicyType) other;
         return name.equals(accessDescriptor.name);
     }
 

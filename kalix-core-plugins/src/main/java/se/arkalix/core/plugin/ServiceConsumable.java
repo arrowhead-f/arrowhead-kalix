@@ -1,6 +1,6 @@
 package se.arkalix.core.plugin;
 
-import se.arkalix.security.access.AccessType;
+import se.arkalix.security.access.AccessPolicyType;
 import se.arkalix.core.plugin.or.OrchestrationWarning;
 import se.arkalix.ServiceRecord;
 import se.arkalix.ServiceInterface;
@@ -56,10 +56,10 @@ public interface ServiceConsumable {
     Optional<String> expiresAt();
 
     /**
-     * The security/authentication mode supported by the service.
+     * Type of access policy enforced by the service.
      */
     @DtoJsonName("secure")
-    AccessType security();
+    AccessPolicyType accessPolicyType();
 
     /**
      * Arbitrary service metadata.
@@ -102,7 +102,7 @@ public interface ServiceConsumable {
      */
     default ServiceRecord toServiceDescription() {
         final var provider = provider().toSystemDescription();
-        if (!provider.isSecure() && security().isSecure()) {
+        if (!provider.isSecure() && accessPolicyType().isSecure()) {
             throw new IllegalStateException("The description of the \"" +
                 name().name() + "\" service implies that it is served over " +
                 "a secure transport, but its provider \"" + provider.name() +
@@ -115,7 +115,7 @@ public interface ServiceConsumable {
             .expiresAt(expiresAt()
                 .map(Instants::fromAitiaDateTimeString)
                 .orElse(null))
-            .accessType(security())
+            .accessPolicyType(accessPolicyType())
             .metadata(metadata())
             .version(version())
             .interfaceTokens(Stream.concat(

@@ -21,8 +21,8 @@ public class AccessByCloudCertificate implements AccessPolicy {
     private AccessByCloudCertificate() {}
 
     @Override
-    public AccessType type() {
-        return AccessType.CERTIFICATE;
+    public AccessPolicyType type() {
+        return AccessPolicyType.CERTIFICATE;
     }
 
     @Override

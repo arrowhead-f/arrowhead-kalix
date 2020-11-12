@@ -41,8 +41,8 @@ public class AccessByCloudWhitelist implements AccessPolicy {
     }
 
     @Override
-    public AccessType type() {
-        return AccessType.CERTIFICATE;
+    public AccessPolicyType type() {
+        return AccessPolicyType.CERTIFICATE;
     }
 
     @Override

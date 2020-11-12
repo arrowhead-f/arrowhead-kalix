@@ -28,7 +28,7 @@ public interface AccessPolicy {
      * @return Access policy type.
      */
     @ThreadSafe
-    AccessType type();
+    AccessPolicyType type();
 
     /**
      * Determines whether or not the described {@code system} may consume the

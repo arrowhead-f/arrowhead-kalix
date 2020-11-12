@@ -9,7 +9,7 @@ import io.netty.handler.ssl.SslContextBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.*;
-import se.arkalix.security.access.AccessType;
+import se.arkalix.security.access.AccessPolicyType;
 import se.arkalix._internal.ArServer;
 import se.arkalix.plugin._internal.PluginNotifier;
 import se.arkalix.util.concurrent._internal.NettyScheduler;
@@ -89,7 +89,7 @@ public class HttpServer implements ArServer {
             throw new IllegalArgumentException("Expected service to be HttpService");
         }
 
-        if (service.accessPolicy().type() == AccessType.NOT_SECURE) {
+        if (service.accessPolicy().type() == AccessPolicyType.NOT_SECURE) {
             if (system.isSecure()) {
                 throw new IllegalStateException("System \"" + system.name() +
                     "\" is running in secure mode; services with the " +

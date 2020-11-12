@@ -3,7 +3,7 @@ package se.arkalix.net.http.consumer._internal;
 import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
 import se.arkalix.codec.CodecType;
-import se.arkalix.security.access.AccessType;
+import se.arkalix.security.access.AccessPolicyType;
 import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerConnection;
@@ -38,7 +38,7 @@ public class DefaultHttpConsumer implements HttpConsumer {
 
         client = HttpClient.from(system);
 
-        final var isSecure = service.accessType() != AccessType.NOT_SECURE;
+        final var isSecure = service.accessPolicyType() != AccessPolicyType.NOT_SECURE;
         if (isSecure != system.isSecure()) {
             if (isSecure) {
                 throw new IllegalStateException("The provided system is " +

@@ -1,6 +1,6 @@
 package se.arkalix._internal;
 
-import se.arkalix.security.access.AccessType;
+import se.arkalix.security.access.AccessPolicyType;
 import se.arkalix.ServiceRecord;
 import se.arkalix.SystemRecord;
 import se.arkalix.ServiceInterface;
@@ -21,7 +21,7 @@ public class DefaultServiceRecord implements ServiceRecord {
     private final String uri;
     private final Instant receivedAt;
     private final Instant expiresAt;
-    private final AccessType accessType;
+    private final AccessPolicyType accessPolicyType;
     private final Map<String, String> metadata;
     private final int version;
     private final Map<ServiceInterface, String> interfaceTokens;
@@ -42,7 +42,7 @@ public class DefaultServiceRecord implements ServiceRecord {
         }
         receivedAt = Objects.requireNonNullElseGet(builder.receivedAt, Instant::now);
         expiresAt = Objects.requireNonNullElse(builder.expiresAt, Instant.MAX);
-        accessType = Objects.requireNonNull(builder.accessType, "security");
+        accessPolicyType = Objects.requireNonNull(builder.accessPolicyType, "accessPolicyType");
         metadata = builder.metadata == null
             ? Collections.emptyMap()
             : Collections.unmodifiableMap(builder.metadata);
@@ -80,8 +80,8 @@ public class DefaultServiceRecord implements ServiceRecord {
     }
 
     @Override
-    public AccessType accessType() {
-        return accessType;
+    public AccessPolicyType accessPolicyType() {
+        return accessPolicyType;
     }
 
     @Override
@@ -140,14 +140,14 @@ public class DefaultServiceRecord implements ServiceRecord {
             uri.equals(that.uri()) &&
             receivedAt.equals(that.receivedAt()) &&
             expiresAt.equals(that.expiresAt()) &&
-            accessType.equals(that.accessType()) &&
+            accessPolicyType.equals(that.accessPolicyType()) &&
             metadata.equals(that.metadata()) &&
             interfaceTokens.equals(that.interfaceTokens());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, provider, uri, receivedAt, expiresAt, accessType, metadata, version, interfaceTokens);
+        return Objects.hash(name, provider, uri, receivedAt, expiresAt, accessPolicyType, metadata, version, interfaceTokens);
     }
 
     @Override
@@ -158,7 +158,7 @@ public class DefaultServiceRecord implements ServiceRecord {
             ", uri='" + uri + '\'' +
             ", receivedAt=" + receivedAt +
             ", expiresAt=" + expiresAt +
-            ", accessType=" + accessType +
+            ", accessPolicyType=" + accessPolicyType +
             ", metadata=" + metadata +
             ", version=" + version +
             ", interfaceTokens=" + stringifyTokens() +
@@ -182,7 +182,7 @@ public class DefaultServiceRecord implements ServiceRecord {
         private String uri;
         private Instant receivedAt;
         private Instant expiresAt;
-        private AccessType accessType;
+        private AccessPolicyType accessPolicyType;
         private Map<String, String> metadata;
         private int version;
 
@@ -206,8 +206,8 @@ public class DefaultServiceRecord implements ServiceRecord {
             this.expiresAt = renewAt;
         }
 
-        public void accessType(final AccessType accessType) {
-            this.accessType = accessType;
+        public void accessPolicyType(final AccessPolicyType accessPolicyType) {
+            this.accessPolicyType = accessPolicyType;
         }
 
         public void metadata(final Map<String, String> metadata) {

@@ -1,6 +1,6 @@
 package se.arkalix.core.plugin.sr;
 
-import se.arkalix.security.access.AccessType;
+import se.arkalix.security.access.AccessPolicyType;
 import se.arkalix.ServiceInterface;
 import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoToString;
@@ -34,10 +34,10 @@ public interface ServiceQuery {
     List<ServiceInterface> interfaces();
 
     /**
-     * Permitted security/authentication modes.
+     * Supported access policy types.
      */
     @DtoJsonName("securityRequirements")
-    List<AccessType> securityModes();
+    List<AccessPolicyType> accessPolicyTypes();
 
     /**
      * Required metadata pairs.

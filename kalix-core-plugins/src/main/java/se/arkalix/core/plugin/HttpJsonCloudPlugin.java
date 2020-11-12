@@ -35,8 +35,8 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static se.arkalix.security.access.AccessType.CERTIFICATE;
-import static se.arkalix.security.access.AccessType.NOT_SECURE;
+import static se.arkalix.security.access.AccessPolicyType.CERTIFICATE;
+import static se.arkalix.security.access.AccessPolicyType.NOT_SECURE;
 import static se.arkalix.net.ProtocolType.HTTP;
 import static se.arkalix.util.concurrent.Future.done;
 
@@ -345,7 +345,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                                 .name("service-discovery")
                                 .provider(provider)
                                 .uri(serviceDiscoveryBasePath)
-                                .accessType(isSecure ? CERTIFICATE : NOT_SECURE)
+                                .accessPolicyType(isSecure ? CERTIFICATE : NOT_SECURE)
                                 .interfaces(ServiceInterface.getOrCreate(HTTP, isSecure, CodecType.JSON))
                                 .build());
 

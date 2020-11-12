@@ -85,7 +85,7 @@ public interface ArService {
             .name(name())
             .provider(system.description())
             .uri(uri())
-            .accessType(accessPolicy().type())
+            .accessPolicyType(accessPolicy().type())
             .metadata(metadata())
             .version(version())
             .interfaces(codecTypes().stream()

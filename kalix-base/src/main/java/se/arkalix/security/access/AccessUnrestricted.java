@@ -22,8 +22,8 @@ public class AccessUnrestricted implements AccessPolicy {
     static final AccessUnrestricted instance = new AccessUnrestricted();
 
     @Override
-    public AccessType type() {
-        return AccessType.NOT_SECURE;
+    public AccessPolicyType type() {
+        return AccessPolicyType.NOT_SECURE;
     }
 
     @Override

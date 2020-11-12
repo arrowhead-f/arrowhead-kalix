@@ -1,7 +1,7 @@
 package se.arkalix;
 
 import se.arkalix._internal.DefaultServiceRecord;
-import se.arkalix.security.access.AccessType;
+import se.arkalix.security.access.AccessPolicyType;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -61,7 +61,7 @@ public interface ServiceRecord extends Comparable<ServiceRecord> {
      *
      * @return Service access policy type.
      */
-    AccessType accessType();
+    AccessPolicyType accessPolicyType();
 
     /**
      * Gets metadata associated with this service. Their significance and use
@@ -166,14 +166,14 @@ public interface ServiceRecord extends Comparable<ServiceRecord> {
         }
 
         /**
-         * Sets access policy type, or <i>security mode</i>, enforced by this
-         * service. <b>Must be specified.</b>
+         * Sets type of access policy, or <i>security mode</i>, enforced by
+         * this service. <b>Must be specified.</b>
          *
-         * @param accessType Access policy type.
+         * @param accessPolicyType Access policy type.
          * @return This builder.
          */
-        public Builder accessType(final AccessType accessType) {
-            inner.accessType(accessType);
+        public Builder accessPolicyType(final AccessPolicyType accessPolicyType) {
+            inner.accessPolicyType(accessPolicyType);
             return this;
         }
 

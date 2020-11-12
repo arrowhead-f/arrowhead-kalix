@@ -73,8 +73,8 @@ public class AccessByToken implements AccessPolicy {
     }
 
     @Override
-    public AccessType type() {
-        return AccessType.TOKEN;
+    public AccessPolicyType type() {
+        return AccessPolicyType.TOKEN;
     }
 
     @Override

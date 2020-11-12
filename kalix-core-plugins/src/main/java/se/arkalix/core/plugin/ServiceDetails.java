@@ -1,6 +1,6 @@
 package se.arkalix.core.plugin;
 
-import se.arkalix.security.access.AccessType;
+import se.arkalix.security.access.AccessPolicyType;
 import se.arkalix.core.plugin.sr.ServiceQueryResult;
 import se.arkalix.ServiceRecord;
 import se.arkalix.ServiceInterface;
@@ -55,7 +55,7 @@ public interface ServiceDetails {
      * The security/authentication mode supported by the service.
      */
     @DtoJsonName("secure")
-    AccessType security();
+    AccessPolicyType security();
 
     /**
      * Arbitrary service metadata.
@@ -96,7 +96,7 @@ public interface ServiceDetails {
             .expiresAt(expiresAt()
                 .map(Instants::fromAitiaDateTimeString)
                 .orElse(null))
-            .accessType(security())
+            .accessPolicyType(security())
             .metadata(metadata())
             .version(version())
             .interfaces(interfaces()
@@ -112,7 +112,7 @@ public interface ServiceDetails {
             .provider(SystemDetails.from(description.provider()))
             .uri(description.uri())
             .expiresAt(Instants.toAitiaDateTimeString(description.expiresAt()))
-            .security(description.accessType())
+            .security(description.accessPolicyType())
             .metadata(description.metadata())
             .version(description.version())
             .interfaces(description.interfaces()
