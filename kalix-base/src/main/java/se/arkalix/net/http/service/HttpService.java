@@ -88,7 +88,7 @@ public final class HttpService implements ArService {
      * <b>Must be specified.</b>
      * <p>
      * While this service will prevent messages claimed to be encoded with
-     * other codecs from being received, stating that an codec can be
+     * other codecs from being received, stating that a codec can be
      * read and written does not itself guarantee it. It is up to the service
      * creator to ensure that such capabilities are indeed available. For most
      * intents and purposes, the most adequate way of achieving this is by

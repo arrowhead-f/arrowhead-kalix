@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Identifies one out of a set of known <i>codecs</i>.
  * <p>
- * An codec is understood to be set of rules used for assigning meaning to
+ * A codec is understood to be set of rules used for assigning meaning to
  * certain bit patterns in strings of bytes, which then can be followed to
  * construct Java objects from such bit patterns and to turn Java objects into
  * bit patterns. Each codec can be <i>known</i> to be general-purpose,
@@ -99,7 +99,7 @@ public final class CodecType implements ToCodecType {
     }
 
     /**
-     * Registers given character set as an codec.
+     * Registers given character set as a codec.
      *
      * @param charset Character set to register.
      * @return New codec.
@@ -349,7 +349,7 @@ public final class CodecType implements ToCodecType {
     }
 
     /**
-     * An codec registration form.
+     * A codec registration form.
      */
     public static class Registration {
         private String name;

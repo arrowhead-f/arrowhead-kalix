@@ -24,81 +24,6 @@ public interface MessageIncoming extends Message {
     BodyIncoming body();
 
     /**
-     * Collects and then converts the incoming message body using the provided
-     * {@code decoder}.
-     * <p>
-     * Calling this method consumes the body associated with this message. Any
-     * further attempts to consume the body will cause exceptions to be thrown.
-     *
-     * @param <T>     Type produced by given {@code decoder}, if successful.
-     * @param decoder Function to use for decoding the message body.
-     * @return Future completed when the incoming message body has been fully
-     * received and decoded.
-     * @throws IllegalStateException If the body has already been consumed.
-     * @throws NullPointerException  If {@code decoder} is {@code null}.
-     */
-    default <T> Future<T> bodyAs(final Decoder<T> decoder) {
-        Objects.requireNonNull(decoder, "decoder");
-        return body()
-            .buffer()
-            .map(decoder::decode);
-    }
-
-    /**
-     * Collects and then converts the incoming message body using the provided
-     * {@code decoder}, which will attempt to select an appropriate decoder
-     * function from any {@link #codecType() codec} specified in the message.
-     * <p>
-     * Calling this method consumes the body associated with this message. Any
-     * further attempts to consume the body will cause exceptions to be thrown.
-     *
-     * @param <T>     Type produced by given {@code decoder}, if successful.
-     * @param decoder Function to use for decoding the message body.
-     * @return Future completed when the incoming message body has been fully
-     * received and decoded.
-     * @throws MessageCodecMisspecified     If an codec is specified in the
-     *                                    message, but it cannot be interpreted.
-     * @throws MessageCodecUnspecified If no codec is specified in this
-     *                                    message.
-     * @throws MessageCodecUnsupported If the codec specified in the
-     *                                    message is not supported by the given
-     *                                    {@code decoder}.
-     * @throws IllegalStateException      If the body has already been consumed.
-     * @throws NullPointerException       If {@code decoder} is {@code null}.
-     */
-    default <T> Future<T> bodyAs(final MultiDecoder<T> decoder) {
-        return bodyAs(decoder, codecType().orElseThrow(() -> new MessageCodecUnspecified(this)));
-    }
-
-    /**
-     * Collects and then converts the incoming message body using the provided
-     * {@code decoder}, which will attempt to select an appropriate decoder
-     * function from any {@link #codecType() codec} specified in the message.
-     * <p>
-     * Calling this method consumes the body associated with this message. Any
-     * further attempts to consume the body will cause exceptions to be thrown.
-     *
-     * @param <T>     Type produced by given {@code decoder}, if successful.
-     * @param decoder Function to use for decoding the message body.
-     * @return Future completed when the incoming message body has been fully
-     * received and decoded.
-     * @throws MessageCodecUnsupported If the given codec is not
-     *                                    supported by the given {@code
-     *                                    decoder}.
-     * @throws IllegalStateException      If the body has already been consumed.
-     * @throws NullPointerException       If {@code decoder} or {@code codec}
-     *                                    is {@code null}.
-     */
-    default <T> Future<T> bodyAs(final MultiDecoder<T> decoder, final ToCodecType codec) {
-        Objects.requireNonNull(decoder, "decoder");
-        Objects.requireNonNull(codec, "codec");
-        final var codec0 = codec.toCodecType();
-        return body()
-            .buffer()
-            .map(reader -> decoder.decode(reader, codec0));
-    }
-
-    /**
      * Requests that the incoming message body be collected into a regular Java
      * byte array ({@code byte[]}).
      * <p>
@@ -159,6 +84,81 @@ public interface MessageIncoming extends Message {
     }
 
     /**
+     * Collects and then converts the incoming message body using the provided
+     * {@code decoder}.
+     * <p>
+     * Calling this method consumes the body associated with this message. Any
+     * further attempts to consume the body will cause exceptions to be thrown.
+     *
+     * @param <T>     Type produced by given {@code decoder}, if successful.
+     * @param decoder Function to use for decoding the message body.
+     * @return Future completed when the incoming message body has been fully
+     * received and decoded.
+     * @throws IllegalStateException If the body has already been consumed.
+     * @throws NullPointerException  If {@code decoder} is {@code null}.
+     */
+    default <T> Future<T> bodyTo(final Decoder<T> decoder) {
+        Objects.requireNonNull(decoder, "decoder");
+        return body()
+            .buffer()
+            .map(decoder::decode);
+    }
+
+    /**
+     * Collects and then converts the incoming message body using the provided
+     * {@code decoder}, which will attempt to select an appropriate decoder
+     * function from any {@link #codecType() codec} specified in the message.
+     * <p>
+     * Calling this method consumes the body associated with this message. Any
+     * further attempts to consume the body will cause exceptions to be thrown.
+     *
+     * @param <T>     Type produced by given {@code decoder}, if successful.
+     * @param decoder Function to use for decoding the message body.
+     * @return Future completed when the incoming message body has been fully
+     * received and decoded.
+     * @throws MessageCodecMisspecified If a codec is specified in the
+     *                                  message, but it cannot be interpreted.
+     * @throws MessageCodecUnspecified  If no codec is specified in this
+     *                                  message.
+     * @throws MessageCodecUnsupported  If the codec specified in the
+     *                                  message is not supported by the given
+     *                                  {@code decoder}.
+     * @throws IllegalStateException    If the body has already been consumed.
+     * @throws NullPointerException     If {@code decoder} is {@code null}.
+     */
+    default <T> Future<T> bodyTo(final MultiDecoder<T> decoder) {
+        return bodyTo(decoder, codecType().orElseThrow(() -> new MessageCodecUnspecified(this)));
+    }
+
+    /**
+     * Collects and then converts the incoming message body using the provided
+     * {@code decoder}, which will attempt to select an appropriate decoder
+     * function from any {@link #codecType() codec} specified in the message.
+     * <p>
+     * Calling this method consumes the body associated with this message. Any
+     * further attempts to consume the body will cause exceptions to be thrown.
+     *
+     * @param <T>     Type produced by given {@code decoder}, if successful.
+     * @param decoder Function to use for decoding the message body.
+     * @return Future completed when the incoming message body has been fully
+     * received and decoded.
+     * @throws MessageCodecUnsupported If the given codec is not
+     *                                 supported by the given {@code
+     *                                 decoder}.
+     * @throws IllegalStateException   If the body has already been consumed.
+     * @throws NullPointerException    If {@code decoder} or {@code codec}
+     *                                 is {@code null}.
+     */
+    default <T> Future<T> bodyTo(final MultiDecoder<T> decoder, final ToCodecType codec) {
+        Objects.requireNonNull(decoder, "decoder");
+        Objects.requireNonNull(codec, "codec");
+        final var codec0 = codec.toCodecType();
+        return body()
+            .buffer()
+            .map(reader -> decoder.decode(reader, codec0));
+    }
+
+    /**
      * Requests that the incoming message body be written to the file at the
      * specified file system path.
      * <p>
@@ -166,7 +166,7 @@ public interface MessageIncoming extends Message {
      * parameter is {@code true}, the file is appended to rather than being
      * overwritten.
      * <p>
-     * Using this method, or {@link #writeTo(Path)}, is the preferred way of
+     * Using this method, or {@link #bodyTo(Path)}, is the preferred way of
      * receiving data objects that are too large to handle in-memory. This as
      * received data is written directly to the target file as it is received,
      * rather than being buffered until all of it becomes available.
@@ -184,7 +184,7 @@ public interface MessageIncoming extends Message {
      * @throws IllegalStateException If the body has already been requested.
      * @throws NullPointerException  If {@code path} is {@code null}.
      */
-    default Future<?> writeTo(final Path path, boolean append) {
+    default Future<?> bodyTo(final Path path, boolean append) {
         return body().writeTo(path, append);
     }
 
@@ -195,7 +195,7 @@ public interface MessageIncoming extends Message {
      * The file will be created if it does not exist, or overwritten if it does
      * exist.
      * <p>
-     * Using this method, or {@link #writeTo(Path, boolean)}, is the preferred
+     * Using this method, or {@link #bodyTo(Path, boolean)}, is the preferred
      * way of receiving data objects that are too large to handle in-memory.
      * This as received data is written directly to the target file as it is
      * received, rather than being buffered until all of it becomes available.
@@ -210,7 +210,7 @@ public interface MessageIncoming extends Message {
      * @throws IllegalStateException If the body has already been requested.
      * @throws NullPointerException  If {@code path} is {@code null}.
      */
-    default Future<?> writeTo(final Path path) {
+    default Future<?> bodyTo(final Path path) {
         return body().writeTo(path);
     }
 }

@@ -25,7 +25,7 @@ public class HttpMediaTypes {
      * RFC in question is only categorized as "BEST CURRENT PRACTICE", which
      * means that it becomes practically impossible to avoid using some
      * guesswork when writing a routine such as this. This particular
-     * implementation will require that a media type matching an codec has a
+     * implementation will require that a media type matching a codec has a
      * subtype <i>or suffix</i> equal to the name of the codec in question.
      * Types are ignored.
      * <p>
@@ -106,7 +106,7 @@ public class HttpMediaTypes {
             }
         }
 
-        // Find an codec that matches the subtype or suffix ignoring case.
+        // Find a codec that matches the subtype or suffix ignoring case.
         nextCodec:
         for (final var codec : codecTypes) {
             final var name = codec.name();
@@ -237,7 +237,7 @@ public class HttpMediaTypes {
                 }
             }
 
-            // Find an codec that matches the subtype or suffix ignoring case.
+            // Find a codec that matches the subtype or suffix ignoring case.
             nextCodec:
             for (final var codec : codecTypes) {
                 final var name = codec.name();

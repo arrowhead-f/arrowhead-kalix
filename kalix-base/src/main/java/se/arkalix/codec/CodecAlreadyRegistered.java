@@ -1,7 +1,7 @@
 package se.arkalix.codec;
 
 /**
- * Represents the rejection of an codec registration due to another codec
+ * Represents the rejection of a codec registration due to another codec
  * with the same name already being registered.
  */
 public class CodecAlreadyRegistered extends CodecException {

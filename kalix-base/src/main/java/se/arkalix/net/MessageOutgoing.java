@@ -79,7 +79,7 @@ public interface MessageOutgoing<Self> extends Message {
      * using given {@code codec}.
      *
      * @param encodable Object to use, in encoded form, as message body.
-     * @param codec  Codec to use when codec {@code encodable}.
+     * @param codec     Codec to use when codec {@code encodable}.
      * @return This message.
      * @throws NullPointerException If {@code codec} or {@code encodable} is
      *                              {@code null}.

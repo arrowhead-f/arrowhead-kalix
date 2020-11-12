@@ -27,7 +27,7 @@ public class HttpJsonServices {
         Objects.requireNonNull(decoder, "decoder");
 
         if (response.status().isSuccess()) {
-            return response.bodyAs(decoder);
+            return response.bodyTo(decoder);
         }
         return handleError(response);
     }
@@ -41,7 +41,7 @@ public class HttpJsonServices {
 
         final var status = response.status();
         if (status.isSuccess()) {
-            return response.bodyAs(decoder)
+            return response.bodyTo(decoder)
                 .map(Optional::of);
         }
         if (status == HttpStatus.NOT_FOUND) {
@@ -54,7 +54,7 @@ public class HttpJsonServices {
         if (response.status().isClientError()) {
             final var headers = response.headers();
             if (headers.get("content-type").orElse("").startsWith("application/json")) {
-                return response.bodyAs(ErrorResponseDto::decode)
+                return response.bodyTo(ErrorResponseDto::decode)
                     .mapThrow(error -> new ErrorResponseException(response, error));
             }
         }

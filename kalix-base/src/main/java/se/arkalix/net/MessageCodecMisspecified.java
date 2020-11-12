@@ -4,7 +4,7 @@ import java.util.Objects;
 
 /**
  * Represents the inability to encode or decode a {@link Message}, caused by
- * an codec being specified incorrectly.
+ * a codec being specified incorrectly.
  */
 public class MessageCodecMisspecified extends MessageException {
     private final Object codec;
@@ -12,8 +12,8 @@ public class MessageCodecMisspecified extends MessageException {
     /**
      * Creates new exception.
      *
-     * @param message  Offending message.
-     * @param codec Unexpectedly formatted codec.
+     * @param message Offending message.
+     * @param codec   Unexpectedly formatted codec.
      */
     public MessageCodecMisspecified(final Message message, final Object codec) {
         this(message, codec, null);
@@ -22,9 +22,9 @@ public class MessageCodecMisspecified extends MessageException {
     /**
      * Creates new exception.
      *
-     * @param message  Offending message.
-     * @param codec Unexpectedly formatted codec.
-     * @param cause    Description of formatting error, if any.
+     * @param message Offending message.
+     * @param codec   Unexpectedly formatted codec.
+     * @param cause   Description of formatting error, if any.
      */
     public MessageCodecMisspecified(final Message message, final Object codec, final Throwable cause) {
         super(message, cause);
