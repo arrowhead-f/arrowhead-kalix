@@ -320,7 +320,7 @@ public class DtoImplementerFactory {
             }
         }
 
-        return new DtoTargetSpecification.Builder(target)
+        return new DtoTargetSpecification.Builder()
             .implementation(implementation
                 .addMethod(constructor.build())
                 .build())
