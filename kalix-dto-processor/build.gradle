@@ -1,0 +1,24 @@
+plugins {
+    id 'java-library'
+}
+
+ext {
+    versionJavaPoet = '1.13.0'
+}
+
+dependencies {
+    implementation project(':kalix-base')
+    implementation project(':kalix-dto')
+    implementation "com.squareup:javapoet:$versionJavaPoet"
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            pom {
+                name = 'Arrowhead Kalix: Data Transmission Object Annotation Processing Library'
+                description = 'Contains an annotation processor for automatically generating data transmission objects specified using the annotations of the kalix-dto library.'
+            }
+        }
+    }
+}

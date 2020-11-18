@@ -448,7 +448,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                     .flatMap(serviceDiscovery -> serviceDiscovery.query(new ServiceQueryBuilder()
                         .name("orchestration-service")
                         .interfaces(ServiceInterface.getOrCreate(HTTP, isSecure, CodecType.JSON))
-                        .securityModes(isSecure ? CERTIFICATE : NOT_SECURE)
+                        .accessPolicyTypes(isSecure ? CERTIFICATE : NOT_SECURE)
                         .build()))
                     .flatMapResult(result -> {
                         if (result.isFailure()) {

@@ -1,6 +1,5 @@
 package se.arkalix.codec.json;
 
-import se.arkalix.dto.DtoExclusive;
 import se.arkalix.codec.DecoderReadUnexpectedToken;
 import se.arkalix.codec.CodecType;
 import se.arkalix.codec.binary.BinaryReader;
@@ -10,14 +9,11 @@ import se.arkalix.codec.json._internal.JsonTokenBuffer;
 import se.arkalix.codec.json._internal.JsonTokenizer;
 import se.arkalix.util.annotation.Internal;
 
-import static se.arkalix.dto.DtoCodec.JSON;
-
 /**
  * JSON null.
  *
  * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
  */
-@DtoExclusive(JSON)
 @SuppressWarnings("unused")
 public class JsonNull implements JsonValue {
     private static final byte[] BYTES_NULL = new byte[]{'n', 'u', 'l', 'l'};

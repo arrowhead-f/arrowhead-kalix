@@ -1,0 +1,14 @@
+plugins {
+    id 'java-library'
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            pom {
+                name = 'Arrowhead Kalix: Data Transmission Object Annotations Library'
+                description = 'Annotations and other utilities required for automatically generating data transmission objects using the kalix-dto-processor library.'
+            }
+        }
+    }
+}

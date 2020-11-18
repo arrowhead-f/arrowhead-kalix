@@ -1,6 +1,5 @@
 package se.arkalix.codec.json;
 
-import se.arkalix.dto.DtoExclusive;
 import se.arkalix.codec.CodecType;
 import se.arkalix.codec.DecoderReadUnexpectedToken;
 import se.arkalix.codec.binary.BinaryReader;
@@ -14,14 +13,11 @@ import java.time.*;
 import java.util.Objects;
 import java.util.Optional;
 
-import static se.arkalix.dto.DtoCodec.JSON;
-
 /**
  * JSON string.
  *
  * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
  */
-@DtoExclusive(JSON)
 @SuppressWarnings("unused")
 public class JsonString implements JsonValue {
     private final String string;

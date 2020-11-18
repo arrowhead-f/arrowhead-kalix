@@ -1,6 +1,5 @@
 package se.arkalix.codec.json;
 
-import se.arkalix.dto.DtoExclusive;
 import se.arkalix.codec.CodecType;
 import se.arkalix.codec.DecoderReadUnexpectedToken;
 import se.arkalix.codec.binary.BinaryReader;
@@ -12,14 +11,11 @@ import se.arkalix.util.annotation.Internal;
 
 import java.util.Optional;
 
-import static se.arkalix.dto.DtoCodec.JSON;
-
 /**
  * JSON true or false.
  *
  * @see <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a>
  */
-@DtoExclusive(JSON)
 @SuppressWarnings("unused")
 public class JsonBoolean implements JsonValue {
     private static final byte[] BYTES_TRUE = new byte[]{'t', 'r', 'u', 'e'};
