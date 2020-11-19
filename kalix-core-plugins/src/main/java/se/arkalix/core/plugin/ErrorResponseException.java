@@ -15,7 +15,7 @@ public class ErrorResponseException extends HttpIncomingResponseUnexpected {
      *
      * @param error Core service error to include in exception.
      */
-    public ErrorResponseException(final HttpIncomingResponse response, final ErrorResponse error) {
+    public ErrorResponseException(final HttpIncomingResponse<?, ?> response, final ErrorResponse error) {
         super(response, error.type() + " [" + error.code() + "]: " + error.message());
         this.error = error;
     }
