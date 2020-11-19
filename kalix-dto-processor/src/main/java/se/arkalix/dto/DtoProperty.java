@@ -9,22 +9,22 @@ import java.util.Map;
 import java.util.Objects;
 
 public class DtoProperty implements DtoType {
-    private final ExecutableElement parentElement;
+    private final ExecutableElement method;
     private final String name;
     private final Map<DtoCodec, String> dtoCodecToName;
     private final DtoType type;
     private final boolean isOptional;
 
     private DtoProperty(final Builder builder) {
-        parentElement = Objects.requireNonNull(builder.parentElement, "parentElement");
+        method = Objects.requireNonNull(builder.method, "method");
         name = Objects.requireNonNull(builder.name, "name");
         dtoCodecToName = Objects.requireNonNull(builder.dtoCodecToName, "dtoCodecToName");
         type = Objects.requireNonNull(builder.type, "type");
         isOptional = builder.isOptional;
     }
 
-    public ExecutableElement parentElement() {
-        return parentElement;
+    public ExecutableElement method() {
+        return method;
     }
 
     public String name() {
@@ -59,14 +59,14 @@ public class DtoProperty implements DtoType {
     }
 
     public static class Builder {
-        private ExecutableElement parentElement;
+        private ExecutableElement method;
         private String name;
         private Map<DtoCodec, String> dtoCodecToName;
         private DtoType type;
         private boolean isOptional;
 
-        public Builder parentElement(final ExecutableElement parentElement) {
-            this.parentElement = parentElement;
+        public Builder method(final ExecutableElement method) {
+            this.method = method;
             return this;
         }
 

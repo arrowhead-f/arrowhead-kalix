@@ -20,10 +20,6 @@ public enum DtoCodecSpec {
         this.encoderMethodName = Objects.requireNonNull(encoderMethodName, "encoderMethodName");
     }
 
-    public DtoCodec dtoCodec() {
-        return dtoCodec;
-    }
-
     public String decoderMethodName() {
         return decoderMethodName;
     }

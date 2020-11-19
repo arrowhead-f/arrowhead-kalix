@@ -27,21 +27,9 @@ public class DtoGenerator {
     }
 
     public void writeTo(final DtoTarget target, final String packageName, final Filer filer) throws IOException {
-        final var specification = createForTarget(target);
+        final var interfaceType = target.dtoInterface();
 
-        JavaFile.builder(packageName, specification.implementation())
-            .indent("    ").build()
-            .writeTo(filer);
-
-        JavaFile.builder(packageName, specification.builder())
-            .indent("    ").build()
-            .writeTo(filer);
-    }
-
-    public DtoTargetSpecification createForTarget(final DtoTarget target) {
-        final var interfaceType = target.interfaceType();
-
-        final var implementationClassName = ClassName.bestGuess(target.dataSimpleName());
+        final var implementationClassName = ClassName.bestGuess(interfaceType.dataSimpleName());
         final var implementation = TypeSpec.classBuilder(implementationClassName)
             .addJavadoc("{@link $N} Data Transfer Object (DTO).", interfaceType.simpleName())
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
@@ -57,7 +45,7 @@ public class DtoGenerator {
                 .addModifiers(Modifier.FINAL)
                 .build());
 
-        target.properties().forEach(property -> {
+        target.dtoProperties().forEach(property -> {
             final var descriptor = property.descriptor();
             final var name = property.name();
             final var inputTypeName = property.inputTypeName();
@@ -186,7 +174,7 @@ public class DtoGenerator {
             }
         });
 
-        if (target.isAnnotatedWith(DtoEqualsHashCode.class)) {
+        if (interfaceType.isAnnotatedWith(DtoEqualsHashCode.class)) {
             final var equals = MethodSpec.methodBuilder("equals")
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
@@ -194,11 +182,11 @@ public class DtoGenerator {
                 .returns(TypeName.BOOLEAN)
                 .addCode("if (this == other) { return true; };\n")
                 .addCode("if (other == null || getClass() != other.getClass()) { return false; };\n")
-                .addCode("final $1T that = ($1T) other;\n", target.dataTypeName())
+                .addCode("final $1T that = ($1T) other;\n", interfaceType.inputTypeName())
                 .addCode("return ");
 
             var index = 0;
-            for (final var property : target.properties()) {
+            for (final var property : target.dtoProperties()) {
                 final var descriptor = property.descriptor();
                 final var name = property.name();
 
@@ -230,7 +218,7 @@ public class DtoGenerator {
                 .addCode("return $T.hash(", Objects.class);
 
             index = 0;
-            for (final var property : target.properties()) {
+            for (final var property : target.dtoProperties()) {
                 if (index++ != 0) {
                     hashCode.addCode(", ");
                 }
@@ -242,7 +230,7 @@ public class DtoGenerator {
                 .build());
         }
 
-        if (target.isAnnotatedWith(DtoToString.class)) {
+        if (interfaceType.isAnnotatedWith(DtoToString.class)) {
             final var toString = MethodSpec.methodBuilder("toString")
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
@@ -250,7 +238,7 @@ public class DtoGenerator {
                 .addCode("return \"$N{\" +\n", interfaceType.simpleName());
 
             var index = 0;
-            for (final var property : target.properties()) {
+            for (final var property : target.dtoProperties()) {
                 final var name = property.name();
 
                 if (index++ != 0) {
@@ -285,14 +273,14 @@ public class DtoGenerator {
                 .build());
         }
 
-        if (target.isAnnotatedWith(DtoReadableAs.class)) {
+        if (interfaceType.isAnnotatedWith(DtoReadableAs.class)) {
             final var decode = MethodSpec.methodBuilder("decode")
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .returns(implementationClassName)
                 .addParameter(ClassName.get(BinaryReader.class), "reader", Modifier.FINAL)
                 .addParameter(ClassName.get(CodecType.class), "codec", Modifier.FINAL);
 
-            for (final var codec : target.interfaceType().readableCodecs()) {
+            for (final var codec : target.dtoInterface().readableCodecs()) {
                 decode
                     .beginControlFlow("if (codec == $T.$N)", CodecType.class, codec.name())
                     .addStatement("return $N(reader)", codec.decoderMethodName())
@@ -304,14 +292,14 @@ public class DtoGenerator {
                 .build());
         }
 
-        if (target.isAnnotatedWith(DtoWritableAs.class)) {
+        if (interfaceType.isAnnotatedWith(DtoWritableAs.class)) {
             final var encode = MethodSpec.methodBuilder("encode")
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(ClassName.get(BinaryWriter.class), "writer", Modifier.FINAL)
                 .addParameter(ClassName.get(CodecType.class), "codec", Modifier.FINAL);
 
-            for (final var codec : target.interfaceType().writableCodecs()) {
+            for (final var codec : target.dtoInterface().writableCodecs()) {
                 encode
                     .beginControlFlow("if (codec == $T.$N)", CodecType.class, codec.name())
                     .addStatement("$N(writer)", codec.encoderMethodName())
@@ -326,25 +314,29 @@ public class DtoGenerator {
                     .build());
         }
 
-        // TODO: Make it possible to provide custom DtoImplementer classes, somehow.
-        final var targetCodecs = target.codecs();
+        final var targetCodecs = interfaceType.codecs();
         for (final var implementer : backends) {
             if (targetCodecs.contains(implementer.codec())) {
                 implementer.implementFor(target, implementation);
             }
         }
 
-        return new DtoTargetSpecification.Builder()
-            .implementation(implementation
-                .addMethod(constructor.build())
-                .build())
-            .builder(builder
-                .addMethod(MethodSpec.methodBuilder("build")
-                    .addModifiers(Modifier.PUBLIC)
-                    .returns(target.dataTypeName())
-                    .addStatement("return new $N(this)", target.dataSimpleName())
-                    .build())
+        implementation.addMethod(constructor.build());
+
+        builder
+            .addMethod(MethodSpec.methodBuilder("build")
+                .addModifiers(Modifier.PUBLIC)
+                .returns(interfaceType.inputTypeName())
+                .addStatement("return new $N(this)", interfaceType.dataSimpleName())
                 .build())
             .build();
+
+        JavaFile.builder(packageName, implementation.build())
+            .indent("    ").build()
+            .writeTo(filer);
+
+        JavaFile.builder(packageName, builder.build())
+            .indent("    ").build()
+            .writeTo(filer);
     }
 }

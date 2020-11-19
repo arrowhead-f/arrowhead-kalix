@@ -34,17 +34,18 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
 
     @Override
     public void implementFor(final DtoTarget target, final TypeSpec.Builder implementation) {
-        if (target.interfaceType().isReadableAs(DtoCodecSpec.JSON)) {
+        if (target.dtoInterface().isReadableAs(DtoCodecSpec.JSON)) {
             implementReadMethodsFor(target, implementation);
         }
-        if (target.interfaceType().isWritableAs(DtoCodecSpec.JSON)) {
+        if (target.dtoInterface().isWritableAs(DtoCodecSpec.JSON)) {
             implementWriteMethodFor(target, implementation);
         }
     }
 
     private void implementReadMethodsFor(final DtoTarget target, final TypeSpec.Builder implementation) {
-        final var dataTypeName = target.dataTypeName();
-        final var properties = target.properties();
+        final var interfaceType= target.dtoInterface();
+        final var dataTypeName = interfaceType.inputTypeName();
+        final var properties = target.dtoProperties();
 
         implementation.addMethod(MethodSpec.methodBuilder(codec().decoderMethodName())
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
@@ -77,7 +78,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
             builder.beginControlFlow("error:");
         }
 
-        final var builderName = target.interfaceType().simpleName() + "Builder";
+        final var builderName = target.dtoInterface().simpleName() + "Builder";
         builder
             .beginControlFlow("if (token.type() != $T.OBJECT)", JsonType.class)
             .addStatement("errorMessage = \"expected object\"")
@@ -95,7 +96,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
                 builder.endControlFlow("break");
             }
             catch (final IllegalStateException exception) {
-                throw new DtoException(property.parentElement(), exception.getMessage());
+                throw new DtoException(property.method(), exception.getMessage());
             }
         }
 
@@ -355,7 +356,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         final Expander assignment,
         final MethodSpec.Builder builder
     ) {
-        final var returnType = target.interfaceType().type().toString();
+        final var returnType = target.dtoInterface().type().toString();
         final var parameter = JsonTokenBuffer.class.getCanonicalName();
         if (!type.containsPublicStaticMethod(returnType, codec().decoderMethodName(), parameter)) {
             throw new DtoException(type.typeElement(), "No public static " +
@@ -546,7 +547,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         writeCache.clear();
         writeCache.append('{');
 
-        final var properties = target.properties();
+        final var properties = target.dtoProperties();
         final var p1 = properties.size();
         var checkBeforeWritingComma = false;
         if (p1 > 0) {
@@ -613,7 +614,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
                 }
             }
             catch (final IllegalStateException exception) {
-                throw new DtoException(property.parentElement(), exception.getMessage());
+                throw new DtoException(property.method(), exception.getMessage());
             }
         }
 

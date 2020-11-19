@@ -119,7 +119,7 @@ public class DtoPropertyFactory {
         }
 
         final var builder = new DtoProperty.Builder()
-            .parentElement(method)
+            .method(method)
             .name(method.getSimpleName().toString())
             .dtoCodecToName(collectDtoCodecNamesFrom(method));
 
