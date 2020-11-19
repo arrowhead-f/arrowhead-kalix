@@ -2,24 +2,23 @@ package se.arkalix.dto;
 
 import se.arkalix.dto.types.DtoInterface;
 
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.util.Elements;
-import javax.lang.model.util.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class DtoTargetFactory {
+public class DtoAnalyzer {
     private final Elements elementUtils;
     private final DtoPropertyFactory propertyFactory;
 
-    public DtoTargetFactory(final Elements elementUtils, final Types typeUtils) {
-        this.elementUtils = elementUtils;
-
-        propertyFactory = new DtoPropertyFactory(elementUtils, typeUtils);
+    public DtoAnalyzer(final ProcessingEnvironment processingEnv) {
+        elementUtils = processingEnv.getElementUtils();
+        propertyFactory = new DtoPropertyFactory(elementUtils, processingEnv.getTypeUtils());
     }
 
-    public DtoTarget createFromInterface(final Element element) {
+    public DtoTarget analyze(final Element element) {
         if (element.getKind() != ElementKind.INTERFACE) {
             throw new DtoException(element, "Only interfaces may " +
                 "be annotated with @DtoReadableAs and/or @DtoWritableAs");

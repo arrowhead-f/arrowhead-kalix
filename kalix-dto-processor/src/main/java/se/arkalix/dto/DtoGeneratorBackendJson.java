@@ -22,7 +22,7 @@ import java.time.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class DtoImplementerJson implements DtoImplementer {
+public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
     private final BinaryWriterWriteCache writeCache = new BinaryWriterWriteCache("writer");
 
     private int level = 0;

@@ -1,7 +1,5 @@
 package se.arkalix.dto;
 
-import com.squareup.javapoet.JavaFile;
-
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
@@ -18,8 +16,8 @@ public class DtoProcessor extends AbstractProcessor {
     private Messager messager;
     private Elements elementUtils;
 
-    private DtoTargetFactory targetFactory;
-    private DtoImplementerFactory implementerFactory;
+    private DtoAnalyzer analyzer;
+    private DtoGenerator generator;
 
     @Override
     public synchronized void init(final ProcessingEnvironment processingEnv) {
@@ -29,9 +27,9 @@ public class DtoProcessor extends AbstractProcessor {
         messager = processingEnv.getMessager();
         elementUtils = processingEnv.getElementUtils();
 
-        targetFactory = new DtoTargetFactory(elementUtils, processingEnv.getTypeUtils());
-        implementerFactory = new DtoImplementerFactory(
-            new DtoImplementerJson()
+        analyzer = new DtoAnalyzer(processingEnv);
+        generator = new DtoGenerator(
+            new DtoGeneratorBackendJson()
         );
     }
 
@@ -42,19 +40,12 @@ public class DtoProcessor extends AbstractProcessor {
             .distinct()
             .forEach(element -> {
                 try {
-                    final var target = targetFactory.createFromInterface(element);
-                    final var specification = implementerFactory.createForTarget(target);
-
+                    final var target = analyzer.analyze(element);
                     final var packageName = elementUtils.getPackageOf(element)
-                        .getQualifiedName().toString();
+                        .getQualifiedName()
+                        .toString();
 
-                    JavaFile.builder(packageName, specification.implementation())
-                        .indent("    ").build()
-                        .writeTo(filer);
-
-                    JavaFile.builder(packageName, specification.builder())
-                        .indent("    ").build()
-                        .writeTo(filer);
+                    generator.writeTo(target, packageName, filer);
                 }
                 catch (final Throwable throwable) {
                     final var writer = new StringWriter();

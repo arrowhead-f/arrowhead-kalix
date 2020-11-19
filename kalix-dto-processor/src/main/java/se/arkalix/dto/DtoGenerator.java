@@ -11,17 +11,31 @@ import se.arkalix.codec.MultiEncodable;
 import se.arkalix.codec.binary.BinaryReader;
 import se.arkalix.codec.binary.BinaryWriter;
 
+import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 
-public class DtoImplementerFactory {
-    private final DtoImplementer[] implementers;
+public class DtoGenerator {
+    private final DtoGeneratorBackend[] backends;
 
-    public DtoImplementerFactory(final DtoImplementer... implementers) {
-        this.implementers = implementers;
+    public DtoGenerator(final DtoGeneratorBackend... backends) {
+        this.backends = backends;
+    }
+
+    public void writeTo(final DtoTarget target, final String packageName, final Filer filer) throws IOException {
+        final var specification = createForTarget(target);
+
+        JavaFile.builder(packageName, specification.implementation())
+            .indent("    ").build()
+            .writeTo(filer);
+
+        JavaFile.builder(packageName, specification.builder())
+            .indent("    ").build()
+            .writeTo(filer);
     }
 
     public DtoTargetSpecification createForTarget(final DtoTarget target) {
@@ -314,7 +328,7 @@ public class DtoImplementerFactory {
 
         // TODO: Make it possible to provide custom DtoImplementer classes, somehow.
         final var targetCodecs = target.codecs();
-        for (final var implementer : implementers) {
+        for (final var implementer : backends) {
             if (targetCodecs.contains(implementer.codec())) {
                 implementer.implementFor(target, implementation);
             }
