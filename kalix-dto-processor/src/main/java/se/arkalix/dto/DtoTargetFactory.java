@@ -2,10 +2,7 @@ package se.arkalix.dto;
 
 import se.arkalix.dto.types.DtoInterface;
 
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -22,11 +19,12 @@ public class DtoTargetFactory {
         propertyFactory = new DtoPropertyFactory(elementUtils, typeUtils);
     }
 
-    public DtoTarget createFromInterface(final TypeElement interfaceElement) {
-        if (interfaceElement.getKind() != ElementKind.INTERFACE) {
-            throw new DtoException(interfaceElement, "Only interfaces may " +
+    public DtoTarget createFromInterface(final Element element) {
+        if (element.getKind() != ElementKind.INTERFACE) {
+            throw new DtoException(element, "Only interfaces may " +
                 "be annotated with @DtoReadableAs and/or @DtoWritableAs");
         }
+        final var interfaceElement= (TypeElement) element;
         if (interfaceElement.getTypeParameters().size() != 0) {
             throw new DtoException(interfaceElement, "@DtoReadableAs/@DtoWritableAs " +
                 "interfaces may not have type parameters");
@@ -55,17 +53,17 @@ public class DtoTargetFactory {
         final var interfaceType = new DtoInterface(declaredType, readableCodecs, writableCodecs);
 
         final var properties = new ArrayList<DtoProperty>();
-        for (final var element : elementUtils.getAllMembers(interfaceElement)) {
-            if (element.getEnclosingElement().getKind() != ElementKind.INTERFACE ||
-                element.getKind() != ElementKind.METHOD)
+        for (final var member : elementUtils.getAllMembers(interfaceElement)) {
+            if (member.getEnclosingElement().getKind() != ElementKind.INTERFACE ||
+                member.getKind() != ElementKind.METHOD)
             {
                 continue;
             }
-            final var modifiers = element.getModifiers();
+            final var modifiers = member.getModifiers();
             if (modifiers.contains(Modifier.DEFAULT) || modifiers.contains(Modifier.STATIC)) {
                 continue;
             }
-            final var executable = (ExecutableElement) element;
+            final var executable = (ExecutableElement) member;
             final var property = propertyFactory.createFromMethod(executable);
             properties.add(property);
         }
