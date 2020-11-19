@@ -34,10 +34,10 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
 
     @Override
     public void implementFor(final DtoTarget target, final TypeSpec.Builder implementation) {
-        if (target.interfaceType().isReadable(DtoCodecSpec.JSON)) {
+        if (target.interfaceType().isReadableAs(DtoCodecSpec.JSON)) {
             implementReadMethodsFor(target, implementation);
         }
-        if (target.interfaceType().isWritable(DtoCodecSpec.JSON)) {
+        if (target.interfaceType().isWritableAs(DtoCodecSpec.JSON)) {
             implementWriteMethodFor(target, implementation);
         }
     }
@@ -396,7 +396,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
     }
 
     private void readInterface(final DtoInterface type, final Expander assignment, final MethodSpec.Builder builder) {
-        if (!type.isReadable(DtoCodecSpec.JSON)) {
+        if (!type.isReadableAs(DtoCodecSpec.JSON)) {
             throw new IllegalStateException(type.simpleName() + " is not " +
                 "annotated with @DtoReadableAs, or lacks DtoCodec.JSON as " +
                 "annotation argument");
@@ -745,7 +745,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
     }
 
     private void writeInterface(final DtoInterface type, final String name, final MethodSpec.Builder builder) {
-        if (!type.isWritable(DtoCodecSpec.JSON)) {
+        if (!type.isWritableAs(DtoCodecSpec.JSON)) {
             throw new IllegalStateException(type.simpleName() + " is not " +
                 "annotated with @DtoWritableAs, or lacks DtoCodec.JSON as " +
                 "annotation argument");

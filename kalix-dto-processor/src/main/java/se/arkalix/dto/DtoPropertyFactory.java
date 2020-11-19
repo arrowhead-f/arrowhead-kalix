@@ -326,9 +326,7 @@ public class DtoPropertyFactory {
     }
 
     private DtoType toInterfaceOrCustomType(final ExecutableElement method, final TypeMirror type) {
-        final var declaredType = (DeclaredType) type;
         var element = typeUtils.asElement(type);
-
         var readable = element.getAnnotation(DtoReadableAs.class);
         var writable = element.getAnnotation(DtoWritableAs.class);
 
@@ -346,10 +344,7 @@ public class DtoPropertyFactory {
             return new DtoCustom(type, (TypeElement) element, typeUtils, elementUtils);
         }
 
-        final var readableCodecs = readable != null ? readable.value() : null;
-        final var writableCodecs = writable != null ? writable.value() : null;
-
-        return new DtoInterface(declaredType, readableCodecs, writableCodecs);
+        return new DtoInterface(elementUtils, element);
     }
 
     private DtoSequence toListType(final ExecutableElement method, final TypeMirror type) {

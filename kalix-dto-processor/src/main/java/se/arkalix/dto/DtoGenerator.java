@@ -186,7 +186,7 @@ public class DtoGenerator {
             }
         });
 
-        if (target.isComparable()) {
+        if (target.isAnnotatedWith(DtoEqualsHashCode.class)) {
             final var equals = MethodSpec.methodBuilder("equals")
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
@@ -242,7 +242,7 @@ public class DtoGenerator {
                 .build());
         }
 
-        if (target.isPrintable()) {
+        if (target.isAnnotatedWith(DtoToString.class)) {
             final var toString = MethodSpec.methodBuilder("toString")
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
@@ -285,7 +285,7 @@ public class DtoGenerator {
                 .build());
         }
 
-        if (target.isReadable()) {
+        if (target.isAnnotatedWith(DtoReadableAs.class)) {
             final var decode = MethodSpec.methodBuilder("decode")
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .returns(implementationClassName)
@@ -304,7 +304,7 @@ public class DtoGenerator {
                 .build());
         }
 
-        if (target.isWritable()) {
+        if (target.isAnnotatedWith(DtoWritableAs.class)) {
             final var encode = MethodSpec.methodBuilder("encode")
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
