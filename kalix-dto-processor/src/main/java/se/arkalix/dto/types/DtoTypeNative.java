@@ -4,11 +4,11 @@ import com.squareup.javapoet.TypeName;
 
 import javax.lang.model.type.TypeMirror;
 
-public class DtoElement implements DtoType {
+public class DtoTypeNative implements DtoType {
     private final TypeName typeName;
     private final DtoDescriptor descriptor;
 
-    public DtoElement(final TypeMirror type, final DtoDescriptor descriptor) {
+    public DtoTypeNative(final TypeMirror type, final DtoDescriptor descriptor) {
         this.typeName = TypeName.get(type);
         this.descriptor = descriptor;
     }
@@ -19,12 +19,7 @@ public class DtoElement implements DtoType {
     }
 
     @Override
-    public TypeName inputTypeName() {
-        return typeName;
-    }
-
-    @Override
-    public TypeName outputTypeName() {
+    public TypeName interfaceTypeName() {
         return typeName;
     }
 

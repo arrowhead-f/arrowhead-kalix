@@ -72,7 +72,7 @@ public interface ServiceQuery {
 
     static ServiceQueryDto from(final se.arkalix.query.ServiceQuery query) {
         final var isSecure = query.isSecure();
-        return new ServiceQueryBuilder()
+        return new ServiceQueryDto.Builder()
             .name(query.name().orElse(null))
             .interfaces(query.protocolTypes()
                 .stream()

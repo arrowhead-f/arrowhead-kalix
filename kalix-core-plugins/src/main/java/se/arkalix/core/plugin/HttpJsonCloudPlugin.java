@@ -8,7 +8,7 @@ import se.arkalix.core.plugin.or.HttpJsonOrchestrationService;
 import se.arkalix.core.plugin.or.OrchestrationPattern;
 import se.arkalix.core.plugin.or.OrchestrationStrategy;
 import se.arkalix.core.plugin.sr.HttpJsonServiceDiscoveryService;
-import se.arkalix.core.plugin.sr.ServiceQueryBuilder;
+import se.arkalix.core.plugin.sr.ServiceQueryDto;
 import se.arkalix.core.plugin.sr.ServiceRegistration;
 import se.arkalix.SystemRecord;
 import se.arkalix.ServiceRecord;
@@ -377,7 +377,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                     logger.info("HTTP/JSON cloud plugin requesting authorization key ...");
                 }
                 authorizationKeyAnnouncement = requestServiceDiscovery()
-                    .flatMap(serviceDiscovery -> serviceDiscovery.query(new ServiceQueryBuilder()
+                    .flatMap(serviceDiscovery -> serviceDiscovery.query(new ServiceQueryDto.Builder()
                         .name("auth-public-key")
                         .build()))
                     .mapResult(result -> {
@@ -445,7 +445,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                 }
                 final var isSecure = client.isSecure();
                 orchestrationAnnouncement = requestServiceDiscovery()
-                    .flatMap(serviceDiscovery -> serviceDiscovery.query(new ServiceQueryBuilder()
+                    .flatMap(serviceDiscovery -> serviceDiscovery.query(new ServiceQueryDto.Builder()
                         .name("orchestration-service")
                         .interfaces(ServiceInterface.getOrCreate(HTTP, isSecure, CodecType.JSON))
                         .accessPolicyTypes(isSecure ? CERTIFICATE : NOT_SECURE)

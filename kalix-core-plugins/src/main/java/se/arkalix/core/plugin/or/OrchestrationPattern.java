@@ -146,7 +146,7 @@ public class OrchestrationPattern {
      * @return New orchestration query.
      */
     public OrchestrationQueryDto toQuery(final SystemDetailsDto requester, final ServiceQuery query) {
-        return new OrchestrationQueryBuilder()
+        return new OrchestrationQueryDto.Builder()
             .requester(requester)
             .service(isIncludingService && query != null
                 ? se.arkalix.core.plugin.sr.ServiceQuery.from(query)

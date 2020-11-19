@@ -35,6 +35,7 @@ public class DtoPropertyFactory {
     // Collection types.
     private final DeclaredType listType;
     private final DeclaredType mapType;
+    private final DeclaredType optionalType;
 
     // Big number types.
     private final DeclaredType bigDecimalType;
@@ -54,7 +55,6 @@ public class DtoPropertyFactory {
     private final DeclaredType zoneOffsetType;
 
     // Other types.
-    private final DeclaredType optionalType;
     private final DeclaredType stringType;
 
     private final Set<Modifier> publicStaticModifiers;
@@ -77,6 +77,7 @@ public class DtoPropertyFactory {
 
         listType = getDeclaredType.apply(List.class);
         mapType = getDeclaredType.apply(Map.class);
+        optionalType = getDeclaredType.apply(Optional.class);
 
         bigDecimalType = getDeclaredType.apply(BigDecimal.class);
         bigIntegerType = getDeclaredType.apply(BigInteger.class);
@@ -93,7 +94,6 @@ public class DtoPropertyFactory {
         zoneIdType = getDeclaredType.apply(ZoneId.class);
         zoneOffsetType = getDeclaredType.apply(ZoneOffset.class);
 
-        optionalType = getDeclaredType.apply(Optional.class);
         stringType = getDeclaredType.apply(String.class);
 
         publicStaticModifiers = Stream.of(Modifier.PUBLIC, Modifier.STATIC)
@@ -111,46 +111,27 @@ public class DtoPropertyFactory {
             method.getTypeParameters().size() != 0
         )
         {
-            throw new DtoException(method, "@DtoReadableAs/@DtoWritableAs " +
-                "interface methods must either be static, provide a default " +
-                "implementation, or be simple getters, which means that " +
-                "they have a non-void return type, take no arguments and " +
-                "do not have any type parameters");
+            throw new DtoException(method, "the methods of interfaces that " +
+                "are annotated with @DtoReadableAs and/or @DtoWritableAs " +
+                "must either be static, provide a default implementation, " +
+                "or be simple getters, which means that they have a non-" +
+                "void return type, take no arguments and do not have any " +
+                "type parameters");
         }
 
-        final var builder = new DtoProperty.Builder()
+        final var type = resolveDtoType(method, method.getReturnType());
+        if (type instanceof DtoTypeCollection && ((DtoTypeCollection) type).containsOptional()) {
+            throw new DtoException(method, "Optional<> must not be used as " +
+                "a generic type parameter of any getter method return type " +
+                "in any interface with the @DtoReadableAs and/or " +
+                "@DtoWritableAs annotations");
+        }
+
+        return new DtoProperty.Builder()
             .method(method)
             .name(method.getSimpleName().toString())
-            .dtoCodecToName(collectDtoCodecNamesFrom(method));
-
-        var type = method.getReturnType();
-
-        if (type.getKind().isPrimitive()) {
-            return builder
-                .type(toElementType(type, DtoDescriptor.valueOf(type.getKind())))
-                .isOptional(false)
-                .build();
-        }
-        if (type.getKind() == TypeKind.ARRAY) {
-            return builder
-                .type(toArrayType(method, type))
-                .isOptional(false)
-                .build();
-        }
-
-        if (typeUtils.isAssignable(typeUtils.erasure(type), optionalType)) {
-            final var declaredType = (DeclaredType) type;
-            final var argumentType = declaredType.getTypeArguments().get(0);
-            final var dtoType = resolveDtoType(method, argumentType);
-            return builder
-                .type(dtoType)
-                .isOptional(true)
-                .build();
-        }
-
-        return builder
-            .type(resolveDtoType(method, type))
-            .isOptional(false)
+            .dtoCodecToName(collectDtoCodecNamesFrom(method))
+            .type(type)
             .build();
     }
 
@@ -165,61 +146,64 @@ public class DtoPropertyFactory {
 
     private DtoType resolveDtoType(final ExecutableElement method, final TypeMirror type) {
         if (type.getKind().isPrimitive()) {
-            return toElementType(type, DtoDescriptor.valueOf(type.getKind()));
+            return toNativeType(type, DtoDescriptor.valueOf(type.getKind()));
         }
         if (type.getKind() == TypeKind.ARRAY) {
             return toArrayType(method, type);
         }
         if (typeUtils.isSameType(bigDecimalType, type)) {
-            return toElementType(type, DtoDescriptor.BIG_DECIMAL);
+            return toNativeType(type, DtoDescriptor.BIG_DECIMAL);
         }
         if (typeUtils.isSameType(bigIntegerType, type)) {
-            return toElementType(type, DtoDescriptor.BIG_INTEGER);
+            return toNativeType(type, DtoDescriptor.BIG_INTEGER);
         }
         if (typeUtils.isSameType(booleanType, type)) {
-            return toElementType(type, DtoDescriptor.BOOLEAN_BOXED);
+            return toNativeType(type, DtoDescriptor.BOOLEAN_BOXED);
         }
         if (typeUtils.isSameType(byteType, type)) {
-            return toElementType(type, DtoDescriptor.BYTE_BOXED);
+            return toNativeType(type, DtoDescriptor.BYTE_BOXED);
         }
         if (typeUtils.isSameType(characterType, type)) {
-            return toElementType(type, DtoDescriptor.CHARACTER_BOXED);
+            return toNativeType(type, DtoDescriptor.CHARACTER_BOXED);
         }
         if (typeUtils.isSameType(doubleType, type)) {
-            return toElementType(type, DtoDescriptor.DOUBLE_BOXED);
+            return toNativeType(type, DtoDescriptor.DOUBLE_BOXED);
         }
         if (typeUtils.isSameType(durationType, type)) {
-            return toElementType(type, DtoDescriptor.DURATION);
+            return toNativeType(type, DtoDescriptor.DURATION);
         }
         if (typeUtils.isSameType(floatType, type)) {
-            return toElementType(type, DtoDescriptor.FLOAT_BOXED);
+            return toNativeType(type, DtoDescriptor.FLOAT_BOXED);
         }
         if (typeUtils.isSameType(instantType, type)) {
-            return toElementType(type, DtoDescriptor.INSTANT);
+            return toNativeType(type, DtoDescriptor.INSTANT);
         }
         if (typeUtils.isSameType(integerType, type)) {
-            return toElementType(type, DtoDescriptor.INTEGER_BOXED);
+            return toNativeType(type, DtoDescriptor.INTEGER_BOXED);
         }
         if (typeUtils.isSameType(longType, type)) {
-            return toElementType(type, DtoDescriptor.LONG_BOXED);
+            return toNativeType(type, DtoDescriptor.LONG_BOXED);
         }
         if (typeUtils.isSameType(monthDayType, type)) {
-            return toElementType(type, DtoDescriptor.MONTH_DAY);
+            return toNativeType(type, DtoDescriptor.MONTH_DAY);
         }
         if (typeUtils.isSameType(offsetDateTimeType, type)) {
-            return toElementType(type, DtoDescriptor.OFFSET_DATE_TIME);
+            return toNativeType(type, DtoDescriptor.OFFSET_DATE_TIME);
         }
         if (typeUtils.isSameType(offsetTimeType, type)) {
-            return toElementType(type, DtoDescriptor.OFFSET_TIME);
+            return toNativeType(type, DtoDescriptor.OFFSET_TIME);
+        }
+        if (typeUtils.isAssignable(typeUtils.erasure(type), optionalType)) {
+            return toOptionalType(method, type);
         }
         if (typeUtils.isSameType(periodType, type)) {
-            return toElementType(type, DtoDescriptor.PERIOD);
+            return toNativeType(type, DtoDescriptor.PERIOD);
         }
         if (typeUtils.isSameType(shortType, type)) {
-            return toElementType(type, DtoDescriptor.SHORT_BOXED);
+            return toNativeType(type, DtoDescriptor.SHORT_BOXED);
         }
         if (typeUtils.asElement(type).getKind() == ElementKind.ENUM) {
-            return toElementType(type, DtoDescriptor.ENUM);
+            return toNativeType(type, DtoDescriptor.ENUM);
         }
         if (typeUtils.isAssignable(typeUtils.erasure(type), listType)) {
             return toListType(method, type);
@@ -228,25 +212,25 @@ public class DtoPropertyFactory {
             return toMapType(method, type);
         }
         if (typeUtils.isSameType(stringType, type)) {
-            return toElementType(type, DtoDescriptor.STRING);
+            return toNativeType(type, DtoDescriptor.STRING);
         }
         if (typeUtils.isSameType(yearType, type)) {
-            return toElementType(type, DtoDescriptor.YEAR);
+            return toNativeType(type, DtoDescriptor.YEAR);
         }
         if (typeUtils.isSameType(yearMonthType, type)) {
-            return toElementType(type, DtoDescriptor.YEAR_MONTH);
+            return toNativeType(type, DtoDescriptor.YEAR_MONTH);
         }
         if (typeUtils.isSameType(zonedDateTimeType, type)) {
-            return toElementType(type, DtoDescriptor.ZONED_DATE_TIME);
+            return toNativeType(type, DtoDescriptor.ZONED_DATE_TIME);
         }
         if (typeUtils.isSameType(zoneIdType, type)) {
-            return toElementType(type, DtoDescriptor.ZONE_ID);
+            return toNativeType(type, DtoDescriptor.ZONE_ID);
         }
         if (typeUtils.isSameType(zoneOffsetType, type)) {
-            return toElementType(type, DtoDescriptor.ZONE_OFFSET);
+            return toNativeType(type, DtoDescriptor.ZONE_OFFSET);
         }
         if (isEnumLike(type)) {
-            return toElementType(type, DtoDescriptor.ENUM);
+            return toNativeType(type, DtoDescriptor.ENUM);
         }
         return toInterfaceOrCustomType(method, type);
     }
@@ -319,10 +303,10 @@ public class DtoPropertyFactory {
         return hasEquals && hasHashCode && hasToString && hasValueOf;
     }
 
-    private DtoSequence toArrayType(final ExecutableElement method, final TypeMirror type) {
+    private DtoTypeSequence toArrayType(final ExecutableElement method, final TypeMirror type) {
         final var arrayType = (ArrayType) type;
         final var element = resolveDtoType(method, arrayType.getComponentType());
-        return DtoSequence.newArray(arrayType, element);
+        return DtoTypeSequence.newArray(arrayType, element);
     }
 
     private DtoType toInterfaceOrCustomType(final ExecutableElement method, final TypeMirror type) {
@@ -332,28 +316,28 @@ public class DtoPropertyFactory {
 
         if (readable == null && writable == null) {
             if (element.getSimpleName().toString().endsWith(DtoTarget.DATA_SUFFIX)) {
-                throw new DtoException(method, "Generated DTO classes may " +
+                throw new DtoException(method, "generated DTO classes may " +
                     "not be used in interfaces annotated with @DtoReadableAs " +
                     "or @DtoWritableAs; rather use the interface types from " +
                     "which those DTO classes were generated");
             }
             if (!element.getKind().isClass() && !element.getKind().isInterface()) {
-                throw new DtoException(method, "Only class and interface " +
+                throw new DtoException(method, "only class and interface " +
                     "types may be used as custom DTO classes");
             }
-            return new DtoCustom(type, (TypeElement) element, typeUtils, elementUtils);
+            return new DtoTypeCustom(type, (TypeElement) element, typeUtils, elementUtils);
         }
 
-        return new DtoInterface(elementUtils, element);
+        return new DtoTypeInterface(element);
     }
 
-    private DtoSequence toListType(final ExecutableElement method, final TypeMirror type) {
+    private DtoTypeSequence toListType(final ExecutableElement method, final TypeMirror type) {
         final var declaredType = (DeclaredType) type;
         final var element = resolveDtoType(method, declaredType.getTypeArguments().get(0));
-        return DtoSequence.newList(declaredType, element);
+        return DtoTypeSequence.newList(declaredType, element);
     }
 
-    private DtoMap toMapType(final ExecutableElement method, final TypeMirror type) {
+    private DtoTypeMap toMapType(final ExecutableElement method, final TypeMirror type) {
         final var declaredType = (DeclaredType) type;
         final var typeArguments = declaredType.getTypeArguments();
         final var key = resolveDtoType(method, typeArguments.get(0));
@@ -362,10 +346,16 @@ public class DtoPropertyFactory {
                 "enum-likes and strings may be used as Map keys");
         }
         final var value = resolveDtoType(method, typeArguments.get(1));
-        return new DtoMap(declaredType, key, value);
+        return new DtoTypeMap(declaredType, key, value);
     }
 
-    private DtoType toElementType(final TypeMirror type, final DtoDescriptor descriptor) {
-        return new DtoElement(type, descriptor);
+    private DtoType toNativeType(final TypeMirror type, final DtoDescriptor descriptor) {
+        return new DtoTypeNative(type, descriptor);
+    }
+
+    private DtoTypeOptional toOptionalType(final ExecutableElement method, final TypeMirror type) {
+        final var declaredType = (DeclaredType) type;
+        final var valueType = resolveDtoType(method, declaredType.getTypeArguments().get(0));
+        return new DtoTypeOptional(declaredType, valueType);
     }
 }

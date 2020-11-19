@@ -31,7 +31,7 @@ public interface ArTrustedContractNegotiationService {
      * @return Future completed successfully only if acceptance succeeds.
      */
     default Future<?> accept(final long negotiationId) {
-        return accept(new TrustedContractAcceptanceBuilder()
+        return accept(new TrustedContractAcceptanceDto.Builder()
             .negotiationId(negotiationId)
             .acceptedAt(Instant.now())
             .build());
@@ -73,7 +73,7 @@ public interface ArTrustedContractNegotiationService {
      * @return Future completed successfully only if rejection succeeds.
      */
     default Future<?> reject(final long negotiationId) {
-        return reject(new TrustedContractRejectionBuilder()
+        return reject(new TrustedContractRejectionDto.Builder()
             .negotiationId(negotiationId)
             .rejectedAt(Instant.now())
             .build());

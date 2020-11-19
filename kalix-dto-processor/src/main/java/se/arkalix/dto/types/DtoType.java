@@ -5,7 +5,9 @@ import com.squareup.javapoet.TypeName;
 public interface DtoType {
     DtoDescriptor descriptor();
 
-    TypeName inputTypeName();
+    TypeName interfaceTypeName();
 
-    TypeName outputTypeName();
+    default TypeName generatedTypeName() {
+        return interfaceTypeName();
+    }
 }

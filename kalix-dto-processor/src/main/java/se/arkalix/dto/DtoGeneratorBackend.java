@@ -4,7 +4,11 @@ import com.squareup.javapoet.TypeSpec;
 
 // TODO: Make it possible to use custom DtoImplementer implementations.
 public interface DtoGeneratorBackend {
-    DtoCodecSpec codec();
+    DtoCodec codec();
 
-    void implementFor(DtoTarget target, TypeSpec.Builder implementation);
+    String decodeMethodName();
+    String encodeMethodName();
+
+    void generateDecodeMethodFor(DtoTarget target, TypeSpec.Builder implementation);
+    void generateEncodeMethodFor(DtoTarget target, TypeSpec.Builder implementation);
 }

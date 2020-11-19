@@ -71,7 +71,7 @@ public interface ServiceRegistration {
     List<ServiceInterface> interfaces();
 
     static ServiceRegistrationDto from(final ServiceRecord description) {
-        return new ServiceRegistrationBuilder()
+        return new ServiceRegistrationDto.Builder()
             .name(description.name())
             .provider(SystemDetails.from(description.provider()))
             .uri(description.uri())

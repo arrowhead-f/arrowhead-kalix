@@ -46,6 +46,21 @@ public final class JsonPrimitives {
         return string;
     }
 
+    public static char readChar(final JsonToken token, final BinaryReader reader) {
+        final var string = readString(token, reader);
+        if (string.length() != 1) {
+            throw new DecoderReadUnexpectedToken(
+                CodecType.JSON,
+                reader,
+                string,
+                token.begin(),
+                "not a single string character; expected string to contain " +
+                    "exactly one Unicode code point with a value less than " +
+                    "or equal to 0xFFFF");
+        }
+        return string.charAt(0);
+    }
+
     public static double readDouble(final JsonToken token, final BinaryReader reader) {
         return Double.parseDouble(requireNotHex(readStringRaw(token, reader)));
     }
@@ -246,6 +261,10 @@ public final class JsonPrimitives {
 
     public static void write(final boolean bool, final BinaryWriter writer) {
         writer.write(bool ? TRUE : FALSE);
+    }
+
+    public static void write(final char ch, final BinaryWriter writer) {
+        write(Character.toString(ch), writer);
     }
 
     public static void write(final Duration duration, final BinaryWriter writer) {

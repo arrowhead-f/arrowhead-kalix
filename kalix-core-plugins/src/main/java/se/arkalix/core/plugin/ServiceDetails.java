@@ -107,8 +107,8 @@ public interface ServiceDetails {
     }
 
     static ServiceDetailsDto from(final ServiceRecord description) {
-        return new ServiceDetailsBuilder()
-            .name(new ServiceNameBuilder().name(description.name()).build())
+        return new ServiceDetailsDto.Builder()
+            .name(new ServiceNameDto.Builder().name(description.name()).build())
             .provider(SystemDetails.from(description.provider()))
             .uri(description.uri())
             .expiresAt(Instants.toAitiaDateTimeString(description.expiresAt()))
@@ -117,7 +117,7 @@ public interface ServiceDetails {
             .version(description.version())
             .interfaces(description.interfaces()
                 .stream()
-                .map(descriptor -> new InterfaceNameBuilder().name(descriptor).build())
+                .map(descriptor -> new InterfaceNameDto.Builder().name(descriptor).build())
                 .collect(Collectors.toUnmodifiableList()))
             .build();
     }

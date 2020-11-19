@@ -4,9 +4,6 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
-import se.arkalix.dto.types.*;
-import se.arkalix.dto.util.BinaryWriterWriteCache;
-import se.arkalix.dto.util.Expander;
 import se.arkalix.codec.CodecType;
 import se.arkalix.codec.DecoderReadUnexpectedToken;
 import se.arkalix.codec.binary.BinaryReader;
@@ -15,12 +12,16 @@ import se.arkalix.codec.json.JsonType;
 import se.arkalix.codec.json._internal.JsonPrimitives;
 import se.arkalix.codec.json._internal.JsonTokenBuffer;
 import se.arkalix.codec.json._internal.JsonTokenizer;
+import se.arkalix.dto.types.*;
+import se.arkalix.dto.util.BinaryWriterWriteCache;
+import se.arkalix.dto.util.Expander;
 import se.arkalix.util.annotation.Internal;
 
 import javax.lang.model.element.Modifier;
 import java.time.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
     private final BinaryWriterWriteCache writeCache = new BinaryWriterWriteCache("writer");
@@ -28,35 +29,35 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
     private int level = 0;
 
     @Override
-    public DtoCodecSpec codec() {
-        return DtoCodecSpec.JSON;
+    public DtoCodec codec() {
+        return DtoCodec.JSON;
     }
 
     @Override
-    public void implementFor(final DtoTarget target, final TypeSpec.Builder implementation) {
-        if (target.dtoInterface().isReadableAs(DtoCodecSpec.JSON)) {
-            implementReadMethodsFor(target, implementation);
-        }
-        if (target.dtoInterface().isWritableAs(DtoCodecSpec.JSON)) {
-            implementWriteMethodFor(target, implementation);
-        }
+    public String decodeMethodName() {
+        return "decodeJson";
     }
 
-    private void implementReadMethodsFor(final DtoTarget target, final TypeSpec.Builder implementation) {
-        final var interfaceType= target.dtoInterface();
-        final var dataTypeName = interfaceType.inputTypeName();
-        final var properties = target.dtoProperties();
+    @Override
+    public String encodeMethodName() {
+        return "encodeJson";
+    }
 
-        implementation.addMethod(MethodSpec.methodBuilder(codec().decoderMethodName())
+    @Override
+    public void generateDecodeMethodFor(final DtoTarget target, final TypeSpec.Builder implementation) {
+        final var typeName = target.typeName();
+        final var properties = target.properties();
+
+        implementation.addMethod(MethodSpec.methodBuilder(decodeMethodName())
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-            .returns(dataTypeName)
+            .returns(typeName)
             .addParameter(BinaryReader.class, "reader", Modifier.FINAL)
-            .addStatement("return $N($T.tokenize(reader))", codec().decoderMethodName(), JsonTokenizer.class)
+            .addStatement("return $N($T.tokenize(reader))", decodeMethodName(), JsonTokenizer.class)
             .build());
 
-        final var builder = MethodSpec.methodBuilder(codec().decoderMethodName())
+        final var builder = MethodSpec.methodBuilder(decodeMethodName())
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-            .returns(dataTypeName)
+            .returns(typeName)
             .addParameter(JsonTokenBuffer.class, "buffer", Modifier.FINAL)
             .addAnnotation(Internal.class)
             .addStatement("final var reader = buffer.reader()")
@@ -68,7 +69,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
 
         var hasEnum = properties.stream().anyMatch(property -> property.descriptor() == DtoDescriptor.ENUM);
         var hasInterface = properties.stream().anyMatch(property -> property.descriptor() == DtoDescriptor.INTERFACE);
-        var hasMandatory = properties.stream().anyMatch(property -> !property.isOptional());
+        var hasMandatory = properties.stream().anyMatch(property -> property.descriptor() != DtoDescriptor.OPTIONAL);
         var hasNumber = properties.stream().anyMatch(property -> property.descriptor().isNumber());
 
         if (hasEnum || hasInterface || hasMandatory || hasNumber) {
@@ -78,13 +79,12 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
             builder.beginControlFlow("error:");
         }
 
-        final var builderName = target.dtoInterface().simpleName() + "Builder";
         builder
             .beginControlFlow("if (token.type() != $T.OBJECT)", JsonType.class)
             .addStatement("errorMessage = \"expected object\"")
             .addStatement("break error")
             .endControlFlow()
-            .addStatement("final var builder = new $N()", builderName)
+            .addStatement("final var builder = new Builder()")
             .beginControlFlow("for (n = token.nChildren(); n != 0; --n)")
             .beginControlFlow("switch ($T.readString(buffer.next(), reader))", JsonPrimitives.class);
 
@@ -161,7 +161,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         switch (descriptor) {
         case ARRAY:
         case LIST:
-            readArray(target, (DtoSequence) type, assignment, builder);
+            readArray(target, (DtoTypeSequence) type, assignment, builder);
             break;
 
         case BIG_DECIMAL:
@@ -184,10 +184,11 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
 
         case CHARACTER_BOXED:
         case CHARACTER_UNBOXED:
-            throw characterTypesNotSupportedException();
+            readCharacter(assignment, builder);
+            break;
 
         case CUSTOM:
-            readCustom(target, (DtoCustom) type, assignment, builder);
+            readCustom(target, (DtoTypeCustom) type, assignment, builder);
             break;
 
         case DOUBLE_BOXED:
@@ -218,7 +219,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
             break;
 
         case INTERFACE:
-            readInterface((DtoInterface) type, assignment, builder);
+            readInterface((DtoTypeInterface) type, assignment, builder);
             break;
 
         case LONG_BOXED:
@@ -227,7 +228,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
             break;
 
         case MAP:
-            readMap(target, (DtoMap) type, assignment, builder);
+            readMap(target, (DtoTypeMap) type, assignment, builder);
             break;
 
         case MONTH_DAY:
@@ -240,6 +241,10 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
 
         case OFFSET_TIME:
             readTemporal(OffsetTime.class, descriptor.isNumber(), assignment, builder);
+            break;
+
+        case OPTIONAL:
+            readOptional(target, (DtoTypeOptional) type, assignment, builder);
             break;
 
         case PERIOD:
@@ -282,12 +287,12 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
 
     private void readArray(
         final DtoTarget target,
-        final DtoSequence type,
+        final DtoTypeSequence type,
         final Expander assignment,
         final MethodSpec.Builder builder
     ) {
-        final var element = type.element();
-        final var elementTypeName = element.inputTypeName();
+        final var itemType = type.itemType();
+        final var itemTypeName = itemType.generatedTypeName();
 
         builder
             .addStatement("token = buffer.next()")
@@ -307,7 +312,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         final Expander assignment0;
         if (type.descriptor() == DtoDescriptor.ARRAY) {
             builder
-                .addStatement("final var items$L = new $T[token.nChildren()]", level, elementTypeName)
+                .addStatement("final var items$L = new $T[token.nChildren()]", level, itemTypeName)
                 .beginControlFlow("for (var i$1L = 0; i$1L < items$1L.length; ++i$1L)", level);
 
             final var leader = "items" + level + "[i" + level + "] = ";
@@ -316,7 +321,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         else {
             builder
                 .addStatement("var n$L = token.nChildren()", level)
-                .addStatement("final var items$1L = new $2T<$3T>(n$1L)", level, ArrayList.class, elementTypeName)
+                .addStatement("final var items$1L = new $2T<$3T>(n$1L)", level, ArrayList.class, itemTypeName)
                 .beginControlFlow("while (n$1L-- != 0)", level);
 
             final var leader = "items" + level + ".add(";
@@ -324,7 +329,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         }
 
         level += 1;
-        readValue(target, element, assignment0, builder);
+        readValue(target, itemType, assignment0, builder);
         level -= 1;
 
         builder
@@ -334,10 +339,10 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
 
     private void readBoolean(final Expander assignment, final MethodSpec.Builder builder) {
         builder
-            .addStatement("boolean value$L", level)
+            .addStatement("boolean valueType$L", level)
             .beginControlFlow("switch (buffer.next().type())")
-            .addStatement("case TRUE: value$L = true; break", level)
-            .addStatement("case FALSE: value$L = false; break", level);
+            .addStatement("case TRUE: valueType$L = true; break", level)
+            .addStatement("case FALSE: valueType$L = false; break", level);
         if (level == 0) {
             builder.addStatement("case NULL: continue");
         }
@@ -347,20 +352,38 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
             .addStatement("break error")
             .endControlFlow()
             .endControlFlow()
-            .addStatement(assignment.expand("value$L"), level);
+            .addStatement(assignment.expand("valueType$L"), level);
+    }
+
+    private void readCharacter(final Expander assignment, final MethodSpec.Builder builder) {
+        builder
+            .addStatement("token = buffer.next()")
+            .addStatement("type = token.type()");
+        if (level == 0) {
+            builder
+                .beginControlFlow("if (type == $T.NULL)", JsonType.class)
+                .addStatement("continue")
+                .endControlFlow();
+        }
+        builder
+            .beginControlFlow("if (type != $T.STRING)", JsonType.class)
+            .addStatement("errorMessage = \"expected string\"")
+            .addStatement("break error")
+            .endControlFlow()
+            .addStatement(assignment.expand("$T.readChar(token, reader)"), JsonPrimitives.class);
     }
 
     private void readCustom(
         final DtoTarget target,
-        final DtoCustom type,
+        final DtoTypeCustom type,
         final Expander assignment,
         final MethodSpec.Builder builder
     ) {
-        final var returnType = target.dtoInterface().type().toString();
+        final var returnType = target.typeName().toString();
         final var parameter = JsonTokenBuffer.class.getCanonicalName();
-        if (!type.containsPublicStaticMethod(returnType, codec().decoderMethodName(), parameter)) {
+        if (!type.containsPublicStaticMethod(returnType, decodeMethodName(), parameter)) {
             throw new DtoException(type.typeElement(), "No public static " +
-                returnType + " " + codec().decoderMethodName() +
+                returnType + " " + decodeMethodName() +
                 "(JsonTokenBuffer) method available; required for this " +
                 "class/interface to be useful as a custom JSON DTO");
         }
@@ -374,7 +397,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         }
 
         builder.addStatement(assignment.expand("$T.$N(buffer)"),
-            codec().decoderMethodName(), type.inputTypeName());
+            decodeMethodName(), type.interfaceTypeName());
     }
 
     private void readEnum(final DtoType type, final Expander assignment, final MethodSpec.Builder builder) {
@@ -389,18 +412,23 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         }
         builder
             .beginControlFlow("if (type != $T.STRING)", JsonType.class)
-            .addStatement("errorMessage = \"expected number\"")
+            .addStatement("errorMessage = \"expected string\"")
             .addStatement("break error")
             .endControlFlow()
             .addStatement(assignment.expand("$T.valueOf($T.readString(token, reader))"),
-                type.inputTypeName(), JsonPrimitives.class);
+                type.interfaceTypeName(), JsonPrimitives.class);
     }
 
-    private void readInterface(final DtoInterface type, final Expander assignment, final MethodSpec.Builder builder) {
-        if (!type.isReadableAs(DtoCodecSpec.JSON)) {
-            throw new IllegalStateException(type.simpleName() + " is not " +
-                "annotated with @DtoReadableAs, or lacks DtoCodec.JSON as " +
-                "annotation argument");
+    private void readInterface(final DtoTypeInterface type, final Expander assignment, final MethodSpec.Builder builder) {
+        final var dtoReadableAs = type.element().getAnnotation(DtoReadableAs.class);
+        if (dtoReadableAs == null) {
+            throw new DtoException(type.element(), type.interfaceTypeName() + " is " +
+                "not annotated with @DtoReadableAs(DtoCodec.JSON)");
+        }
+        if (!List.of(dtoReadableAs.value()).contains(DtoCodec.JSON)) {
+            throw new DtoException(type.element(), type.interfaceTypeName() + " is " +
+                "annotated with @DtoReadableAs, but it lacks DtoCodec.JSON " +
+                "as annotation argument");
         }
 
         if (level == 0) {
@@ -412,17 +440,17 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         }
 
         builder.addStatement(assignment.expand("$T.$N(buffer)"),
-            type.inputTypeName(), codec().decoderMethodName());
+            type.generatedTypeName(), decodeMethodName());
     }
 
     private void readMap(
         final DtoTarget target,
-        final DtoMap type,
+        final DtoTypeMap type,
         final Expander assignment,
         final MethodSpec.Builder builder
     ) {
-        final var key = type.key();
-        final var value = type.value();
+        final var keyType = type.keyType();
+        final var valueType = type.valueType();
 
         builder
             .addStatement("token = buffer.next()")
@@ -440,20 +468,20 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
             .endControlFlow()
             .addStatement("var n$L = token.nChildren()", level)
             .addStatement("final var entries$1L = new $2T<$3T, $4T>(n$1L)",
-                level, HashMap.class, key.inputTypeName(), value.inputTypeName())
+                level, HashMap.class, keyType.generatedTypeName(), valueType.generatedTypeName())
             .beginControlFlow("while (n$L-- != 0)", level)
-            .addStatement("final var key$L = $T.readString(buffer.next(), reader)", level, JsonPrimitives.class);
+            .addStatement("final var keyType$L = $T.readString(buffer.next(), reader)", level, JsonPrimitives.class);
 
-        final var leader = "final var value" + level + " = ";
+        final var leader = "final var valueType" + level + " = ";
         level += 1;
-        readValue(target, value, x -> leader + x, builder);
+        readValue(target, valueType, x -> leader + x, builder);
         level -= 1;
 
-        if (key.descriptor() == DtoDescriptor.ENUM) {
-            builder.addStatement("entries$1L.put($2T.valueOf(key$1L), value$1L)", level, key.inputTypeName());
+        if (keyType.descriptor() == DtoDescriptor.ENUM) {
+            builder.addStatement("entries$1L.put($2T.valueOf(keyType$1L), valueType$1L)", level, keyType.interfaceTypeName());
         }
         else {
-            builder.addStatement("entries$1L.put(key$1L, value$1L)", level);
+            builder.addStatement("entries$1L.put(keyType$1L, valueType$1L)", level);
         }
 
         builder
@@ -477,6 +505,15 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
             .addStatement("break error")
             .endControlFlow()
             .addStatement(assignment.expand("$T.read" + type + "(token, reader)"), JsonPrimitives.class);
+    }
+
+    private void readOptional(
+        final DtoTarget target,
+        final DtoTypeOptional type,
+        final Expander assignment,
+        final MethodSpec.Builder builder
+    ) {
+        readValue(target, type.valueType(), assignment, builder);
     }
 
     private void readString(final Expander assignment, final MethodSpec.Builder builder) {
@@ -505,11 +542,11 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         builder.addStatement("token = buffer.next()");
         if (asNumber) {
             builder
-                .addStatement("$T value$L", class_, level)
+                .addStatement("$T valueType$L", class_, level)
                 .beginControlFlow("switch (token.type())")
-                .addStatement("case NUMBER: value$L = $T.read$TNumber(token, reader); break",
+                .addStatement("case NUMBER: valueType$L = $T.read$TNumber(token, reader); break",
                     level, JsonPrimitives.class, class_)
-                .addStatement("case STRING: value$L = $T.read$T(token, reader); break",
+                .addStatement("case STRING: valueType$L = $T.read$T(token, reader); break",
                     level, JsonPrimitives.class, class_);
             if (level == 0) {
                 builder.addStatement("case NULL: continue");
@@ -517,7 +554,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
             builder
                 .addStatement("default: errorMessage = \"expected number or string\"; break error")
                 .endControlFlow()
-                .addStatement(assignment.expand("value$L"), level);
+                .addStatement(assignment.expand("valueType$L"), level);
         }
         else {
             builder.addStatement("type = token.type()");
@@ -536,8 +573,9 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         }
     }
 
-    private void implementWriteMethodFor(final DtoTarget target, final TypeSpec.Builder implementation) {
-        final var builder = MethodSpec.methodBuilder(codec().encoderMethodName())
+    @Override
+    public void generateEncodeMethodFor(final DtoTarget target, final TypeSpec.Builder implementation) {
+        final var builder = MethodSpec.methodBuilder(encodeMethodName())
             .addModifiers(Modifier.PUBLIC)
             .returns(TypeName.get(CodecType.class))
             .addParameter(ParameterSpec.builder(TypeName.get(BinaryWriter.class), "writer")
@@ -547,12 +585,12 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         writeCache.clear();
         writeCache.append('{');
 
-        final var properties = target.dtoProperties();
+        final var properties = target.properties();
         final var p1 = properties.size();
         var checkBeforeWritingComma = false;
         if (p1 > 0) {
             final var property0 = properties.get(0);
-            if (property0.isOptional() || property0.descriptor().isCollection()) {
+            if (property0.descriptor().isCollection() && properties.size() > 1) {
                 checkBeforeWritingComma = true;
                 builder.addStatement("var addComma = false");
             }
@@ -562,7 +600,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
             final var property = properties.get(p0);
             final var descriptor = property.descriptor();
             final var isCollection = descriptor.isCollection();
-            final var isOptional = property.isOptional();
+            final var isOptional = descriptor == DtoDescriptor.OPTIONAL;
             final var name = property.name();
             try {
                 if (isOptional) {
@@ -605,7 +643,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
 
                 writeValue(property.type(), name, builder);
 
-                if (isOptional || isCollection) {
+                if (isCollection) {
                     writeCache.addWriteIfNotEmpty(builder);
                     if (checkBeforeWritingComma) {
                         builder.addStatement("addComma = true");
@@ -635,6 +673,8 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
 
         case BOOLEAN_BOXED:
         case BOOLEAN_UNBOXED:
+        case CHARACTER_BOXED:
+        case CHARACTER_UNBOXED:
         case BIG_DECIMAL:
         case BIG_INTEGER:
         case BYTE_BOXED:
@@ -652,12 +692,8 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
             writeOther(name, builder);
             break;
 
-        case CHARACTER_BOXED:
-        case CHARACTER_UNBOXED:
-            throw characterTypesNotSupportedException();
-
         case CUSTOM:
-            writeCustom((DtoCustom) type, name, builder);
+            writeCustom((DtoTypeCustom) type, name, builder);
             break;
 
         case DURATION:
@@ -680,11 +716,15 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
             break;
 
         case INTERFACE:
-            writeInterface((DtoInterface) type, name, builder);
+            writeInterface((DtoTypeInterface) type, name, builder);
             break;
 
         case MAP:
             writeMap(type, name, builder);
+            break;
+
+        case OPTIONAL:
+            writeOptional((DtoTypeOptional) type, name, builder);
             break;
 
         default:
@@ -708,7 +748,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
 
         final var itemName = "item" + level;
         level += 1;
-        writeValue(((DtoSequence) type).element(), itemName, builder);
+        writeValue(((DtoTypeSequence) type).itemType(), itemName, builder);
         level -= 1;
 
         writeCache.addWriteIfNotEmpty(builder);
@@ -722,21 +762,21 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
     }
 
     private void writeCustom(
-        final DtoCustom type,
+        final DtoTypeCustom type,
         final String name,
         final MethodSpec.Builder builder
     ) {
         final var returnType = CodecType.class.getCanonicalName();
         final var parameter = BinaryWriter.class.getCanonicalName();
-        if (!type.containsPublicMethod(returnType, codec().encoderMethodName(), parameter)) {
+        if (!type.containsPublicMethod(returnType, encodeMethodName(), parameter)) {
             throw new DtoException(type.typeElement(), "No public " +
-                returnType + " " + codec().encoderMethodName() +
+                returnType + " " + encodeMethodName() +
                 "(BinaryWriter) method available; required for this " +
                 "class/interface to be useful as a custom JSON DTO");
         }
 
         writeCache.addWriteIfNotEmpty(builder);
-        builder.addStatement("$N.$N(writer)", name, codec().encoderMethodName());
+        builder.addStatement("$N.$N(writer)", name, encodeMethodName());
     }
 
     private void writeEnum(final String name, final MethodSpec.Builder builder) {
@@ -745,14 +785,19 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         writeCache.append('"');
     }
 
-    private void writeInterface(final DtoInterface type, final String name, final MethodSpec.Builder builder) {
-        if (!type.isWritableAs(DtoCodecSpec.JSON)) {
-            throw new IllegalStateException(type.simpleName() + " is not " +
-                "annotated with @DtoWritableAs, or lacks DtoCodec.JSON as " +
-                "annotation argument");
+    private void writeInterface(final DtoTypeInterface type, final String name, final MethodSpec.Builder builder) {
+        final var dtoWritableAs = type.element().getAnnotation(DtoWritableAs.class);
+        if (dtoWritableAs == null) {
+            throw new DtoException(type.element(), type.interfaceTypeName() + " is " +
+                "not annotated with @DtoWritableAs(DtoCodec.JSON)");
+        }
+        if (!List.of(dtoWritableAs.value()).contains(DtoCodec.JSON)) {
+            throw new DtoException(type.element(), type.interfaceTypeName() + " is " +
+                "annotated with @DtoWritableAs, but it lacks DtoCodec.JSON " +
+                "as annotation argument");
         }
         writeCache.addWriteIfNotEmpty(builder);
-        builder.addStatement("$N.$N(writer)", name, codec().encoderMethodName());
+        builder.addStatement("$N.$N(writer)", name, encodeMethodName());
     }
 
     private void writeMap(final DtoType type, final String name, final MethodSpec.Builder builder) {
@@ -762,7 +807,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
 
         writeCache.append('{').addWrite(builder);
 
-        final var map = (DtoMap) type;
+        final var map = (DtoTypeMap) type;
         builder
             .addStatement("final var entrySet$L = $N.entrySet()", level, name)
             .addStatement("var i$L = 0", level)
@@ -771,13 +816,13 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
             .addStatement("writer.write((byte) ',')")
             .endControlFlow();
 
-        writeValue(map.key(), "entry" + level + ".getKey()", builder);
+        writeValue(map.keyType(), "entry" + level + ".getKey()", builder);
 
         writeCache.append(':');
 
         final var valueName = "entry" + level + ".getValue()";
         level += 1;
-        writeValue(map.value(), valueName, builder);
+        writeValue(map.valueType(), valueName, builder);
         level -= 1;
 
         writeCache.addWriteIfNotEmpty(builder);
@@ -790,6 +835,10 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         }
     }
 
+    private void writeOptional(final DtoTypeOptional type, final String name, final MethodSpec.Builder builder) {
+        writeValue(type.valueType(), name, builder);
+    }
+
     private void writeOther(final String name, final MethodSpec.Builder builder) {
         writeCache.addWriteIfNotEmpty(builder);
         builder.addStatement("$T.write($N, writer)", JsonPrimitives.class, name);
@@ -799,12 +848,5 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         writeCache.append('"').addWrite(builder);
         builder.addStatement("$T.write($N, writer)", JsonPrimitives.class, name);
         writeCache.append('"');
-    }
-
-    private static IllegalStateException characterTypesNotSupportedException() {
-        return new IllegalStateException("The char and Character types " +
-            "cannot be represented as JSON; either change the type or " +
-            "remove DtoCodec.JSON from the array of codecs " +
-            "provided to the @DtoReadableAs/@DtoWritableAs annotation(s)");
     }
 }

@@ -70,7 +70,7 @@ public class EventSubscription {
     }
 
     public EventSubscriptionRequestDto toSubscriptionRequest(final SystemDetailsDto subscriber, final String uri) {
-        return new EventSubscriptionRequestBuilder()
+        return new EventSubscriptionRequestDto.Builder()
             .topic(topic)
             .subscriber(subscriber)
             .sendToUri(uri)

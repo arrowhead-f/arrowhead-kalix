@@ -11,13 +11,13 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import java.util.List;
 
-public class DtoCustom implements DtoType {
+public class DtoTypeCustom implements DtoType {
     private final TypeName typeName;
     private final TypeElement typeElement;
     private final Types typeUtils;
     private final Elements elementUtils;
 
-    public DtoCustom(
+    public DtoTypeCustom(
         final TypeMirror type,
         final TypeElement typeElement,
         final Types typeUtils,
@@ -125,12 +125,7 @@ public class DtoCustom implements DtoType {
     }
 
     @Override
-    public TypeName inputTypeName() {
-        return typeName;
-    }
-
-    @Override
-    public TypeName outputTypeName() {
+    public TypeName interfaceTypeName() {
         return typeName;
     }
 

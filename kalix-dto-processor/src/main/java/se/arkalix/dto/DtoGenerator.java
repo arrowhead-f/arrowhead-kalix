@@ -1,180 +1,228 @@
 package se.arkalix.dto;
 
 import com.squareup.javapoet.*;
-import se.arkalix.codec.CodecUnsupported;
-import se.arkalix.dto.types.DtoCollection;
-import se.arkalix.dto.types.DtoDescriptor;
-import se.arkalix.dto.types.DtoSequence;
-import se.arkalix.dto.util.Expander;
 import se.arkalix.codec.CodecType;
+import se.arkalix.codec.CodecUnsupported;
 import se.arkalix.codec.MultiEncodable;
 import se.arkalix.codec.binary.BinaryReader;
 import se.arkalix.codec.binary.BinaryWriter;
+import se.arkalix.dto.types.*;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class DtoGenerator {
-    private final DtoGeneratorBackend[] backends;
+    private final Map<DtoCodec, DtoGeneratorBackend> backends;
 
     public DtoGenerator(final DtoGeneratorBackend... backends) {
-        this.backends = backends;
+        this.backends = Arrays.stream(backends)
+            .collect(Collectors.toUnmodifiableMap(DtoGeneratorBackend::codec, backend -> backend));
     }
 
     public void writeTo(final DtoTarget target, final String packageName, final Filer filer) throws IOException {
-        final var interfaceType = target.dtoInterface();
+        final var interface_ = target.interface_();
+        final var interfaceElement = interface_.element();
+        final var interfaceTypeName = interfaceElement.asType();
 
-        final var implementationClassName = ClassName.bestGuess(interfaceType.dataSimpleName());
+        final var implementationClassName = target.typeName();
         final var implementation = TypeSpec.classBuilder(implementationClassName)
-            .addJavadoc("{@link $N} Data Transfer Object (DTO).", interfaceType.simpleName())
+            .addJavadoc("{@link $T} Data Transfer Object (DTO).", interfaceTypeName)
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-            .addSuperinterface(interfaceType.outputTypeName());
+            .addSuperinterface(interfaceTypeName);
 
-        final var builderSimpleName = interfaceType.builderSimpleName();
-        final var builderClassName = ClassName.bestGuess(builderSimpleName);
-        final var builder = TypeSpec.classBuilder(builderSimpleName)
-            .addModifiers(Modifier.PUBLIC, Modifier.FINAL);
+        final var builderClassName = ClassName.bestGuess("Builder");
+        final var builder = TypeSpec.classBuilder(builderClassName)
+            .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL);
 
         final var constructor = MethodSpec.constructorBuilder()
+            .addModifiers(Modifier.PRIVATE)
             .addParameter(ParameterSpec.builder(builderClassName, "builder")
                 .addModifiers(Modifier.FINAL)
                 .build());
 
-        target.dtoProperties().forEach(property -> {
+        target.properties().forEach(property -> {
             final var descriptor = property.descriptor();
             final var name = property.name();
-            final var inputTypeName = property.inputTypeName();
-            final var outputTypeName = property.outputTypeName();
+            final var type = property.type();
+            final var pInterfaceTypeName = type.interfaceTypeName();
+            final var pGeneratedTypeName = type.generatedTypeName();
 
-            implementation.addField(inputTypeName, name, Modifier.PRIVATE, Modifier.FINAL);
-            final var getter = MethodSpec.methodBuilder(name)
-                .addAnnotation(Override.class)
-                .addModifiers(Modifier.PUBLIC)
-                .returns(property.isOptional()
-                    ? ParameterizedTypeName.get(ClassName.get(Optional.class), outputTypeName)
-                    : descriptor.isCollection() ? outputTypeName : inputTypeName);
+            // DTO property field.
+            implementation.addField(FieldSpec.builder(
+                new DtoDescriptorRouter<TypeName>() {
+                    @Override
+                    public TypeName onAny(final DtoDescriptor descriptor) {
+                        return pGeneratedTypeName;
+                    }
 
-            final Expander output;
+                    @Override
+                    public TypeName onOptional(final DtoDescriptor descriptor) {
+                        return ((DtoTypeOptional) type).valueType().generatedTypeName();
+                    }
+                }.route(descriptor), name)
+                .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
+                .build());
 
-            if (property.isOptional()) {
-                output = (expression) -> "return Optional.ofNullable(" + expression + ')';
+            // DTO getter method(s).
+            implementation.addMethod(new DtoDescriptorRouter<MethodSpec>() {
+                private final MethodSpec.Builder getter = MethodSpec.methodBuilder(name)
+                    .addAnnotation(Override.class)
+                    .addModifiers(Modifier.PUBLIC)
+                    .returns(pInterfaceTypeName);
 
-                if (descriptor == DtoDescriptor.INTERFACE) {
-                    implementation.addMethod(MethodSpec.methodBuilder(name + "AsDto")
-                        .addModifiers(Modifier.PUBLIC)
-                        .addJavadoc("@see #$N()", name)
-                        .returns(ParameterizedTypeName.get(ClassName.get(Optional.class), inputTypeName))
-                        .addStatement(output.expand("$N"), name)
-                        .build());
+                @Override
+                public MethodSpec onAny(final DtoDescriptor descriptor) {
+                    return getter.addStatement("return $N", name)
+                        .build();
                 }
-            }
-            else {
-                output = (expression) -> "return " + expression;
-            }
 
-            switch (descriptor) {
+                @Override
+                public MethodSpec onArray(final DtoDescriptor descriptor) {
+                    return getter.addStatement("return $N.clone()", name)
+                        .build();
+                }
+
+                @Override
+                public MethodSpec onCollection(final DtoDescriptor descriptor) {
+                    final var collection = ((DtoTypeCollection) type);
+                    if (collection.containsInterfaceType()) {
+                        implementation.addMethod(MethodSpec.methodBuilder(name + "AsDtos")
+                            .addModifiers(Modifier.PUBLIC)
+                            .addJavadoc("@see #$N()", name)
+                            .returns(type.generatedTypeName())
+                            .addStatement("return $N", name)
+                            .build());
+
+                        return getter
+                            .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)
+                                .addMember("value", "\"unchecked\"")
+                                .build())
+                            .addStatement("return ($N) $N", descriptor == DtoDescriptor.LIST ? "List" : "Map", name)
+                            .build();
+                    }
+                    else {
+                        return onAny(descriptor);
+                    }
+                }
+
+                @Override
+                public MethodSpec onOptional(final DtoDescriptor descriptor) {
+                    final var valueType = ((DtoTypeOptional) type).valueType();
+                    if (valueType.descriptor() == DtoDescriptor.INTERFACE) {
+                        implementation.addMethod(MethodSpec.methodBuilder(name + "AsDto")
+                            .addModifiers(Modifier.PUBLIC)
+                            .addJavadoc("@see #$N()", name)
+                            .returns(pGeneratedTypeName)
+                            .addStatement("return Optional.ofNullable($N)", name)
+                            .build());
+                    }
+                    return getter.addStatement("return Optional.ofNullable($N)", name)
+                        .build();
+                }
+            }.route(descriptor));
+
+            // Builder property field.
+            builder.addField(FieldSpec.builder(
+                new DtoDescriptorRouter<TypeName>() {
+                    @Override
+                    public TypeName onAny(final DtoDescriptor descriptor) {
+                        return descriptor.isPrimitiveUnboxed()
+                            ? pGeneratedTypeName.box()
+                            : pGeneratedTypeName;
+                    }
+
+                    @Override
+                    public TypeName onOptional(final DtoDescriptor descriptor) {
+                        return ((DtoTypeOptional) type).valueType().generatedTypeName();
+                    }
+                }.route(descriptor), name)
+                .addModifiers(Modifier.PRIVATE)
+                .build());
+
+            // Builder setter method(s)
+            builder.addMethod(new DtoDescriptorRouter<MethodSpec>() {
+                final MethodSpec.Builder setter = MethodSpec.methodBuilder(name)
+                    .addModifiers(Modifier.PUBLIC)
+                    .returns(builderClassName)
+                    .addStatement("this.$1N = $1N", name)
+                    .addStatement("return this");
+
+                @Override
+                public MethodSpec onAny(final DtoDescriptor descriptor) {
+                    return setter
+                        .addParameter(pGeneratedTypeName, name, Modifier.FINAL)
+                        .build();
+                }
+
+                @Override
+                public MethodSpec onArray(final DtoDescriptor descriptor) {
+                    setter.varargs();
+                    return onAny(descriptor);
+                }
+
+                @Override
+                public MethodSpec onList(final DtoDescriptor descriptor) {
+                    final var itemType = ((DtoTypeSequence) type).itemType();
+                    if (!itemType.descriptor().isCollection()) {
+                        final var itemTypeName = itemType.generatedTypeName();
+                        builder.addMethod(MethodSpec.methodBuilder(name)
+                            .addModifiers(Modifier.PUBLIC)
+                            .addParameter(ArrayTypeName.of(itemTypeName), name, Modifier.FINAL)
+                            .varargs()
+                            .returns(builderClassName)
+                            .addStatement("this.$1N = $2T.asList($1N)", name, Arrays.class)
+                            .addStatement("return this")
+                            .build());
+                    }
+                    return onAny(descriptor);
+                }
+
+                @Override
+                public MethodSpec onOptional(final DtoDescriptor descriptor) {
+                    final var valueType = ((DtoTypeOptional) type).valueType();
+                    return setter
+                        .addParameter(valueType.generatedTypeName(), name, Modifier.FINAL)
+                        .build();
+                }
+            }.route(descriptor));
+
+            // DTO constructor statement.
+            switch (property.descriptor()) {
             case ARRAY:
-                getter.addStatement(output.expand("$N.clone()"), name);
+                constructor.addStatement("this.$1N = builder.$1N == null ? new $2T{} : builder.$1N",
+                    name, pInterfaceTypeName);
                 break;
 
             case LIST:
+                constructor.addStatement("this.$1N = builder.$1N == null || builder.$1N.size() == 0 " +
+                        "? $2T.emptyList() : $2T.unmodifiableList(builder.$1N)",
+                    name, Collections.class);
+                break;
+
             case MAP:
-                if (((DtoCollection) property.type()).containsInterfaceType()) {
-                    getter.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)
-                        .addMember("value", "\"unchecked\"").build());
-                    getter.addStatement(output.expand("($N) $N"), descriptor == DtoDescriptor.LIST ? "List" : "Map", name);
+                constructor.addStatement("this.$1N = builder.$1N == null || builder.$1N.size() == 0 " +
+                        "? $2T.emptyMap() : $2T.unmodifiableMap(builder.$1N)",
+                    name, Collections.class);
+                break;
 
-                    implementation.addMethod(MethodSpec.methodBuilder(name + "AsDtos")
-                        .addModifiers(Modifier.PUBLIC)
-                        .addJavadoc("@see #$N()", name)
-                        .returns(inputTypeName)
-                        .addStatement("return $N", name)
-                        .build());
-                }
-                else {
-                    getter.addStatement(output.expand("$N"), name);
-
-                }
+            case OPTIONAL:
+                constructor.addStatement("this.$1N = builder.$1N", name);
                 break;
 
             default:
-                getter.addStatement(output.expand("$N"), name);
+                constructor.addStatement("this.$1N = $2T.requireNonNull(builder.$1N, \"$1N\")",
+                    name, Objects.class);
                 break;
-            }
-
-            implementation.addMethod(getter.build());
-
-            final var builderFieldTypeName = property.descriptor().isPrimitive()
-                ? property.inputTypeName().box()
-                : property.inputTypeName();
-
-            builder.addField(FieldSpec.builder(builderFieldTypeName, name).build());
-            final var fieldSetter = MethodSpec.methodBuilder(name)
-                .addModifiers(Modifier.PUBLIC)
-                .addParameter(inputTypeName, name, Modifier.FINAL)
-                .returns(builderClassName)
-                .addStatement("this.$1N = $1N", name)
-                .addStatement("return this");
-
-            if (descriptor == DtoDescriptor.ARRAY) {
-                fieldSetter.varargs();
-            }
-
-            builder.addMethod(fieldSetter.build());
-
-            if (descriptor == DtoDescriptor.LIST) {
-                final var element = ((DtoSequence) property.type()).element();
-                if (!element.descriptor().isCollection()) {
-                    final var elementTypeName = element.inputTypeName();
-
-                    builder.addMethod(MethodSpec.methodBuilder(name)
-                        .addModifiers(Modifier.PUBLIC)
-                        .addParameter(ArrayTypeName.of(elementTypeName), name, Modifier.FINAL)
-                        .varargs()
-                        .returns(builderClassName)
-                        .addStatement("this.$1N = $2T.asList($1N)", name, Arrays.class)
-                        .addStatement("return this")
-                        .build());
-                }
-            }
-
-            if (property.isOptional()) {
-                constructor.addStatement("this.$1N = builder.$1N", name);
-            }
-            else {
-                switch (property.descriptor()) {
-                case ARRAY:
-                    constructor.addStatement("this.$1N = builder.$1N == null " +
-                            "? new $2T{} : builder.$1N",
-                        name, inputTypeName);
-                    break;
-
-                case LIST:
-                    constructor.addStatement("this.$1N = builder.$1N == null || builder.$1N.size() == 0 " +
-                            "? $2T.emptyList() : $2T.unmodifiableList(builder.$1N)",
-                        name, Collections.class);
-                    break;
-
-                case MAP:
-                    constructor.addStatement("this.$1N = builder.$1N == null || builder.$1N.size() == 0 " +
-                            "? $2T.emptyMap() : $2T.unmodifiableMap(builder.$1N)",
-                        name, Collections.class);
-                    break;
-
-                default:
-                    constructor.addStatement("this.$1N = $2T.requireNonNull(builder.$1N, \"$1N\")",
-                        name, Objects.class);
-                    break;
-                }
             }
         });
 
-        if (interfaceType.isAnnotatedWith(DtoEqualsHashCode.class)) {
+        if (interfaceElement.getAnnotation(DtoEqualsHashCode.class) != null) {
             final var equals = MethodSpec.methodBuilder("equals")
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
@@ -182,11 +230,11 @@ public class DtoGenerator {
                 .returns(TypeName.BOOLEAN)
                 .addCode("if (this == other) { return true; };\n")
                 .addCode("if (other == null || getClass() != other.getClass()) { return false; };\n")
-                .addCode("final $1T that = ($1T) other;\n", interfaceType.inputTypeName())
+                .addCode("final $1T that = ($1T) other;\n", implementationClassName)
                 .addCode("return ");
 
             var index = 0;
-            for (final var property : target.dtoProperties()) {
+            for (final var property : target.properties()) {
                 final var descriptor = property.descriptor();
                 final var name = property.name();
 
@@ -199,7 +247,7 @@ public class DtoGenerator {
                 else if (descriptor == DtoDescriptor.ARRAY) {
                     equals.addCode("$1T.equals($2N, that.$2N)", Arrays.class, name);
                 }
-                else if (property.isOptional()) {
+                else if (descriptor == DtoDescriptor.OPTIONAL) {
                     equals.addCode("$1T.equals($2N, that.$2N)", Objects.class, name);
                 }
                 else {
@@ -218,7 +266,7 @@ public class DtoGenerator {
                 .addCode("return $T.hash(", Objects.class);
 
             index = 0;
-            for (final var property : target.dtoProperties()) {
+            for (final var property : target.properties()) {
                 if (index++ != 0) {
                     hashCode.addCode(", ");
                 }
@@ -230,15 +278,15 @@ public class DtoGenerator {
                 .build());
         }
 
-        if (interfaceType.isAnnotatedWith(DtoToString.class)) {
+        if (interfaceElement.getAnnotation(DtoToString.class) != null) {
             final var toString = MethodSpec.methodBuilder("toString")
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
                 .returns(ClassName.get(String.class))
-                .addCode("return \"$N{\" +\n", interfaceType.simpleName());
+                .addCode("return \"$T{\" +\n", interfaceTypeName);
 
             var index = 0;
-            for (final var property : target.dtoProperties()) {
+            for (final var property : target.properties()) {
                 final var name = property.name();
 
                 if (index++ != 0) {
@@ -249,19 +297,21 @@ public class DtoGenerator {
                 }
 
                 switch (property.descriptor()) {
+                case ARRAY:
+                    toString.addCode("\" + $T.toString($N) +\n", Arrays.class, name);
+                    break;
+
                 case STRING:
                     toString.addCode("'\" + $N + '\\'' +\n", name);
                     break;
 
-                case ARRAY:
-                    if (property.isOptional()) {
+                case OPTIONAL:
+                    final var valueType = ((DtoTypeOptional) property.type()).valueType();
+                    if (valueType.descriptor() == DtoDescriptor.ARRAY) {
                         toString.addCode("\" + ($2N == null ? \"null\" : $1T.toString($2N)) +\n", Arrays.class, name);
-                    }
-                    else {
-                        toString.addCode("\" + $T.toString($N) +\n", Arrays.class, name);
-                    }
-                    break;
+                        break;
 
+                    }
                 default:
                     toString.addCode("\" + $N +\n", name);
                     break;
@@ -273,17 +323,20 @@ public class DtoGenerator {
                 .build());
         }
 
-        if (interfaceType.isAnnotatedWith(DtoReadableAs.class)) {
+        final var dtoReadableAs = interfaceElement.getAnnotation(DtoReadableAs.class);
+        if (dtoReadableAs != null) {
             final var decode = MethodSpec.methodBuilder("decode")
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .returns(implementationClassName)
                 .addParameter(ClassName.get(BinaryReader.class), "reader", Modifier.FINAL)
                 .addParameter(ClassName.get(CodecType.class), "codec", Modifier.FINAL);
 
-            for (final var codec : target.dtoInterface().readableCodecs()) {
+            for (final var codec : dtoReadableAs.value()) {
+                final var backend = getBackendByCodecOrThrow(codec);
+                backend.generateDecodeMethodFor(target, implementation);
                 decode
                     .beginControlFlow("if (codec == $T.$N)", CodecType.class, codec.name())
-                    .addStatement("return $N(reader)", codec.decoderMethodName())
+                    .addStatement("return $N(reader)", backend.decodeMethodName())
                     .endControlFlow();
             }
 
@@ -292,17 +345,20 @@ public class DtoGenerator {
                 .build());
         }
 
-        if (interfaceType.isAnnotatedWith(DtoWritableAs.class)) {
+        final var dtoWritableAs = interfaceElement.getAnnotation(DtoWritableAs.class);
+        if (dtoWritableAs != null) {
             final var encode = MethodSpec.methodBuilder("encode")
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(ClassName.get(BinaryWriter.class), "writer", Modifier.FINAL)
                 .addParameter(ClassName.get(CodecType.class), "codec", Modifier.FINAL);
 
-            for (final var codec : target.dtoInterface().writableCodecs()) {
+            for (final var codec : dtoWritableAs.value()) {
+                final var backend = getBackendByCodecOrThrow(codec);
+                backend.generateEncodeMethodFor(target, implementation);
                 encode
                     .beginControlFlow("if (codec == $T.$N)", CodecType.class, codec.name())
-                    .addStatement("$N(writer)", codec.encoderMethodName())
+                    .addStatement("$N(writer)", backend.encodeMethodName())
                     .addStatement("return")
                     .endControlFlow();
             }
@@ -314,29 +370,28 @@ public class DtoGenerator {
                     .build());
         }
 
-        final var targetCodecs = interfaceType.codecs();
-        for (final var implementer : backends) {
-            if (targetCodecs.contains(implementer.codec())) {
-                implementer.implementFor(target, implementation);
-            }
-        }
-
-        implementation.addMethod(constructor.build());
-
-        builder
-            .addMethod(MethodSpec.methodBuilder("build")
-                .addModifiers(Modifier.PUBLIC)
-                .returns(interfaceType.inputTypeName())
-                .addStatement("return new $N(this)", interfaceType.dataSimpleName())
+        JavaFile.builder(packageName, implementation
+            .addMethod(constructor.build())
+            .addType(builder
+                .addMethod(MethodSpec.methodBuilder("build")
+                    .addModifiers(Modifier.PUBLIC)
+                    .returns(implementationClassName)
+                    .addStatement("return new $T(this)", implementationClassName)
+                    .build())
                 .build())
-            .build();
-
-        JavaFile.builder(packageName, implementation.build())
-            .indent("    ").build()
+            .build())
+            .indent("    ")
+            .build()
             .writeTo(filer);
+    }
 
-        JavaFile.builder(packageName, builder.build())
-            .indent("    ").build()
-            .writeTo(filer);
+    private DtoGeneratorBackend getBackendByCodecOrThrow(final DtoCodec codec) {
+        final var backend = backends.get(codec);
+        if (backend == null) {
+            throw new IllegalStateException("No code generation backend " +
+                "available for codec \"" + codec + "\"; cannot generate DTO " +
+                "class");
+        }
+        return backend;
     }
 }

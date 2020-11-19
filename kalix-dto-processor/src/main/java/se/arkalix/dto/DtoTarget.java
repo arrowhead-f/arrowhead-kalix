@@ -1,32 +1,36 @@
 package se.arkalix.dto;
 
-import se.arkalix.dto.types.DtoInterface;
+import com.squareup.javapoet.ClassName;
+import se.arkalix.dto.types.DtoTypeInterface;
 
 import java.util.List;
 import java.util.Objects;
 
 public class DtoTarget {
     public static final String DATA_SUFFIX = "Dto";
-    public static final String BUILDER_SUFFIX = "Builder";
 
-    private final DtoInterface dtoInterface;
+    private final DtoTypeInterface interface_;
     private final List<DtoProperty> properties;
 
-    public DtoTarget(final DtoInterface dtoInterface, final List<DtoProperty> properties) {
-        this.dtoInterface = Objects.requireNonNull(dtoInterface, "dtoInterface");
+    public DtoTarget(final DtoTypeInterface interface_, final List<DtoProperty> properties) {
+        this.interface_ = Objects.requireNonNull(interface_, "interface_");
         this.properties = Objects.requireNonNull(properties, "properties");
     }
 
-    public DtoInterface dtoInterface() {
-        return dtoInterface;
+    public DtoTypeInterface interface_() {
+        return interface_;
     }
 
-    public List<DtoProperty> dtoProperties() {
+    public List<DtoProperty> properties() {
         return properties;
     }
 
     @Override
     public String toString() {
-        return dtoInterface.inputTypeName().toString();
+        return interface_.interfaceTypeName().toString();
+    }
+
+    public ClassName typeName() {
+        return interface_.generatedTypeName();
     }
 }

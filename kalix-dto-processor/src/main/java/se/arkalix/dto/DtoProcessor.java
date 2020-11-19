@@ -50,7 +50,8 @@ public class DtoProcessor extends AbstractProcessor {
                 catch (final Throwable throwable) {
                     final var writer = new StringWriter();
                     final var printer = new PrintWriter(writer);
-                    throwable.printStackTrace(printer);
+                    //throwable.printStackTrace(printer);
+                    writer.append(throwable.getMessage());
                     messager.printMessage(
                         Diagnostic.Kind.ERROR,
                         writer.toString(),

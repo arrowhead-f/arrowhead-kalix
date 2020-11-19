@@ -64,7 +64,7 @@ public interface SystemDetails {
     }
 
     static SystemDetailsDto from(final ArSystem system) {
-        return new SystemDetailsBuilder()
+        return new SystemDetailsDto.Builder()
             .name(system.name())
             .hostname(system.socketAddress().getHostString())
             .port(system.port())
@@ -76,7 +76,7 @@ public interface SystemDetails {
 
     static SystemDetailsDto from(final SystemRecord provider) {
         final var socketAddress = provider.socketAddress();
-        return new SystemDetailsBuilder()
+        return new SystemDetailsDto.Builder()
             .name(provider.name())
             .hostname(socketAddress.getHostString())
             .port(socketAddress.getPort())

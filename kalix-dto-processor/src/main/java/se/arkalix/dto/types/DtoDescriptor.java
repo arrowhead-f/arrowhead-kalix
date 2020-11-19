@@ -31,6 +31,7 @@ public enum DtoDescriptor {
     MONTH_DAY(0x4000),
     OFFSET_DATE_TIME(0x6000),
     OFFSET_TIME(0x6000),
+    OPTIONAL(0x0100),
     PERIOD(0x4000),
     SHORT_BOXED(0x2680),
     SHORT_UNBOXED(0x2280),

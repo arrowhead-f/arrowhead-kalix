@@ -452,7 +452,7 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                         public Future<?> accept() {
                             return system.consume()
                                 .oneUsing(HttpJsonTrustedContractNegotiationService.factory())
-                                .flatMap(service -> service.accept(new TrustedContractAcceptanceBuilder()
+                                .flatMap(service -> service.accept(new TrustedContractAcceptanceDto.Builder()
                                     .negotiationId(negotiation.id())
                                     .offerorName(negotiation.offer().offerorName())
                                     .acceptorName(negotiation.offer().receiverName())
@@ -463,7 +463,7 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
 
                         @Override
                         public Future<?> offer(final SimplifiedContractCounterOffer offer) {
-                            final var counterOffer = new TrustedContractCounterOfferBuilder()
+                            final var counterOffer = new TrustedContractCounterOfferDto.Builder()
                                 .negotiationId(negotiation.id())
                                 .offerorName(negotiation.offer().receiverName())
                                 .receiverName(negotiation.offer().offerorName())
@@ -487,7 +487,7 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                         public Future<?> reject() {
                             return system.consume()
                                 .oneUsing(HttpJsonTrustedContractNegotiationService.factory())
-                                .flatMap(service -> service.reject(new TrustedContractRejectionBuilder()
+                                .flatMap(service -> service.reject(new TrustedContractRejectionDto.Builder()
                                     .negotiationId(negotiation.id())
                                     .offerorName(negotiation.offer().offerorName())
                                     .rejectorName(negotiation.offer().receiverName())
