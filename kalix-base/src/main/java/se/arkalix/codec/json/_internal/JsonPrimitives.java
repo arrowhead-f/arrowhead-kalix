@@ -47,6 +47,56 @@ public final class JsonPrimitives {
     }
 
     public static char readChar(final JsonToken token, final BinaryReader reader) {
+        var c0 = token.begin();
+        final var c1 = token.end();
+
+        var b = reader.getByte(c0);
+        if (b < 0x20 || b == 0x7F) {
+            throw new DecoderReadUnexpectedToken(
+                CodecType.JSON,
+                reader,
+                readStringRaw(token, reader),
+                token.begin(),
+                "invalid JSON string character");
+        }
+        if (b == '\\') {
+            b = reader.getByte(++c0);
+            switch (b) {
+            case '\"':
+            case '/':
+            case '\\':
+                break;
+
+            case 'b': b = '\b'; break;
+            case 'f': b = '\f'; break;
+            case 'r': b = '\r'; break;
+            case 'n': b = '\n'; break;
+            case 't': b = '\t'; break;
+
+            case 'u':
+                final var uBuffer = new byte[4];
+                if (c0 + 4 == c1) {
+                    try {
+                        reader.getBytes(c0, uBuffer);
+                        final var uString = new String(uBuffer, StandardCharsets.ISO_8859_1);
+                        final var uNumber = Integer.parseUnsignedInt(uString, 16);
+                        return (char) uNumber;
+                    }
+                    catch (final NumberFormatException ignored) {}
+                }
+                else {
+                    reader.getBytes(p1, uBuffer, 0, p2 - p1);
+                }
+                badEscapeBuilder.append("\\u").append(new String(uBuffer, StandardCharsets.US_ASCII));
+                break error;
+
+            default:
+                badEscapeBuilder.append('\\').append(Character.toString(b));
+                break error;
+            }
+        }
+
+
         final var string = readString(token, reader);
         if (string.length() != 1) {
             throw new DecoderReadUnexpectedToken(

@@ -5,7 +5,7 @@ import java.lang.annotation.Target;
 
 /**
  * Allows overriding the name of a {@link se.arkalix.dto DTO interface} field
- * when codec or decoding it to/from JSON.
+ * when encoding or decoding it to/from JSON.
  * <p>
  * For example, given the following interface:
  * <pre>

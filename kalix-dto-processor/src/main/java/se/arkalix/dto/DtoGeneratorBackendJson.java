@@ -188,7 +188,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
             break;
 
         case CUSTOM:
-            readCustom(target, (DtoTypeCustom) type, assignment, builder);
+            readCustom((DtoTypeCustom) type, assignment, builder);
             break;
 
         case DOUBLE_BOXED:
@@ -374,7 +374,6 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
     }
 
     private void readCustom(
-        final DtoTarget target,
         final DtoTypeCustom type,
         final Expander assignment,
         final MethodSpec.Builder builder
