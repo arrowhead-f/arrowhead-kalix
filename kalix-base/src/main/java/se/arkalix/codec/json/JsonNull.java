@@ -40,8 +40,8 @@ public class JsonNull implements JsonValue {
      *                                    valid JSON null at the current read
      *                                    offset.
      */
-    public static JsonNull readJson(final BinaryReader reader) {
-        return readJson(JsonTokenizer.tokenize(reader));
+    public static JsonNull decodeJson(final BinaryReader reader) {
+        return decodeJson(JsonTokenizer.tokenize(reader));
     }
 
     /**
@@ -49,7 +49,7 @@ public class JsonNull implements JsonValue {
      * versions of the Kalix library. Use is not advised.
      */
     @Internal
-    public static JsonNull readJson(final JsonTokenBuffer buffer) {
+    public static JsonNull decodeJson(final JsonTokenBuffer buffer) {
         var token = buffer.next();
         if (token.type() != JsonType.NULL) {
             final var reader = buffer.reader();
@@ -64,7 +64,7 @@ public class JsonNull implements JsonValue {
     }
 
     @Override
-    public CodecType writeJson(final BinaryWriter writer) {
+    public CodecType encodeJson(final BinaryWriter writer) {
         writer.write(BYTES_NULL);
         return CodecType.JSON;
     }

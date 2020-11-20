@@ -87,8 +87,8 @@ public class JsonObject implements JsonCollection<String>, Iterable<JsonPair> {
      *                                    valid JSON object at the current read
      *                                    offset.
      */
-    public static JsonObject readJson(final BinaryReader reader) {
-        return readJson(JsonTokenizer.tokenize(reader));
+    public static JsonObject decodeJson(final BinaryReader reader) {
+        return decodeJson(JsonTokenizer.tokenize(reader));
     }
 
     /**
@@ -96,7 +96,7 @@ public class JsonObject implements JsonCollection<String>, Iterable<JsonPair> {
      * versions of the Kalix library. Use is not advised.
      */
     @Internal
-    public static JsonObject readJson(final JsonTokenBuffer buffer) {
+    public static JsonObject decodeJson(final JsonTokenBuffer buffer) {
         final var reader = buffer.reader();
         var token = buffer.next();
         if (token.type() != JsonType.OBJECT) {
@@ -110,14 +110,14 @@ public class JsonObject implements JsonCollection<String>, Iterable<JsonPair> {
         final var pairs = new ArrayList<JsonPair>(token.nChildren());
         for (var n = token.nChildren(); n-- != 0; ) {
             final var name = buffer.next();
-            final var value = JsonValue.readJson(buffer);
+            final var value = JsonValue.decodeJson(buffer);
             pairs.add(new JsonPair(JsonPrimitives.readString(name, reader), value));
         }
         return new JsonObject(pairs);
     }
 
     @Override
-    public CodecType writeJson(final BinaryWriter writer) {
+    public CodecType encodeJson(final BinaryWriter writer) {
         writer.write((byte) '{');
         var isFirst = true;
         for (final var pair : pairs) {
@@ -130,7 +130,7 @@ public class JsonObject implements JsonCollection<String>, Iterable<JsonPair> {
             writer.write((byte) '"');
             JsonPrimitives.write(pair.name(), writer);
             writer.write(new byte[]{'"', ':'});
-            pair.value().writeJson(writer);
+            pair.value().encodeJson(writer);
         }
         writer.write((byte) '}');
         return CodecType.JSON;

@@ -14,7 +14,7 @@ public class DtoTypeSequence implements DtoTypeCollection {
     private static final ClassName listClassName = ClassName.get(List.class);
 
     private final DtoDescriptor descriptor;
-    private final TypeName interfaceTypeName;
+    private final TypeName originalTypeName;
     private final TypeName generatedTypeName;
     private final DtoType itemType;
 
@@ -23,13 +23,13 @@ public class DtoTypeSequence implements DtoTypeCollection {
 
     private DtoTypeSequence(
         final DtoDescriptor descriptor,
-        final TypeName interfaceTypeName,
+        final TypeName originalTypeName,
         final TypeName generatedTypeName,
         final DtoType itemType
     )
     {
         this.descriptor = descriptor;
-        this.interfaceTypeName = interfaceTypeName;
+        this.originalTypeName = originalTypeName;
         this.generatedTypeName = generatedTypeName;
         this.itemType = itemType;
     }
@@ -84,8 +84,8 @@ public class DtoTypeSequence implements DtoTypeCollection {
     }
 
     @Override
-    public TypeName interfaceTypeName() {
-        return interfaceTypeName;
+    public TypeName originalTypeName() {
+        return originalTypeName;
     }
 
     @Override

@@ -379,7 +379,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         final Expander assignment,
         final MethodSpec.Builder builder
     ) {
-        final var returnType = target.typeName().toString();
+        final var returnType = type.originalTypeName().toString();
         final var parameter = JsonTokenBuffer.class.getCanonicalName();
         if (!type.containsPublicStaticMethod(returnType, decodeMethodName(), parameter)) {
             throw new DtoException(type.typeElement(), "No public static " +
@@ -397,7 +397,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         }
 
         builder.addStatement(assignment.expand("$T.$N(buffer)"),
-            decodeMethodName(), type.interfaceTypeName());
+            type.originalTypeName(), decodeMethodName());
     }
 
     private void readEnum(final DtoType type, final Expander assignment, final MethodSpec.Builder builder) {
@@ -416,17 +416,17 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
             .addStatement("break error")
             .endControlFlow()
             .addStatement(assignment.expand("$T.valueOf($T.readString(token, reader))"),
-                type.interfaceTypeName(), JsonPrimitives.class);
+                type.originalTypeName(), JsonPrimitives.class);
     }
 
     private void readInterface(final DtoTypeInterface type, final Expander assignment, final MethodSpec.Builder builder) {
         final var dtoReadableAs = type.element().getAnnotation(DtoReadableAs.class);
         if (dtoReadableAs == null) {
-            throw new DtoException(type.element(), type.interfaceTypeName() + " is " +
+            throw new DtoException(type.element(), type.originalTypeName() + " is " +
                 "not annotated with @DtoReadableAs(DtoCodec.JSON)");
         }
         if (!List.of(dtoReadableAs.value()).contains(DtoCodec.JSON)) {
-            throw new DtoException(type.element(), type.interfaceTypeName() + " is " +
+            throw new DtoException(type.element(), type.originalTypeName() + " is " +
                 "annotated with @DtoReadableAs, but it lacks DtoCodec.JSON " +
                 "as annotation argument");
         }
@@ -478,7 +478,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         level -= 1;
 
         if (keyType.descriptor() == DtoDescriptor.ENUM) {
-            builder.addStatement("entries$1L.put($2T.valueOf(keyType$1L), valueType$1L)", level, keyType.interfaceTypeName());
+            builder.addStatement("entries$1L.put($2T.valueOf(keyType$1L), valueType$1L)", level, keyType.originalTypeName());
         }
         else {
             builder.addStatement("entries$1L.put(keyType$1L, valueType$1L)", level);
@@ -788,11 +788,11 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
     private void writeInterface(final DtoTypeInterface type, final String name, final MethodSpec.Builder builder) {
         final var dtoWritableAs = type.element().getAnnotation(DtoWritableAs.class);
         if (dtoWritableAs == null) {
-            throw new DtoException(type.element(), type.interfaceTypeName() + " is " +
+            throw new DtoException(type.element(), type.originalTypeName() + " is " +
                 "not annotated with @DtoWritableAs(DtoCodec.JSON)");
         }
         if (!List.of(dtoWritableAs.value()).contains(DtoCodec.JSON)) {
-            throw new DtoException(type.element(), type.interfaceTypeName() + " is " +
+            throw new DtoException(type.element(), type.originalTypeName() + " is " +
                 "annotated with @DtoWritableAs, but it lacks DtoCodec.JSON " +
                 "as annotation argument");
         }

@@ -274,8 +274,8 @@ public class JsonNumber implements JsonValue {
      *                                    valid JSON number at the current read
      *                                    offset.
      */
-    public static JsonNumber readJson(final BinaryReader reader) {
-        return readJson(JsonTokenizer.tokenize(reader));
+    public static JsonNumber decodeJson(final BinaryReader reader) {
+        return decodeJson(JsonTokenizer.tokenize(reader));
     }
 
     /**
@@ -283,7 +283,7 @@ public class JsonNumber implements JsonValue {
      * versions of the Kalix library. Use is not advised.
      */
     @Internal
-    public static JsonNumber readJson(final JsonTokenBuffer buffer) {
+    public static JsonNumber decodeJson(final JsonTokenBuffer buffer) {
         final var reader = buffer.reader();
         final var token = buffer.next();
         final var string = JsonPrimitives.readStringRaw(token, reader);
@@ -299,7 +299,7 @@ public class JsonNumber implements JsonValue {
     }
 
     @Override
-    public CodecType writeJson(final BinaryWriter writer) {
+    public CodecType encodeJson(final BinaryWriter writer) {
         writer.write(number.getBytes(StandardCharsets.ISO_8859_1));
         return CodecType.JSON;
     }

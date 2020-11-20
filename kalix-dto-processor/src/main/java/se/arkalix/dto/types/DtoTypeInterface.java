@@ -12,7 +12,7 @@ import java.util.Objects;
 
 public class DtoTypeInterface implements DtoType {
     private final TypeElement interfaceElement;
-    private final ClassName interfaceTypeName;
+    private final ClassName originalTypeName;
     private final ClassName generatedTypeName;
 
     public DtoTypeInterface(final Element element) {
@@ -39,7 +39,7 @@ public class DtoTypeInterface implements DtoType {
                 "names ending with \"" + DtoTarget.DATA_SUFFIX + "\"");
         }
 
-        interfaceTypeName = ClassName.get(interfaceElement);
+        originalTypeName = ClassName.get(interfaceElement);
 
         final var generatedSimpleName = interfaceSimpleName + DtoTarget.DATA_SUFFIX;
         generatedTypeName = ClassName.get(packageNameOf(interfaceElement), generatedSimpleName);
@@ -55,8 +55,8 @@ public class DtoTypeInterface implements DtoType {
     }
 
     @Override
-    public ClassName interfaceTypeName() {
-        return interfaceTypeName;
+    public ClassName originalTypeName() {
+        return originalTypeName;
     }
 
     @Override
@@ -66,7 +66,7 @@ public class DtoTypeInterface implements DtoType {
 
     @Override
     public String toString() {
-        return interfaceTypeName.toString();
+        return originalTypeName.toString();
     }
 
     private static String packageNameOf(Element element) {

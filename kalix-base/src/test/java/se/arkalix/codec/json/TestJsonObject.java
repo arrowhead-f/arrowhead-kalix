@@ -18,7 +18,7 @@ public class TestJsonObject {
     @ParameterizedTest
     @MethodSource("objectsToRead")
     void shouldReadObject(final JsonObject expected, final String json) {
-        assertEquals(expected, JsonObject.readJson(new ByteArrayReader(json.getBytes(StandardCharsets.UTF_8))));
+        assertEquals(expected, JsonObject.decodeJson(new ByteArrayReader(json.getBytes(StandardCharsets.UTF_8))));
     }
 
     static Stream<Arguments> objectsToRead() {
@@ -39,7 +39,7 @@ public class TestJsonObject {
     @MethodSource("objectsToWrite")
     void shouldWriteObject(final String expected, final JsonObject object) {
         final var writer = new ByteArrayWriter(new byte[expected.getBytes(StandardCharsets.UTF_8).length]);
-        object.writeJson(writer);
+        object.encodeJson(writer);
         assertEquals(expected, new String(writer.asByteArray(), StandardCharsets.UTF_8));
     }
 

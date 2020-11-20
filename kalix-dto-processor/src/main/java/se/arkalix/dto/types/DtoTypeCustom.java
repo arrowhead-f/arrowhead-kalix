@@ -125,7 +125,7 @@ public class DtoTypeCustom implements DtoType {
     }
 
     @Override
-    public TypeName interfaceTypeName() {
+    public TypeName originalTypeName() {
         return typeName;
     }
 

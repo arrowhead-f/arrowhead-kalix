@@ -11,7 +11,7 @@ import java.util.Optional;
 public class DtoTypeOptional implements DtoTypeCollection {
     private static final ClassName optionalClassName = ClassName.get(Optional.class);
 
-    private final TypeName interfaceTypeName;
+    private final TypeName originalTypeName;
     private final ParameterizedTypeName generatedClassName;
     private final DtoType valueType;
 
@@ -22,7 +22,7 @@ public class DtoTypeOptional implements DtoTypeCollection {
         Objects.requireNonNull(type, "type");
         this.valueType = Objects.requireNonNull(valueType, "valueType");
 
-        interfaceTypeName = ClassName.get(type);
+        originalTypeName = ClassName.get(type);
         generatedClassName = ParameterizedTypeName.get(optionalClassName, valueType.generatedTypeName());
     }
 
@@ -54,8 +54,8 @@ public class DtoTypeOptional implements DtoTypeCollection {
     }
 
     @Override
-    public TypeName interfaceTypeName() {
-        return interfaceTypeName;
+    public TypeName originalTypeName() {
+        return originalTypeName;
     }
 
     @Override

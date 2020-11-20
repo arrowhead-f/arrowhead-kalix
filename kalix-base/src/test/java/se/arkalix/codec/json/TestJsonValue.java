@@ -19,7 +19,7 @@ public class TestJsonValue {
     @MethodSource("valuesToRead")
     void shouldReadOne(final JsonValue expected, final String input) {
         final var reader = new ByteArrayReader(input.getBytes(StandardCharsets.UTF_8));
-        Assertions.assertEquals(expected, JsonValue.readJson(reader));
+        Assertions.assertEquals(expected, JsonValue.decodeJson(reader));
     }
 
     static Stream<Arguments> valuesToRead() {
@@ -73,7 +73,7 @@ public class TestJsonValue {
     @MethodSource("valuesToWrite")
     void shouldWriteOne(final String expected, final JsonValue input) {
         final var writer = new ByteArrayWriter(new byte[expected.getBytes(StandardCharsets.UTF_8).length]);
-        final var codec = input.writeJson(writer);
+        final var codec = input.encodeJson(writer);
 
         assertEquals(CodecType.JSON, codec);
         assertEquals(expected, new String(writer.asByteArray(), StandardCharsets.UTF_8));

@@ -16,7 +16,7 @@ public class TestJsonArray {
     @ParameterizedTest
     @MethodSource("arraysToRead")
     void shouldReadArray(final JsonArray expected, final String json) {
-        assertEquals(expected, JsonArray.readJson(new ByteArrayReader(json.getBytes(StandardCharsets.UTF_8))));
+        assertEquals(expected, JsonArray.decodeJson(new ByteArrayReader(json.getBytes(StandardCharsets.UTF_8))));
     }
 
     static Stream<Arguments> arraysToRead() {
@@ -34,7 +34,7 @@ public class TestJsonArray {
     @MethodSource("arraysToWrite")
     void shouldWriteArray(final String expected, final JsonArray array) {
         final var writer = new ByteArrayWriter(new byte[expected.length()]);
-        array.writeJson(writer);
+        array.encodeJson(writer);
         assertEquals(expected, new String(writer.asByteArray(), StandardCharsets.UTF_8));
     }
 

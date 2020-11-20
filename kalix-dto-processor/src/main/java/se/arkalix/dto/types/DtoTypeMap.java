@@ -8,7 +8,7 @@ import javax.lang.model.type.DeclaredType;
 import java.util.Map;
 
 public class DtoTypeMap implements DtoTypeCollection {
-    private final TypeName interfaceTypeName;
+    private final TypeName originalTypeName;
     private final ParameterizedTypeName generatedTypeName;
     private final DtoType keyType;
     private final DtoType valueType;
@@ -19,7 +19,7 @@ public class DtoTypeMap implements DtoTypeCollection {
     public DtoTypeMap(final DeclaredType type, final DtoType keyType, final DtoType valueType) {
         assert !keyType.descriptor().isCollection() && !(keyType instanceof DtoTypeInterface);
 
-        this.interfaceTypeName = TypeName.get(type);
+        this.originalTypeName = TypeName.get(type);
         this.generatedTypeName = ParameterizedTypeName.get(
             ClassName.get(Map.class),
             keyType.generatedTypeName(),
@@ -60,8 +60,8 @@ public class DtoTypeMap implements DtoTypeCollection {
     }
 
     @Override
-    public TypeName interfaceTypeName() {
-        return interfaceTypeName;
+    public TypeName originalTypeName() {
+        return originalTypeName;
     }
 
     @Override

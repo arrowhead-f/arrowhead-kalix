@@ -50,7 +50,7 @@ public class DtoGenerator {
             final var descriptor = property.descriptor();
             final var name = property.name();
             final var type = property.type();
-            final var pInterfaceTypeName = type.interfaceTypeName();
+            final var pInterfaceTypeName = type.originalTypeName();
             final var pGeneratedTypeName = type.generatedTypeName();
 
             // DTO property field.

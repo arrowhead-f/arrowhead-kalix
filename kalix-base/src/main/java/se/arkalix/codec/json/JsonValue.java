@@ -71,7 +71,7 @@ public interface JsonValue {
      * @param writer Writer to which this JSON value will be written.
      * @return {@link CodecType#JSON}.
      */
-    CodecType writeJson(final BinaryWriter writer);
+    CodecType encodeJson(final BinaryWriter writer);
 
     /**
      * Reads JSON value from given {@code reader}.
@@ -80,8 +80,8 @@ public interface JsonValue {
      *               ignoring any whitespace.
      * @return Decoded JSON value.
      */
-    static JsonValue readJson(final BinaryReader reader) {
-         return readJson(JsonTokenizer.tokenize(reader));
+    static JsonValue decodeJson(final BinaryReader reader) {
+         return decodeJson(JsonTokenizer.tokenize(reader));
     }
 
     /**
@@ -89,22 +89,22 @@ public interface JsonValue {
      * versions of the Kalix library. Use is not advised.
      */
     @Internal
-    static JsonValue readJson(final JsonTokenBuffer buffer) {
+    static JsonValue decodeJson(final JsonTokenBuffer buffer) {
         var token = buffer.peek();
         switch (token.type()) {
         case OBJECT:
-            return JsonObject.readJson(buffer);
+            return JsonObject.decodeJson(buffer);
         case ARRAY:
-            return JsonArray.readJson(buffer);
+            return JsonArray.decodeJson(buffer);
         case STRING:
-            return JsonString.readJson(buffer);
+            return JsonString.decodeJson(buffer);
         case NUMBER:
-            return JsonNumber.readJson(buffer);
+            return JsonNumber.decodeJson(buffer);
         case TRUE:
         case FALSE:
-            return JsonBoolean.readJson(buffer);
+            return JsonBoolean.decodeJson(buffer);
         case NULL:
-            return JsonNull.readJson(buffer);
+            return JsonNull.decodeJson(buffer);
         default:
             throw new IllegalStateException("Illegal token type: " + token.type());
         }

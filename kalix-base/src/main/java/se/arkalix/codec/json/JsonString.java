@@ -160,8 +160,8 @@ public class JsonString implements JsonValue {
      *                                    valid JSON string at the current read
      *                                    offset.
      */
-    public static JsonString readJson(final BinaryReader reader) {
-        return readJson(JsonTokenizer.tokenize(reader));
+    public static JsonString decodeJson(final BinaryReader reader) {
+        return decodeJson(JsonTokenizer.tokenize(reader));
     }
 
     /**
@@ -169,7 +169,7 @@ public class JsonString implements JsonValue {
      * versions of the Kalix library. Use is not advised.
      */
     @Internal
-    public static JsonString readJson(final JsonTokenBuffer buffer) {
+    public static JsonString decodeJson(final JsonTokenBuffer buffer) {
         final var reader = buffer.reader();
         var token = buffer.next();
         if (token.type() != JsonType.STRING) {
@@ -184,7 +184,7 @@ public class JsonString implements JsonValue {
     }
 
     @Override
-    public CodecType writeJson(final BinaryWriter writer) {
+    public CodecType encodeJson(final BinaryWriter writer) {
         writer.write((byte) '"');
         JsonPrimitives.write(string, writer);
         writer.write((byte) '"');

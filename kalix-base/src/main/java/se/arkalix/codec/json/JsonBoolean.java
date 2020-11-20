@@ -64,8 +64,8 @@ public class JsonBoolean implements JsonValue {
      *                                    valid JSON boolean at the current
      *                                    read offset.
      */
-    public static JsonBoolean readJson(final BinaryReader reader) {
-        return readJson(JsonTokenizer.tokenize(reader));
+    public static JsonBoolean decodeJson(final BinaryReader reader) {
+        return decodeJson(JsonTokenizer.tokenize(reader));
     }
 
     /**
@@ -73,7 +73,7 @@ public class JsonBoolean implements JsonValue {
      * versions of the Kalix library. Use is not advised.
      */
     @Internal
-    public static JsonBoolean readJson(final JsonTokenBuffer buffer) {
+    public static JsonBoolean decodeJson(final JsonTokenBuffer buffer) {
         var token = buffer.next();
         switch (token.type()) {
         case TRUE: return TRUE;
@@ -90,7 +90,7 @@ public class JsonBoolean implements JsonValue {
     }
 
     @Override
-    public CodecType writeJson(final BinaryWriter writer) {
+    public CodecType encodeJson(final BinaryWriter writer) {
         writer.write(value ? BYTES_TRUE : BYTES_FALSE);
         return CodecType.JSON;
     }

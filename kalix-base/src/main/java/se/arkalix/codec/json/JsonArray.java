@@ -84,8 +84,8 @@ public class JsonArray implements JsonCollection<Integer>, Iterable<JsonValue> {
      *                                    valid JSON array at the current read
      *                                    offset.
      */
-    public static JsonArray readJson(final BinaryReader reader) {
-        return readJson(JsonTokenizer.tokenize(reader));
+    public static JsonArray decodeJson(final BinaryReader reader) {
+        return decodeJson(JsonTokenizer.tokenize(reader));
     }
 
     /**
@@ -93,7 +93,7 @@ public class JsonArray implements JsonCollection<Integer>, Iterable<JsonValue> {
      * versions of the Kalix library. Use is not advised.
      */
     @Internal
-    public static JsonArray readJson(final JsonTokenBuffer buffer) {
+    public static JsonArray decodeJson(final JsonTokenBuffer buffer) {
         final var reader = buffer.reader();
         var token = buffer.next();
         if (token.type() != JsonType.ARRAY) {
@@ -106,13 +106,13 @@ public class JsonArray implements JsonCollection<Integer>, Iterable<JsonValue> {
         }
         final var elements = new ArrayList<JsonValue>(token.nChildren());
         for (var n = token.nChildren(); n-- != 0; ) {
-            elements.add(JsonValue.readJson(buffer));
+            elements.add(JsonValue.decodeJson(buffer));
         }
         return new JsonArray(elements);
     }
 
     @Override
-    public CodecType writeJson(final BinaryWriter writer) {
+    public CodecType encodeJson(final BinaryWriter writer) {
         writer.write((byte) '[');
         var isFirst = true;
         for (final var element : elements) {
@@ -122,7 +122,7 @@ public class JsonArray implements JsonCollection<Integer>, Iterable<JsonValue> {
             else {
                 writer.write((byte) ',');
             }
-            element.writeJson(writer);
+            element.encodeJson(writer);
         }
         writer.write((byte) ']');
         return CodecType.JSON;

@@ -19,7 +19,7 @@ public class DtoTypeNative implements DtoType {
     }
 
     @Override
-    public TypeName interfaceTypeName() {
+    public TypeName originalTypeName() {
         return typeName;
     }
 

@@ -27,7 +27,7 @@ public class DtoTarget {
 
     @Override
     public String toString() {
-        return interface_.interfaceTypeName().toString();
+        return interface_.originalTypeName().toString();
     }
 
     public ClassName typeName() {
