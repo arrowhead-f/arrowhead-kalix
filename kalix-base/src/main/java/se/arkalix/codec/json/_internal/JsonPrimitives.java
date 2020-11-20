@@ -49,66 +49,86 @@ public final class JsonPrimitives {
     public static char readChar(final JsonToken token, final BinaryReader reader) {
         var c0 = token.begin();
         final var c1 = token.end();
-
-        var b = reader.getByte(c0);
-        if (b < 0x20 || b == 0x7F) {
-            throw new DecoderReadUnexpectedToken(
-                CodecType.JSON,
-                reader,
-                readStringRaw(token, reader),
-                token.begin(),
-                "invalid JSON string character");
-        }
-        if (b == '\\') {
-            b = reader.getByte(++c0);
-            switch (b) {
-            case '\"':
-            case '/':
-            case '\\':
-                break;
-
-            case 'b': b = '\b'; break;
-            case 'f': b = '\f'; break;
-            case 'r': b = '\r'; break;
-            case 'n': b = '\n'; break;
-            case 't': b = '\t'; break;
-
-            case 'u':
-                final var uBuffer = new byte[4];
-                if (c0 + 4 == c1) {
-                    try {
-                        reader.getBytes(c0, uBuffer);
-                        final var uString = new String(uBuffer, StandardCharsets.ISO_8859_1);
-                        final var uNumber = Integer.parseUnsignedInt(uString, 16);
-                        return (char) uNumber;
+        String error;
+        error:
+        {
+            var b = reader.getByte(c0);
+            if (b < 0) {
+                if (b < -64) {
+                    error = "bad JSON character string; invalid UTF-8 " +
+                        "lead byte";
+                    break error;
+                }
+                if (b < -32) { // 2 byte UTF-8 code point.
+                    if (c0 + 2 != c1) {
+                        error = "bad JSON character string; must contain " +
+                            "exactly one valid UTF-8 code point";
+                        break error;
                     }
-                    catch (final NumberFormatException ignored) {}
+                    return (char) (((0x1F & b) << 6) |
+                        (0x3F & reader.getByte(c0 + 1)));
                 }
-                else {
-                    reader.getBytes(p1, uBuffer, 0, p2 - p1);
+                if (b < -16) { // 3 byte UTF-8 code point.
+                    if (c0 + 3 != c1) {
+                        error = "bad JSON character string; must contain " +
+                            "exactly one valid UTF-8 code point";
+                        break error;
+                    }
+                    return (char) (((0x0F & b) << 12) |
+                        ((0x3F & reader.getByte(c0 + 1)) << 6) |
+                        (0x3F & reader.getByte(c0 + 2)));
                 }
-                badEscapeBuilder.append("\\u").append(new String(uBuffer, StandardCharsets.US_ASCII));
-                break error;
-
-            default:
-                badEscapeBuilder.append('\\').append(Character.toString(b));
+                error = "bad JSON character string; 4-byte UTF-8 code " +
+                    "points do not fit in a java char";
                 break error;
             }
-        }
+            if (b < 0x20 || b == 0x7F) {
+                error = "bad JSON character string; Unicode basic latin " +
+                    "control characters not allowed in JSON strings";
+                break error;
+            }
+            if (b == '\\') {
+                b = reader.getByte(++c0);
+                switch (b) {
+                case '\"':
+                case '/':
+                case '\\':
+                    break;
 
+                case 'b': b = '\b'; break;
+                case 'f': b = '\f'; break;
+                case 'r': b = '\r'; break;
+                case 'n': b = '\n'; break;
+                case 't': b = '\t'; break;
 
-        final var string = readString(token, reader);
-        if (string.length() != 1) {
-            throw new DecoderReadUnexpectedToken(
-                CodecType.JSON,
-                reader,
-                string,
-                token.begin(),
-                "not a single string character; expected string to contain " +
-                    "exactly one Unicode code point with a value less than " +
-                    "or equal to 0xFFFF");
+                case 'u':
+                    final var uBuffer = new byte[4];
+                    if (++c0 + 4 == c1) {
+                        try {
+                            reader.getBytes(c0, uBuffer);
+                            final var uString = new String(uBuffer, StandardCharsets.ISO_8859_1);
+                            final var uNumber = Integer.parseUnsignedInt(uString, 16);
+                            return (char) uNumber;
+                        }
+                        catch (final NumberFormatException ignored) {}
+                    }
+                default:
+                    error = "bad JSON character string; bad escape sequence";
+                    break error;
+                }
+            }
+            if (c0 + 1 == c1) {
+                return (char) b;
+            }
+            error = "bad JSON character string; must contain exactly one " +
+                "valid character or escape sequence";
         }
-        return string.charAt(0);
+        throw new DecoderReadUnexpectedToken(
+            CodecType.JSON,
+            reader,
+            readStringRaw(token, reader),
+            token.begin(),
+            error);
     }
 
     public static double readDouble(final JsonToken token, final BinaryReader reader) {
