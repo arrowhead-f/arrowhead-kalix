@@ -1,15 +1,17 @@
 package se.arkalix.util.concurrent;
 
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.arkalix.util.concurrent._internal.NettyThread;
 import se.arkalix.util.Result;
 import se.arkalix.util.annotation.ThreadSafe;
+import se.arkalix.util.concurrent._internal.FutureConsumption;
+import se.arkalix.util.concurrent._internal.FutureConsumptionWithExtraCancelTarget;
+import se.arkalix.util.concurrent._internal.NettyThread;
 import se.arkalix.util.function.ThrowingConsumer;
 import se.arkalix.util.function.ThrowingFunction;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -29,7 +31,7 @@ import java.util.function.Consumer;
  * or no longer desired, its {@link #cancel(boolean)} method should always be
  * called.
  * <p>
- * To make it more convenient to handle different kinds of result, the
+ * To make it more convenient to handle different kinds of results, the
  * following default methods are provided, categorized after their areas of
  * application:
  * <ol type="A">
@@ -92,7 +94,7 @@ import java.util.function.Consumer;
  *     </li>
  *     <li>
  *         <b>Result Distribution</b>
- *         <p>Allow for for multiple consumers to receive the {@link Result} of
+ *         <p>Allow for multiple consumers to receive the {@link Result} of
  *            this {@code Future}.
  *             <ol>
  *                 <li>{@link #toAnnouncement()}</li>
@@ -101,8 +103,7 @@ import java.util.function.Consumer;
  *     </li>
  *     <li>
  *         <b>Result Suspension</b>
- *         <p>Delay completion of this {@code Future} until some point in the
- *            future.
+ *         <p>Adjust the time it will take for this {@code Future} to complete.
  *             <ol>
  *                 <li>{@link #delay(Duration)}</li>
  *                 <li>{@link #delayUntil(Instant)}</li>
@@ -149,6 +150,8 @@ import java.util.function.Consumer;
  */
 @SuppressWarnings("unused")
 public interface Future<V> {
+    Logger logger = LoggerFactory.getLogger(Future.class);
+
     /**
      * Sets function to receive result of this {@code Future}, when and if it
      * becomes available.
@@ -222,7 +225,9 @@ public interface Future<V> {
      * @throws NullPointerException If {@code consumer} is {@code null}.
      */
     default void onFailure(final Consumer<Throwable> consumer) {
-        Objects.requireNonNull(consumer, "consumer");
+        if (consumer == null) {
+            throw new NullPointerException("consumer");
+        }
         onResult(result -> {
             if (result.isFailure()) {
                 consumer.accept(result.fault());
@@ -249,31 +254,24 @@ public interface Future<V> {
      * @throws NullPointerException If {@code consumer} is {@code null}.
      */
     default Future<V> ifSuccess(final ThrowingConsumer<V> consumer) {
-        Objects.requireNonNull(consumer, "consumer");
-        final var source = this;
-        return new Future<>() {
-            @Override
-            public void onResult(final Consumer<Result<V>> consumer0) {
-                source.onResult(result0 -> {
-                    Result<V> result1;
-                    try {
-                        if (result0.isSuccess()) {
-                            consumer.accept(result0.value());
-                        }
-                        result1 = result0;
-                    }
-                    catch (final Throwable throwable) {
-                        result1 = Result.failure(throwable);
-                    }
-                    consumer0.accept(result1);
-                });
+        if (consumer == null) {
+            throw new NullPointerException("consumer");
+        }
+        final var future = new FutureConsumption<V>(this);
+        onResult(result0 -> {
+            Result<V> result1;
+            try {
+                if (result0.isSuccess()) {
+                    consumer.accept(result0.value());
+                }
+                result1 = result0;
             }
-
-            @Override
-            public void cancel(final boolean mayInterruptIfRunning) {
-                source.cancel(mayInterruptIfRunning);
+            catch (final Throwable throwable) {
+                result1 = Result.failure(throwable);
             }
-        };
+            future.consume(result1);
+        });
+        return future;
     }
 
     /**
@@ -298,35 +296,28 @@ public interface Future<V> {
      * @throws NullPointerException If {@code consumer} is {@code null}.
      */
     default <T extends Throwable> Future<V> ifFailure(final Class<T> class_, final ThrowingConsumer<T> consumer) {
-        Objects.requireNonNull(consumer, "consumer");
-        final var source = this;
-        return new Future<>() {
-            @Override
-            public void onResult(final Consumer<Result<V>> consumer0) {
-                source.onResult(result0 -> {
-                    Result<V> result1;
-                    try {
-                        if (result0.isFailure()) {
-                            final var fault = result0.fault();
-                            if (class_.isAssignableFrom(fault.getClass())) {
-                                consumer.accept(class_.cast(result0.fault()));
-                            }
-                        }
-                        result1 = result0;
+        if (consumer == null) {
+            throw new NullPointerException("consumer");
+        }
+        final var future = new FutureConsumption<V>(this);
+        onResult(result0 -> {
+            Result<V> result1;
+            try {
+                if (result0.isFailure()) {
+                    final var fault = result0.fault();
+                    if (class_.isAssignableFrom(fault.getClass())) {
+                        consumer.accept(class_.cast(result0.fault()));
                     }
-                    catch (final Throwable throwable) {
-                        throwable.addSuppressed(result0.fault());
-                        result1 = Result.failure(throwable);
-                    }
-                    consumer0.accept(result1);
-                });
+                }
+                result1 = result0;
             }
-
-            @Override
-            public void cancel(final boolean mayInterruptIfRunning) {
-                source.cancel(mayInterruptIfRunning);
+            catch (final Throwable throwable) {
+                throwable.addSuppressed(result0.fault());
+                result1 = Result.failure(throwable);
             }
-        };
+            future.consume(result1);
+        });
+        return future;
     }
 
     /**
@@ -348,32 +339,25 @@ public interface Future<V> {
      * @throws NullPointerException If {@code consumer} is {@code null}.
      */
     default Future<V> always(final ThrowingConsumer<Result<V>> consumer) {
-        Objects.requireNonNull(consumer, "consumer");
-        final var source = this;
-        return new Future<>() {
-            @Override
-            public void onResult(final Consumer<Result<V>> consumer0) {
-                source.onResult(result0 -> {
-                    Result<V> result1;
-                    try {
-                        consumer.accept(result0);
-                        result1 = result0;
-                    }
-                    catch (final Throwable throwable) {
-                        if (result0.isFailure()) {
-                            throwable.addSuppressed(result0.fault());
-                        }
-                        result1 = Result.failure(throwable);
-                    }
-                    consumer0.accept(result1);
-                });
+        if (consumer == null) {
+            throw new NullPointerException("consumer");
+        }
+        final var future = new FutureConsumption<V>(this);
+        onResult(result0 -> {
+            Result<V> result1;
+            try {
+                consumer.accept(result0);
+                result1 = result0;
             }
-
-            @Override
-            public void cancel(final boolean mayInterruptIfRunning) {
-                source.cancel(mayInterruptIfRunning);
+            catch (final Throwable throwable) {
+                if (result0.isFailure()) {
+                    throwable.addSuppressed(result0.fault());
+                }
+                result1 = Result.failure(throwable);
             }
-        };
+            future.consume(result1);
+        });
+        return future;
     }
 
     /**
@@ -401,39 +385,32 @@ public interface Future<V> {
      * @throws NullPointerException If {@code mapper} is {@code null}.
      */
     default <U> Future<U> map(final ThrowingFunction<? super V, U> mapper) {
-        Objects.requireNonNull(mapper, "mapper");
-        final var source = this;
-        return new Future<>() {
-            @Override
-            public void onResult(final Consumer<Result<U>> consumer) {
-                source.onResult(result0 -> {
-                    Result<U> result1;
-                    success:
-                    {
-                        Throwable cause;
-                        if (result0.isSuccess()) {
-                            try {
-                                result1 = Result.success(mapper.apply(result0.value()));
-                                break success;
-                            }
-                            catch (final Throwable throwable) {
-                                cause = throwable;
-                            }
-                        }
-                        else {
-                            cause = result0.fault();
-                        }
-                        result1 = Result.failure(cause);
+        if (mapper == null) {
+            throw new NullPointerException("mapper");
+        }
+        final var future = new FutureConsumption<U>(this);
+        onResult(result0 -> {
+            Result<U> result1;
+            success:
+            {
+                Throwable cause;
+                if (result0.isSuccess()) {
+                    try {
+                        result1 = Result.success(mapper.apply(result0.value()));
+                        break success;
                     }
-                    consumer.accept(result1);
-                });
+                    catch (final Throwable throwable) {
+                        cause = throwable;
+                    }
+                }
+                else {
+                    cause = result0.fault();
+                }
+                result1 = Result.failure(cause);
             }
-
-            @Override
-            public void cancel(final boolean mayInterruptIfRunning) {
-                source.cancel(mayInterruptIfRunning);
-            }
-        };
+            future.consume(result1);
+        });
+        return future;
     }
 
     /**
@@ -465,40 +442,35 @@ public interface Future<V> {
         final Class<T> class_,
         final ThrowingFunction<T, ? extends V> mapper
     ) {
-        Objects.requireNonNull(class_, "class_");
-        Objects.requireNonNull(mapper, "mapper");
-        final var source = this;
-        return new Future<>() {
-            @Override
-            public void onResult(final Consumer<Result<V>> consumer) {
-                source.onResult(result0 -> {
-                    Result<V> result1;
-                    result:
-                    if (result0.isSuccess()) {
-                        result1 = result0;
-                    }
-                    else {
-                        var fault = result0.fault();
-                        if (class_.isAssignableFrom(fault.getClass())) {
-                            try {
-                                result1 = Result.success(mapper.apply(class_.cast(fault)));
-                                break result;
-                            }
-                            catch (final Throwable throwable) {
-                                fault = throwable;
-                            }
-                        }
-                        result1 = Result.failure(fault);
-                    }
-                    consumer.accept(result1);
-                });
+        if (class_ == null) {
+            throw new NullPointerException("class_");
+        }
+        if (mapper == null) {
+            throw new NullPointerException("mapper");
+        }
+        final var future = new FutureConsumption<V>(this);
+        onResult(result0 -> {
+            Result<V> result1;
+            result:
+            if (result0.isSuccess()) {
+                result1 = result0;
             }
-
-            @Override
-            public void cancel(final boolean mayInterruptIfRunning) {
-                source.cancel(mayInterruptIfRunning);
+            else {
+                var fault = result0.fault();
+                if (class_.isAssignableFrom(fault.getClass())) {
+                    try {
+                        result1 = Result.success(mapper.apply(class_.cast(fault)));
+                        break result;
+                    }
+                    catch (final Throwable throwable) {
+                        fault = throwable;
+                    }
+                }
+                result1 = Result.failure(fault);
             }
-        };
+            future.consume(result1);
+        });
+        return future;
     }
 
     /**
@@ -531,38 +503,33 @@ public interface Future<V> {
         final Class<T> class_,
         final ThrowingFunction<Throwable, Throwable> mapper
     ) {
-        Objects.requireNonNull(class_, "class_");
-        Objects.requireNonNull(mapper, "mapper");
-        final var source = this;
-        return new Future<>() {
-            @Override
-            public void onResult(final Consumer<Result<V>> consumer) {
-                source.onResult(result0 -> {
-                    Result<V> result1;
-                    if (result0.isSuccess()) {
-                        result1 = result0;
-                    }
-                    else {
-                        Throwable cause1 = result0.fault();
-                        if (class_.isAssignableFrom(cause1.getClass())) {
-                            try {
-                                cause1 = mapper.apply(result0.fault());
-                            }
-                            catch (final Throwable throwable) {
-                                cause1 = throwable;
-                            }
-                        }
-                        result1 = Result.failure(cause1);
-                    }
-                    consumer.accept(result1);
-                });
+        if (class_ == null) {
+            throw new NullPointerException("class_");
+        }
+        if (mapper == null) {
+            throw new NullPointerException("mapper");
+        }
+        final var future = new FutureConsumption<V>(this);
+        onResult(result0 -> {
+            Result<V> result1;
+            if (result0.isSuccess()) {
+                result1 = result0;
             }
-
-            @Override
-            public void cancel(final boolean mayInterruptIfRunning) {
-                source.cancel(mayInterruptIfRunning);
+            else {
+                Throwable cause1 = result0.fault();
+                if (class_.isAssignableFrom(cause1.getClass())) {
+                    try {
+                        cause1 = mapper.apply(result0.fault());
+                    }
+                    catch (final Throwable throwable) {
+                        cause1 = throwable;
+                    }
+                }
+                result1 = Result.failure(cause1);
             }
-        };
+            future.consume(result1);
+        });
+        return future;
     }
 
     /**
@@ -590,29 +557,21 @@ public interface Future<V> {
      * @throws NullPointerException If {@code mapper} is {@code null}.
      */
     default <U> Future<U> mapResult(final ThrowingFunction<Result<V>, Result<U>> mapper) {
-        Objects.requireNonNull(mapper, "mapper");
-        final var source = this;
-        return new Future<>() {
-            @Override
-            public void onResult(final Consumer<Result<U>> consumer) {
-                source.onResult(result0 -> {
-                    Result<U> result1;
-                    try {
-                        result1 = mapper.apply(result0);
-
-                    }
-                    catch (final Throwable throwable) {
-                        result1 = Result.failure(throwable);
-                    }
-                    consumer.accept(result1);
-                });
+        if (mapper == null) {
+            throw new NullPointerException("mapper");
+        }
+        final var future = new FutureConsumption<U>(this);
+        onResult(result0 -> {
+            Result<U> result1;
+            try {
+                result1 = mapper.apply(result0);
             }
-
-            @Override
-            public void cancel(final boolean mayInterruptIfRunning) {
-                source.cancel(mayInterruptIfRunning);
+            catch (final Throwable throwable) {
+                result1 = Result.failure(throwable);
             }
-        };
+            future.consume(result1);
+        });
+        return future;
     }
 
     /**
@@ -637,33 +596,26 @@ public interface Future<V> {
      * @throws NullPointerException If {@code mapper} is {@code null}.
      */
     default <U> Future<U> mapThrow(final ThrowingFunction<? super V, Throwable> mapper) {
-        Objects.requireNonNull(mapper, "mapper");
-        final var source = this;
-        return new Future<>() {
-            @Override
-            public void onResult(final Consumer<Result<U>> consumer) {
-                source.onResult(result0 -> {
-                    Throwable cause;
-                    if (result0.isSuccess()) {
-                        try {
-                            cause = mapper.apply(result0.value());
-                        }
-                        catch (final Throwable throwable) {
-                            cause = throwable;
-                        }
-                    }
-                    else {
-                        cause = result0.fault();
-                    }
-                    consumer.accept(Result.failure(cause));
-                });
+        if (mapper == null) {
+            throw new NullPointerException("mapper");
+        }
+        final var future = new FutureConsumption<U>(this);
+        onResult(result -> {
+            Throwable cause;
+            if (result.isSuccess()) {
+                try {
+                    cause = mapper.apply(result.value());
+                }
+                catch (final Throwable throwable) {
+                    cause = throwable;
+                }
             }
-
-            @Override
-            public void cancel(final boolean mayInterruptIfRunning) {
-                source.cancel(mayInterruptIfRunning);
+            else {
+                cause = result.fault();
             }
-        };
+            future.consume(Result.failure(cause));
+        });
+        return future;
     }
 
     /**
@@ -698,44 +650,27 @@ public interface Future<V> {
      * @throws NullPointerException If {@code mapper} is {@code null}.
      */
     default <U> Future<U> flatMap(final ThrowingFunction<? super V, ? extends Future<U>> mapper) {
-        Objects.requireNonNull(mapper, "mapper");
-        final var source = this;
-        return new Future<>() {
-            private Future<?> cancelTarget = source;
-
-            @Override
-            public void onResult(final Consumer<Result<U>> consumer) {
-                source.onResult(result0 -> {
-                    if (cancelTarget == null) {
-                        return;
-                    }
-                    Throwable cause;
-                    if (result0.isSuccess()) {
-                        try {
-                            final var future1 = mapper.apply(result0.value());
-                            future1.onResult(consumer);
-                            cancelTarget = future1;
-                            return;
-                        }
-                        catch (final Throwable throwable) {
-                            cause = throwable;
-                        }
-                    }
-                    else {
-                        cause = result0.fault();
-                    }
-                    consumer.accept(Result.failure(cause));
-                });
-            }
-
-            @Override
-            public void cancel(final boolean mayInterruptIfRunning) {
-                if (cancelTarget != null) {
-                    cancelTarget.cancel(mayInterruptIfRunning);
-                    cancelTarget = null;
+        if (mapper == null) {
+            throw new NullPointerException("mapper");
+        }
+        final var future = new FutureConsumption<U>(this);
+        onResult(result -> {
+            Throwable cause;
+            if (result.isSuccess()) {
+                try {
+                    future.consume(mapper.apply(result.value()));
+                    return;
+                }
+                catch (final Throwable throwable) {
+                    cause = throwable;
                 }
             }
-        };
+            else {
+                cause = result.fault();
+            }
+            future.consume(Result.failure(cause));
+        });
+        return future;
     }
 
     /**
@@ -774,54 +709,39 @@ public interface Future<V> {
         final Class<T> class_,
         final ThrowingFunction<T, ? extends Future<V>> mapper
     ) {
-        Objects.requireNonNull(class_, "class_");
-        Objects.requireNonNull(mapper, "mapper");
-        final var source = this;
-        return new Future<>() {
-            private Future<?> cancelTarget = source;
-
-            @Override
-            public void onResult(final Consumer<Result<V>> consumer) {
-                source.onResult(result0 -> {
-                    Result<V> result1;
-                    done:
-                    {
-                        if (cancelTarget == null) {
-                            return;
-                        }
-                        if (result0.isSuccess()) {
-                            result1 = result0;
-                            break done;
-                        }
-                        var fault = result0.fault();
-                        if (class_.isAssignableFrom(fault.getClass())) {
-                            try {
-                                final var future1 = mapper.apply(class_.cast(fault));
-                                future1.onResult(consumer);
-                                cancelTarget = future1;
-                                return;
-                            }
-                            catch (final Throwable throwable) {
-                                fault = throwable;
-                            }
-                        }
-                        else {
-                            fault = result0.fault();
-                        }
-                        result1 = Result.failure(fault);
-                    }
-                    consumer.accept(result1);
-                });
-            }
-
-            @Override
-            public void cancel(final boolean mayInterruptIfRunning) {
-                if (cancelTarget != null) {
-                    cancelTarget.cancel(mayInterruptIfRunning);
-                    cancelTarget = null;
+        if (class_ == null) {
+            throw new NullPointerException("class_");
+        }
+        if (mapper == null) {
+            throw new NullPointerException("mapper");
+        }
+        final var future = new FutureConsumption<V>(this);
+        onResult(result0 -> {
+            Result<V> result1;
+            done:
+            {
+                if (result0.isSuccess()) {
+                    result1 = result0;
+                    break done;
                 }
+                var fault = result0.fault();
+                if (class_.isAssignableFrom(fault.getClass())) {
+                    try {
+                        future.consume(mapper.apply(class_.cast(fault)));
+                        return;
+                    }
+                    catch (final Throwable throwable) {
+                        fault = throwable;
+                    }
+                }
+                else {
+                    fault = result0.fault();
+                }
+                result1 = Result.failure(fault);
             }
-        };
+            future.consume(result1);
+        });
+        return future;
     }
 
     /**
@@ -862,51 +782,37 @@ public interface Future<V> {
         final Class<T> class_,
         final ThrowingFunction<Throwable, ? extends Future<Throwable>> mapper
     ) {
-        Objects.requireNonNull(class_, "class_");
-        Objects.requireNonNull(mapper, "mapper");
-        final var source = this;
-        return new Future<>() {
-            private Future<?> cancelTarget = source;
-
-            @Override
-            public void onResult(final Consumer<Result<V>> consumer) {
-                source.onResult(result0 -> {
-                    Result<V> result1;
-                    if (cancelTarget == null) {
+        if (class_ == null) {
+            throw new NullPointerException("class_");
+        }
+        if (mapper == null) {
+            throw new NullPointerException("mapper");
+        }
+        final var future = new FutureConsumption<V>(this);
+        onResult(result0 -> {
+            Result<V> result1;
+            if (result0.isSuccess()) {
+                result1 = result0;
+            }
+            else {
+                Throwable cause1 = result0.fault();
+                if (class_.isAssignableFrom(cause1.getClass())) {
+                    try {
+                        final var future1 = mapper.apply(cause1);
+                        future1.onResult(result -> future.consume(Result.failure(result.isSuccess()
+                            ? result.value()
+                            : result.fault())));
                         return;
                     }
-                    if (result0.isSuccess()) {
-                        result1 = result0;
+                    catch (final Throwable throwable) {
+                        cause1 = throwable;
                     }
-                    else {
-                        Throwable cause1 = result0.fault();
-                        if (class_.isAssignableFrom(cause1.getClass())) {
-                            try {
-                                final var future1 = mapper.apply(cause1);
-                                future1.onResult(result -> consumer.accept(Result.failure(result.isSuccess()
-                                    ? result.value()
-                                    : result.fault())));
-                                cancelTarget = future1;
-                                return;
-                            }
-                            catch (final Throwable throwable) {
-                                cause1 = throwable;
-                            }
-                        }
-                        result1 = Result.failure(cause1);
-                    }
-                    consumer.accept(result1);
-                });
-            }
-
-            @Override
-            public void cancel(final boolean mayInterruptIfRunning) {
-                if (cancelTarget != null) {
-                    cancelTarget.cancel(mayInterruptIfRunning);
-                    cancelTarget = null;
                 }
+                result1 = Result.failure(cause1);
             }
-        };
+            future.consume(result1);
+        });
+        return future;
     }
 
     /**
@@ -941,36 +847,19 @@ public interface Future<V> {
      * @throws NullPointerException If {@code mapper} is {@code null}.
      */
     default <U> Future<U> flatMapResult(final ThrowingFunction<Result<V>, ? extends Future<U>> mapper) {
-        Objects.requireNonNull(mapper, "mapper");
-        final var source = this;
-        return new Future<>() {
-            private Future<?> cancelTarget = source;
-
-            @Override
-            public void onResult(final Consumer<Result<U>> consumer) {
-                source.onResult(result0 -> {
-                    if (cancelTarget == null) {
-                        return;
-                    }
-                    try {
-                        final var future1 = mapper.apply(result0);
-                        future1.onResult(consumer);
-                        cancelTarget = future1;
-                    }
-                    catch (final Throwable throwable) {
-                        consumer.accept(Result.failure(throwable));
-                    }
-                });
+        if (mapper == null) {
+            throw new NullPointerException("mapper");
+        }
+        final var future = new FutureConsumption<U>(this);
+        onResult(result -> {
+            try {
+                future.consume(mapper.apply(result));
             }
-
-            @Override
-            public void cancel(final boolean mayInterruptIfRunning) {
-                if (cancelTarget != null) {
-                    cancelTarget.cancel(mayInterruptIfRunning);
-                    cancelTarget = null;
-                }
+            catch (final Throwable throwable) {
+                future.consume(Result.failure(throwable));
             }
-        };
+        });
+        return future;
     }
 
     /**
@@ -1006,46 +895,30 @@ public interface Future<V> {
      * @throws NullPointerException If {@code mapper} is {@code null}.
      */
     default Future<V> flatMapThrow(final ThrowingFunction<V, ? extends Future<? extends Throwable>> mapper) {
-        Objects.requireNonNull(mapper, "mapper");
-        final var source = this;
-        return new Future<>() {
-            private Future<?> cancelTarget = source;
-
-            @Override
-            public void onResult(final Consumer<Result<V>> consumer) {
-                source.onResult(result0 -> {
-                    Result<V> result1;
-                    if (cancelTarget == null) {
-                        return;
-                    }
-                    if (result0.isFailure()) {
-                        result1 = result0;
-                    }
-                    else {
-                        try {
-                            final var future1 = mapper.apply(result0.value());
-                            future1.onResult(result -> consumer.accept(Result.failure(result.isSuccess()
-                                ? result.value()
-                                : result.fault())));
-                            cancelTarget = future1;
-                            return;
-                        }
-                        catch (final Throwable throwable) {
-                            result1 = Result.failure(throwable);
-                        }
-                    }
-                    consumer.accept(result1);
-                });
+        if (mapper == null) {
+            throw new NullPointerException("mapper");
+        }
+        final var future = new FutureConsumption<V>(this);
+        onResult(result0 -> {
+            Result<V> result1;
+            if (result0.isFailure()) {
+                result1 = result0;
             }
-
-            @Override
-            public void cancel(final boolean mayInterruptIfRunning) {
-                if (cancelTarget != null) {
-                    cancelTarget.cancel(mayInterruptIfRunning);
-                    cancelTarget = null;
+            else {
+                try {
+                    final var future1 = mapper.apply(result0.value());
+                    future1.onResult(result -> future.consume(Result.failure(result.isSuccess()
+                        ? result.value()
+                        : result.fault())));
+                    return;
+                }
+                catch (final Throwable throwable) {
+                    result1 = Result.failure(throwable);
                 }
             }
-        };
+            future.consume(result1);
+        });
+        return future;
     }
 
     /**
@@ -1061,24 +934,11 @@ public interface Future<V> {
      */
     default <U> Future<U> pass(final U value) {
         final var source = this;
-        return new Future<>() {
-            @Override
-            public void onResult(final Consumer<Result<U>> consumer) {
-                source.onResult(result -> {
-                    if (result.isSuccess()) {
-                        consumer.accept(Result.success(value));
-                    }
-                    else {
-                        consumer.accept(Result.failure(result.fault()));
-                    }
-                });
-            }
-
-            @Override
-            public void cancel(final boolean mayInterruptIfRunning) {
-                source.cancel(mayInterruptIfRunning);
-            }
-        };
+        final var future = new FutureConsumption<U>(this);
+        onResult(result -> future.consume(result.isSuccess()
+            ? Result.success(value)
+            : Result.failure(result.fault())));
+        return future;
     }
 
     /**
@@ -1095,24 +955,17 @@ public interface Future<V> {
      * @throws NullPointerException If {@code throwable} is {@code null}.
      */
     default <U> Future<U> fail(final Throwable throwable) {
-        Objects.requireNonNull(throwable, "throwable");
-        final var source = this;
-        return new Future<>() {
-            @Override
-            public void onResult(final Consumer<Result<U>> consumer) {
-                source.onResult(result -> {
-                    if (result.isFailure()) {
-                        throwable.addSuppressed(result.fault());
-                    }
-                    consumer.accept(Result.failure(throwable));
-                });
+        if (throwable == null) {
+            throw new NullPointerException("throwable");
+        }
+        final var future = new FutureConsumption<U>(this);
+        onResult(result -> {
+            if (result.isFailure()) {
+                throwable.addSuppressed(result.fault());
             }
-
-            @Override
-            public void cancel(final boolean mayInterruptIfRunning) {
-                source.cancel(mayInterruptIfRunning);
-            }
-        };
+            future.consume(Result.failure(throwable));
+        });
+        return future;
     }
 
     /**
@@ -1140,29 +993,13 @@ public interface Future<V> {
      * this {@code Future}.
      */
     default Future<V> delay(final Duration duration) {
-        Objects.requireNonNull(duration, "duration");
-        final var source = this;
-        return new Future<>() {
-            private Future<?> cancelTarget = source;
-
-            @Override
-            public void onResult(final Consumer<Result<V>> consumer) {
-                source.onResult(result -> {
-                    if (cancelTarget != null) {
-                        cancelTarget = Schedulers.fixed()
-                            .schedule(duration, () -> consumer.accept(result));
-                    }
-                });
-            }
-
-            @Override
-            public void cancel(final boolean mayInterruptIfRunning) {
-                if (cancelTarget != null) {
-                    cancelTarget.cancel(mayInterruptIfRunning);
-                    cancelTarget = null;
-                }
-            }
-        };
+        if (duration == null) {
+            throw new NullPointerException("duration");
+        }
+        final var future = new FutureConsumptionWithExtraCancelTarget<V>(this);
+        onResult(result -> future.extraCancelTarget(Schedulers.fixed()
+            .schedule(duration, () -> future.consume(result))));
+        return future;
     }
 
     /**
@@ -1181,35 +1018,21 @@ public interface Future<V> {
      * this {@code Future}.
      */
     default Future<V> delayUntil(final Instant baseline) {
-        Objects.requireNonNull(baseline, "baseline");
-        final var source = this;
-        return new Future<>() {
-            private Future<?> cancelTarget = source;
-
-            @Override
-            public void onResult(final Consumer<Result<V>> consumer) {
-                source.onResult(result -> {
-                    if (cancelTarget != null) {
-                        final var duration = Duration.between(baseline, Instant.now());
-                        if (duration.isNegative() || duration.isZero()) {
-                            consumer.accept(result);
-                        }
-                        else {
-                            cancelTarget = Schedulers.fixed()
-                                .schedule(duration, () -> consumer.accept(result));
-                        }
-                    }
-                });
+        if (baseline == null) {
+            throw new NullPointerException("baseline");
+        }
+        final var future = new FutureConsumptionWithExtraCancelTarget<V>(this);
+        onResult(result -> {
+            final var duration = Duration.between(baseline, Instant.now());
+            if (duration.isNegative() || duration.isZero()) {
+                future.consume(result);
             }
-
-            @Override
-            public void cancel(final boolean mayInterruptIfRunning) {
-                if (cancelTarget != null) {
-                    cancelTarget.cancel(mayInterruptIfRunning);
-                    cancelTarget = null;
-                }
+            else {
+                future.extraCancelTarget(Schedulers.fixed()
+                    .schedule(duration, () -> future.consume(result)));
             }
-        };
+        });
+        return future;
     }
 
     /**
@@ -1243,48 +1066,40 @@ public interface Future<V> {
      * function could be executed on a separate thread.
      */
     default Future<?> fork(final Consumer<V> consumer) {
-        Objects.requireNonNull(consumer, "Expected consumer");
-        final var source = this;
-        return new Future<>() {
-            @Override
-            public void onResult(final Consumer<Result<Object>> consumer0) {
-                source.onResult(result0 -> {
-                    Result<Object> result1;
-                    success:
-                    {
-                        Throwable cause;
-                        if (result0.isSuccess()) {
+        if (consumer == null) {
+            throw new NullPointerException("consumer");
+        }
+        final var future = new FutureConsumption<>(this);
+        onResult(result0 -> {
+            Result<Object> result1;
+            success:
+            {
+                Throwable cause;
+                if (result0.isSuccess()) {
+                    try {
+                        Schedulers.dynamic().execute(() -> {
                             try {
-                                Schedulers.dynamic().execute(() -> {
-                                    try {
-                                        consumer.accept(result0.value());
-                                    }
-                                    catch (final Throwable throwable) {
-                                        LoggerFactory.getLogger(Future.class)
-                                            .error("Unexpected fork consumer exception caught", throwable);
-                                    }
-                                });
-                                result1 = Result.done();
-                                break success;
+                                consumer.accept(result0.value());
                             }
                             catch (final Throwable throwable) {
-                                cause = throwable;
+                                logger.error("Unexpected fork consumer exception caught", throwable);
                             }
-                        }
-                        else {
-                            cause = result0.fault();
-                        }
-                        result1 = Result.failure(cause);
+                        });
+                        result1 = Result.done();
+                        break success;
                     }
-                    consumer0.accept(result1);
-                });
+                    catch (final Throwable throwable) {
+                        cause = throwable;
+                    }
+                }
+                else {
+                    cause = result0.fault();
+                }
+                result1 = Result.failure(cause);
             }
-
-            @Override
-            public void cancel(final boolean mayInterruptIfRunning) {
-                source.cancel(mayInterruptIfRunning);
-            }
-        };
+            future.consume(result1);
+        });
+        return future;
     }
 
     /**
@@ -1331,80 +1146,60 @@ public interface Future<V> {
      * @throws NullPointerException If {@code mapper} is {@code null}.
      */
     default <U> Future<U> forkJoin(final ThrowingFunction<V, U> mapper) {
-        Objects.requireNonNull(mapper, "Expected mapper");
-        final var source = this;
-        return new Future<>() {
-            private final AtomicReference<Future<?>> cancelTarget = new AtomicReference<>(source);
-
-            @Override
-            public void onResult(final Consumer<Result<U>> consumer) {
-                source.onResult(result0 -> {
-                    if (cancelTarget.get() == null) {
-                        return;
-                    }
-                    Throwable fault1;
-                    fault:
-                    {
-                        if (result0.isFailure()) {
-                            fault1 = result0.fault();
-                            break fault;
-                        }
-
-                        final var thread = Thread.currentThread();
-                        if (!(thread instanceof NettyThread)) {
-                            fault1 = new IllegalStateException("Result not " +
-                                "provided by default fixed scheduler thread; " +
-                                "joining fork would not be possible");
-                            break fault;
-                        }
-
-                        final var eventLoop = ((NettyThread) thread).eventLoop();
-                        if (eventLoop == null || !eventLoop.inEventLoop()) {
-                            fault1 = new IllegalStateException("Current " +
-                                "thread not associated with a task queue; " +
-                                "joining fork would not be possible");
-                            break fault;
-                        }
-
-                        final var scheduler = Schedulers.dynamic();
-                        final var future1 = scheduler.submit(() -> {
-                            if (cancelTarget.get() == null) {
-                                return;
-                            }
-                            Result<U> result1;
-                            try {
-                                result1 = Result.success(mapper.apply(result0.value()));
-                            }
-                            catch (final Throwable throwable) {
-                                result1 = Result.failure(throwable);
-                            }
-                            final var result2 = result1;
-                            try {
-                                eventLoop.execute(() -> consumer.accept(result2));
-                            }
-                            catch (final Throwable throwable) {
-                                if (throwable instanceof RejectedExecutionException && eventLoop.isShuttingDown()) {
-                                    return;
-                                }
-                                LoggerFactory.getLogger(Future.class)
-                                    .error("Failed to join fork", throwable);
-                            }
-                        });
-                        cancelTarget.set(future1);
-                        return;
-                    }
-                    consumer.accept(Result.failure(fault1));
-                });
-            }
-
-            @Override
-            public void cancel(final boolean mayInterruptIfRunning) {
-                final var cancelTarget0 = cancelTarget.getAndSet(null);
-                if (cancelTarget0 != null) {
-                    cancelTarget0.cancel(mayInterruptIfRunning);
+        if (mapper == null) {
+            throw new NullPointerException("mapper");
+        }
+        final var future = new FutureConsumptionWithExtraCancelTarget<U>(this);
+        onResult(result0 -> {
+            Throwable fault1;
+            fault:
+            {
+                if (result0.isFailure()) {
+                    fault1 = result0.fault();
+                    break fault;
                 }
+
+                final var thread = Thread.currentThread();
+                if (!(thread instanceof NettyThread)) {
+                    fault1 = new IllegalStateException("Result not " +
+                        "provided by default fixed scheduler thread; " +
+                        "joining fork would not be possible");
+                    break fault;
+                }
+
+                final var eventLoop = ((NettyThread) thread).eventLoop();
+                if (eventLoop == null || !eventLoop.inEventLoop()) {
+                    fault1 = new IllegalStateException("Current " +
+                        "thread not associated with a task queue; " +
+                        "joining fork would not be possible");
+                    break fault;
+                }
+
+                final var future1 = Schedulers.dynamic().submit(() -> {
+                    Result<U> result1;
+                    try {
+                        result1 = Result.success(mapper.apply(result0.value()));
+                    }
+                    catch (final Throwable throwable) {
+                        result1 = Result.failure(throwable);
+                    }
+                    final var result2 = result1;
+                    try {
+                        eventLoop.execute(() -> future.consume(result2));
+                    }
+                    catch (final Throwable throwable) {
+                        if (throwable instanceof RejectedExecutionException && eventLoop.isShuttingDown()) {
+                            return;
+                        }
+                        logger.error("Failed to join fork", throwable);
+                    }
+                });
+                future.extraCancelTarget(future1);
+                return;
             }
-        };
+            future.consume(Result.failure(fault1));
+        });
+        return future;
     }
 
     /**
