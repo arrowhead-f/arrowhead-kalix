@@ -29,12 +29,16 @@ import static se.arkalix.dto.DtoCodec.JSON;
 public interface ServiceConsumable {
     /**
      * Service name.
+     *
+     * @return Service name.
      */
     @DtoJsonName("service")
     ServiceName name();
 
     /**
      * Service provider.
+     *
+     * @return Service provider.
      */
     SystemDetails provider();
 
@@ -44,6 +48,8 @@ public interface ServiceConsumable {
      * The significance of this value depends on the application-level
      * network protocol employed by the service. If, for example, HTTP is
      * used, then this is a base path.
+     *
+     * @return Service URI.
      */
     @DtoJsonName("serviceUri")
     String uri();
@@ -51,29 +57,38 @@ public interface ServiceConsumable {
     /**
      * The date and time at which the service definition entry expires, if
      * ever.
+     *
+     * @return Time at which this service record expires.
      */
     @DtoJsonName("endOfValidity")
     Optional<String> expiresAt();
 
     /**
      * Type of access policy enforced by the service.
+     *
+     * @return Type of service access policy.
      */
     @DtoJsonName("secure")
     AccessPolicyType accessPolicyType();
 
     /**
      * Arbitrary service metadata.
+     *
+     * @return Service metadata map.
      */
     Map<String, String> metadata();
 
     /**
      * Service version.
+     *
+     * @return Service version.
      */
     int version();
 
     /**
      * List of supported network interface triplets.
      *
+     * @return List of interface names.
      * @see ServiceInterface InterfaceDescriptor
      */
     List<InterfaceName> interfaces();
@@ -83,6 +98,8 @@ public interface ServiceConsumable {
      * <p>
      * One token is provided for each {@link ServiceInterface interface
      * triplet} supported by the service.
+     *
+     * @return Service interface triplets mapped to authorization tokens.
      */
     @DtoJsonName("authorizationTokens")
     Map<ServiceInterface, String> tokens();
@@ -90,6 +107,8 @@ public interface ServiceConsumable {
     /**
      * Any notifications about the state of the service that might have bearing
      * on whether or not the service will be consumed.
+     *
+     * @return List of orchestration warnings.
      */
     List<OrchestrationWarning> warnings();
 

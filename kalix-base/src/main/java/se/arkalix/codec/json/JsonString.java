@@ -167,6 +167,9 @@ public class JsonString implements JsonValue {
     /**
      * <i>Internal API</i>. Might change in breaking ways between patch
      * versions of the Kalix library. Use is not advised.
+     *
+     * @param buffer Buffer of JSON tokens.
+     * @return Decoded string.
      */
     @Internal
     public static JsonString decodeJson(final JsonTokenBuffer buffer) {

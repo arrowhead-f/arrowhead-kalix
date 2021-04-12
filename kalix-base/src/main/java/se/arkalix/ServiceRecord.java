@@ -131,6 +131,7 @@ public interface ServiceRecord extends Comparable<ServiceRecord> {
         /**
          * Sets service URI. <b>Must be specified.</b>
          *
+         * @param uri Service URI.
          * @return This builder.
          * @see ServiceRecord#uri()
          */

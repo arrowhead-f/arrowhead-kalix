@@ -21,24 +21,32 @@ import static se.arkalix.dto.DtoCodec.JSON;
 public interface EventIncoming {
     /**
      * Category of event.
+     *
+     * @return Name of event topic.
      */
     @DtoJsonName("eventType")
     String topic();
 
     /**
      * Information about the system publishing this event.
+     *
+     * @return Event publisher details.
      */
     @DtoJsonName("source")
     Optional<SystemDetails> publisher();
 
     /**
      * Arbitrary details about this event.
+     *
+     * @return Event metadata map.
      */
     @DtoJsonName("metaData")
     Map<String, String> metadata();
 
     /**
      * An arbitrary string payload associated with this event.
+     *
+     * @return Arbitrary event payload.
      */
     @DtoJsonName("payload")
     String data();
@@ -46,6 +54,7 @@ public interface EventIncoming {
     /**
      * The time at which this event was created.
      *
+     * @return Time of event creation, as AITIA timestamp.
      * @see Instants#fromAitiaDateTimeString(String)
      */
     @DtoJsonName("timeStamp")

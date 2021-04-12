@@ -44,6 +44,8 @@ public interface TrustedContractNegotiatorHandler {
      * <p>
      * The negotiation session in question must be considered permanently
      * closed when this method is invoked.
+     *
+     * @param negotiationId Identifier of expires negotiation session.
      */
     default void onExpiry(final long negotiationId) {
         final var logger = LoggerFactory.getLogger(getClass());
@@ -57,7 +59,8 @@ public interface TrustedContractNegotiatorHandler {
      * This method being invoked does not necessarily imply that the
      * negotiation session in question is closed.
      *
-     * @param throwable Exception preventing offer submission.
+     * @param negotiationId Identifier of affected negotiation session.
+     * @param throwable     Exception preventing offer submission.
      */
     default void onFault(final long negotiationId, final Throwable throwable) {
         final var logger = LoggerFactory.getLogger(getClass());

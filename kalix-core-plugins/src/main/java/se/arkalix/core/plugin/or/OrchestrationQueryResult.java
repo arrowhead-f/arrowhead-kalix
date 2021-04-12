@@ -19,6 +19,8 @@ import static se.arkalix.dto.DtoCodec.JSON;
 public interface OrchestrationQueryResult {
     /**
      * Services the querying system may consume.
+     *
+     * @return List of consumable service descriptions.
      */
     @DtoJsonName("response")
     List<ServiceConsumable> services();

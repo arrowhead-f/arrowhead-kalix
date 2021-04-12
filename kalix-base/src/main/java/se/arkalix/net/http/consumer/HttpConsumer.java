@@ -33,6 +33,7 @@ public interface HttpConsumer extends ArConsumer {
      * @param system    Arrowhead system consuming {@code service}.
      * @param service   Service to be consumed.
      * @param codecTypes Supported request/response codecs.
+     * @return New {@code HttpConsumer}.
      * @throws NullPointerException     If {@code system}, {@code service} or
      *                                  {@code codecs} is {@code null}.
      * @throws IllegalArgumentException If the security modes of {@code system}

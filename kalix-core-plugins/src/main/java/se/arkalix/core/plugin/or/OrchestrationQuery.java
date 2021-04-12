@@ -26,6 +26,8 @@ import static se.arkalix.dto.DtoCodec.JSON;
 public interface OrchestrationQuery {
     /**
      * Details about the system making the orchestration query.
+     *
+     * @return Requester system details.
      */
     @DtoJsonName("requesterSystem")
     SystemDetails requester();
@@ -33,6 +35,8 @@ public interface OrchestrationQuery {
     /**
      * Description of the specific kind of service the querying system desires
      * to consume.
+     *
+     * @return Requested service query.
      */
     @DtoJsonName("requestedService")
     Optional<ServiceQuery> service();
@@ -40,12 +44,16 @@ public interface OrchestrationQuery {
     /**
      * A list of systems the querying system prefers to provide the requested
      * service.
+     *
+     * @return List of preferred service providers.
      */
     @DtoJsonName("preferredProviders")
     List<ServiceProvider> providers();
 
     /**
      * A map of orchestration {@link OrchestrationOption options}.
+     *
+     * @return Orchestration options map.
      */
     @DtoJsonName("orchestrationFlags")
     Map<OrchestrationOption, Boolean> options();

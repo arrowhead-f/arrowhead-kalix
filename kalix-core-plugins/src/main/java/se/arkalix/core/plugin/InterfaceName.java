@@ -17,6 +17,8 @@ import static se.arkalix.dto.DtoCodec.JSON;
 public interface InterfaceName {
     /**
      * Interface triplet.
+     *
+     * @return Service interface triplet.
      */
     @DtoJsonName("interfaceName")
     ServiceInterface name();

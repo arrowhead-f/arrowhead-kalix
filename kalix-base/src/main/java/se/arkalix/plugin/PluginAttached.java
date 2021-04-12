@@ -81,6 +81,7 @@ public interface PluginAttached {
      * the {@link Future} is completed with a fault, the service is never
      * provided and the fault is relayed to the caller trying to cause the
      * service to be provided.
+     * @throws Exception Any exception.
      */
     @ThreadSafe
     default Future<?> onServicePrepared(final ArService service) throws Exception {
@@ -107,6 +108,7 @@ public interface PluginAttached {
      * {@link Future} is completed with a fault, the service is never provided
      * and the fault is relayed to the caller trying to cause the service to be
      * provided.
+     * @throws Exception Any exception.
      */
     @ThreadSafe
     default Future<?> onServiceProvided(final ServiceRecord service) throws Exception {
@@ -136,6 +138,7 @@ public interface PluginAttached {
      * @param query An incomplete description of the service being queried.
      * @return {@link Future} that will complete with a collection of service
      * descriptions, out of which some <i>may</i> match the provided query.
+     * @throws Exception Any exception.
      */
     @ThreadSafe
     default Future<Collection<ServiceRecord>> onServiceQueried(final ServiceQuery query)

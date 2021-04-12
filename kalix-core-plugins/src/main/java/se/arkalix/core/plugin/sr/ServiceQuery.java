@@ -22,43 +22,57 @@ import static se.arkalix.dto.DtoCodec.JSON;
 @DtoToString
 public interface ServiceQuery {
     /**
-     * Service name. <b>Must be specified.</b>
+     * Service name.
+     *
+     * @return Service name.
      */
     @DtoJsonName("serviceDefinitionRequirement")
     String name();
 
     /**
      * Supported service interfaces.
+     *
+     * @return List of supported service interfaces.
      */
     @DtoJsonName("interfaceRequirements")
     List<ServiceInterface> interfaces();
 
     /**
      * Supported access policy types.
+     *
+     * @return List of access policy types.
      */
     @DtoJsonName("securityRequirements")
     List<AccessPolicyType> accessPolicyTypes();
 
     /**
      * Required metadata pairs.
+     *
+     * @return Service metadata map.
      */
     @DtoJsonName("metadataRequirements")
     Map<String, String> metadata();
 
     /**
      * Desired exact service version.
+     *
+     * @return Desired service version.
      */
     @DtoJsonName("versionRequirement")
     Optional<Integer> version();
 
     /**
      * The highest permitted service version.
+     *
+     * @return Desired max service version.
      */
     @DtoJsonName("maxVersionRequirement")
     Optional<Integer> versionMax();
 
     /**
      * The lowest permitted service version.
+     *
+     * @return Desired min service version.
      */
     @DtoJsonName("minVersionRequirement")
     Optional<Integer> versionMin();
@@ -66,6 +80,9 @@ public interface ServiceQuery {
     /**
      * Whether or not to test if matching services are live before returning
      * {@link ServiceQueryResult}.
+     *
+     * @return Whether or not ping is desired or not. An empty return value
+     * indicates that the default should be used.
      */
     @DtoJsonName("pingProviders")
     Optional<Boolean> triggerPing();

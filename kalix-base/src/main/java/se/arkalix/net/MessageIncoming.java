@@ -73,6 +73,7 @@ public interface MessageIncoming extends Message {
      * Calling this method consumes the body associated with this message. Any
      * further attempts to consume the body will cause exceptions to be thrown.
      *
+     * @param charset Charset to use when decoding body.
      * @return Future completed when the incoming message body becomes has been
      * fully collected into a {@code String}.
      * @throws IllegalStateException If the body has already been requested.
@@ -140,6 +141,7 @@ public interface MessageIncoming extends Message {
      *
      * @param <T>     Type produced by given {@code decoder}, if successful.
      * @param decoder Function to use for decoding the message body.
+     * @param codec   Codec to use when invoking {@code decoder}.
      * @return Future completed when the incoming message body has been fully
      * received and decoded.
      * @throws MessageCodecUnsupported If the given codec is not

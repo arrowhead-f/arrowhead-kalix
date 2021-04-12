@@ -15,6 +15,8 @@ public @interface DtoWritableAs {
      * <p>
      * See {@link DtoCodec} for a description of what codec names may be
      * used here.
+     *
+     * @return Array of supported codecs.
      */
     DtoCodec[] value();
 }

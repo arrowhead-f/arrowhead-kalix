@@ -27,7 +27,7 @@ public class DecoderReadUnexpectedToken extends CodecException {
     /**
      * Creates new exception.
      *
-     * @param codecType    Codec not adhered to.
+     * @param codecType   Codec not adhered to.
      * @param reader      Reader allowing for the source in question to be read.
      * @param token       Representation of bytes causing decoding to fail.
      * @param offset      Reader position at which reading failed.
@@ -46,11 +46,13 @@ public class DecoderReadUnexpectedToken extends CodecException {
     /**
      * Creates new exception.
      *
-     * @param codecType    Codec not adhered to.
+     * @param codecType   Codec not adhered to.
      * @param reader      Reader allowing for the source in question to be read.
      * @param token       Representation of bytes causing decoding to fail.
      * @param offset      Reader position at which reading failed.
      * @param description Description of failure.
+     * @param cause       {@link Throwable} causing this exception to be thrown,
+     *                    or {@code null} if none.
      */
     public DecoderReadUnexpectedToken(
         final CodecType codecType,

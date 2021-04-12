@@ -97,11 +97,11 @@ public final class HttpService implements ArService {
      * {@code se.arkalix.dto} package.
      *
      * @param codecTypes Codecs declared to be supported. At least one must
-     *                  be provided. The first specified codec is used by
-     *                  default when received requests do not include enough
-     *                  details about their bodies.
+     *                   be provided. The first specified codec is used by
+     *                   default when received requests do not include enough
+     *                   details about their bodies.
      * @return This service.
-     * @see se.arkalix.dto Data Transfer Object Utilities
+     * @see se.arkalix.codec Encoding and Decoding Utilities
      */
     public HttpService codecs(final CodecType... codecTypes) {
         this.codecTypes = Arrays.asList(codecTypes.clone());
@@ -172,117 +172,126 @@ public final class HttpService implements ArService {
      * Adds incoming HTTP request route to this service, handling GET requests
      * matching given pattern.
      *
+     * @param pattern Path pattern.
      * @param handler Handler to invoke with matching requests.
      * @return This service.
      * @see #route(HttpRoute)
      * @see <a href="https://tools.ietf.org/html/rfc7231#section-4.3.1">RFC 7231, Section 4.3.1</a>
      */
-    public HttpService get(final String path, final HttpRouteHandler handler) {
-        return route(HttpMethod.GET, path, handler);
+    public HttpService get(final String pattern, final HttpRouteHandler handler) {
+        return route(HttpMethod.GET, pattern, handler);
     }
 
     /**
      * Adds incoming HTTP request route to this service, handling POST requests
      * matching given pattern.
      *
+     * @param pattern Path pattern.
      * @param handler Handler to invoke with matching requests.
      * @return This service.
      * @see #route(HttpRoute)
      * @see <a href="https://tools.ietf.org/html/rfc7231#section-4.3.3">RFC 7231, Section 4.3.3</a>
      */
-    public HttpService post(final String path, final HttpRouteHandler handler) {
-        return route(HttpMethod.POST, path, handler);
+    public HttpService post(final String pattern, final HttpRouteHandler handler) {
+        return route(HttpMethod.POST, pattern, handler);
     }
 
     /**
      * Adds incoming HTTP request route to this service, handling PUT requests
      * matching given pattern.
      *
+     * @param pattern Path pattern.
      * @param handler Handler to invoke with matching requests.
      * @return This service.
      * @see #route(HttpRoute)
      * @see <a href="https://tools.ietf.org/html/rfc7231#section-4.3.4">RFC 7231, Section 4.3.4</a>
      */
-    public HttpService put(final String path, final HttpRouteHandler handler) {
-        return route(HttpMethod.PUT, path, handler);
+    public HttpService put(final String pattern, final HttpRouteHandler handler) {
+        return route(HttpMethod.PUT, pattern, handler);
     }
 
     /**
      * Adds incoming HTTP request route to this service, handling DELETE
      * requests matching given pattern.
      *
+     * @param pattern Path pattern.
      * @param handler Handler to invoke with matching requests.
      * @return This service.
      * @see #route(HttpRoute)
      * @see <a href="https://tools.ietf.org/html/rfc7231#section-4.3.5">RFC 7231, Section 4.3.5</a>
      */
-    public HttpService delete(final String path, final HttpRouteHandler handler) {
-        return route(HttpMethod.DELETE, path, handler);
+    public HttpService delete(final String pattern, final HttpRouteHandler handler) {
+        return route(HttpMethod.DELETE, pattern, handler);
     }
 
     /**
      * Adds incoming HTTP request route to this service, handling HEAD requests
      * matching given pattern.
      *
+     * @param pattern Path pattern.
      * @param handler Handler to invoke with matching requests.
      * @return This service.
      * @see #route(HttpRoute)
      * @see <a href="https://tools.ietf.org/html/rfc7231#section-4.3.2">RFC 7231, Section 4.3.2</a>
      */
-    public HttpService head(final String path, final HttpRouteHandler handler) {
-        return route(HttpMethod.HEAD, path, handler);
+    public HttpService head(final String pattern, final HttpRouteHandler handler) {
+        return route(HttpMethod.HEAD, pattern, handler);
     }
 
     /**
      * Adds incoming HTTP request route to this service, handling OPTIONS
      * requests matching given pattern.
      *
+     * @param pattern Path pattern.
      * @param handler Handler to invoke with matching requests.
      * @return This service.
      * @see #route(HttpRoute)
      * @see <a href="https://tools.ietf.org/html/rfc7231#section-4.3.7">RFC 7231, Section 4.3.7</a>
      */
-    public HttpService options(final String path, final HttpRouteHandler handler) {
-        return route(HttpMethod.OPTIONS, path, handler);
+    public HttpService options(final String pattern, final HttpRouteHandler handler) {
+        return route(HttpMethod.OPTIONS, pattern, handler);
     }
 
     /**
      * Adds incoming HTTP request route to this service, handling CONNECT
      * requests matching given pattern.
      *
+     * @param pattern Path pattern.
      * @param handler Handler to invoke with matching requests.
      * @return This service.
      * @see #route(HttpRoute)
      * @see <a href="https://tools.ietf.org/html/rfc7231#section-4.3.6">RFC 7231, Section 4.3.6</a>
      */
-    public HttpService connect(final String path, final HttpRouteHandler handler) {
-        return route(HttpMethod.CONNECT, path, handler);
+    public HttpService connect(final String pattern, final HttpRouteHandler handler) {
+        return route(HttpMethod.CONNECT, pattern, handler);
     }
 
     /**
      * Adds incoming HTTP request route to this service, handling PATCH
      * requests matching given pattern.
      *
+     * @param pattern Path pattern.
      * @param handler Handler to invoke with matching requests.
      * @return This service.
      * @see #route(HttpRoute)
      * @see <a href="https://tools.ietf.org/html/rfc5789">RFC 5789</a>
      */
-    public HttpService patch(final String path, final HttpRouteHandler handler) {
-        return route(HttpMethod.PATCH, path, handler);
+    public HttpService patch(final String pattern, final HttpRouteHandler handler) {
+        return route(HttpMethod.PATCH, pattern, handler);
     }
 
     /**
      * Adds incoming HTTP request route to this service, handling TRACE
      * requests matching given pattern.
      *
+     * @param pattern Path pattern.
      * @param handler Handler to invoke with matching requests.
      * @return This service.
      * @see #route(HttpRoute)
      * @see <a href="https://tools.ietf.org/html/rfc7231#section-4.3.8">RFC 7231, Section 4.3.8</a>
      */
-    public HttpService trace(final String path, final HttpRouteHandler handler) {
-        return route(HttpMethod.TRACE, path, handler);
+    public HttpService trace(final String pattern, final HttpRouteHandler handler) {
+        return route(HttpMethod.TRACE, pattern, handler);
     }
 
     /**
@@ -463,6 +472,8 @@ public final class HttpService implements ArService {
      * filter, route handler, or other catcher, while handling an incoming
      * HTTP request that matches its method, path pattern and exception class.
      *
+     * @param <T>            Type of {@code exceptionClass} caught by this
+     *                       catcher.
      * @param method         Request method to match.
      * @param pattern        Request path pattern to match.
      * @param exceptionClass Exception class to be assignable to.
@@ -474,8 +485,8 @@ public final class HttpService implements ArService {
         final HttpMethod method,
         final String pattern,
         final Class<T> exceptionClass,
-        final HttpCatcherHandler<T> handler)
-    {
+        final HttpCatcherHandler<T> handler
+    ) {
         return catcher(new HttpCatcher<>(
             catcherOrdinal++,
             method,
@@ -504,8 +515,8 @@ public final class HttpService implements ArService {
     public HttpService catcher(
         final HttpMethod method,
         final String pattern,
-        final HttpCatcherHandler<Throwable> handler)
-    {
+        final HttpCatcherHandler<Throwable> handler
+    ) {
         return catcher(method, pattern, Throwable.class, handler);
     }
 
@@ -537,6 +548,8 @@ public final class HttpService implements ArService {
      * <p>
      * <i>This method creates a catcher that matches any method.</i>
      *
+     * @param <T>            Type of {@code exceptionClass} caught by this
+     *                       catcher.
      * @param pattern        Request path pattern to match.
      * @param exceptionClass Exception class to be assignable to.
      * @param handler        Handler to invoke with matching exceptions.
@@ -546,8 +559,8 @@ public final class HttpService implements ArService {
     public <T extends Throwable> HttpService catcher(
         final String pattern,
         final Class<T> exceptionClass,
-        final HttpCatcherHandler<T> handler)
-    {
+        final HttpCatcherHandler<T> handler
+    ) {
         return catcher(null, pattern, exceptionClass, handler);
     }
 
@@ -578,6 +591,8 @@ public final class HttpService implements ArService {
      * <p>
      * <i>This method creates a catcher that matches any path.</i>
      *
+     * @param <T>            Type of {@code exceptionClass} caught by this
+     *                       catcher.
      * @param method         Request method to match.
      * @param exceptionClass Exception class to be assignable to.
      * @param handler        Handler to invoke with matching exceptions.
@@ -587,8 +602,8 @@ public final class HttpService implements ArService {
     public <T extends Throwable> HttpService catcher(
         final HttpMethod method,
         final Class<T> exceptionClass,
-        final HttpCatcherHandler<T> handler)
-    {
+        final HttpCatcherHandler<T> handler
+    ) {
         return catcher(method, null, exceptionClass, handler);
     }
 
@@ -601,6 +616,8 @@ public final class HttpService implements ArService {
      * <p>
      * <i>This method creates a catcher that matches any method or path.</i>
      *
+     * @param <T>            Type of {@code exceptionClass} caught by this
+     *                       catcher.
      * @param exceptionClass Exception class to be assignable to.
      * @param handler        Handler to invoke with matching exceptions.
      * @return This service.
@@ -608,8 +625,8 @@ public final class HttpService implements ArService {
      */
     public <T extends Throwable> HttpService catcher(
         final Class<T> exceptionClass,
-        final HttpCatcherHandler<T> handler)
-    {
+        final HttpCatcherHandler<T> handler
+    ) {
         return catcher(null, null, exceptionClass, handler);
     }
 
@@ -673,8 +690,8 @@ public final class HttpService implements ArService {
     public HttpService filter(
         final HttpMethod method,
         final String pattern,
-        final HttpFilterHandler handler)
-    {
+        final HttpFilterHandler handler
+    ) {
         return filter(new HttpFilter(filterOrdinal++, method, pattern != null
             ? HttpPattern.valueOf(pattern)
             : null, handler));

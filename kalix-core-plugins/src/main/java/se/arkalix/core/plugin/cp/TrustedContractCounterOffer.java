@@ -28,12 +28,15 @@ public interface TrustedContractCounterOffer extends TrustedContractOffer {
     /**
      * Identifies the {@link TrustedContractNegotiation negotiation session}
      * containing the countered offer.
+     *
+     * @return Session identifier.
      */
     long negotiationId();
 
     /**
      * Name of offer sender.
      *
+     * @return Offeror name.
      * @see se.arkalix.core.plugin.cp Package documentation for details about names
      */
     @Override
@@ -42,6 +45,7 @@ public interface TrustedContractCounterOffer extends TrustedContractOffer {
     /**
      * Name of offer receiver.
      *
+     * @return Receiver name.
      * @see se.arkalix.core.plugin.cp Package documentation for details about names
      */
     @Override
@@ -49,24 +53,32 @@ public interface TrustedContractCounterOffer extends TrustedContractOffer {
 
     /**
      * Instant after which this offer becomes acceptable.
+     *
+     * @return Instant after which this offer becomes acceptable.
      */
     @Override
     Instant validAfter();
 
     /**
      * Instant after which this offer can no longer be accepted or rejected.
+     *
+     * @return Instant at which this offer expires.
      */
     @Override
     Instant validUntil();
 
     /**
      * Offered contracts.
+     *
+     * @return List of offered contracts.
      */
     @Override
     List<TrustedContract> contracts();
 
     /**
      * Time at which this offer was created.
+     *
+     * @return Time at which this offer was created.
      */
     @Override
     Instant offeredAt();

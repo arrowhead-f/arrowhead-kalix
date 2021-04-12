@@ -55,6 +55,8 @@ public class SimplifiedContractCounterOffer {
 
     /**
      * Instant after which this counter-offer becomes acceptable.
+     *
+     * @return Instant after which this counter-offer becomes acceptable.
      */
     public Instant validAfter() {
         return validAfter;
@@ -62,6 +64,8 @@ public class SimplifiedContractCounterOffer {
 
     /**
      * Instant until this counter-offer can be accepted or rejected.
+     *
+     * @return Instant at which this offer expires.
      */
     public Instant validUntil() {
         return validUntil;
@@ -69,6 +73,8 @@ public class SimplifiedContractCounterOffer {
 
     /**
      * Duration until this counter-offer can no longer be accepted or rejected.
+     *
+     * @return Duration until this counter-offer expires.
      */
     public Duration expiresIn() {
         return Duration.between(Instant.now(), validUntil);
@@ -76,6 +82,8 @@ public class SimplifiedContractCounterOffer {
 
     /**
      * Offered contracts.
+     *
+     * @return List of offered contracts.
      */
     public List<TrustedContractDto> contracts() {
         return contracts;
@@ -83,6 +91,8 @@ public class SimplifiedContractCounterOffer {
 
     /**
      * The time at which this counter-offer was created.
+     *
+     * @return The time at which this counter-offer was created.
      */
     public Instant offeredAt() {
         return offeredAt;

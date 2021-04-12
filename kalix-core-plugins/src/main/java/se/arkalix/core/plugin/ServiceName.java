@@ -16,6 +16,8 @@ import static se.arkalix.dto.DtoCodec.JSON;
 public interface ServiceName {
     /**
      * Service name.
+     *
+     * @return Service name.
      */
     @DtoJsonName("serviceDefinition")
     String name();

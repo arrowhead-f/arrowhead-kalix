@@ -42,6 +42,7 @@ public interface AccessPolicy {
      * @param token    Access token presented by the {@code consumer}, if any.
      * @return {@code true} only if {@code consumer} is permitted to consume
      * {@code service}.
+     * @throws AccessTokenException If given {@code token} is invalid.
      */
     @ThreadSafe
     boolean isAuthorized(
@@ -83,16 +84,16 @@ public interface AccessPolicy {
     }
 
     /**
-     * Creates new access policy granting access to consumers with certificate
-     * chains sharing the same
-     * {@link SystemIdentity master}
-     * certificate as the provider of the service being consumed, as well as
-     * being able to present a token from the authorization system represented
-     * by the given public key.
+     * Creates new access policy granting access to consumers that both have a
+     * the same {@link SystemIdentity master} certificate as the provider of
+     * the service and are able to present a token from the authorization
+     * system represented by the given public key.
      * <p>
      * Note that access policy instances of this type can be shared by multiple
      * services.
      *
+     * @param authorizationKey Public key representing accepted issuer of
+     *                         access tokens.
      * @return New token access policy.
      */
     @ThreadSafe

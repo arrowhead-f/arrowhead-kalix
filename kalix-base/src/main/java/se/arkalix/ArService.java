@@ -77,6 +77,7 @@ public interface ArService {
     /**
      * Creates a new description of this service.
      *
+     * @param system System providing this service.
      * @return New description.
      */
     default ServiceRecord describeAsIfProvidedBy(final ArSystem system) {

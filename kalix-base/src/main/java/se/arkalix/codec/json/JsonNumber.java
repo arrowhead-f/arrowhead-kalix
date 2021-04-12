@@ -281,6 +281,9 @@ public class JsonNumber implements JsonValue {
     /**
      * <i>Internal API</i>. Might change in breaking ways between patch
      * versions of the Kalix library. Use is not advised.
+     *
+     * @param buffer Buffer of JSON tokens.
+     * @return Decoded number.
      */
     @Internal
     public static JsonNumber decodeJson(final JsonTokenBuffer buffer) {

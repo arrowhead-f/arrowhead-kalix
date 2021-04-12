@@ -50,15 +50,15 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
      * @param decoder Function to use for decoding the message body.
      * @return Future completed when the incoming message body has been fully
      * received and decoded.
-     * @throws MessageCodecMisspecified     If a codec is specified in the
-     *                                    message, but it cannot be interpreted.
-     * @throws MessageCodecUnspecified If no codec is specified in this
-     *                                    message.
-     * @throws MessageCodecUnsupported If the codec specified in the
-     *                                    message is not supported by the given
-     *                                    {@code decoder}.
-     * @throws IllegalStateException      If the body has already been consumed.
-     * @throws NullPointerException       If {@code decoder} is {@code null}.
+     * @throws MessageCodecMisspecified If a codec is specified in the
+     *                                  message, but it cannot be interpreted.
+     * @throws MessageCodecUnspecified  If no codec is specified in this
+     *                                  message.
+     * @throws MessageCodecUnsupported  If the codec specified in the
+     *                                  message is not supported by the given
+     *                                  {@code decoder}.
+     * @throws IllegalStateException    If the body has already been consumed.
+     * @throws NullPointerException     If {@code decoder} is {@code null}.
      */
     default <T> Future<T> bodyToIfSuccess(final MultiDecoder<T> decoder) {
         if (status().isSuccess()) {
@@ -78,14 +78,15 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
      *
      * @param <T>     Type produced by given {@code decoder}, if successful.
      * @param decoder Function to use for decoding the message body.
+     * @param codec   Codec to use when invoking {@code decoder}.
      * @return Future completed when the incoming message body has been fully
      * received and decoded.
      * @throws MessageCodecUnsupported If the given codec is not
-     *                                    supported by the given {@code
-     *                                    decoder}.
-     * @throws IllegalStateException      If the body has already been consumed.
-     * @throws NullPointerException       If {@code decoder} or {@code codec}
-     *                                    is {@code null}.
+     *                                 supported by the given {@code
+     *                                 decoder}.
+     * @throws IllegalStateException   If the body has already been consumed.
+     * @throws NullPointerException    If {@code decoder} or {@code codec}
+     *                                 is {@code null}.
      */
     default <T> Future<T> bodyToIfSuccess(
         final MultiDecoder<T> decoder,

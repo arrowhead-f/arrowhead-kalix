@@ -22,16 +22,22 @@ public interface TrustedContractNegotiation {
     /**
      * Negotiation identifier, uniquely identifying this negotiation session in
      * combination with the names of the two parties using it to negotiate.
+     *
+     * @return Negotiation identifier.
      */
     long id();
 
     /**
      * The last offer to be submitted to this session.
+     *
+     * @return Last session offer.
      */
     TrustedContractOffer offer();
 
     /**
      * The current state of this negotiation session.
+     *
+     * @return Session status.
      */
     ContractNegotiationStatus status();
 }

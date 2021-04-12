@@ -17,6 +17,7 @@ public interface SystemRecord {
      * @param publicKey           System public key.
      * @param remoteSocketAddress IP-address/hostname and port through which
      *                            the system can be contacted.
+     * @return Description of provider system.
      * @throws NullPointerException If {@code name} or {@code
      *                              remoteSocketAddress} is {@code null}.
      */
@@ -37,6 +38,7 @@ public interface SystemRecord {
      * @param name                System name.
      * @param remoteSocketAddress IP-address/hostname and port through which
      *                            the system can be contacted.
+     * @return Description of provider system.
      * @throws NullPointerException If {@code name} or {@code
      *                              remoteSocketAddress} is {@code null}.
      */

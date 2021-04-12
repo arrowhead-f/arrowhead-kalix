@@ -21,6 +21,7 @@ public interface SystemRecordWithIdentity extends SystemRecord {
      * @param identity            System certificate chain.
      * @param remoteSocketAddress IP-address/hostname and port through which
      *                            the system can be contacted.
+     * @return Description of consumer system.
      * @throws NullPointerException If {@code identity} or {@code
      *                              remoteSocketAddress} is {@code null}.
      */
@@ -38,6 +39,7 @@ public interface SystemRecordWithIdentity extends SystemRecord {
      * @param name                System name.
      * @param remoteSocketAddress IP-address/hostname and port through which
      *                            the system can be contacted.
+     * @return Description of consumer system.
      * @throws NullPointerException If {@code name} or {@code
      *                              remoteSocketAddress} is {@code null}.
      */

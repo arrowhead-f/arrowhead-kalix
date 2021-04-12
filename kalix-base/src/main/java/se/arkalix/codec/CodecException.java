@@ -14,6 +14,7 @@ public abstract class CodecException extends RuntimeException {
      * cause, suppression enabled or disabled, and writable stack trace enabled
      * or disabled.
      *
+     * @param codecType          Codec subject to this exception.
      * @param message            Detail message, or {@code null}.
      * @param cause              Cause, or {@code null}.
      * @param enableSuppression  Whether or not suppression is enabled or

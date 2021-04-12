@@ -149,6 +149,8 @@ public class HttpConsumerRequest
     /**
      * <i>Internal API</i>. Might change in breaking ways between patch
      * versions of the Kalix library. Use is not advised.
+     *
+     * @return Inner {@code HttpClientRequest}.
      */
     @Internal
     public HttpClientRequest unwrap() {

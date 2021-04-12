@@ -24,21 +24,29 @@ public interface TrustedContractAcceptance {
     /**
      * Identifies the {@link TrustedContractNegotiation negotiation session}
      * containing the accepted offer.
+     *
+     * @return Session identifier.
      */
     long negotiationId();
 
     /**
      * Name of party accepting identified offer.
+     *
+     * @return Acceptor name.
      */
     String acceptorName();
 
     /**
      * Name of party originally making the accepted offer.
+     *
+     * @return Offeror name.
      */
     String offerorName();
 
     /**
      * The instant at which the offer was accepted.
+     *
+     * @return Time of acceptance.
      */
     Instant acceptedAt();
 }

@@ -25,12 +25,16 @@ import static se.arkalix.dto.DtoCodec.JSON;
 public interface ServiceRegistration {
     /**
      * Unique service name.
+     *
+     * @return Name of registered service.
      */
     @DtoJsonName("serviceDefinition")
     String name();
 
     /**
      * The system providing the service.
+     *
+     * @return Details about system providing the registered service.
      */
     @DtoJsonName("providerSystem")
     SystemDetails provider();
@@ -42,23 +46,31 @@ public interface ServiceRegistration {
      * <p>
      * For example, if this service uses HTTP, then the qualifier is a URL base
      * path, such as {@code "/base/path"}.
+     *
+     * @return Service URI.
      */
     @DtoJsonName("serviceUri")
     String uri();
 
     /**
      * The access policy employed by the service.
+     *
+     * @return Service access policy.
      */
     @DtoJsonName("secure")
     Optional<AccessPolicyType> security();
 
     /**
      * Arbitrary metadata to associate with registered service.
+     *
+     * @return Service metadata map.
      */
     Map<String, String> metadata();
 
     /**
      * Service version.
+     *
+     * @return Service version.
      */
     Optional<Integer> version();
 
@@ -67,9 +79,17 @@ public interface ServiceRegistration {
      * <p>
      * If the service is provided securely over HTTP and supports JSON and XML,
      * then its two triplets would be "HTTP-SECURE-JSON" and "HTTP-SECURE-XML".
+     *
+     * @return List of supported service interface triplets.
      */
     List<ServiceInterface> interfaces();
 
+    /**
+     * Creates a new service registration from given service record.
+     *
+     * @param description Service record from which to create registration.
+     * @return Created service registration.
+     */
     static ServiceRegistrationDto from(final ServiceRecord description) {
         return new ServiceRegistrationDto.Builder()
             .name(description.name())

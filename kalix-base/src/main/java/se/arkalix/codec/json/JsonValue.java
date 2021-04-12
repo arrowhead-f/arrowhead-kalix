@@ -81,12 +81,15 @@ public interface JsonValue {
      * @return Decoded JSON value.
      */
     static JsonValue decodeJson(final BinaryReader reader) {
-         return decodeJson(JsonTokenizer.tokenize(reader));
+        return decodeJson(JsonTokenizer.tokenize(reader));
     }
 
     /**
      * <i>Internal API</i>. Might change in breaking ways between patch
      * versions of the Kalix library. Use is not advised.
+     *
+     * @param buffer Buffer of JSON tokens.
+     * @return Decoded value.
      */
     @Internal
     static JsonValue decodeJson(final JsonTokenBuffer buffer) {

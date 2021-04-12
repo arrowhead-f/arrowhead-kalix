@@ -26,12 +26,16 @@ import static se.arkalix.dto.DtoCodec.JSON;
 public interface ServiceDetails {
     /**
      * Service name.
+     *
+     * @return Service name.
      */
     @DtoJsonName("serviceDefinition")
     ServiceName name();
 
     /**
      * Service provider.
+     *
+     * @return Service provider details.
      */
     SystemDetails provider();
 
@@ -40,6 +44,8 @@ public interface ServiceDetails {
      * <p>
      * The significance of this value depends on the network protocol employed
      * by the service. If, for example, HTTP is used, then this is a base path.
+     *
+     * @return Service URI.
      */
     @DtoJsonName("serviceUri")
     String uri();
@@ -47,29 +53,38 @@ public interface ServiceDetails {
     /**
      * The date and time at which the service definition entry expires, if
      * ever.
+     *
+     * @return Instant at which this service record expires.
      */
     @DtoJsonName("endOfValidity")
     Optional<String> expiresAt();
 
     /**
      * The security/authentication mode supported by the service.
+     *
+     * @return Access policy type supported by the service.
      */
     @DtoJsonName("secure")
     AccessPolicyType security();
 
     /**
      * Arbitrary service metadata.
+     *
+     * @return Service metadata map.
      */
     Map<String, String> metadata();
 
     /**
      * Service version.
+     *
+     * @return Service version.
      */
     int version();
 
     /**
      * List of supported network interface triplets.
      *
+     * @return List of supported network interface triplets.
      * @see ServiceInterface InterfaceDescriptor
      */
     List<InterfaceName> interfaces();

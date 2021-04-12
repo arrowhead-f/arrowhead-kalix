@@ -19,6 +19,8 @@ import static se.arkalix.dto.DtoCodec.JSON;
 public interface ServiceQueryResult {
     /**
      * Definitions of services matching original {@link ServiceQuery}.
+     *
+     * @return List of service records.
      */
     @DtoJsonName("serviceQueryData")
     List<ServiceDetails> services();

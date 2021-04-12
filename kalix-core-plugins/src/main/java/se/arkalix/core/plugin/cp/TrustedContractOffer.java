@@ -33,26 +33,36 @@ public interface TrustedContractOffer {
      * This is not necessarily the name of the system sending this message, but
      * of the identity that is to concretely make the offer, which may or may
      * not be the same as the name of the system sending this message.
+     *
+     * @return Name of offer sender.
      */
     String offerorName();
 
     /**
      * Name of offer receiver.
+     *
+     * @return Name of offer receiver.
      */
     String receiverName();
 
     /**
      * Instant after which this offer becomes acceptable.
+     *
+     * @return Instant after which this offer becomes acceptable.
      */
     Instant validAfter();
 
     /**
      * Instant after which this offer can no longer be accepted or rejected.
+     *
+     * @return Instant at which this offer expires.
      */
     Instant validUntil();
 
     /**
      * Duration until this offer expires.
+     *
+     * @return Duration until offer expiry.
      */
     default Duration expiresIn() {
         return Duration.between(Instant.now(), validUntil());
@@ -60,11 +70,15 @@ public interface TrustedContractOffer {
 
     /**
      * Offered contracts.
+     *
+     * @return List of offered contracts.
      */
     List<TrustedContract> contracts();
 
     /**
      * Time at which this offer was created.
+     *
+     * @return Instant of offer creation.
      */
     Instant offeredAt();
 }

@@ -26,18 +26,24 @@ import static se.arkalix.dto.DtoCodec.JSON;
 public interface SystemDetails {
     /**
      * Name of system.
+     *
+     * @return System name.
      */
     @DtoJsonName("systemName")
     String name();
 
     /**
      * Hostname or textual representation of IP address of system.
+     *
+     * @return System hostname or address.
      */
     @DtoJsonName("address")
     String hostname();
 
     /**
      * Port number.
+     *
+     * @return Port number.
      */
     int port();
 
@@ -45,6 +51,8 @@ public interface SystemDetails {
      * Public key of system, if running in secure mode.
      * <p>
      * Must be the Base64 encoded variant of a DER-encoded PKCS#8 private key.
+     *
+     * @return System public key, if any.
      */
     @DtoJsonName("authenticationInfo")
     Optional<String> publicKeyBase64();
@@ -63,6 +71,12 @@ public interface SystemDetails {
             .orElse(null), new InetSocketAddress(hostname(), port()));
     }
 
+    /**
+     * Creates new system record from given concrete system instance.
+     *
+     * @param system System from which to create a record.
+     * @return Created system record.
+     */
     static SystemDetailsDto from(final ArSystem system) {
         return new SystemDetailsDto.Builder()
             .name(system.name())
@@ -74,6 +88,12 @@ public interface SystemDetails {
             .build();
     }
 
+    /**
+     * Creates new system record from the given system record.
+     *
+     * @param provider System record from which to create a new record.
+     * @return Creates system record.
+     */
     static SystemDetailsDto from(final SystemRecord provider) {
         final var socketAddress = provider.socketAddress();
         return new SystemDetailsDto.Builder()

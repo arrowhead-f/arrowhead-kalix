@@ -24,21 +24,29 @@ public interface TrustedContractRejection {
     /**
      * Identifies the {@link TrustedContractNegotiation negotiation session}
      * containing the rejected offer.
+     *
+     * @return Session identifier.
      */
     long negotiationId();
 
     /**
      * Name of party rejecting identified offer.
+     *
+     * @return Rejector name.
      */
     String rejectorName();
 
     /**
      * Name of party originally making the accepted offer.
+     *
+     * @return Offeror name.
      */
     String offerorName();
 
     /**
      * The instant at which the offer was rejected.
+     *
+     * @return The instant at which the offer was rejected.
      */
     Instant rejectedAt();
 }

@@ -143,6 +143,7 @@ public interface BinaryReader {
     /**
      * Increments the internal {@link #readOffset() read offset} by {@code n}.
      *
+     * @param n Number of bytes to skip.
      * @throws IndexOutOfBoundsException If there are less than {@code n} bytes
      *                                   left to skip.
      */

@@ -19,18 +19,24 @@ import static se.arkalix.dto.DtoCodec.JSON;
 public interface ErrorResponse {
     /**
      * Human-readable description of error.
+     *
+     * @return Error description.
      */
     @DtoJsonName("errorMessage")
     String message();
 
     /**
      * Error code.
+     *
+     * @return Error code.
      */
     @DtoJsonName("errorCode")
     int code();
 
     /**
      * Error type descriptor.
+     *
+     * @return Error type descriptor.
      */
     @DtoJsonName("exceptionType")
     String type();

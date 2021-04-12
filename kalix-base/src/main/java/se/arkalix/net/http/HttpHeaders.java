@@ -43,6 +43,7 @@ public interface HttpHeaders {
      * exists in this collection, and then attempts to transform it using
      * given mapper function.
      *
+     * @param <T>    Type of value returned by {@code mapper}.
      * @param name   Name of header. Not case sensitive. Prefer lowercase.
      * @param mapper Function to apply to header.
      * @return Desired value, if available, as returned by {@code mapper}.

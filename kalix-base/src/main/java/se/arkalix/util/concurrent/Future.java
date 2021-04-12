@@ -44,8 +44,6 @@ import java.util.function.Consumer;
  *                 <li>{@link #cancel()}</li>
  *                 <li>{@link #onFailure(Consumer)}</li>
  *             </ol>
- *         </p>
- *     </li>
  *     <li>
  *         <b>Side Effects</b>
  *         <p>Pass the {@link Result} of this {@code Future} to a {@link
@@ -57,8 +55,6 @@ import java.util.function.Consumer;
  *                 <li>{@link #ifSuccess(ThrowingConsumer)}</li>
  *                 <li>{@link #always(ThrowingConsumer)}</li>
  *             </ol>
- *         </p>
- *     </li>
  *     <li>
  *         <b>Result Transformation</b>
  *         <p>Transform the {@link Result} of this {@code Future} and return a
@@ -80,8 +76,6 @@ import java.util.function.Consumer;
  *                 <li>{@link #flatMapResult(ThrowingFunction)}</li>
  *                 <li>{@link #flatMapThrow(ThrowingFunction)}</li>
  *             </ol>
- *         </p>
- *     </li>
  *     <li>
  *         <b>Result Substitution</b>
  *         <p>Replace the {@link Result} of this {@code Future} with any value
@@ -90,8 +84,6 @@ import java.util.function.Consumer;
  *                 <li>{@link #pass(Object)}</li>
  *                 <li>{@link #fail(Throwable)}</li>
  *             </ol>
- *         </p>
- *     </li>
  *     <li>
  *         <b>Result Distribution</b>
  *         <p>Allow for multiple consumers to receive the {@link Result} of
@@ -99,8 +91,6 @@ import java.util.function.Consumer;
  *             <ol>
  *                 <li>{@link #toAnnouncement()}</li>
  *             </ol>
- *         </p>
- *     </li>
  *     <li>
  *         <b>Result Suspension</b>
  *         <p>Adjust the time it will take for this {@code Future} to complete.
@@ -108,8 +98,6 @@ import java.util.function.Consumer;
  *                 <li>{@link #delay(Duration)}</li>
  *                 <li>{@link #delayUntil(Instant)}</li>
  *             </ol>
- *         </p>
- *     </li>
  *     <li>
  *         <b>Thread Management</b>
  *         <p>Consume the result of this {@code Future} on a separate thread.
@@ -117,8 +105,6 @@ import java.util.function.Consumer;
  *                 <li>{@link #fork(Consumer)}</li>
  *                 <li>{@link #forkJoin(ThrowingFunction)}</li>
  *             </ol>
- *         </p>
- *     </li>
  *     <li>
  *         <b>Result Awaiting</b>
  *         <p>Block current thread until the {@link Result} of this {@code
@@ -127,8 +113,6 @@ import java.util.function.Consumer;
  *                  <li>{@link #await()}</li>
  *                  <li>{@link #await(Duration)}</li>
  *              </ol>
- *         </p>
- *     </li>
  *     <li>
  *         <b>Future Result Predetermination</b>
  *         <p>Create a new {@code Future} with a predetermined {@link Result}.
@@ -138,8 +122,6 @@ import java.util.function.Consumer;
  *                 <li>{@link #failure(Throwable)}</li>
  *                 <li>{@link #of(Result)}</li>
  *             </ol>
- *         </p>
- *     </li>
  * </ol>
  * Implementations of this interface are likely <i>not</i> going to be thread
  * safe. Unless otherwise advertised, sharing individual {@code Futures}
@@ -289,6 +271,8 @@ public interface Future<V> {
      * suppressed exception to the new exception thrown by the {@code consumer}
      * function.
      *
+     * @param <T>      Type of {@link Throwable} received by {@code consumer}.
+     * @param class_   Class caught exceptions must be assignable to.
      * @param consumer Function invoked if this {@code Future} completes with
      *                 an fault.
      * @return New {@code Future} completed with the result of this {@code
@@ -430,6 +414,7 @@ public interface Future<V> {
      * Any exception thrown by {@code mapper} leads to the returned
      * {@code Future} being failed with the same exception.
      *
+     * @param <T>    Type of {@link Throwable} caught by this method.
      * @param class_ Class caught exceptions must be assignable to.
      * @param mapper The mapping function to apply to the fault of this
      *               {@code Future}, if it becomes available.
@@ -492,6 +477,8 @@ public interface Future<V> {
      * {@code Future} being failed with the same exception, meaning it is
      * functionally equivalent to returning the exception.
      *
+     * @param <T>    Type of {@link Throwable} caught by this method.
+     * @param class_ Class caught exceptions must be assignable to.
      * @param mapper The mapping function to apply to the fault of this
      *               {@code Future}, if it becomes available.
      * @return A {@code Future} that may eventually hold the result of applying
@@ -589,6 +576,7 @@ public interface Future<V> {
      * Any exception thrown by {@code mapper} leads to the returned
      * {@code Future} being failed with the same exception.
      *
+     * @param <U>    Arbitrary type.
      * @param mapper The mapping function to apply to the value of this
      *               {@code Future}, if it becomes available.
      * @return A {@code Future} that may eventually hold the result of applying
@@ -696,6 +684,7 @@ public interface Future<V> {
      * Any exception thrown by {@code mapper} leads to the returned
      * {@code Future} being failed with the same exception.
      *
+     * @param <T>    Type of {@link Throwable} caught by this method.
      * @param class_ Class that caught exceptions must be assignable to.
      * @param mapper The mapping function to apply to the fault of this
      *               {@code Future}, if it becomes available.
@@ -770,6 +759,8 @@ public interface Future<V> {
      * the {@code Future} returned by mapper fails, the {@code Future} returned
      * by this method is failed with that exception.
      *
+     * @param <T>    Type of {@link Throwable} received by {@code consumer}.
+     * @param class_ Class caught exceptions must be assignable to.
      * @param mapper The mapping function to apply to the fault of this
      *               {@code Future}, if it becomes available.
      * @return A {@code Future} that may eventually hold the result of applying
@@ -928,6 +919,7 @@ public interface Future<V> {
      * If this {@code Future} fails, on the other hand, the returned
      * {@code Future} is failed with the same fault.
      *
+     * @param <U>   Type of {@code value}.
      * @param value Value to include in the returned {@code Future}.
      * @return A {@code Future} that will complete with given {@code throwable}
      * as fault.
@@ -949,6 +941,7 @@ public interface Future<V> {
      * exception to the provided {@code throwable}. If this {@code Future}
      * succeeds, its result is ignored.
      *
+     * @param <U>       Arbitrary type.
      * @param throwable Fault to include in returned {@code Future}.
      * @return A {@code Future} that will complete with given {@code throwable}
      * as fault.
@@ -1260,6 +1253,8 @@ public interface Future<V> {
      *                               blocked.
      * @throws InterruptedException  If the thread awaiting the completion of
      *                               this {@code Future} would be interrupted.
+     * @throws TimeoutException      If this does not complete its operation
+     *                               before the given {@code timeout}.
      */
     default V await(final Duration timeout) throws InterruptedException, TimeoutException {
         throwIfThisThreadBelongsToFixedScheduler();
@@ -1302,6 +1297,7 @@ public interface Future<V> {
     /**
      * Returns {@code Future} that always succeeds with {@code null}.
      *
+     * @param <V> Arbitrary type.
      * @return Cached {@code Future}.
      */
     @SuppressWarnings("unchecked")
