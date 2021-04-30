@@ -161,7 +161,7 @@ public class JsonString implements JsonValue {
      *                                    offset.
      */
     public static JsonString decodeJson(final BinaryReader reader) {
-        return decodeJson(JsonTokenizer.tokenize(reader));
+        return decodeJson_(JsonTokenizer.tokenize(reader));
     }
 
     /**
@@ -172,7 +172,7 @@ public class JsonString implements JsonValue {
      * @return Decoded string.
      */
     @Internal
-    public static JsonString decodeJson(final JsonTokenBuffer buffer) {
+    public static JsonString decodeJson_(final JsonTokenBuffer buffer) {
         final var reader = buffer.reader();
         var token = buffer.next();
         if (token.type() != JsonType.STRING) {

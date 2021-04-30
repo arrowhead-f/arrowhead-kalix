@@ -1,13 +1,10 @@
 package se.arkalix.net;
 
-import se.arkalix.codec.Encodable;
-import se.arkalix.codec.CodecType;
-import se.arkalix.codec.MultiEncodable;
-import se.arkalix.codec.ToCodecType;
+import se.arkalix.codec.*;
 
 import java.nio.charset.Charset;
 import java.nio.file.Path;
-import java.util.Objects;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -56,7 +53,9 @@ public interface MessageOutgoing<Self> extends Message {
      * @throws NullPointerException If {@code byteArray} is {@code null}.
      */
     default Self body(final byte[] byteArray) {
-        Objects.requireNonNull(byteArray, "byteArray");
+        if (byteArray == null) {
+            throw new NullPointerException("byteArray");
+        }
         return body(BodyOutgoing.create(writer -> {
             writer.write(byteArray);
             return CodecType.NONE;
@@ -76,23 +75,54 @@ public interface MessageOutgoing<Self> extends Message {
 
     /**
      * Sets given {@code encodable} as outgoing message body, to be encoded
-     * using given {@code codec}.
+     * using given {@code toCodecType}.
      *
-     * @param encodable Object to use, in encoded form, as message body.
-     * @param codec     Codec to use when codec {@code encodable}.
+     * @param encodable   Object to use, in encoded form, as message body.
+     * @param toCodecType Codec to provide to {@code encodable}.
      * @return This message.
-     * @throws NullPointerException If {@code codec} or {@code encodable} is
-     *                              {@code null}.
+     * @throws NullPointerException If {@code toCodecType} or {@code encodable}
+     *                              is {@code null}.
      */
-    default Self body(final MultiEncodable encodable, final ToCodecType codec) {
-        Objects.requireNonNull(encodable, "encodable");
-        Objects.requireNonNull(codec, "codec");
+    default Self body(final MultiEncodable encodable, final ToCodecType toCodecType) {
+        if (encodable == null) {
+            throw new NullPointerException("encodable");
+        }
+        if (toCodecType == null) {
+            throw new NullPointerException("codec");
+        }
 
-        final var codec0 = codec.toCodecType();
-        return body(BodyOutgoing.create(writer -> {
-            encodable.encode(writer, codec0);
-            return CodecType.NONE;
-        }));
+        final var codecType = toCodecType.toCodecType();
+        return body(BodyOutgoing.create(writer -> encodable
+            .encodableFor(codecType)
+            .encode(writer)));
+    }
+
+    /**
+     * Sets given {@code encodables} as outgoing message body, to be encoded
+     * using given {@code toCodecType}.
+     * <p>
+     * This method can only succeed for codecs that both support anonymous
+     * lists and are explicitly listed as supported by {@link
+     * MultiEncodableForLists#supportedEncodings()}.
+     *
+     * @param encodables  Objects to use, in encoded form, as message body.
+     * @param toCodecType Codec to use when codec {@code encodable}.
+     * @return This message.
+     * @throws NullPointerException If {@code toCodecType} or {@code encodables}
+     *                              is {@code null}.
+     */
+    default Self body(final List<MultiEncodable> encodables, final ToCodecType toCodecType) {
+        if (encodables == null) {
+            throw new NullPointerException("encodables");
+        }
+        if (toCodecType == null) {
+            throw new NullPointerException("codec");
+        }
+
+        final var codec0 = toCodecType.toCodecType();
+        return body(BodyOutgoing.create(writer -> MultiEncodableForLists.of(encodables)
+            .encodableFor(codec0)
+            .encode(writer)));
     }
 
     /**
@@ -124,8 +154,12 @@ public interface MessageOutgoing<Self> extends Message {
      *                              {@code null}.
      */
     default Self body(final String string, final Charset charset) {
-        Objects.requireNonNull(string, "string");
-        Objects.requireNonNull(charset, "charset");
+        if (string == null) {
+            throw new NullPointerException("string");
+        }
+        if (charset == null) {
+            throw new NullPointerException("charset");
+        }
 
         final var codec = CodecType.getOrRegister(charset);
         return body(BodyOutgoing.create(writer -> {

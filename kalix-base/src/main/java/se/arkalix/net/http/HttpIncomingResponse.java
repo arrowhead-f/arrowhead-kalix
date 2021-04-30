@@ -46,7 +46,8 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
      * Calling this method consumes the body associated with this message. Any
      * further attempts to consume the body will cause exceptions to be thrown.
      *
-     * @param <T>     Type produced by given {@code decoder}, if successful.
+     * @param <T>     Type produced by given {@code decoder}, if
+     *                successful.
      * @param decoder Function to use for decoding the message body.
      * @return Future completed when the incoming message body has been fully
      * received and decoded.
@@ -76,24 +77,22 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
      * Calling this method consumes the body associated with this message. Any
      * further attempts to consume the body will cause exceptions to be thrown.
      *
-     * @param <T>     Type produced by given {@code decoder}, if successful.
-     * @param decoder Function to use for decoding the message body.
-     * @param codec   Codec to use when invoking {@code decoder}.
+     * @param <T>         Type produced by given {@code decoder}, if
+     *                    successful.
+     * @param decoder     Function to use for decoding the message body.
+     * @param toCodecType Codec to use when invoking {@code decoder}.
      * @return Future completed when the incoming message body has been fully
      * received and decoded.
      * @throws MessageCodecUnsupported If the given codec is not
      *                                 supported by the given {@code
      *                                 decoder}.
      * @throws IllegalStateException   If the body has already been consumed.
-     * @throws NullPointerException    If {@code decoder} or {@code codec}
+     * @throws NullPointerException    If {@code decoder} or {@code toCodecType}
      *                                 is {@code null}.
      */
-    default <T> Future<T> bodyToIfSuccess(
-        final MultiDecoder<T> decoder,
-        final ToCodecType codec
-    ) {
+    default <T> Future<T> bodyToIfSuccess(final MultiDecoder<T> decoder, final ToCodecType toCodecType) {
         if (status().isSuccess()) {
-            return bodyTo(decoder, codec);
+            return bodyTo(decoder, toCodecType);
         }
         return Future.failure(reject());
     }
@@ -145,8 +144,8 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
      * This method is primarily intended to be used when receiving messages
      * that contain unexpected status codes and no response body is expected.
      * If a response body <i>is</i> expected, please use
-     * {@link #bodyToIfSuccess(MultiDecoder)} instead. If the
-     * reason behind the rejection requires more explanation, please use
+     * {@link #bodyToIfSuccess(MultiDecoder)} instead. If the reason behind
+     * the rejection requires more explanation, please use
      * {@link #rejectIfNotSuccess(String)} instead.
      *
      * @return Future completed with exception only if this response contains a

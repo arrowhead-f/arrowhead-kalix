@@ -41,7 +41,7 @@ public class JsonNull implements JsonValue {
      *                                    offset.
      */
     public static JsonNull decodeJson(final BinaryReader reader) {
-        return decodeJson(JsonTokenizer.tokenize(reader));
+        return decodeJson_(JsonTokenizer.tokenize(reader));
     }
 
     /**
@@ -52,7 +52,7 @@ public class JsonNull implements JsonValue {
      * @return Decoded null.
      */
     @Internal
-    public static JsonNull decodeJson(final JsonTokenBuffer buffer) {
+    public static JsonNull decodeJson_(final JsonTokenBuffer buffer) {
         var token = buffer.next();
         if (token.type() != JsonType.NULL) {
             final var reader = buffer.reader();

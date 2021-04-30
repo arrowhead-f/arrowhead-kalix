@@ -88,7 +88,7 @@ public class JsonObject implements JsonCollection<String>, Iterable<JsonPair> {
      *                                    offset.
      */
     public static JsonObject decodeJson(final BinaryReader reader) {
-        return decodeJson(JsonTokenizer.tokenize(reader));
+        return decodeJson_(JsonTokenizer.tokenize(reader));
     }
 
     /**
@@ -99,7 +99,7 @@ public class JsonObject implements JsonCollection<String>, Iterable<JsonPair> {
      * @return Decoded object.
      */
     @Internal
-    public static JsonObject decodeJson(final JsonTokenBuffer buffer) {
+    public static JsonObject decodeJson_(final JsonTokenBuffer buffer) {
         final var reader = buffer.reader();
         var token = buffer.next();
         if (token.type() != JsonType.OBJECT) {
@@ -113,7 +113,7 @@ public class JsonObject implements JsonCollection<String>, Iterable<JsonPair> {
         final var pairs = new ArrayList<JsonPair>(token.nChildren());
         for (var n = token.nChildren(); n-- != 0; ) {
             final var name = buffer.next();
-            final var value = JsonValue.decodeJson(buffer);
+            final var value = JsonValue.decodeJson_(buffer);
             pairs.add(new JsonPair(JsonPrimitives.readString(name, reader), value));
         }
         return new JsonObject(pairs);

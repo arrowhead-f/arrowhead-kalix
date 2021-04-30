@@ -1,15 +1,12 @@
 package se.arkalix.net;
 
-import se.arkalix.codec.CodecType;
-import se.arkalix.codec.Decoder;
-import se.arkalix.codec.MultiDecoder;
-import se.arkalix.codec.ToCodecType;
+import se.arkalix.codec.*;
 import se.arkalix.util.concurrent.Future;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.Objects;
+import java.util.List;
 
 /**
  * An incoming network message.
@@ -80,7 +77,9 @@ public interface MessageIncoming extends Message {
      * @throws NullPointerException  If {@code charset} is {@code null}.
      */
     default Future<String> bodyAsString(final Charset charset) {
-        Objects.requireNonNull(charset, "charset");
+        if (charset == null) {
+            throw new NullPointerException("charset");
+        }
         return bodyAsByteArray().map(bytes -> new String(bytes, charset));
     }
 
@@ -99,16 +98,20 @@ public interface MessageIncoming extends Message {
      * @throws NullPointerException  If {@code decoder} is {@code null}.
      */
     default <T> Future<T> bodyTo(final Decoder<T> decoder) {
-        Objects.requireNonNull(decoder, "decoder");
+        if (decoder == null) {
+            throw new NullPointerException("decoder");
+        }
         return body()
             .buffer()
             .map(decoder::decode);
+        // TODO: Should we throw an exception if there is more in the body?
     }
 
     /**
      * Collects and then converts the incoming message body using the provided
-     * {@code decoder}, which will attempt to select an appropriate decoder
-     * function from any {@link #codecType() codec} specified in the message.
+     * {@code decoder}, which will attempt to select an appropriate
+     * decoder function from any {@link #codecType() codec} specified in the
+     * message.
      * <p>
      * Calling this method consumes the body associated with this message. Any
      * further attempts to consume the body will cause exceptions to be thrown.
@@ -133,31 +136,36 @@ public interface MessageIncoming extends Message {
 
     /**
      * Collects and then converts the incoming message body using the provided
-     * {@code decoder}, which will attempt to select an appropriate decoder
-     * function from any {@link #codecType() codec} specified in the message.
+     * {@code decoder}, which will attempt to select a decoder
+     * function named by {@code toCodecType}.
      * <p>
      * Calling this method consumes the body associated with this message. Any
      * further attempts to consume the body will cause exceptions to be thrown.
      *
-     * @param <T>     Type produced by given {@code decoder}, if successful.
-     * @param decoder Function to use for decoding the message body.
-     * @param codec   Codec to use when invoking {@code decoder}.
+     * @param <T>         Type produced by given {@code decoder}, if successful.
+     * @param decoder     Function to use for decoding the message body.
+     * @param toCodecType Codec to use when invoking {@code decoder}.
      * @return Future completed when the incoming message body has been fully
      * received and decoded.
-     * @throws MessageCodecUnsupported If the given codec is not
-     *                                 supported by the given {@code
-     *                                 decoder}.
+     * @throws MessageCodecUnsupported If the given codec is not supported by
+     *                                 the given {@code decoder}.
      * @throws IllegalStateException   If the body has already been consumed.
-     * @throws NullPointerException    If {@code decoder} or {@code codec}
+     * @throws NullPointerException    If {@code decoder} or {@code toCodecType}
      *                                 is {@code null}.
      */
-    default <T> Future<T> bodyTo(final MultiDecoder<T> decoder, final ToCodecType codec) {
-        Objects.requireNonNull(decoder, "decoder");
-        Objects.requireNonNull(codec, "codec");
-        final var codec0 = codec.toCodecType();
+    default <T> Future<T> bodyTo(final MultiDecoder<T> decoder, final ToCodecType toCodecType) {
+        if (decoder == null) {
+            throw new NullPointerException("decoder");
+        }
+        if (toCodecType == null) {
+            throw new NullPointerException("toCodecType");
+        }
+        final var codecType = toCodecType.toCodecType();
         return body()
             .buffer()
-            .map(reader -> decoder.decode(reader, codec0));
+            .map(reader -> decoder.decoderFor(codecType)
+                .decode(reader));
+        // TODO: Should we throw an exception if there is more in the body?
     }
 
     /**
@@ -214,5 +222,69 @@ public interface MessageIncoming extends Message {
      */
     default Future<?> bodyTo(final Path path) {
         return body().writeTo(path);
+    }
+
+    /**
+     * Collects and then converts the individual list items of the incoming
+     * message body using the provided {@code decoder}, which will
+     * attempt to select an appropriate decoder function from any {@link
+     * #codecType() codec} specified in the message.
+     * <p>
+     * This method can only succeed for codecs that both support anonymous
+     * lists and are explicitly listed as supported by {@link
+     * MultiDecoderForLists#supportedEncodings()}.
+     * <p>
+     * Calling this method consumes the body associated with this message. Any
+     * further attempts to consume the body will cause exceptions to be thrown.
+     *
+     * @param <T>     Type produced by given {@code decoder}, if successful.
+     * @param decoder Function to use for decoding the message body.
+     * @return Future completed when the incoming message body has been fully
+     * received and decoded.
+     * @throws MessageCodecMisspecified If a codec is specified in the
+     *                                  message, but it cannot be interpreted.
+     * @throws MessageCodecUnspecified  If no codec is specified in this
+     *                                  message.
+     * @throws MessageCodecUnsupported  If the codec specified in the message
+     *                                  is not supported by the given {@code
+     *                                  decoder}.
+     * @throws IllegalStateException    If the body has already been consumed.
+     * @throws NullPointerException     If {@code decoder} is {@code null}.
+     */
+    default <T> Future<List<T>> bodyListItemsTo(final MultiDecoder<T> decoder) {
+        return bodyListItemsTo(decoder, codecType().orElseThrow(() -> new MessageCodecUnspecified(this)));
+    }
+
+    /**
+     * Collects and then converts the individual list items of the incoming
+     * message body using the provided {@code decoder}, which will
+     * attempt to select a decoder function named by {@code toCodecType}.
+     * <p>
+     * This method can only succeed for codecs that both support anonymous
+     * lists and are explicitly listed as supported by {@link
+     * MultiDecoderForLists#supportedEncodings()}.
+     * <p>
+     * Calling this method consumes the body associated with this message. Any
+     * further attempts to consume the body will cause exceptions to be thrown.
+     *
+     * @param <T>         Type produced by given {@code decoder}, if successful.
+     * @param decoder     Function to use for decoding the message body.
+     * @param toCodecType Codec to use when invoking {@code decoder}.
+     * @return Future completed when the incoming message body has been fully
+     * received and decoded.
+     * @throws MessageCodecUnsupported If the given codec is not supported by
+     *                                 the given {@code decoder}.
+     * @throws IllegalStateException   If the body has already been consumed.
+     * @throws NullPointerException    If {@code decoder} or {@code
+     *                                 toCodecType} is {@code null}.
+     */
+    default <T> Future<List<T>> bodyListItemsTo(
+        final MultiDecoder<T> decoder,
+        final ToCodecType toCodecType
+    ) {
+        if (toCodecType == null) {
+            throw new NullPointerException("toCodecType");
+        }
+        return bodyTo(MultiDecoderForLists.of(decoder), toCodecType.toCodecType());
     }
 }

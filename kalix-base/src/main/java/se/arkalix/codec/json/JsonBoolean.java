@@ -65,7 +65,7 @@ public class JsonBoolean implements JsonValue {
      *                                    read offset.
      */
     public static JsonBoolean decodeJson(final BinaryReader reader) {
-        return decodeJson(JsonTokenizer.tokenize(reader));
+        return decodeJson_(JsonTokenizer.tokenize(reader));
     }
 
     /**
@@ -76,7 +76,7 @@ public class JsonBoolean implements JsonValue {
      * @return Decoded boolean.
      */
     @Internal
-    public static JsonBoolean decodeJson(final JsonTokenBuffer buffer) {
+    public static JsonBoolean decodeJson_(final JsonTokenBuffer buffer) {
         var token = buffer.next();
         switch (token.type()) {
         case TRUE: return TRUE;

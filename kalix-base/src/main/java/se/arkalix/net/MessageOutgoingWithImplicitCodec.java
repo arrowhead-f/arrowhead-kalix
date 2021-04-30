@@ -31,13 +31,10 @@ public interface MessageOutgoingWithImplicitCodec<Self> extends MessageOutgoing<
      */
     default Self body(final MultiEncodable encodable) {
         Objects.requireNonNull(encodable, "encodable");
-        return body(BodyOutgoing.create(writer -> {
-            final var codec0 = codecType()
-                .orElseThrow(() -> new MessageCodecUnspecified(this));
-
-            encodable.encode(writer, codec0);
-            return codec0;
-        }));
+        return body(BodyOutgoing.create(writer -> encodable
+            .encodableFor(codecType()
+                .orElseThrow(() -> new MessageCodecUnspecified(this)))
+            .encode(writer)));
     }
 
     /**

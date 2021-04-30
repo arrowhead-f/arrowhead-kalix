@@ -275,7 +275,7 @@ public class JsonNumber implements JsonValue {
      *                                    offset.
      */
     public static JsonNumber decodeJson(final BinaryReader reader) {
-        return decodeJson(JsonTokenizer.tokenize(reader));
+        return decodeJson_(JsonTokenizer.tokenize(reader));
     }
 
     /**
@@ -286,7 +286,7 @@ public class JsonNumber implements JsonValue {
      * @return Decoded number.
      */
     @Internal
-    public static JsonNumber decodeJson(final JsonTokenBuffer buffer) {
+    public static JsonNumber decodeJson_(final JsonTokenBuffer buffer) {
         final var reader = buffer.reader();
         final var token = buffer.next();
         final var string = JsonPrimitives.readStringRaw(token, reader);

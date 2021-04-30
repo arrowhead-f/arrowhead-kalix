@@ -85,7 +85,7 @@ public class JsonArray implements JsonCollection<Integer>, Iterable<JsonValue> {
      *                                    offset.
      */
     public static JsonArray decodeJson(final BinaryReader reader) {
-        return decodeJson(JsonTokenizer.tokenize(reader));
+        return decodeJson_(JsonTokenizer.tokenize(reader));
     }
 
     /**
@@ -96,7 +96,7 @@ public class JsonArray implements JsonCollection<Integer>, Iterable<JsonValue> {
      * @return Decoded array.
      */
     @Internal
-    public static JsonArray decodeJson(final JsonTokenBuffer buffer) {
+    public static JsonArray decodeJson_(final JsonTokenBuffer buffer) {
         final var reader = buffer.reader();
         var token = buffer.next();
         if (token.type() != JsonType.ARRAY) {
@@ -109,7 +109,7 @@ public class JsonArray implements JsonCollection<Integer>, Iterable<JsonValue> {
         }
         final var elements = new ArrayList<JsonValue>(token.nChildren());
         for (var n = token.nChildren(); n-- != 0; ) {
-            elements.add(JsonValue.decodeJson(buffer));
+            elements.add(JsonValue.decodeJson_(buffer));
         }
         return new JsonArray(elements);
     }

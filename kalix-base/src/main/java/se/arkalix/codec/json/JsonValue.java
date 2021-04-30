@@ -81,7 +81,7 @@ public interface JsonValue {
      * @return Decoded JSON value.
      */
     static JsonValue decodeJson(final BinaryReader reader) {
-        return decodeJson(JsonTokenizer.tokenize(reader));
+        return decodeJson_(JsonTokenizer.tokenize(reader));
     }
 
     /**
@@ -92,22 +92,22 @@ public interface JsonValue {
      * @return Decoded value.
      */
     @Internal
-    static JsonValue decodeJson(final JsonTokenBuffer buffer) {
+    static JsonValue decodeJson_(final JsonTokenBuffer buffer) {
         var token = buffer.peek();
         switch (token.type()) {
         case OBJECT:
-            return JsonObject.decodeJson(buffer);
+            return JsonObject.decodeJson_(buffer);
         case ARRAY:
-            return JsonArray.decodeJson(buffer);
+            return JsonArray.decodeJson_(buffer);
         case STRING:
-            return JsonString.decodeJson(buffer);
+            return JsonString.decodeJson_(buffer);
         case NUMBER:
-            return JsonNumber.decodeJson(buffer);
+            return JsonNumber.decodeJson_(buffer);
         case TRUE:
         case FALSE:
-            return JsonBoolean.decodeJson(buffer);
+            return JsonBoolean.decodeJson_(buffer);
         case NULL:
-            return JsonNull.decodeJson(buffer);
+            return JsonNull.decodeJson_(buffer);
         default:
             throw new IllegalStateException("Illegal token type: " + token.type());
         }

@@ -1,11 +1,7 @@
 package se.arkalix.dto;
 
 import com.squareup.javapoet.*;
-import se.arkalix.codec.CodecType;
-import se.arkalix.codec.CodecUnsupported;
-import se.arkalix.codec.MultiEncodable;
-import se.arkalix.codec.binary.BinaryReader;
-import se.arkalix.codec.binary.BinaryWriter;
+import se.arkalix.codec.*;
 import se.arkalix.dto.types.*;
 
 import javax.annotation.processing.Filer;
@@ -325,48 +321,46 @@ public class DtoGenerator {
 
         final var dtoReadableAs = interfaceElement.getAnnotation(DtoReadableAs.class);
         if (dtoReadableAs != null) {
-            final var decode = MethodSpec.methodBuilder("decode")
+            final var decode = MethodSpec.methodBuilder("decoderFor")
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .returns(implementationClassName)
-                .addParameter(ClassName.get(BinaryReader.class), "reader", Modifier.FINAL)
-                .addParameter(ClassName.get(CodecType.class), "codec", Modifier.FINAL);
+                .returns(ParameterizedTypeName.get(ClassName.get(Decoder.class), implementationClassName))
+                .addParameter(ClassName.get(CodecType.class), "codecType", Modifier.FINAL);
 
             for (final var codec : dtoReadableAs.value()) {
                 final var backend = getBackendByCodecOrThrow(codec);
                 backend.generateDecodeMethodFor(target, implementation);
                 decode
-                    .beginControlFlow("if (codec == $T.$N)", CodecType.class, codec.name())
-                    .addStatement("return $N(reader)", backend.decodeMethodName())
+                    .beginControlFlow("if (codecType == $T.$N)", CodecType.class, codec.name())
+                    .addStatement("return $T::$N", implementationClassName, backend.decodeMethodName())
                     .endControlFlow();
             }
 
             implementation.addMethod(decode
-                .addStatement("throw new $T(codec)", CodecUnsupported.class)
+                .addStatement("throw new $T(codecType)", CodecUnsupported.class)
                 .build());
         }
 
         final var dtoWritableAs = interfaceElement.getAnnotation(DtoWritableAs.class);
         if (dtoWritableAs != null) {
-            final var encode = MethodSpec.methodBuilder("encode")
+            final var encode = MethodSpec.methodBuilder("encodableFor")
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
-                .addParameter(ClassName.get(BinaryWriter.class), "writer", Modifier.FINAL)
-                .addParameter(ClassName.get(CodecType.class), "codec", Modifier.FINAL);
+                .returns(ClassName.get(Encodable.class))
+                .addParameter(ClassName.get(CodecType.class), "codecType", Modifier.FINAL);
 
             for (final var codec : dtoWritableAs.value()) {
                 final var backend = getBackendByCodecOrThrow(codec);
                 backend.generateEncodeMethodFor(target, implementation);
                 encode
-                    .beginControlFlow("if (codec == $T.$N)", CodecType.class, codec.name())
-                    .addStatement("$N(writer)", backend.encodeMethodName())
-                    .addStatement("return")
+                    .beginControlFlow("if (codecType == $T.$N)", CodecType.class, codec.name())
+                    .addStatement("return this::$N", backend.encodeMethodName())
                     .endControlFlow();
             }
 
             implementation
                 .addSuperinterface(ClassName.get(MultiEncodable.class))
                 .addMethod(encode
-                    .addStatement("throw new $T(codec)", CodecUnsupported.class)
+                    .addStatement("throw new $T(codecType)", CodecUnsupported.class)
                     .build());
         }
 

@@ -52,10 +52,10 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
             .returns(typeName)
             .addParameter(BinaryReader.class, "reader", Modifier.FINAL)
-            .addStatement("return $N($T.tokenize(reader))", decodeMethodName(), JsonTokenizer.class)
+            .addStatement("return $N_($T.tokenize(reader))", decodeMethodName(), JsonTokenizer.class)
             .build());
 
-        final var builder = MethodSpec.methodBuilder(decodeMethodName())
+        final var builder = MethodSpec.methodBuilder(decodeMethodName() + "_")
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
             .returns(typeName)
             .addParameter(JsonTokenBuffer.class, "buffer", Modifier.FINAL)
@@ -383,7 +383,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         if (!type.containsPublicStaticMethod(returnType, decodeMethodName(), parameter)) {
             throw new DtoException(type.typeElement(), "No public static " +
                 returnType + " " + decodeMethodName() +
-                "(JsonTokenBuffer) method available; required for this " +
+                "_(JsonTokenBuffer) method available; required for this " +
                 "class/interface to be useful as a custom JSON DTO");
         }
 
@@ -396,7 +396,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         }
 
         builder.addStatement(assignment.expand("$T.$N(buffer)"),
-            type.originalTypeName(), decodeMethodName());
+            type.originalTypeName(), decodeMethodName() + "_");
     }
 
     private void readEnum(final DtoType type, final Expander assignment, final MethodSpec.Builder builder) {
@@ -439,7 +439,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         }
 
         builder.addStatement(assignment.expand("$T.$N(buffer)"),
-            type.generatedTypeName(), decodeMethodName());
+            type.generatedTypeName(), decodeMethodName() + "_");
     }
 
     private void readMap(
