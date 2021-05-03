@@ -379,11 +379,12 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         final MethodSpec.Builder builder
     ) {
         final var returnType = type.originalTypeName().toString();
+        final var internalDecodeMethodName = decodeMethodName() + "_";
         final var parameter = JsonTokenBuffer.class.getCanonicalName();
-        if (!type.containsPublicStaticMethod(returnType, decodeMethodName(), parameter)) {
+        if (!type.containsPublicStaticMethod(returnType, internalDecodeMethodName, parameter)) {
             throw new DtoException(type.typeElement(), "No public static " +
-                returnType + " " + decodeMethodName() +
-                "_(JsonTokenBuffer) method available; required for this " +
+                returnType + " " + internalDecodeMethodName +
+                "(JsonTokenBuffer) method available; required for this " +
                 "class/interface to be useful as a custom JSON DTO");
         }
 
@@ -396,7 +397,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         }
 
         builder.addStatement(assignment.expand("$T.$N(buffer)"),
-            type.originalTypeName(), decodeMethodName() + "_");
+            type.originalTypeName(), internalDecodeMethodName);
     }
 
     private void readEnum(final DtoType type, final Expander assignment, final MethodSpec.Builder builder) {
