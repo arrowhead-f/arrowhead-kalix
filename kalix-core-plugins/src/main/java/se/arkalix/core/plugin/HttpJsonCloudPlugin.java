@@ -303,7 +303,7 @@ public class HttpJsonCloudPlugin implements Plugin {
             if (serviceDiscoveryAnnouncement == null) {
                 if (logger.isInfoEnabled()) {
                     logger.info("HTTP/JSON cloud plugin connecting to " +
-                        "\"service_registry\" system at {} ...", serviceRegistrySocketAddress);
+                        "\"serviceregistry\" system at {} ...", serviceRegistrySocketAddress);
                 }
                 serviceDiscoveryAnnouncement = client.connect(serviceRegistrySocketAddress)
                     .mapResult(result -> {
@@ -325,19 +325,19 @@ public class HttpJsonCloudPlugin implements Plugin {
                         if (isSecure) {
                             final var identity = new SystemIdentity(connection.remoteCertificateChain());
                             final var name = identity.name();
-                            if (!Objects.equals(name, "service_registry")) {
+                            if (!Objects.equals(name, "serviceregistry")) {
                                 return Result.failure(new CloudException("" +
                                     "HTTP/JSON cloud plugin connected to " +
                                     "system at " + serviceRegistrySocketAddress +
                                     " and found that its certificate name " +
                                     "is \"" + name + "\" while expecting it " +
-                                    "to be \"service_registry\"; failed to " +
+                                    "to be \"serviceregistry\"; failed to " +
                                     "resolve service discovery service "));
                             }
                             provider = SystemRecord.from(name, identity.publicKey(), serviceRegistrySocketAddress);
                         }
                         else {
-                            provider = SystemRecord.from("service_registry", serviceRegistrySocketAddress);
+                            provider = SystemRecord.from("serviceregistry", serviceRegistrySocketAddress);
                         }
 
                         final var serviceDiscovery = new HttpJsonServiceDiscoveryService(system,
@@ -353,7 +353,7 @@ public class HttpJsonCloudPlugin implements Plugin {
 
                         if (logger.isInfoEnabled()) {
                             logger.info("HTTP/JSON cloud plugin " +
-                                "connected to \"service_registry\" system " +
+                                "connected to \"serviceregistry\" system " +
                                 "at {}", serviceRegistrySocketAddress);
                         }
 
@@ -362,7 +362,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                     .ifFailure(Throwable.class, fault -> {
                         if (logger.isErrorEnabled()) {
                             logger.error("HTTP/JSON cloud plugin failed to " +
-                                "connect to \"service_registry\" system at " +
+                                "connect to \"serviceregistry\" system at " +
                                 serviceRegistrySocketAddress, fault);
                         }
                     })
