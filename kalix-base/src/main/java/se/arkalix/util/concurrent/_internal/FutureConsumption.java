@@ -20,8 +20,10 @@ public class FutureConsumption<V> implements Future<V> {
     }
 
     public void consume(final Result<V> result) {
-        if (consumer == null && logger.isTraceEnabled()) {
-            logger.trace("Future result ignored: {}", result);
+        if (consumer == null) {
+            if (logger.isTraceEnabled()) {
+                logger.trace("Future result ignored: {}", result);
+            }
         }
         else {
             consumer.accept(result);
@@ -29,8 +31,10 @@ public class FutureConsumption<V> implements Future<V> {
     }
 
     public void consume(final Future<V> future) {
-        if (consumer == null && logger.isTraceEnabled()) {
-            logger.trace("Future ignored: {}", future);
+        if (consumer == null) {
+            if (logger.isTraceEnabled()) {
+                logger.trace("Future ignored: {}", future);
+            }
         }
         else {
             future.onResult(consumer);
