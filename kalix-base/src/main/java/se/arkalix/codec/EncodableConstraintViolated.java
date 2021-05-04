@@ -1,6 +1,6 @@
 package se.arkalix.codec;
 
-import se.arkalix.codec.binary.BinaryWriter;
+import se.arkalix.io.buf.BufferWriter;
 
 import java.util.Objects;
 
@@ -10,21 +10,21 @@ import java.util.Objects;
  * codec it is intended to be represented in.
  */
 public class EncodableConstraintViolated extends CodecException {
-    private final BinaryWriter writer;
+    private final BufferWriter writer;
     private final Object object;
     private final String description;
 
     /**
      * Creates new exception.
      *
-     * @param codecType    Codec being applied when exception was thrown.
+     * @param codecType   Codec being applied when exception was thrown.
      * @param writer      Writer to which encoded object was to be written.
      * @param object      Object violating codec, if relevant.
      * @param description Description of failure.
      */
     public EncodableConstraintViolated(
         final CodecType codecType,
-        final BinaryWriter writer,
+        final BufferWriter writer,
         final Object object,
         final String description
     ) {
@@ -43,7 +43,7 @@ public class EncodableConstraintViolated extends CodecException {
      *
      * @return Encodable throwing this exception.
      */
-    public BinaryWriter writer() {
+    public BufferWriter writer() {
         return writer;
     }
 

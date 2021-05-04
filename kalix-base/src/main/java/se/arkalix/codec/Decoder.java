@@ -1,6 +1,6 @@
 package se.arkalix.codec;
 
-import se.arkalix.codec.binary.BinaryReader;
+import se.arkalix.io.buf.BufferReader;
 
 /**
  * A function used to decode binary data into a concrete class instance.
@@ -13,9 +13,9 @@ public interface Decoder<T> {
      * Decodes binary data available via {@code reader} into concrete class
      * instance.
      *
-     * @param reader Binary data reader.
+     * @param reader Buffer reader.
      * @return Decoded object.
      * @throws NullPointerException If {@code reader} is {@code null}.
      */
-    T decode(final BinaryReader reader);
+    T decode(final BufferReader reader);
 }

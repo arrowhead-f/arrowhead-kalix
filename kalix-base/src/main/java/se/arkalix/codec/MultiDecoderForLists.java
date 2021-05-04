@@ -75,7 +75,7 @@ public class MultiDecoderForLists<T> implements MultiDecoder<List<T>> {
                         reader.readOffset(),
                         "cannot decode empty string");
                 }
-                b = reader.readByte();
+                b = reader.readS8();
             } while (b == ' ' || b == '\t' || b == '\r' || b == '\n');
 
             if (b != '[') {
@@ -100,7 +100,7 @@ public class MultiDecoderForLists<T> implements MultiDecoder<List<T>> {
                             reader.readOffset(),
                             "array ended unexpectedly");
                     }
-                    b = reader.readByte();
+                    b = reader.readS8();
                 } while (b == ' ' || b == '\t' || b == '\r' || b == '\n');
 
                 list.add(decoder.decoderFor(CodecType.JSON).decode(reader));
@@ -114,7 +114,7 @@ public class MultiDecoderForLists<T> implements MultiDecoder<List<T>> {
                             reader.readOffset(),
                             "array ended unexpectedly");
                     }
-                    b = reader.readByte();
+                    b = reader.readS8();
                 } while (b == ' ' || b == '\t' || b == '\r' || b == '\n');
 
                 switch (b) {

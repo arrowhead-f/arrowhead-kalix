@@ -3,8 +3,8 @@ package se.arkalix.codec.json._internal;
 import se.arkalix.codec.CodecType;
 import se.arkalix.codec.DecoderReadUnexpectedToken;
 import se.arkalix.codec.EncodableConstraintViolated;
-import se.arkalix.codec.binary.BinaryReader;
-import se.arkalix.codec.binary.BinaryWriter;
+import se.arkalix.io.buf.BufferReader;
+import se.arkalix.io.buf.BufferWriter;
 import se.arkalix.util.annotation.Internal;
 
 import java.math.BigDecimal;
@@ -24,15 +24,15 @@ public final class JsonPrimitives {
         '0', '1', '2', '3', '4', '5', '6', '7',
         '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
-    public static BigDecimal readBigDecimal(final JsonToken token, final BinaryReader reader) {
+    public static BigDecimal readBigDecimal(final JsonToken token, final BufferReader reader) {
         return new BigDecimal(readStringRaw(token, reader));
     }
 
-    public static BigInteger readBigInteger(final JsonToken token, final BinaryReader reader) {
+    public static BigInteger readBigInteger(final JsonToken token, final BufferReader reader) {
         return new BigInteger(readStringRaw(token, reader));
     }
 
-    public static byte readByte(final JsonToken token, final BinaryReader reader) {
+    public static byte readByte(final JsonToken token, final BufferReader reader) {
         return Byte.parseByte(requireNotHex(readStringRaw(token, reader)));
     }
 
@@ -46,13 +46,13 @@ public final class JsonPrimitives {
         return string;
     }
 
-    public static char readChar(final JsonToken token, final BinaryReader reader) {
+    public static char readChar(final JsonToken token, final BufferReader reader) {
         var c0 = token.begin();
         final var c1 = token.end();
         String error;
         error:
         {
-            var b = reader.getByte(c0);
+            var b = reader.getS8At(c0);
             if (b < 0) {
                 if (b < -64) {
                     error = "bad JSON character string; invalid UTF-8 " +
@@ -66,7 +66,7 @@ public final class JsonPrimitives {
                         break error;
                     }
                     return (char) (((0x1F & b) << 6) |
-                        (0x3F & reader.getByte(c0 + 1)));
+                        (0x3F & reader.getS8At(c0 + 1)));
                 }
                 if (b < -16) { // 3 byte UTF-8 code point.
                     if (c0 + 3 != c1) {
@@ -75,8 +75,8 @@ public final class JsonPrimitives {
                         break error;
                     }
                     return (char) (((0x0F & b) << 12) |
-                        ((0x3F & reader.getByte(c0 + 1)) << 6) |
-                        (0x3F & reader.getByte(c0 + 2)));
+                        ((0x3F & reader.getS8At(c0 + 1)) << 6) |
+                        (0x3F & reader.getS8At(c0 + 2)));
                 }
                 error = "bad JSON character string; 4-byte UTF-8 code " +
                     "points do not fit in a java char";
@@ -88,7 +88,7 @@ public final class JsonPrimitives {
                 break error;
             }
             if (b == '\\') {
-                b = reader.getByte(++c0);
+                b = reader.getS8At(++c0);
                 switch (b) {
                 case '\"':
                 case '/':
@@ -105,7 +105,7 @@ public final class JsonPrimitives {
                     final var uBuffer = new byte[4];
                     if (++c0 + 4 == c1) {
                         try {
-                            reader.getBytes(c0, uBuffer);
+                            reader.getAt(c0, uBuffer);
                             final var uString = new String(uBuffer, StandardCharsets.ISO_8859_1);
                             final var uNumber = Integer.parseUnsignedInt(uString, 16);
                             return (char) uNumber;
@@ -131,67 +131,67 @@ public final class JsonPrimitives {
             error);
     }
 
-    public static double readDouble(final JsonToken token, final BinaryReader reader) {
+    public static double readDouble(final JsonToken token, final BufferReader reader) {
         return Double.parseDouble(requireNotHex(readStringRaw(token, reader)));
     }
 
-    public static Duration readDuration(final JsonToken token, final BinaryReader reader) {
+    public static Duration readDuration(final JsonToken token, final BufferReader reader) {
         return Duration.parse(readStringRaw(token, reader));
     }
 
-    public static Duration readDurationNumber(final JsonToken token, final BinaryReader reader) {
+    public static Duration readDurationNumber(final JsonToken token, final BufferReader reader) {
         final var number = Double.parseDouble(readStringRaw(token, reader));
         final long integer = (long) number;
         return Duration.ofSeconds(integer, (long) ((number - integer) * 1e9));
     }
 
-    public static float readFloat(final JsonToken token, final BinaryReader reader) {
+    public static float readFloat(final JsonToken token, final BufferReader reader) {
         return Float.parseFloat(requireNotHex(readStringRaw(token, reader)));
     }
 
-    public static int readInteger(final JsonToken token, final BinaryReader reader) {
+    public static int readInteger(final JsonToken token, final BufferReader reader) {
         return Integer.parseInt(requireNotHex(readStringRaw(token, reader)));
     }
 
-    public static Instant readInstant(final JsonToken token, final BinaryReader reader) {
+    public static Instant readInstant(final JsonToken token, final BufferReader reader) {
         return Instant.parse(readStringRaw(token, reader));
     }
 
-    public static Instant readInstantNumber(final JsonToken token, final BinaryReader reader) {
+    public static Instant readInstantNumber(final JsonToken token, final BufferReader reader) {
         final var number = Double.parseDouble(readStringRaw(token, reader));
         final long integer = (long) number;
         return Instant.ofEpochSecond(integer, (long) ((number - integer) * 1e9));
     }
 
-    public static long readLong(final JsonToken token, final BinaryReader reader) {
+    public static long readLong(final JsonToken token, final BufferReader reader) {
         return Long.parseLong(requireNotHex(readStringRaw(token, reader)));
     }
 
-    public static MonthDay readMonthDay(final JsonToken token, final BinaryReader reader) {
+    public static MonthDay readMonthDay(final JsonToken token, final BufferReader reader) {
         return MonthDay.parse(readStringRaw(token, reader));
     }
 
-    public static OffsetDateTime readOffsetDateTime(final JsonToken token, final BinaryReader reader) {
+    public static OffsetDateTime readOffsetDateTime(final JsonToken token, final BufferReader reader) {
         return OffsetDateTime.parse(readStringRaw(token, reader));
     }
 
-    public static OffsetDateTime readOffsetDateTimeNumber(final JsonToken token, final BinaryReader reader) {
+    public static OffsetDateTime readOffsetDateTimeNumber(final JsonToken token, final BufferReader reader) {
         return OffsetDateTime.ofInstant(readInstantNumber(token, reader), ZoneId.systemDefault());
     }
 
-    public static OffsetTime readOffsetTime(final JsonToken token, final BinaryReader reader) {
+    public static OffsetTime readOffsetTime(final JsonToken token, final BufferReader reader) {
         return OffsetTime.parse(readStringRaw(token, reader));
     }
 
-    public static Period readPeriod(final JsonToken token, final BinaryReader reader) {
+    public static Period readPeriod(final JsonToken token, final BufferReader reader) {
         return Period.parse(readStringRaw(token, reader));
     }
 
-    public static short readShort(final JsonToken token, final BinaryReader reader) {
+    public static short readShort(final JsonToken token, final BufferReader reader) {
         return Short.parseShort(requireNotHex(readStringRaw(token, reader)));
     }
 
-    public static String readString(final JsonToken token, final BinaryReader reader) {
+    public static String readString(final JsonToken token, final BufferReader reader) {
         var p0 = token.begin(); // Index of first non-appended byte in reader.
         var p1 = p0; // Current reader offset.
         final var p2 = token.end(); // End of string reader region.
@@ -203,13 +203,13 @@ public final class JsonPrimitives {
         error:
         {
             while (p1 < p2) {
-                var b = reader.getByte(p1);
+                var b = reader.getS8At(p1);
                 if (b == '\\') {
                     // Collect bytes before escape sequence into buffer.
                     {
                         final var length = p1 - p0;
                         if (length > 0) {
-                            reader.getBytes(p0, buffer, b0, length);
+                            reader.getAt(p0, buffer, b0, length);
                             b0 += length;
                         }
                         p0 = ++p1;
@@ -220,7 +220,7 @@ public final class JsonPrimitives {
                         break error;
                     }
 
-                    b = reader.getByte(p1++);
+                    b = reader.getS8At(p1++);
                     switch (b) {
                     case '\"':
                     case '/':
@@ -237,7 +237,7 @@ public final class JsonPrimitives {
                         final var uBuffer = new byte[4];
                         if (p1 + 4 <= p2) {
                             try {
-                                reader.getBytes(p1, uBuffer);
+                                reader.getAt(p1, uBuffer);
                                 final var uString = new String(uBuffer, StandardCharsets.ISO_8859_1);
                                 final var uNumber = Integer.parseUnsignedInt(uString, 16);
                                 final var uBytes = Character.toString(uNumber)
@@ -252,7 +252,7 @@ public final class JsonPrimitives {
                             catch (final NumberFormatException ignored) {}
                         }
                         else {
-                            reader.getBytes(p1, uBuffer, 0, p2 - p1);
+                            reader.getAt(p1, uBuffer, 0, p2 - p1);
                         }
                         badEscapeBuilder.append("\\u").append(new String(uBuffer, StandardCharsets.US_ASCII));
                         break error;
@@ -270,7 +270,7 @@ public final class JsonPrimitives {
             }
             final var length = p1 - p0;
             if (length > 0) {
-                reader.getBytes(p0, buffer, b0, length);
+                reader.getAt(p0, buffer, b0, length);
                 b0 += length;
             }
             return new String(b0 < buffer.length
@@ -281,80 +281,80 @@ public final class JsonPrimitives {
         throw new DecoderReadUnexpectedToken(CodecType.JSON, reader, badEscapeBuilder.toString(), p1, "Bad escape");
     }
 
-    public static String readStringRaw(final JsonToken token, final BinaryReader reader) {
+    public static String readStringRaw(final JsonToken token, final BufferReader reader) {
         final var buffer = new byte[token.length()];
-        reader.getBytes(token.begin(), buffer);
+        reader.getAt(token.begin(), buffer);
         return new String(buffer, StandardCharsets.ISO_8859_1);
     }
 
-    public static Year readYear(final JsonToken token, final BinaryReader reader) {
+    public static Year readYear(final JsonToken token, final BufferReader reader) {
         return Year.parse(readStringRaw(token, reader));
     }
 
-    public static Year readYearNumber(final JsonToken token, final BinaryReader reader) {
+    public static Year readYearNumber(final JsonToken token, final BufferReader reader) {
         final var number = Double.parseDouble(readStringRaw(token, reader));
         return Year.of((int) number);
     }
 
-    public static YearMonth readYearMonth(final JsonToken token, final BinaryReader reader) {
+    public static YearMonth readYearMonth(final JsonToken token, final BufferReader reader) {
         return YearMonth.parse(readStringRaw(token, reader));
     }
 
-    public static ZonedDateTime readZonedDateTime(final JsonToken token, final BinaryReader reader) {
+    public static ZonedDateTime readZonedDateTime(final JsonToken token, final BufferReader reader) {
         return ZonedDateTime.parse(readStringRaw(token, reader));
     }
 
-    public static ZonedDateTime readZonedDateTimeNumber(final JsonToken token, final BinaryReader reader) {
+    public static ZonedDateTime readZonedDateTimeNumber(final JsonToken token, final BufferReader reader) {
         return ZonedDateTime.ofInstant(readInstantNumber(token, reader), ZoneOffset.UTC);
     }
 
-    public static ZoneId readZoneId(final JsonToken token, final BinaryReader reader) {
+    public static ZoneId readZoneId(final JsonToken token, final BufferReader reader) {
         return ZoneId.of(readStringRaw(token, reader));
     }
 
-    public static ZoneOffset readZoneOffset(final JsonToken token, final BinaryReader reader) {
+    public static ZoneOffset readZoneOffset(final JsonToken token, final BufferReader reader) {
         return ZoneOffset.of(readStringRaw(token, reader));
     }
 
-    public static ZoneOffset readZoneOffsetNumber(final JsonToken token, final BinaryReader reader) {
+    public static ZoneOffset readZoneOffsetNumber(final JsonToken token, final BufferReader reader) {
         final var number = Double.parseDouble(readStringRaw(token, reader));
         return ZoneOffset.ofTotalSeconds((int) number);
     }
 
-    public static void write(final BigDecimal bigDecimal, final BinaryWriter writer) {
+    public static void write(final BigDecimal bigDecimal, final BufferWriter writer) {
         writer.write(bigDecimal.toString().getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    public static void write(final BigInteger bigInteger, final BinaryWriter writer) {
+    public static void write(final BigInteger bigInteger, final BufferWriter writer) {
         writer.write(bigInteger.toString().getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    public static void write(final boolean bool, final BinaryWriter writer) {
+    public static void write(final boolean bool, final BufferWriter writer) {
         writer.write(bool ? TRUE : FALSE);
     }
 
-    public static void write(final char ch, final BinaryWriter writer) {
+    public static void write(final char ch, final BufferWriter writer) {
         write(Character.toString(ch), writer);
     }
 
-    public static void write(final Duration duration, final BinaryWriter writer) {
+    public static void write(final Duration duration, final BufferWriter writer) {
         writer.write(duration.toString().getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    public static void write(final Instant instant, final BinaryWriter writer) {
+    public static void write(final Instant instant, final BufferWriter writer) {
         writer.write(instant.toString().getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    public static void write(final MonthDay monthDay, final BinaryWriter writer) {
+    public static void write(final MonthDay monthDay, final BufferWriter writer) {
         writer.write(monthDay.toString().getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    public static void write(final long number, final BinaryWriter writer) {
+    public static void write(final long number, final BufferWriter writer) {
         writer.write(Long.toString(number)
             .getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    public static void write(final double number, final BinaryWriter writer)
+    public static void write(final double number, final BufferWriter writer)
         throws EncodableConstraintViolated {
         if (!Double.isFinite(number)) {
             throw new EncodableConstraintViolated(
@@ -368,25 +368,25 @@ public final class JsonPrimitives {
             .getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    public static void write(final OffsetDateTime offsetDateTime, final BinaryWriter writer) {
+    public static void write(final OffsetDateTime offsetDateTime, final BufferWriter writer) {
         writer.write(offsetDateTime.toString().getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    public static void write(final OffsetTime offsetTime, final BinaryWriter writer) {
+    public static void write(final OffsetTime offsetTime, final BufferWriter writer) {
         writer.write(offsetTime.toString().getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    public static void write(final Period period, final BinaryWriter writer) {
+    public static void write(final Period period, final BufferWriter writer) {
         writer.write(period.toString().getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    public static void write(final String string, final BinaryWriter writer) {
+    public static void write(final String string, final BufferWriter writer) {
         final var bytes = string.getBytes(StandardCharsets.UTF_8);
 
         for (var i = 0; i < bytes.length; ++i) {
             var b = bytes[i];
             if (b >= 0 && b < ' ' || b == '"' || b == 0x7F) {
-                writer.write((byte) '\\');
+                writer.writeS8((byte) '\\');
                 switch (b) {
                 case '\b': b = 'b'; break;
                 case '\f': b = 'f'; break;
@@ -395,8 +395,8 @@ public final class JsonPrimitives {
                 case '"': break;
                 default:
                     writer.write(new byte[]{'u', '0', '0'});
-                    writer.write(HEX[(b & 0xF0) >>> 4]);
-                    writer.write(HEX[(b & 0x0F)]);
+                    writer.writeS8(HEX[(b & 0xF0) >>> 4]);
+                    writer.writeS8(HEX[(b & 0x0F)]);
                     continue;
                 }
             }
@@ -404,35 +404,35 @@ public final class JsonPrimitives {
                 b = bytes[++i];
                 if (b <= (byte) 0x9F) {
                     writer.write(new byte[]{'u', '0', '0'});
-                    writer.write(HEX[(b & 0xF0) >>> 4]);
-                    writer.write(HEX[(b & 0x0F)]);
+                    writer.writeS8(HEX[(b & 0xF0) >>> 4]);
+                    writer.writeS8(HEX[(b & 0x0F)]);
                     continue;
                 }
                 else {
-                    writer.write((byte) 0xC2);
+                    writer.writeS8((byte) 0xC2);
                 }
             }
-            writer.write(b);
+            writer.writeS8(b);
         }
     }
 
-    public static void write(final Year year, final BinaryWriter writer) {
+    public static void write(final Year year, final BufferWriter writer) {
         writer.write(("" + year.getValue()).getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    public static void write(final YearMonth yearMonth, final BinaryWriter writer) {
+    public static void write(final YearMonth yearMonth, final BufferWriter writer) {
         writer.write(yearMonth.toString().getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    public static void write(final ZonedDateTime zonedDateTime, final BinaryWriter writer) {
+    public static void write(final ZonedDateTime zonedDateTime, final BufferWriter writer) {
         writer.write(zonedDateTime.toString().getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    public static void write(final ZoneId zoneId, final BinaryWriter writer) {
+    public static void write(final ZoneId zoneId, final BufferWriter writer) {
         writer.write(zoneId.toString().getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    public static void write(final ZoneOffset zoneOffset, final BinaryWriter writer) {
+    public static void write(final ZoneOffset zoneOffset, final BufferWriter writer) {
         writer.write(zoneOffset.toString().getBytes(StandardCharsets.ISO_8859_1));
     }
 }

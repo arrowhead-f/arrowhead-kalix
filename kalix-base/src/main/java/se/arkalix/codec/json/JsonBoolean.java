@@ -2,11 +2,11 @@ package se.arkalix.codec.json;
 
 import se.arkalix.codec.CodecType;
 import se.arkalix.codec.DecoderReadUnexpectedToken;
-import se.arkalix.codec.binary.BinaryReader;
-import se.arkalix.codec.binary.BinaryWriter;
 import se.arkalix.codec.json._internal.JsonPrimitives;
 import se.arkalix.codec.json._internal.JsonTokenBuffer;
 import se.arkalix.codec.json._internal.JsonTokenizer;
+import se.arkalix.io.buf.BufferReader;
+import se.arkalix.io.buf.BufferWriter;
 import se.arkalix.util.annotation.Internal;
 
 import java.util.Optional;
@@ -64,7 +64,7 @@ public class JsonBoolean implements JsonValue {
      *                                    valid JSON boolean at the current
      *                                    read offset.
      */
-    public static JsonBoolean decodeJson(final BinaryReader reader) {
+    public static JsonBoolean decodeJson(final BufferReader reader) {
         return decodeJson_(JsonTokenizer.tokenize(reader));
     }
 
@@ -93,7 +93,7 @@ public class JsonBoolean implements JsonValue {
     }
 
     @Override
-    public CodecType encodeJson(final BinaryWriter writer) {
+    public CodecType encodeJson(final BufferWriter writer) {
         writer.write(value ? BYTES_TRUE : BYTES_FALSE);
         return CodecType.JSON;
     }

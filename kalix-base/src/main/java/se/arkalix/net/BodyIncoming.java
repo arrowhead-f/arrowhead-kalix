@@ -1,6 +1,6 @@
 package se.arkalix.net;
 
-import se.arkalix.codec.binary.BinaryReader;
+import se.arkalix.io.buf.BufferReader;
 import se.arkalix.util.concurrent.Future;
 
 import java.nio.file.Path;
@@ -12,14 +12,14 @@ import java.nio.file.Path;
 public interface BodyIncoming {
     /**
      * Requests that the incoming message body be buffered in full and then be
-     * wrapped into a {@link BinaryReader}.
+     * wrapped into a {@link BufferReader}.
      * <p>
      * Calling this method consumes the body associated with this message. Any
      * further attempts to consume the body will cause exceptions to be thrown.
      *
      * @return Future completed with fully buffered binary reader.
      */
-    Future<BinaryReader> buffer();
+    Future<BufferReader> buffer();
 
     /**
      * Requests that the incoming message body be written to the file at the

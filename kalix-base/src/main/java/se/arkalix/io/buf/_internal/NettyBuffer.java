@@ -166,7 +166,7 @@ public class NettyBuffer extends CheckedBuffer {
 
     @Override
     protected void onClose() {
-        // TODO: Try to recycle buffer?
+        buf.release();
     }
 
     @Override

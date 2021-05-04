@@ -2,11 +2,11 @@ package se.arkalix.codec.json;
 
 import se.arkalix.codec.CodecType;
 import se.arkalix.codec.DecoderReadUnexpectedToken;
-import se.arkalix.codec.binary.BinaryReader;
-import se.arkalix.codec.binary.BinaryWriter;
 import se.arkalix.codec.json._internal.JsonPrimitives;
 import se.arkalix.codec.json._internal.JsonTokenBuffer;
 import se.arkalix.codec.json._internal.JsonTokenizer;
+import se.arkalix.io.buf.BufferReader;
+import se.arkalix.io.buf.BufferWriter;
 import se.arkalix.util.annotation.Internal;
 
 import java.math.BigDecimal;
@@ -274,7 +274,7 @@ public class JsonNumber implements JsonValue {
      *                                    valid JSON number at the current read
      *                                    offset.
      */
-    public static JsonNumber decodeJson(final BinaryReader reader) {
+    public static JsonNumber decodeJson(final BufferReader reader) {
         return decodeJson_(JsonTokenizer.tokenize(reader));
     }
 
@@ -302,7 +302,7 @@ public class JsonNumber implements JsonValue {
     }
 
     @Override
-    public CodecType encodeJson(final BinaryWriter writer) {
+    public CodecType encodeJson(final BufferWriter writer) {
         writer.write(number.getBytes(StandardCharsets.ISO_8859_1));
         return CodecType.JSON;
     }

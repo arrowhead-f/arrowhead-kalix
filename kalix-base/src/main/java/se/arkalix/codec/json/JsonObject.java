@@ -2,11 +2,11 @@ package se.arkalix.codec.json;
 
 import se.arkalix.codec.CodecType;
 import se.arkalix.codec.DecoderReadUnexpectedToken;
-import se.arkalix.codec.binary.BinaryReader;
-import se.arkalix.codec.binary.BinaryWriter;
 import se.arkalix.codec.json._internal.JsonPrimitives;
 import se.arkalix.codec.json._internal.JsonTokenBuffer;
 import se.arkalix.codec.json._internal.JsonTokenizer;
+import se.arkalix.io.buf.BufferReader;
+import se.arkalix.io.buf.BufferWriter;
 import se.arkalix.util.annotation.Internal;
 
 import java.util.*;
@@ -87,7 +87,7 @@ public class JsonObject implements JsonCollection<String>, Iterable<JsonPair> {
      *                                    valid JSON object at the current read
      *                                    offset.
      */
-    public static JsonObject decodeJson(final BinaryReader reader) {
+    public static JsonObject decodeJson(final BufferReader reader) {
         return decodeJson_(JsonTokenizer.tokenize(reader));
     }
 
@@ -120,22 +120,22 @@ public class JsonObject implements JsonCollection<String>, Iterable<JsonPair> {
     }
 
     @Override
-    public CodecType encodeJson(final BinaryWriter writer) {
-        writer.write((byte) '{');
+    public CodecType encodeJson(final BufferWriter writer) {
+        writer.writeS8((byte) '{');
         var isFirst = true;
         for (final var pair : pairs) {
             if (isFirst) {
                 isFirst = false;
             }
             else {
-                writer.write((byte) ',');
+                writer.writeS8((byte) ',');
             }
-            writer.write((byte) '"');
+            writer.writeS8((byte) '"');
             JsonPrimitives.write(pair.name(), writer);
             writer.write(new byte[]{'"', ':'});
             pair.value().encodeJson(writer);
         }
-        writer.write((byte) '}');
+        writer.writeS8((byte) '}');
         return CodecType.JSON;
     }
 

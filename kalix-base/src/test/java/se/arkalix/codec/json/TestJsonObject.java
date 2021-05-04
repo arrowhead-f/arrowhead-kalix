@@ -3,8 +3,7 @@ package se.arkalix.codec.json;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import se.arkalix.codec.binary.ByteArrayReader;
-import se.arkalix.codec.binary.ByteArrayWriter;
+import se.arkalix.io.buf.Buffer;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -18,7 +17,7 @@ public class TestJsonObject {
     @ParameterizedTest
     @MethodSource("objectsToRead")
     void shouldReadObject(final JsonObject expected, final String json) {
-        assertEquals(expected, JsonObject.decodeJson(new ByteArrayReader(json.getBytes(StandardCharsets.UTF_8))));
+        assertEquals(expected, JsonObject.decodeJson(Buffer.wrap(json.getBytes(StandardCharsets.UTF_8))));
     }
 
     static Stream<Arguments> objectsToRead() {
@@ -38,9 +37,11 @@ public class TestJsonObject {
     @ParameterizedTest
     @MethodSource("objectsToWrite")
     void shouldWriteObject(final String expected, final JsonObject object) {
-        final var writer = new ByteArrayWriter(new byte[expected.getBytes(StandardCharsets.UTF_8).length]);
-        object.encodeJson(writer);
-        assertEquals(expected, new String(writer.asByteArray(), StandardCharsets.UTF_8));
+        final var byteArray = new byte[expected.getBytes(StandardCharsets.UTF_8).length];
+        final var buffer = Buffer.wrap(byteArray);
+        buffer.clear();
+        object.encodeJson(buffer);
+        assertEquals(expected, new String(byteArray, StandardCharsets.UTF_8));
     }
 
     static Stream<Arguments> objectsToWrite() {

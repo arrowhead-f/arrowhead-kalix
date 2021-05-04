@@ -29,7 +29,7 @@ public class BinaryWriterWriteCache {
     public void addWrite(final MethodSpec.Builder methodBuilder) {
         final var input = builder.toString().getBytes(StandardCharsets.UTF_8);
         if (input.length == 1) {
-            methodBuilder.addStatement(writerName + ".write((byte) " + literalOf(input[0]) + ")");
+            methodBuilder.addStatement(writerName + ".writeS8((byte) " + literalOf(input[0]) + ")");
         }
         else {
             final var output = new StringBuilder(builder.length() * 4);

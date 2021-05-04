@@ -159,6 +159,134 @@ public interface BufferReader extends AutoCloseable {
         return getS64NeAt(offset);
     }
 
+    default byte peekS8() {
+        return getS8At(readOffset());
+    }
+
+    default short peekS16Be() {
+        return getS16BeAt(readOffset());
+    }
+
+    default short peekS16Le() {
+        return getS16LeAt(readOffset());
+    }
+
+    default short peekS16Ne() {
+        return getS16NeAt(readOffset());
+    }
+
+    default int peekS24Be() {
+        return getS24BeAt(readOffset());
+    }
+
+    default int peekS24Le() {
+        return getS24LeAt(readOffset());
+    }
+
+    default int peekS24Ne() {
+        return getS24NeAt(readOffset());
+    }
+
+    default int peekS32Be() {
+        return getS32BeAt(readOffset());
+    }
+
+    default int peekS32Le() {
+        return getS32LeAt(readOffset());
+    }
+
+    default int peekS32Ne() {
+        return getS32NeAt(readOffset());
+    }
+
+    default long peekS48Be() {
+        return getS48BeAt(readOffset());
+    }
+
+    default long peekS48Le() {
+        return getS48LeAt(readOffset());
+    }
+
+    default long peekS48Ne() {
+        return getS48NeAt(readOffset());
+    }
+
+    default long peekS64Be() {
+        return getS64BeAt(readOffset());
+    }
+
+    default long peekS64Le() {
+        return getS64LeAt(readOffset());
+    }
+
+    default long peekS64Ne() {
+        return getS64NeAt(readOffset());
+    }
+
+    default int peekU8() {
+        return getU8At(readOffset());
+    }
+
+    default int peekU16Be() {
+        return getU16BeAt(readOffset());
+    }
+
+    default int peekU16Le() {
+        return getU16LeAt(readOffset());
+    }
+
+    default int peekU16Ne() {
+        return getU16NeAt(readOffset());
+    }
+
+    default int peekU24Be() {
+        return getU24BeAt(readOffset());
+    }
+
+    default int peekU24Le() {
+        return getU24LeAt(readOffset());
+    }
+
+    default int peekU24Ne() {
+        return getU24NeAt(readOffset());
+    }
+
+    default long peekU32Be() {
+        return getU32BeAt(readOffset());
+    }
+
+    default long peekU32Le() {
+        return getU32LeAt(readOffset());
+    }
+
+    default long peekU32Ne() {
+        return getU32NeAt(readOffset());
+    }
+
+    default long peekU48Be() {
+        return getU48BeAt(readOffset());
+    }
+
+    default long peekU48Le() {
+        return getU48LeAt(readOffset());
+    }
+
+    default long peekU48Ne() {
+        return getU48NeAt(readOffset());
+    }
+
+    default long peekU64Be() {
+        return getU64BeAt(readOffset());
+    }
+
+    default long peekU64Le() {
+        return getU64LeAt(readOffset());
+    }
+
+    default long peekU64Ne() {
+        return getU64NeAt(readOffset());
+    }
+
     int readableBytes();
 
     int readOffset();

@@ -2,7 +2,7 @@ package se.arkalix.net._internal;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import se.arkalix.codec.binary.BinaryReader;
+import se.arkalix.io.buf.BufferReader;
 import se.arkalix.net.BodyIncoming;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;
@@ -22,7 +22,7 @@ public class NettyBodyIncoming implements BodyIncoming, NettyBodyReceiver {
     }
 
     @Override
-    public Future<BinaryReader> buffer() {
+    public Future<BufferReader> buffer() {
         if (receiver != null) {
             throw new IllegalStateException("Message body already consumed");
         }

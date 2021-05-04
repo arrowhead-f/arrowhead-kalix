@@ -2,11 +2,11 @@ package se.arkalix.codec.json;
 
 import se.arkalix.codec.CodecType;
 import se.arkalix.codec.DecoderReadUnexpectedToken;
-import se.arkalix.codec.binary.BinaryReader;
-import se.arkalix.codec.binary.BinaryWriter;
+import se.arkalix.codec.json._internal.JsonPrimitives;
 import se.arkalix.codec.json._internal.JsonTokenBuffer;
 import se.arkalix.codec.json._internal.JsonTokenizer;
-import se.arkalix.codec.json._internal.JsonPrimitives;
+import se.arkalix.io.buf.BufferReader;
+import se.arkalix.io.buf.BufferWriter;
 import se.arkalix.util.annotation.Internal;
 
 import java.time.*;
@@ -160,7 +160,7 @@ public class JsonString implements JsonValue {
      *                                    valid JSON string at the current read
      *                                    offset.
      */
-    public static JsonString decodeJson(final BinaryReader reader) {
+    public static JsonString decodeJson(final BufferReader reader) {
         return decodeJson_(JsonTokenizer.tokenize(reader));
     }
 
@@ -187,10 +187,10 @@ public class JsonString implements JsonValue {
     }
 
     @Override
-    public CodecType encodeJson(final BinaryWriter writer) {
-        writer.write((byte) '"');
+    public CodecType encodeJson(final BufferWriter writer) {
+        writer.writeS8((byte) '"');
         JsonPrimitives.write(string, writer);
-        writer.write((byte) '"');
+        writer.writeS8((byte) '"');
         return CodecType.JSON;
     }
 

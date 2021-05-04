@@ -5,8 +5,8 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.arkalix.codec.binary.BinaryReader;
-import se.arkalix.codec.binary._internal.ByteBufReader;
+import se.arkalix.io.buf.BufferReader;
+import se.arkalix.io.buf._internal.NettyBuffer;
 import se.arkalix.net.BodyIncoming;
 import se.arkalix.util.Result;
 import se.arkalix.util.concurrent.Future;
@@ -14,14 +14,14 @@ import se.arkalix.util.concurrent.Future;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-public class NettyBodyReceiverBuffered implements NettyBodyReceiver, Future<BinaryReader> {
+public class NettyBodyReceiverBuffered implements NettyBodyReceiver, Future<BufferReader> {
     private static final Logger logger = LoggerFactory.getLogger(BodyIncoming.class);
 
     private final CompositeByteBuf buffer;
 
     private boolean isCancelled = false;
-    private Consumer<Result<BinaryReader>> consumer;
-    private Result<BinaryReader> result;
+    private Consumer<Result<BufferReader>> consumer;
+    private Result<BufferReader> result;
 
     public NettyBodyReceiverBuffered(final ByteBufAllocator allocator) {
         buffer = Objects.requireNonNull(allocator, "allocator").compositeBuffer();
@@ -65,7 +65,7 @@ public class NettyBodyReceiverBuffered implements NettyBodyReceiver, Future<Bina
     @Override
     public void close() {
         if (result == null) {
-            result = Result.success(new ByteBufReader(buffer));
+            result = Result.success(new NettyBuffer(buffer));
         }
         if (consumer != null) {
             final var consumer0 = consumer;
@@ -82,7 +82,7 @@ public class NettyBodyReceiverBuffered implements NettyBodyReceiver, Future<Bina
     }
 
     @Override
-    public void onResult(final Consumer<Result<BinaryReader>> consumer) {
+    public void onResult(final Consumer<Result<BufferReader>> consumer) {
         if (result != null) {
             final var result0 = result;
             result = null;

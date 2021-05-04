@@ -2,8 +2,8 @@ package se.arkalix.codec.json._internal;
 
 import se.arkalix.codec.CodecType;
 import se.arkalix.codec.DecoderReadUnexpectedToken;
-import se.arkalix.codec.binary.BinaryReader;
 import se.arkalix.codec.json.JsonType;
+import se.arkalix.io.buf.BufferReader;
 import se.arkalix.util.annotation.Internal;
 
 import java.nio.charset.StandardCharsets;
@@ -13,19 +13,19 @@ import java.util.Objects;
 @Internal
 @SuppressWarnings("unused")
 public final class JsonTokenizer {
-    private final BinaryReader reader;
+    private final BufferReader reader;
     private final ArrayList<JsonToken> tokens;
 
     private int p0;
     private DecoderReadUnexpectedToken error = null;
 
-    private JsonTokenizer(final BinaryReader reader) {
+    private JsonTokenizer(final BufferReader reader) {
         this.reader = Objects.requireNonNull(reader, "reader");
         this.tokens = new ArrayList<>(reader.readableBytes() / 16);
         this.p0 = reader.readOffset();
     }
 
-    public static JsonTokenBuffer tokenize(final BinaryReader reader) {
+    public static JsonTokenBuffer tokenize(final BufferReader reader) {
         final var tokenizer = new JsonTokenizer(reader);
         if (tokenizer.tokenizeValue()) {
             return new JsonTokenBuffer(tokenizer.tokens, reader);
@@ -46,7 +46,7 @@ public final class JsonTokenizer {
 
     private void saveCandidateAsError(final String message) {
         final var buffer = new byte[reader.readOffset() - p0];
-        reader.getBytes(p0, buffer);
+        reader.getAt(p0, buffer);
         error = new DecoderReadUnexpectedToken(
             CodecType.JSON,
             reader,
@@ -58,11 +58,11 @@ public final class JsonTokenizer {
 
     private void discardWhitespace() {
         for (byte b; reader.readableBytes() > 0; ) {
-            b = reader.peekByte();
+            b = reader.peekS8();
             if (b != '\t' && b != '\r' && b != '\n' && b != ' ') {
                 break;
             }
-            reader.skipByte();
+            reader.skip(1);
         }
         discardCandidate();
     }
@@ -70,7 +70,7 @@ public final class JsonTokenizer {
     private boolean tokenizeValue() {
         discardWhitespace();
 
-        switch (reader.readByteOrZero()) {
+        switch (readByteOrZero()) {
         case '\0': return true;
         case '{': return tokenizeObject();
         case '[': return tokenizeArray();
@@ -109,16 +109,16 @@ public final class JsonTokenizer {
             saveCandidateAsError("unexpected end of object");
             return false;
         }
-        var b = reader.peekByte();
+        var b = reader.peekS8();
         if (b == '}') {
-            reader.skipByte();
+            reader.skip(1);
             return true;
         }
 
         while (true) {
             discardWhitespace();
 
-            b = reader.readByteOrZero();
+            b = readByteOrZero();
             if (b != '\"') {
                 saveCandidateAsError("object key must be string");
                 return false;
@@ -129,7 +129,7 @@ public final class JsonTokenizer {
 
             discardWhitespace();
 
-            b = reader.readByteOrZero();
+            b = readByteOrZero();
             if (b != ':') {
                 saveCandidateAsError("object key not followed by colon");
                 return false;
@@ -146,16 +146,16 @@ public final class JsonTokenizer {
                 saveCandidateAsError("unexpected end of object");
                 return false;
             }
-            b = reader.peekByte();
+            b = reader.peekS8();
             if (b == ',') {
-                reader.skipByte();
+                reader.skip(1);
                 continue;
             }
             if (b != '}') {
                 saveCandidateAsError("expected `,` or `}`");
                 return false;
             }
-            reader.skipByte();
+            reader.skip(1);
             return true;
         }
     }
@@ -169,9 +169,9 @@ public final class JsonTokenizer {
             saveCandidateAsError("unexpected end of array");
             return false;
         }
-        byte b = reader.peekByte();
+        byte b = reader.peekS8();
         if (b == ']') {
-            reader.skipByte();
+            reader.skip(1);
             return true;
         }
 
@@ -183,7 +183,7 @@ public final class JsonTokenizer {
 
             discardWhitespace();
 
-            b = reader.readByteOrZero();
+            b = readByteOrZero();
             if (b == ',') {
                 continue;
             }
@@ -197,7 +197,7 @@ public final class JsonTokenizer {
 
     private boolean tokenizeString() {
         while (reader.readableBytes() > 0) {
-            byte b = reader.readByte();
+            byte b = reader.readS8();
             if (b == '\"') {
                 final var token = collectCandidate(JsonType.STRING);
 
@@ -211,11 +211,11 @@ public final class JsonTokenizer {
                 if (reader.readableBytes() == 0) {
                     break;
                 }
-                if (reader.readByte() == 'u') {
+                if (reader.readS8() == 'u') {
                     if (reader.readableBytes() < 4) {
                         break;
                     }
-                    reader.skipBytes(4);
+                    reader.skip(4);
                 }
             }
         }
@@ -226,7 +226,7 @@ public final class JsonTokenizer {
     private void tokenizeNumber() {
         number:
         while (reader.readableBytes() > 0) {
-            switch (reader.peekByte()) {
+            switch (reader.peekS8()) {
             case '\0':
             case ',':
             case '}':
@@ -238,7 +238,7 @@ public final class JsonTokenizer {
                 break number;
 
             default:
-                reader.skipByte();
+                reader.skip(1);
                 break;
             }
         }
@@ -248,13 +248,13 @@ public final class JsonTokenizer {
     private boolean tokenizeTrue() {
         error:
         {
-            if (reader.readByteOrZero() != 'r') {
+            if (readByteOrZero() != 'r') {
                 break error;
             }
-            if (reader.readByteOrZero() != 'u') {
+            if (readByteOrZero() != 'u') {
                 break error;
             }
-            if (reader.readByteOrZero() != 'e') {
+            if (readByteOrZero() != 'e') {
                 break error;
             }
             collectCandidate(JsonType.TRUE);
@@ -267,16 +267,16 @@ public final class JsonTokenizer {
     private boolean tokenizeFalse() {
         error:
         {
-            if (reader.readByteOrZero() != 'a') {
+            if (readByteOrZero() != 'a') {
                 break error;
             }
-            if (reader.readByteOrZero() != 'l') {
+            if (readByteOrZero() != 'l') {
                 break error;
             }
-            if (reader.readByteOrZero() != 's') {
+            if (readByteOrZero() != 's') {
                 break error;
             }
-            if (reader.readByteOrZero() != 'e') {
+            if (readByteOrZero() != 'e') {
                 break error;
             }
             collectCandidate(JsonType.FALSE);
@@ -289,13 +289,13 @@ public final class JsonTokenizer {
     private boolean tokenizeNull() {
         error:
         {
-            if (reader.readByteOrZero() != 'u') {
+            if (readByteOrZero() != 'u') {
                 break error;
             }
-            if (reader.readByteOrZero() != 'l') {
+            if (readByteOrZero() != 'l') {
                 break error;
             }
-            if (reader.readByteOrZero() != 'l') {
+            if (readByteOrZero() != 'l') {
                 break error;
             }
             collectCandidate(JsonType.NULL);
@@ -308,7 +308,7 @@ public final class JsonTokenizer {
     private void expandAndSaveCandidateAsError(final String message) {
         expand:
         while (reader.readableBytes() > 0) {
-            switch (reader.peekByte()) {
+            switch (reader.peekS8()) {
             case '\0':
             case ',':
             case '}':
@@ -320,10 +320,19 @@ public final class JsonTokenizer {
                 break expand;
 
             default:
-                reader.skipByte();
+                reader.skip(1);
                 break;
             }
         }
         saveCandidateAsError(message);
+    }
+
+    private byte readByteOrZero() {
+        if (reader.readableBytes() > 0) {
+            return reader.readS8();
+        }
+        else {
+            return 0;
+        }
     }
 }

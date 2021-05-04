@@ -36,7 +36,7 @@ public interface MessageIncoming extends Message {
             .buffer()
             .map(reader -> {
                 final var buffer = new byte[reader.readableBytes()];
-                reader.readBytes(buffer);
+                reader.read(buffer);
                 return buffer;
             });
     }

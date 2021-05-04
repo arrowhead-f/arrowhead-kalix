@@ -6,8 +6,6 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import se.arkalix.codec.CodecType;
 import se.arkalix.codec.DecoderReadUnexpectedToken;
-import se.arkalix.codec.binary.BinaryReader;
-import se.arkalix.codec.binary.BinaryWriter;
 import se.arkalix.codec.json.JsonType;
 import se.arkalix.codec.json._internal.JsonPrimitives;
 import se.arkalix.codec.json._internal.JsonTokenBuffer;
@@ -15,6 +13,8 @@ import se.arkalix.codec.json._internal.JsonTokenizer;
 import se.arkalix.dto.types.*;
 import se.arkalix.dto.util.BinaryWriterWriteCache;
 import se.arkalix.dto.util.Expander;
+import se.arkalix.io.buf.BufferReader;
+import se.arkalix.io.buf.BufferWriter;
 import se.arkalix.util.annotation.Internal;
 
 import javax.lang.model.element.Modifier;
@@ -51,7 +51,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         implementation.addMethod(MethodSpec.methodBuilder(decodeMethodName())
             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
             .returns(typeName)
-            .addParameter(BinaryReader.class, "reader", Modifier.FINAL)
+            .addParameter(BufferReader.class, "reader", Modifier.FINAL)
             .addStatement("return $N_($T.tokenize(reader))", decodeMethodName(), JsonTokenizer.class)
             .build());
 
@@ -419,7 +419,11 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
                 type.originalTypeName(), JsonPrimitives.class);
     }
 
-    private void readInterface(final DtoTypeInterface type, final Expander assignment, final MethodSpec.Builder builder) {
+    private void readInterface(
+        final DtoTypeInterface type,
+        final Expander assignment,
+        final MethodSpec.Builder builder
+    ) {
         final var dtoReadableAs = type.element().getAnnotation(DtoReadableAs.class);
         if (dtoReadableAs == null) {
             throw new DtoException(type.element(), type.originalTypeName() + " is " +
@@ -578,7 +582,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         final var builder = MethodSpec.methodBuilder(encodeMethodName())
             .addModifiers(Modifier.PUBLIC)
             .returns(TypeName.get(CodecType.class))
-            .addParameter(ParameterSpec.builder(TypeName.get(BinaryWriter.class), "writer")
+            .addParameter(ParameterSpec.builder(TypeName.get(BufferWriter.class), "writer")
                 .addModifiers(Modifier.FINAL)
                 .build());
 
@@ -743,7 +747,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
             .addStatement("var i$L = 0", level)
             .beginControlFlow("for (final var item$L : $N)", level, name)
             .beginControlFlow("if (i$L++ != 0)", level)
-            .addStatement("writer.write((byte) ',')")
+            .addStatement("writer.writeS8((byte) ',')")
             .endControlFlow();
 
         final var itemName = "item" + level;
@@ -767,7 +771,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
         final MethodSpec.Builder builder
     ) {
         final var returnType = CodecType.class.getCanonicalName();
-        final var parameter = BinaryWriter.class.getCanonicalName();
+        final var parameter = BufferWriter.class.getCanonicalName();
         if (!type.containsPublicMethod(returnType, encodeMethodName(), parameter)) {
             throw new DtoException(type.typeElement(), "No public " +
                 returnType + " " + encodeMethodName() +
@@ -813,7 +817,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
             .addStatement("var i$L = 0", level)
             .beginControlFlow("for (final var entry$1L : entrySet$1L)", level)
             .beginControlFlow("if (i$L++ != 0)", level)
-            .addStatement("writer.write((byte) ',')")
+            .addStatement("writer.writeS8((byte) ',')")
             .endControlFlow();
 
         writeValue(map.keyType(), "entry" + level + ".getKey()", builder);

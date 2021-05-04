@@ -70,17 +70,17 @@ public class MultiEncodableForLists implements MultiEncodable {
                 throw new NullPointerException("writer");
             }
 
-            writer.write((byte) '[');
+            writer.writeS8((byte) '[');
 
             if (items.size() > 0) {
                 items.get(0).encodableFor(CodecType.JSON);
             }
             for (final var item : items.subList(1, items.size())) {
-                writer.write((byte) ',');
+                writer.writeS8((byte) ',');
                 item.encodableFor(CodecType.JSON);
             }
 
-            writer.write((byte) ']');
+            writer.writeS8((byte) ']');
 
             return CodecType.JSON;
         };
