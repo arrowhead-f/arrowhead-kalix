@@ -23,7 +23,7 @@ public class NettyBodyIncoming implements BodyIncoming, NettyBodyReceiver {
 
     @Override
     public Future<BinaryReader> buffer() {
-        if (receiver == null) {
+        if (receiver != null) {
             throw new IllegalStateException("Message body already consumed");
         }
         final var receiver = new NettyBodyReceiverBuffered(allocator);
@@ -34,7 +34,7 @@ public class NettyBodyIncoming implements BodyIncoming, NettyBodyReceiver {
 
     @Override
     public Future<?> writeTo(final Path path, final boolean append) {
-        if (receiver == null) {
+        if (receiver != null) {
             throw new IllegalStateException("Message body already consumed");
         }
         final var receiver = new NettyBodyReceiverFileWriter(path, append);
