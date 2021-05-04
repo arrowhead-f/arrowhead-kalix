@@ -154,6 +154,9 @@ public class NettyHttpClientConnection
             return;
         }
         final var body = incomingResponse.body();
+        if (body.isCancelled()) {
+            return;
+        }
         body.write(content.content());
         if (content instanceof LastHttpContent) {
             incomingResponse.unwrap().headers().add(((LastHttpContent) content).trailingHeaders());

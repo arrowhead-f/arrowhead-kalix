@@ -239,6 +239,9 @@ public class NettyHttpServiceConnection
             return;
         }
         final var body = kalixRequest.body();
+        if (body.isCancelled()) {
+            return;
+        }
         body.write(content.content());
         if (content instanceof LastHttpContent) {
             kalixRequest.unwrap().headers().add(((LastHttpContent) content).trailingHeaders());

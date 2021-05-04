@@ -14,7 +14,7 @@ import java.util.Objects;
 public class NettyBodyIncoming implements BodyIncoming, NettyBodyReceiver {
     private final ByteBufAllocator allocator;
 
-    private NettyBodyReceiver receiver = NettyBodyReceiverIgnoring.instance();
+    private NettyBodyReceiver receiver = null;
     private boolean isDone = true;
 
     public NettyBodyIncoming(final ByteBufAllocator allocator) {
@@ -23,7 +23,7 @@ public class NettyBodyIncoming implements BodyIncoming, NettyBodyReceiver {
 
     @Override
     public Future<BinaryReader> buffer() {
-        if (!(receiver instanceof NettyBodyReceiverIgnoring)) {
+        if (receiver == null) {
             throw new IllegalStateException("Message body already consumed");
         }
         final var receiver = new NettyBodyReceiverBuffered(allocator);
@@ -34,7 +34,7 @@ public class NettyBodyIncoming implements BodyIncoming, NettyBodyReceiver {
 
     @Override
     public Future<?> writeTo(final Path path, final boolean append) {
-        if (!(receiver instanceof NettyBodyReceiverIgnoring)) {
+        if (receiver == null) {
             throw new IllegalStateException("Message body already consumed");
         }
         final var receiver = new NettyBodyReceiverFileWriter(path, append);
@@ -44,12 +44,12 @@ public class NettyBodyIncoming implements BodyIncoming, NettyBodyReceiver {
     }
 
     public boolean isDone() {
-        return isDone || receiver.isCancelled();
+        return isDone || isCancelled();
     }
 
     @Override
     public boolean isCancelled() {
-        return receiver.isCancelled();
+        return receiver == null || receiver.isCancelled();
     }
 
     @Override
