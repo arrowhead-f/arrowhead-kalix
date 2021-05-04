@@ -110,16 +110,41 @@ public class DtoGenerator {
                 @Override
                 public MethodSpec onOptional(final DtoDescriptor descriptor) {
                     final var valueType = ((DtoTypeOptional) type).valueType();
-                    if (valueType.descriptor() == DtoDescriptor.INTERFACE) {
-                        implementation.addMethod(MethodSpec.methodBuilder(name + "AsDto")
-                            .addModifiers(Modifier.PUBLIC)
-                            .addJavadoc("@see #$N()", name)
-                            .returns(pGeneratedTypeName)
-                            .addStatement("return Optional.ofNullable($N)", name)
-                            .build());
-                    }
-                    return getter.addStatement("return Optional.ofNullable($N)", name)
-                        .build();
+                    return new DtoDescriptorRouter<MethodSpec>() {
+                        @Override
+                        public MethodSpec onAny(final DtoDescriptor descriptor) {
+                            return getter.addStatement("return Optional.ofNullable($N)", name)
+                                .build();
+                        }
+
+                        @Override
+                        public MethodSpec onArray(final DtoDescriptor descriptor) {
+                            return onAny(descriptor);
+                        }
+
+                        @Override
+                        public MethodSpec onCollection(final DtoDescriptor descriptor) {
+                            final var collectionType = (DtoTypeCollection) valueType;
+                            if (collectionType.containsInterfaceType()) {
+                                implementation.addMethod(MethodSpec.methodBuilder(name + "AsDto")
+                                    .addModifiers(Modifier.PUBLIC)
+                                    .addJavadoc("@see #$N()", name)
+                                    .returns(pGeneratedTypeName)
+                                    .addStatement("return Optional.ofNullable($N)", name)
+                                    .build());
+
+                                if (descriptor == DtoDescriptor.LIST) {
+                                    return getter.addStatement("return Optional.ofNullable((List) $N)", name)
+                                        .build();
+                                }
+                                if (descriptor == DtoDescriptor.MAP) {
+                                    return getter.addStatement("return Optional.ofNullable((Map) $N)", name)
+                                        .build();
+                                }
+                            }
+                            return onAny(descriptor);
+                        }
+                    }.route(valueType.descriptor());
                 }
             }.route(descriptor));
 
