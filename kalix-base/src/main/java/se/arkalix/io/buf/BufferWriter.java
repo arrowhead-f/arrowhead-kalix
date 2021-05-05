@@ -30,11 +30,27 @@ public interface BufferWriter extends AutoCloseable {
 
     void setAt(int offset, ByteBuffer source);
 
-    default void setF32At(final int offset, final float value) {
+    default void setF32BeAt(final int offset, final float value) {
+        setS32BeAt(offset, Float.floatToIntBits(value));
+    }
+
+    default void setF32LeAt(final int offset, final float value) {
+        setS32LeAt(offset, Float.floatToIntBits(value));
+    }
+
+    default void setF32NeAt(final int offset, final float value) {
         setS32NeAt(offset, Float.floatToIntBits(value));
     }
 
-    default void setF64At(final int offset, final double value) {
+    default void setF64BeAt(final int offset, final double value) {
+        setS64BeAt(offset, Double.doubleToLongBits(value));
+    }
+
+    default void setF64LeAt(final int offset, final double value) {
+        setS64LeAt(offset, Double.doubleToLongBits(value));
+    }
+
+    default void setF64NeAt(final int offset, final double value) {
         setS64NeAt(offset, Double.doubleToLongBits(value));
     }
 
@@ -214,11 +230,27 @@ public interface BufferWriter extends AutoCloseable {
 
     void write(ByteBuffer source);
 
-    default void writeF32(final float value) {
+    default void writeF32Be(final float value) {
+        writeS32Be(Float.floatToIntBits(value));
+    }
+
+    default void writeF32Le(final float value) {
+        writeS32Le(Float.floatToIntBits(value));
+    }
+
+    default void writeF32Ne(final float value) {
         writeS32Ne(Float.floatToIntBits(value));
     }
 
-    default void writeF64(final double value) {
+    default void writeF64Be(final double value) {
+        writeS64Be(Double.doubleToLongBits(value));
+    }
+
+    default void writeF64Le(final double value) {
+        writeS64Le(Double.doubleToLongBits(value));
+    }
+
+    default void writeF64Ne(final double value) {
         writeS64Ne(Double.doubleToLongBits(value));
     }
 

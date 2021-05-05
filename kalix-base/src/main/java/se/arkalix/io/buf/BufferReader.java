@@ -30,11 +30,27 @@ public interface BufferReader extends AutoCloseable {
 
     void getAt(int offset, ByteBuffer destination);
 
-    default float getF32At(final int offset) {
+    default float getF32BeAt(final int offset) {
+        return Float.intBitsToFloat(getS32BeAt(offset));
+    }
+
+    default float getF32LeAt(final int offset) {
+        return Float.intBitsToFloat(getS32LeAt(offset));
+    }
+
+    default float getF32NeAt(final int offset) {
         return Float.intBitsToFloat(getS32NeAt(offset));
     }
 
-    default double getF64At(final int offset) {
+    default double getF64BeAt(final int offset) {
+        return Double.longBitsToDouble(getS64BeAt(offset));
+    }
+
+    default double getF64LeAt(final int offset) {
+        return Double.longBitsToDouble(getS64LeAt(offset));
+    }
+
+    default double getF64NeAt(final int offset) {
         return Double.longBitsToDouble(getS64NeAt(offset));
     }
 
@@ -157,6 +173,55 @@ public interface BufferReader extends AutoCloseable {
 
     default long getU64NeAt(final int offset) {
         return getS64NeAt(offset);
+    }
+
+    default void peek(final byte[] destination) {
+        peek(destination, 0, destination.length);
+    }
+
+    default void peek(final byte[] destination, final int destinationOffset, final int length) {
+        getAt(readOffset(), destination, destinationOffset, length);
+    }
+
+    default void peek(final BufferWriter destination) {
+        peek(destination, destination.writableBytes());
+    }
+
+    default void peek(final BufferWriter destination, final int length) {
+        peek(destination, destination.writeOffset(), length);
+        destination.writeOffset(destination.writeOffset() + length);
+    }
+
+    default void peek(final BufferWriter destination, final int destinationOffset, final int length) {
+        getAt(readOffset(), destination, destinationOffset, length);
+    }
+
+    default void peek(final ByteBuffer destination) {
+        getAt(readOffset(), destination);
+    }
+
+    default float peekF32Be() {
+        return Float.intBitsToFloat(peekS32Be());
+    }
+
+    default float peekF32Le() {
+        return Float.intBitsToFloat(peekS32Le());
+    }
+
+    default float peekF32Ne() {
+        return Float.intBitsToFloat(peekS32Ne());
+    }
+
+    default double peekF64Be() {
+        return Double.longBitsToDouble(peekS64Be());
+    }
+
+    default double peekF64Le() {
+        return Double.longBitsToDouble(peekS64Le());
+    }
+
+    default double peekF64Ne() {
+        return Double.longBitsToDouble(peekS64Ne());
     }
 
     default byte peekS8() {
@@ -314,11 +379,27 @@ public interface BufferReader extends AutoCloseable {
 
     void read(ByteBuffer destination);
 
-    default float readF32() {
+    default float readF32Be() {
+        return Float.intBitsToFloat(readS32Be());
+    }
+
+    default float readF32Le() {
+        return Float.intBitsToFloat(readS32Le());
+    }
+
+    default float readF32Ne() {
         return Float.intBitsToFloat(readS32Ne());
     }
 
-    default double readF64() {
+    default double readF64Be() {
+        return Double.longBitsToDouble(readS64Be());
+    }
+
+    default double readF64Le() {
+        return Double.longBitsToDouble(readS64Le());
+    }
+
+    default double readF64Ne() {
         return Double.longBitsToDouble(readS64Ne());
     }
 

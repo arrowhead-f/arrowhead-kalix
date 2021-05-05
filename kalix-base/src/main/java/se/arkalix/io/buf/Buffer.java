@@ -71,6 +71,9 @@ public interface Buffer extends BufferReader, BufferWriter {
 
     /**
      * Wraps given byte array into a {@link Buffer}.
+     * <p>
+     * If you want to write to the wrapped byte array through the returned
+     * buffer, make sure to call {@link #clear()} before you write.
      *
      * @param byteArray Byte array to wrap.
      * @return Wrapped byte array.
@@ -109,7 +112,7 @@ public interface Buffer extends BufferReader, BufferWriter {
      * Clears the contents of this buffer.
      * <p>
      * This method is only guaranteed to reset the internal read and write
-     * offsets. It will likely not do anything to the actual buffer memory,
+     * offsets. It will likely not do anything to the actual buffer memory.
      */
     void clear();
 
