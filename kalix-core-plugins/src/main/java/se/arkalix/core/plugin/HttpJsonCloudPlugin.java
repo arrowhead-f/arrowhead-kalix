@@ -179,6 +179,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                         if ("INVALID_PARAMETER".equals(error.type())) {
                             return serviceDiscovery.unregister(
                                 service.name(),
+                                service.uri(),
                                 provider.name(),
                                 providerSocketAddress.getHostString(),
                                 providerSocketAddress.getPort())
@@ -227,6 +228,7 @@ public class HttpJsonCloudPlugin implements Plugin {
             requestServiceDiscovery()
                 .flatMap(serviceDiscovery -> serviceDiscovery.unregister(
                     service.name(),
+                    service.uri(),
                     provider.name(),
                     providerSocketAddress.getHostString(),
                     providerSocketAddress.getPort()))
