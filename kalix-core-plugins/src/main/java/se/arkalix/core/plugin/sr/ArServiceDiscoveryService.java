@@ -62,23 +62,25 @@ public interface ArServiceDiscoveryService extends ArConsumer {
      * Unregisters a service that is currently registered.
      *
      * @param serviceName Name of service of existing entry.
+     * @param serviceUri  URI of service of existing entry.
      * @param systemName  Name of system of existing entry.
      * @param hostname    Address/hostname of existing entry.
      * @param port        Port number of existing entry.
      * @return Future completed when unregistration is known to have succeeded
      * or failed.
      */
-    Future<?> unregister(String serviceName, String systemName, String hostname, int port);
+    Future<?> unregister(String serviceName, String serviceUri, String systemName, String hostname, int port);
 
     /**
      * Unregisters a service that is currently registered.
      *
      * @param serviceName Name of service of existing entry.
+     * @param serviceUri  URI of service of existing entry.
      * @param system      System of existing entry.
      * @return Future completed when unregistration is known to have succeeded
      * or failed.
      */
-    default Future<?> unregister(final String serviceName, final ArSystem system) {
-        return unregister(serviceName, system.name(), system.socketAddress().getHostString(), system.port());
+    default Future<?> unregister(final String serviceName, final String serviceUri, final ArSystem system) {
+        return unregister(serviceName, serviceUri, system.name(), system.socketAddress().getHostString(), system.port());
     }
 }

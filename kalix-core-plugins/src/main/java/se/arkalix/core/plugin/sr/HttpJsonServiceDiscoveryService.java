@@ -67,6 +67,7 @@ public class HttpJsonServiceDiscoveryService implements ArServiceDiscoveryServic
     @Override
     public Future<?> unregister(
         final String serviceName,
+        final String serviceUri,
         final String systemName,
         final String hostname,
         final int port)
@@ -76,6 +77,7 @@ public class HttpJsonServiceDiscoveryService implements ArServiceDiscoveryServic
                 .method(DELETE)
                 .path(pathUnregister)
                 .queryParameter("service_definition", serviceName)
+                .queryParameter("service_uri", serviceUri)
                 .queryParameter("system_name", systemName)
                 .queryParameter("address", hostname)
                 .queryParameter("port", Integer.toString(port)))
