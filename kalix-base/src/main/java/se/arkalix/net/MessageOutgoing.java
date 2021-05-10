@@ -111,7 +111,7 @@ public interface MessageOutgoing<Self> extends Message {
      * @throws NullPointerException If {@code toCodecType} or {@code encodables}
      *                              is {@code null}.
      */
-    default Self body(final List<MultiEncodable> encodables, final ToCodecType toCodecType) {
+    default Self body(final List<? extends MultiEncodable> encodables, final ToCodecType toCodecType) {
         if (encodables == null) {
             throw new NullPointerException("encodables");
         }
