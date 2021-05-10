@@ -73,11 +73,11 @@ public class MultiEncodableForLists implements MultiEncodable {
             writer.writeS8((byte) '[');
 
             if (items.size() > 0) {
-                items.get(0).encodableFor(CodecType.JSON);
+                items.get(0).encodableFor(CodecType.JSON).encode(writer);
             }
             for (final var item : items.subList(1, items.size())) {
                 writer.writeS8((byte) ',');
-                item.encodableFor(CodecType.JSON);
+                item.encodableFor(CodecType.JSON).encode(writer);
             }
 
             writer.writeS8((byte) ']');
