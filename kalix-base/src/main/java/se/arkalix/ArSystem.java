@@ -354,6 +354,18 @@ public interface ArSystem extends SystemRecordWithIdentity {
         }
 
         /**
+         * Sets system metadata. Their significance and use depend on the
+         * system.
+         *
+         * @param metadata System metadata to use.
+         * @return This builder.
+         */
+        public final Builder metadata(final Map<String, String> metadata) {
+            inner.metadata(metadata);
+            return this;
+        }
+
+        /**
          * Sets trust store to use for determining what systems are trusted to
          * be communicated by the created system.
          * <p>

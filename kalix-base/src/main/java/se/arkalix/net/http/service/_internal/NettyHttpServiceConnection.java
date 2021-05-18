@@ -110,7 +110,7 @@ public class NettyHttpServiceConnection
         }
         else {
             final var remoteSocketAddress = (InetSocketAddress) channel.remoteAddress();
-            consumer = SystemRecordWithIdentity.from("<" + remoteSocketAddress + ">", remoteSocketAddress);
+            consumer = SystemRecordWithIdentity.from("<" + remoteSocketAddress + ">", remoteSocketAddress, null);
         }
         super.channelActive(ctx);
     }

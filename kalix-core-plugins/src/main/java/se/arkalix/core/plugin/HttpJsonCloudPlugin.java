@@ -336,7 +336,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                                     "to be \"serviceregistry\"; failed to " +
                                     "resolve service discovery service "));
                             }
-                            provider = SystemRecord.from(name, identity.publicKey(), serviceRegistrySocketAddress);
+                            provider = SystemRecord.from(name, identity.publicKey(), serviceRegistrySocketAddress, null);
                         }
                         else {
                             provider = SystemRecord.from("serviceregistry", serviceRegistrySocketAddress);

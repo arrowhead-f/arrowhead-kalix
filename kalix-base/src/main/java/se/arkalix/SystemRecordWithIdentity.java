@@ -7,6 +7,7 @@ import se.arkalix.security.identity.SystemIdentity;
 import java.net.InetSocketAddress;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -27,7 +28,7 @@ public interface SystemRecordWithIdentity extends SystemRecord {
      */
     static SystemRecordWithIdentity from(final SystemIdentity identity, final InetSocketAddress remoteSocketAddress) {
         Objects.requireNonNull(identity, "identity");
-        return new DefaultSystemRecordWithIdentity(identity.name(), identity, remoteSocketAddress);
+        return new DefaultSystemRecordWithIdentity(identity.name(), identity, remoteSocketAddress, null);
     }
 
     /**
@@ -39,12 +40,17 @@ public interface SystemRecordWithIdentity extends SystemRecord {
      * @param name                System name.
      * @param remoteSocketAddress IP-address/hostname and port through which
      *                            the system can be contacted.
+     * @param metadata            System metadata.
      * @return Description of consumer system.
      * @throws NullPointerException If {@code name} or {@code
      *                              remoteSocketAddress} is {@code null}.
      */
-    static SystemRecordWithIdentity from(final String name, final InetSocketAddress remoteSocketAddress) {
-        return new DefaultSystemRecordWithIdentity(name, null, remoteSocketAddress);
+    static SystemRecordWithIdentity from(
+        final String name,
+        final InetSocketAddress remoteSocketAddress,
+        Map<String, String> metadata
+    ) {
+        return new DefaultSystemRecordWithIdentity(name, null, remoteSocketAddress, metadata);
     }
 
     /**
