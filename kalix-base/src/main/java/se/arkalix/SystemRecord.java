@@ -5,6 +5,7 @@ import se.arkalix.security.SecurityDisabled;
 
 import java.net.InetSocketAddress;
 import java.security.PublicKey;
+import java.util.Map;
 
 /**
  * Describes an Arrowhead system that can, potentially, be communicated with.
@@ -17,6 +18,7 @@ public interface SystemRecord {
      * @param publicKey           System public key.
      * @param remoteSocketAddress IP-address/hostname and port through which
      *                            the system can be contacted.
+     * @param metadata            System metadata.
      * @return Description of provider system.
      * @throws NullPointerException If {@code name} or {@code
      *                              remoteSocketAddress} is {@code null}.
@@ -24,9 +26,10 @@ public interface SystemRecord {
     static SystemRecord from(
         final String name,
         final PublicKey publicKey,
-        final InetSocketAddress remoteSocketAddress
+        final InetSocketAddress remoteSocketAddress,
+        final Map<String, String> metadata
     ) {
-        return new DefaultSystemRecord(name, publicKey, remoteSocketAddress);
+        return new DefaultSystemRecord(name, publicKey, remoteSocketAddress, metadata);
     }
 
     /**
@@ -43,7 +46,7 @@ public interface SystemRecord {
      *                              remoteSocketAddress} is {@code null}.
      */
     static SystemRecord from(final String name, final InetSocketAddress remoteSocketAddress) {
-        return new DefaultSystemRecord(name, null, remoteSocketAddress);
+        return new DefaultSystemRecord(name, null, remoteSocketAddress, null);
     }
 
     /**
@@ -52,6 +55,13 @@ public interface SystemRecord {
      * @return System name.
      */
     String name();
+
+    /**
+     * Gets metadata related to the described system.
+     *
+     * @return System metadata
+     */
+    Map<String, String> metadata();
 
     /**
      * The socket address of the described system.

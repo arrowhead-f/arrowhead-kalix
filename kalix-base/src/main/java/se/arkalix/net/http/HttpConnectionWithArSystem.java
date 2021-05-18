@@ -36,7 +36,7 @@ public interface HttpConnectionWithArSystem extends HttpConnection {
     default SystemRecordWithIdentity remoteSystem() {
         return isSecure()
             ? SystemRecordWithIdentity.from(remoteIdentity(), remoteSocketAddress())
-            : SystemRecordWithIdentity.from("<" + remoteSocketAddress() + ">", remoteSocketAddress());
+            : SystemRecordWithIdentity.from("<" + remoteSocketAddress() + ">", remoteSocketAddress(), null);
     }
 
     @Override

@@ -30,6 +30,7 @@ public class DefaultSystem implements ArSystem {
     private static final Logger logger = LoggerFactory.getLogger(ArSystem.class);
 
     private final String name;
+    private final Map<String, String> metadata;
     private final InetSocketAddress localSocketAddress;
     private final boolean isSecure;
     private final OwnedIdentity identity;
@@ -85,7 +86,11 @@ public class DefaultSystem implements ArSystem {
 
         description = SystemRecord.from(name, isSecure
             ? identity.publicKey()
-            : null, localSocketAddress);
+            : null, localSocketAddress, builder.metadata);
+
+        metadata = builder.metadata == null
+            ? Collections.emptyMap()
+            : Collections.unmodifiableMap(builder.metadata);
 
         consumedServices = Objects.requireNonNullElseGet(builder.serviceCache,
             ArServiceRecordCache::withDefaultEntryLifetimeLimit);
@@ -112,6 +117,11 @@ public class DefaultSystem implements ArSystem {
     @Override
     public String name() {
         return name;
+    }
+
+    @Override
+    public Map<String, String> metadata() {
+        return metadata;
     }
 
     @Override
@@ -305,6 +315,7 @@ public class DefaultSystem implements ArSystem {
         private boolean isSecure = true;
         private Collection<Plugin> plugins;
         private ArServiceRecordCache serviceCache;
+        private Map<String, String> metadata = null;
 
         public void name(final String name) {
             this.name = name;
@@ -367,6 +378,10 @@ public class DefaultSystem implements ArSystem {
 
         public void plugins(final Collection<Plugin> plugins) {
             this.plugins = plugins;
+        }
+
+        public void metadata(final Map<String, String> metadata) {
+            this.metadata = metadata;
         }
 
         public ArSystem build() {

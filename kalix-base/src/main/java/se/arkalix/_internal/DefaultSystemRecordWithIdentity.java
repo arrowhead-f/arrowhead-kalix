@@ -6,6 +6,8 @@ import se.arkalix.security.identity.SystemIdentity;
 import se.arkalix.util.annotation.Internal;
 
 import java.net.InetSocketAddress;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
 
 @Internal
@@ -13,15 +15,20 @@ public class DefaultSystemRecordWithIdentity implements SystemRecordWithIdentity
     private final String name;
     private final SystemIdentity identity;
     private final InetSocketAddress socketAddress;
+    private final Map<String, String> metadata;
 
     public DefaultSystemRecordWithIdentity(
         final String name,
         final SystemIdentity identity,
-        final InetSocketAddress socketAddress
+        final InetSocketAddress socketAddress,
+        final Map<String, String> metadata
     ) {
         this.name = Objects.requireNonNull(name, "name");
         this.identity = identity;
         this.socketAddress = Objects.requireNonNull(socketAddress, "socketAddress");
+        this.metadata = metadata == null
+            ? Collections.emptyMap()
+            : Collections.unmodifiableMap(metadata);
 
     }
 
@@ -49,6 +56,11 @@ public class DefaultSystemRecordWithIdentity implements SystemRecordWithIdentity
     }
 
     @Override
+    public Map<String, String> metadata() {
+        return metadata;
+    }
+
+    @Override
     public boolean equals(final Object other) {
         if (this == other) { return true; }
         if (other == null || getClass() != other.getClass()) { return false; }
@@ -71,6 +83,7 @@ public class DefaultSystemRecordWithIdentity implements SystemRecordWithIdentity
             "name=" + name +
             ", identity='" + identity + '\'' +
             ", socketAddress=" + socketAddress +
+            ", metadata=" + metadata +
             '}';
     }
 }
