@@ -35,9 +35,11 @@ public interface MessageIncoming extends Message {
         return body()
             .buffer()
             .map(reader -> {
-                final var buffer = new byte[reader.readableBytes()];
-                reader.read(buffer);
-                return buffer;
+                try (reader) {
+                    final var byteArray = new byte[reader.readableBytes()];
+                    reader.read(byteArray);
+                    return byteArray;
+                }
             });
     }
 
@@ -94,8 +96,12 @@ public interface MessageIncoming extends Message {
      * @param decoder Function to use for decoding the message body.
      * @return Future completed when the incoming message body has been fully
      * received and decoded.
-     * @throws IllegalStateException If the body has already been consumed.
-     * @throws NullPointerException  If {@code decoder} is {@code null}.
+     * @throws DecoderException       If the body does not conform to the
+     *                                codec of the given {@code decoder}.
+     * @throws IllegalStateException  If the body has already been consumed.
+     * @throws MessageHasTrailingData If trailing data is discovered in the
+     *                                message body.
+     * @throws NullPointerException   If {@code decoder} is {@code null}.
      */
     default <T> Future<T> bodyTo(final Decoder<T> decoder) {
         if (decoder == null) {
@@ -103,8 +109,15 @@ public interface MessageIncoming extends Message {
         }
         return body()
             .buffer()
-            .map(decoder::decode);
-        // TODO: Should we throw an exception if there is more in the body?
+            .map(reader -> {
+                try (reader) {
+                    final var result = decoder.decode(reader);
+                    if (reader.readableBytes() > 0) {
+                        throw new MessageHasTrailingData(this);
+                    }
+                    return result;
+                }
+            });
     }
 
     /**
@@ -120,6 +133,9 @@ public interface MessageIncoming extends Message {
      * @param decoder Function to use for decoding the message body.
      * @return Future completed when the incoming message body has been fully
      * received and decoded.
+     * @throws DecoderException         If the body does not conform to the
+     *                                  codec it states.
+     * @throws IllegalStateException    If the body has already been consumed.
      * @throws MessageCodecMisspecified If a codec is specified in the
      *                                  message, but it cannot be interpreted.
      * @throws MessageCodecUnspecified  If no codec is specified in this
@@ -127,7 +143,8 @@ public interface MessageIncoming extends Message {
      * @throws MessageCodecUnsupported  If the codec specified in the
      *                                  message is not supported by the given
      *                                  {@code decoder}.
-     * @throws IllegalStateException    If the body has already been consumed.
+     * @throws MessageHasTrailingData   If trailing data is discovered in the
+     *                                  message body.
      * @throws NullPointerException     If {@code decoder} is {@code null}.
      */
     default <T> Future<T> bodyTo(final MultiDecoder<T> decoder) {
@@ -147,9 +164,13 @@ public interface MessageIncoming extends Message {
      * @param toCodecType Codec to use when invoking {@code decoder}.
      * @return Future completed when the incoming message body has been fully
      * received and decoded.
+     * @throws DecoderException        If the body does not conform to the
+     *                                 codec it states.
+     * @throws IllegalStateException   If the body has already been consumed.
      * @throws MessageCodecUnsupported If the given codec is not supported by
      *                                 the given {@code decoder}.
-     * @throws IllegalStateException   If the body has already been consumed.
+     * @throws MessageHasTrailingData  If trailing data is discovered in the
+     *                                 message body.
      * @throws NullPointerException    If {@code decoder} or {@code toCodecType}
      *                                 is {@code null}.
      */
@@ -163,9 +184,16 @@ public interface MessageIncoming extends Message {
         final var codecType = toCodecType.toCodecType();
         return body()
             .buffer()
-            .map(reader -> decoder.decoderFor(codecType)
-                .decode(reader));
-        // TODO: Should we throw an exception if there is more in the body?
+            .map(reader -> {
+                try (reader) {
+                    final var result = decoder.decoderFor(codecType)
+                        .decode(reader);
+                    if (reader.readableBytes() > 0) {
+                        throw new MessageHasTrailingData(this);
+                    }
+                    return result;
+                }
+            });
     }
 
     /**
@@ -226,9 +254,9 @@ public interface MessageIncoming extends Message {
 
     /**
      * Collects and then converts the individual list items of the incoming
-     * message body using the provided {@code decoder}, which will
-     * attempt to select an appropriate decoder function from any {@link
-     * #codecType() codec} specified in the message.
+     * message body using the provided {@code decoder}, which will attempt to
+     * select an appropriate decoder function from any {@link #codecType()
+     * codec} specified in the message.
      * <p>
      * This method can only succeed for codecs that both support anonymous
      * lists and are explicitly listed as supported by {@link
@@ -241,6 +269,9 @@ public interface MessageIncoming extends Message {
      * @param decoder Function to use for decoding the message body.
      * @return Future completed when the incoming message body has been fully
      * received and decoded.
+     * @throws DecoderException         If the body does not conform to the
+     *                                  codec it states.
+     * @throws IllegalStateException    If the body has already been consumed.
      * @throws MessageCodecMisspecified If a codec is specified in the
      *                                  message, but it cannot be interpreted.
      * @throws MessageCodecUnspecified  If no codec is specified in this
@@ -248,7 +279,8 @@ public interface MessageIncoming extends Message {
      * @throws MessageCodecUnsupported  If the codec specified in the message
      *                                  is not supported by the given {@code
      *                                  decoder}.
-     * @throws IllegalStateException    If the body has already been consumed.
+     * @throws MessageHasTrailingData   If trailing data is discovered in the
+     *                                  message body.
      * @throws NullPointerException     If {@code decoder} is {@code null}.
      */
     default <T> Future<List<T>> bodyListItemsTo(final MultiDecoder<T> decoder) {
@@ -257,8 +289,8 @@ public interface MessageIncoming extends Message {
 
     /**
      * Collects and then converts the individual list items of the incoming
-     * message body using the provided {@code decoder}, which will
-     * attempt to select a decoder function named by {@code toCodecType}.
+     * message body using the provided {@code decoder}, which will attempt to
+     * select a decoder function named by {@code toCodecType}.
      * <p>
      * This method can only succeed for codecs that both support anonymous
      * lists and are explicitly listed as supported by {@link
@@ -272,9 +304,13 @@ public interface MessageIncoming extends Message {
      * @param toCodecType Codec to use when invoking {@code decoder}.
      * @return Future completed when the incoming message body has been fully
      * received and decoded.
+     * @throws DecoderException        If the body does not conform to the
+     *                                 codec it states.
+     * @throws IllegalStateException   If the body has already been consumed.
      * @throws MessageCodecUnsupported If the given codec is not supported by
      *                                 the given {@code decoder}.
-     * @throws IllegalStateException   If the body has already been consumed.
+     * @throws MessageHasTrailingData  If trailing data is discovered in the
+     *                                 message body.
      * @throws NullPointerException    If {@code decoder} or {@code
      *                                 toCodecType} is {@code null}.
      */

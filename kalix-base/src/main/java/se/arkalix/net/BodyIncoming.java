@@ -16,6 +16,8 @@ public interface BodyIncoming {
      * <p>
      * Calling this method consumes the body associated with this message. Any
      * further attempts to consume the body will cause exceptions to be thrown.
+     * If the returned {@link Future} successfully resolves into a buffer, it
+     * must be {@link BufferReader#close() closed} once no longer in use.
      *
      * @return Future completed with fully buffered binary reader.
      */

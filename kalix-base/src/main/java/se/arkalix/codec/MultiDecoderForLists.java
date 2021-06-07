@@ -1,5 +1,7 @@
 package se.arkalix.codec;
 
+import se.arkalix.io.buf.BufferReader;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -63,78 +65,68 @@ public class MultiDecoderForLists<T> implements MultiDecoder<List<T>> {
             if (reader == null) {
                 throw new NullPointerException("reader");
             }
+            if (reader.readableBytes() <= 0) {
+                throw new DecoderException(
+                    CodecType.JSON, reader, "",
+                    reader.readOffset(), "cannot decode empty string");
+            }
 
             byte b;
-
-            do {
-                if (reader.readableBytes() <= 0) {
-                    throw new DecoderReadUnexpectedToken(
-                        CodecType.JSON,
-                        reader,
-                        "",
-                        reader.readOffset(),
-                        "cannot decode empty string");
-                }
-                b = reader.readS8();
-            } while (b == ' ' || b == '\t' || b == '\r' || b == '\n');
-
-            if (b != '[') {
-                throw new DecoderReadUnexpectedToken(
-                    CodecType.JSON,
-                    reader,
-                    Character.toString(b),
-                    reader.readOffset(),
-                    "expected '['");
-            }
-
-            final var list = new ArrayList<T>();
-
-            loop:
-            while (true) {
+            try {
                 do {
-                    if (reader.readableBytes() <= 0) {
-                        throw new DecoderReadUnexpectedToken(
-                            CodecType.JSON,
-                            reader,
-                            "",
-                            reader.readOffset(),
-                            "array ended unexpectedly");
-                    }
                     b = reader.readS8();
                 } while (b == ' ' || b == '\t' || b == '\r' || b == '\n');
 
-                list.add(decoder.decoderFor(CodecType.JSON).decode(reader));
-
-                do {
-                    if (reader.readableBytes() <= 0) {
-                        throw new DecoderReadUnexpectedToken(
-                            CodecType.JSON,
-                            reader,
-                            "",
-                            reader.readOffset(),
-                            "array ended unexpectedly");
-                    }
-                    b = reader.readS8();
-                } while (b == ' ' || b == '\t' || b == '\r' || b == '\n');
-
-                switch (b) {
-                case ',':
-                    continue;
-
-                case ']':
-                    break loop;
-
-                default:
-                    throw new DecoderReadUnexpectedToken(
-                        CodecType.JSON,
-                        reader,
-                        Character.toString(b),
-                        reader.readOffset(),
-                        "expected ',' or ']'");
+                if (b != '[') {
+                    throw new DecoderException(
+                        CodecType.JSON, reader, Character.toString(b),
+                        reader.readOffset(), "expected '['");
                 }
-            }
 
-            return list;
+                final var list = new ArrayList<T>();
+
+                loop:
+                while (true) {
+                    do {
+                        b = reader.readS8();
+                    } while (b == ' ' || b == '\t' || b == '\r' || b == '\n');
+
+                    list.add(decoder.decoderFor(CodecType.JSON).decode(reader));
+
+                    do {
+                        b = reader.readS8();
+                    } while (b == ' ' || b == '\t' || b == '\r' || b == '\n');
+
+                    switch (b) {
+                    case ',':
+                        continue;
+
+                    case ']':
+                        break loop;
+
+                    default:
+                        throw new DecoderException(
+                            CodecType.JSON, reader, Character.toString(b),
+                            reader.readOffset(), "expected ',' or ']'");
+                    }
+                }
+
+                while (reader.readableBytes() > 0) {
+                    b = reader.readS8();
+                    if (b != ' ' && b != '\t' && b != '\r' && b != '\n') {
+                        throw new DecoderException(
+                            CodecType.JSON, reader, Character.toString(b),
+                            reader.readOffset(), "only whitespace allowed after array end");
+                    }
+                }
+
+                return list;
+            }
+            catch (final IndexOutOfBoundsException exception) {
+                throw new DecoderException(
+                    CodecType.JSON, reader, "",
+                    reader.readOffset(), "array ended unexpectedly", exception);
+            }
         };
     }
 }

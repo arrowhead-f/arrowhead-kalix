@@ -12,12 +12,12 @@ public interface MultiEncodable {
      *
      * @param codecType Codec to be used to encode the data written to
      *                  {@code writer}.
-     * @throws CodecUnsupported            If no support exists for encoding
-     *                                     data using {@code codec}.
-     * @throws EncodableConstraintViolated If this object violates a constraint
-     *                                     imposed by the given codec.
-     * @throws NullPointerException        If {@code writer} or {@code codec}
-     *                                     is {@code null}.
+     * @throws CodecUnsupported     If no support exists for encoding data
+     *                              using {@code codec}.
+     * @throws EncodableException   If this object violates a constraint
+     *                              imposed by the given codec.
+     * @throws NullPointerException If {@code writer} or {@code codec} is
+     *                              {@code null}.
      */
     Encodable encodableFor(CodecType codecType);
 }

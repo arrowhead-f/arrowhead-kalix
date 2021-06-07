@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.ArSystem;
 import se.arkalix.SystemRecordWithIdentity;
-import se.arkalix.codec.DecoderReadUnexpectedToken;
+import se.arkalix.codec.DecoderException;
 import se.arkalix.codec.CodecType;
 import se.arkalix.codec.MediaType;
 import se.arkalix.net._internal.NettyBodyOutgoing;
@@ -222,7 +222,7 @@ public class NettyHttpServiceConnection
                     }
                     sendEmptyResponseAndCleanup(ctx, convert(exception.status()));
                 }
-                else if (fault instanceof DecoderReadUnexpectedToken) {
+                else if (fault instanceof DecoderException) {
                     sendEmptyResponseAndCleanup(ctx, BAD_REQUEST);
                 }
                 else if (fault instanceof ServiceNotFoundException) {

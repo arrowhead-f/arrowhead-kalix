@@ -5,7 +5,7 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import se.arkalix.codec.CodecType;
-import se.arkalix.codec.DecoderReadUnexpectedToken;
+import se.arkalix.codec.DecoderException;
 import se.arkalix.codec.json.JsonType;
 import se.arkalix.codec.json._internal.JsonPrimitives;
 import se.arkalix.codec.json._internal.JsonTokenBuffer;
@@ -113,7 +113,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
 
         if (hasInterface) {
             builder
-                .beginControlFlow("catch (final $T exception)", DecoderReadUnexpectedToken.class)
+                .beginControlFlow("catch (final $T exception)", DecoderException.class)
                 .addStatement("errorMessage = \"failed to read child object\"")
                 .addStatement("errorCause = exception")
                 .endControlFlow();
@@ -146,7 +146,7 @@ public class DtoGeneratorBackendJson implements DtoGeneratorBackend {
             .addStatement("throw new $1T($2T.JSON, reader, " +
                     "atEnd ? \"{\" : $3T.readStringRaw(token, reader), atEnd ? 0 " +
                     ": token.begin(), errorMessage, errorCause)",
-                DecoderReadUnexpectedToken.class, CodecType.class, JsonPrimitives.class);
+                DecoderException.class, CodecType.class, JsonPrimitives.class);
 
         implementation.addMethod(builder.build());
     }

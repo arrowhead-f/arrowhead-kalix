@@ -15,6 +15,8 @@ public interface Decoder<T> {
      *
      * @param reader Buffer reader.
      * @return Decoded object.
+     * @throws DecoderException     If read data does not conform to the codec
+     *                              of this decoder.
      * @throws NullPointerException If {@code reader} is {@code null}.
      */
     T decode(final BufferReader reader);

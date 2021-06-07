@@ -1,7 +1,7 @@
 package se.arkalix.codec.json;
 
 import se.arkalix.codec.CodecType;
-import se.arkalix.codec.DecoderReadUnexpectedToken;
+import se.arkalix.codec.DecoderException;
 import se.arkalix.codec.json._internal.JsonPrimitives;
 import se.arkalix.codec.json._internal.JsonTokenBuffer;
 import se.arkalix.codec.json._internal.JsonTokenizer;
@@ -156,9 +156,8 @@ public class JsonString implements JsonValue {
      * @param reader Source containing JSON string at the current read offset,
      *               ignoring any whitespace.
      * @return Decoded JSON string.
-     * @throws DecoderReadUnexpectedToken If the reader does not contain a
-     *                                    valid JSON string at the current read
-     *                                    offset.
+     * @throws DecoderException If the reader does not contain a valid JSON
+     *                          string at the current read offset.
      */
     public static JsonString decodeJson(final BufferReader reader) {
         return decodeJson_(JsonTokenizer.tokenize(reader));
@@ -176,7 +175,7 @@ public class JsonString implements JsonValue {
         final var reader = buffer.reader();
         var token = buffer.next();
         if (token.type() != JsonType.STRING) {
-            throw new DecoderReadUnexpectedToken(
+            throw new DecoderException(
                 CodecType.JSON,
                 reader,
                 JsonPrimitives.readStringRaw(token, reader),

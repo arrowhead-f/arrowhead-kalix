@@ -1,7 +1,7 @@
 package se.arkalix.codec.json;
 
 import se.arkalix.codec.CodecType;
-import se.arkalix.codec.DecoderReadUnexpectedToken;
+import se.arkalix.codec.DecoderException;
 import se.arkalix.codec.json._internal.JsonPrimitives;
 import se.arkalix.codec.json._internal.JsonTokenBuffer;
 import se.arkalix.codec.json._internal.JsonTokenizer;
@@ -60,9 +60,8 @@ public class JsonBoolean implements JsonValue {
      * @param reader Source containing "false" at the current read offset,
      *               ignoring any whitespace.
      * @return Decoded JSON false.
-     * @throws DecoderReadUnexpectedToken If the reader does not contain a
-     *                                    valid JSON boolean at the current
-     *                                    read offset.
+     * @throws DecoderException If the reader does not contain a valid JSON
+     *                          boolean at the current read offset.
      */
     public static JsonBoolean decodeJson(final BufferReader reader) {
         return decodeJson_(JsonTokenizer.tokenize(reader));
@@ -83,7 +82,7 @@ public class JsonBoolean implements JsonValue {
         case FALSE: return FALSE;
         default:
             final var reader = buffer.reader();
-            throw new DecoderReadUnexpectedToken(
+            throw new DecoderException(
                 CodecType.JSON,
                 reader,
                 JsonPrimitives.readStringRaw(token, reader),

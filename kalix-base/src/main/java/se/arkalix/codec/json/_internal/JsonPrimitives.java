@@ -1,8 +1,8 @@
 package se.arkalix.codec.json._internal;
 
 import se.arkalix.codec.CodecType;
-import se.arkalix.codec.DecoderReadUnexpectedToken;
-import se.arkalix.codec.EncodableConstraintViolated;
+import se.arkalix.codec.DecoderException;
+import se.arkalix.codec.EncodableException;
 import se.arkalix.io.buf.BufferReader;
 import se.arkalix.io.buf.BufferWriter;
 import se.arkalix.util.annotation.Internal;
@@ -123,7 +123,7 @@ public final class JsonPrimitives {
             error = "bad JSON character string; must contain exactly one " +
                 "valid character or escape sequence";
         }
-        throw new DecoderReadUnexpectedToken(
+        throw new DecoderException(
             CodecType.JSON,
             reader,
             readStringRaw(token, reader),
@@ -278,7 +278,7 @@ public final class JsonPrimitives {
                 : buffer,
                 StandardCharsets.UTF_8);
         }
-        throw new DecoderReadUnexpectedToken(CodecType.JSON, reader, badEscapeBuilder.toString(), p1, "Bad escape");
+        throw new DecoderException(CodecType.JSON, reader, badEscapeBuilder.toString(), p1, "bad escape");
     }
 
     public static String readStringRaw(final JsonToken token, final BufferReader reader) {
@@ -355,9 +355,9 @@ public final class JsonPrimitives {
     }
 
     public static void write(final double number, final BufferWriter writer)
-        throws EncodableConstraintViolated {
+        throws EncodableException {
         if (!Double.isFinite(number)) {
-            throw new EncodableConstraintViolated(
+            throw new EncodableException(
                 CodecType.JSON,
                 writer,
                 number,

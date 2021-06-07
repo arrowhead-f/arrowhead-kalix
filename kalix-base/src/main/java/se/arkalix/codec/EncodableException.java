@@ -9,7 +9,7 @@ import java.util.Objects;
  * bytes in a certain codec, caused by the object somehow violating the
  * codec it is intended to be represented in.
  */
-public class EncodableConstraintViolated extends CodecException {
+public class EncodableException extends CodecException {
     private final BufferWriter writer;
     private final Object object;
     private final String description;
@@ -22,7 +22,7 @@ public class EncodableConstraintViolated extends CodecException {
      * @param object      Object violating codec, if relevant.
      * @param description Description of failure.
      */
-    public EncodableConstraintViolated(
+    public EncodableException(
         final CodecType codecType,
         final BufferWriter writer,
         final Object object,

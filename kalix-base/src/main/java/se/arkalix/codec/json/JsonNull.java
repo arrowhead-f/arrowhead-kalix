@@ -1,7 +1,7 @@
 package se.arkalix.codec.json;
 
 import se.arkalix.codec.CodecType;
-import se.arkalix.codec.DecoderReadUnexpectedToken;
+import se.arkalix.codec.DecoderException;
 import se.arkalix.codec.json._internal.JsonPrimitives;
 import se.arkalix.codec.json._internal.JsonTokenBuffer;
 import se.arkalix.codec.json._internal.JsonTokenizer;
@@ -36,9 +36,8 @@ public class JsonNull implements JsonValue {
      * @param reader Source containing "null" at the current read offset,
      *               ignoring any whitespace.
      * @return Decoded JSON null.
-     * @throws DecoderReadUnexpectedToken If the reader does not contain a
-     *                                    valid JSON null at the current read
-     *                                    offset.
+     * @throws DecoderException If the reader does not contain a valid JSON
+     *                          null at the current read offset.
      */
     public static JsonNull decodeJson(final BufferReader reader) {
         return decodeJson_(JsonTokenizer.tokenize(reader));
@@ -56,7 +55,7 @@ public class JsonNull implements JsonValue {
         var token = buffer.next();
         if (token.type() != JsonType.NULL) {
             final var reader = buffer.reader();
-            throw new DecoderReadUnexpectedToken(
+            throw new DecoderException(
                 CodecType.JSON,
                 reader,
                 JsonPrimitives.readStringRaw(token, reader),

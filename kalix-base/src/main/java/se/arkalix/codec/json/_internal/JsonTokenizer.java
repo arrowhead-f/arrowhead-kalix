@@ -1,7 +1,7 @@
 package se.arkalix.codec.json._internal;
 
 import se.arkalix.codec.CodecType;
-import se.arkalix.codec.DecoderReadUnexpectedToken;
+import se.arkalix.codec.DecoderException;
 import se.arkalix.codec.json.JsonType;
 import se.arkalix.io.buf.BufferReader;
 import se.arkalix.util.annotation.Internal;
@@ -17,7 +17,7 @@ public final class JsonTokenizer {
     private final ArrayList<JsonToken> tokens;
 
     private int p0;
-    private DecoderReadUnexpectedToken error = null;
+    private DecoderException error = null;
 
     private JsonTokenizer(final BufferReader reader) {
         this.reader = Objects.requireNonNull(reader, "reader");
@@ -28,6 +28,7 @@ public final class JsonTokenizer {
     public static JsonTokenBuffer tokenize(final BufferReader reader) {
         final var tokenizer = new JsonTokenizer(reader);
         if (tokenizer.tokenizeValue()) {
+            tokenizer.discardWhitespace();
             return new JsonTokenBuffer(tokenizer.tokens, reader);
         }
         throw tokenizer.error;
@@ -47,13 +48,9 @@ public final class JsonTokenizer {
     private void saveCandidateAsError(final String message) {
         final var buffer = new byte[reader.readOffset() - p0];
         reader.getAt(p0, buffer);
-        error = new DecoderReadUnexpectedToken(
-            CodecType.JSON,
-            reader,
-            new String(buffer, StandardCharsets.UTF_8),
-            p0,
-            message
-        );
+        error = new DecoderException(
+            CodecType.JSON, reader, new String(buffer, StandardCharsets.UTF_8),
+            p0, message);
     }
 
     private void discardWhitespace() {

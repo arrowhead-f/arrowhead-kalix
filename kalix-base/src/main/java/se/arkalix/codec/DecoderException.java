@@ -16,8 +16,8 @@ import java.util.Objects;
  * request causes an error that should always generate a stack trace, some
  * other exception type should be used instead.
  */
-public class DecoderReadUnexpectedToken extends CodecException {
-    private static final Logger logger = LoggerFactory.getLogger(DecoderReadUnexpectedToken.class);
+public class DecoderException extends CodecException {
+    private static final Logger logger = LoggerFactory.getLogger(DecoderException.class);
 
     private final BufferReader reader;
     private final String token;
@@ -33,7 +33,7 @@ public class DecoderReadUnexpectedToken extends CodecException {
      * @param offset      Reader position at which reading failed.
      * @param description Description of failure.
      */
-    public DecoderReadUnexpectedToken(
+    public DecoderException(
         final CodecType codecType,
         final BufferReader reader,
         final String token,
@@ -54,7 +54,7 @@ public class DecoderReadUnexpectedToken extends CodecException {
      * @param cause       {@link Throwable} causing this exception to be thrown,
      *                    or {@code null} if none.
      */
-    public DecoderReadUnexpectedToken(
+    public DecoderException(
         final CodecType codecType,
         final BufferReader reader,
         final String token,
