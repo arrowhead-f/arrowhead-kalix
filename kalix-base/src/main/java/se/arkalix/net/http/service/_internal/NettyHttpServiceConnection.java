@@ -12,8 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.ArSystem;
 import se.arkalix.SystemRecordWithIdentity;
-import se.arkalix.codec.DecoderException;
 import se.arkalix.codec.CodecType;
+import se.arkalix.codec.DecoderException;
 import se.arkalix.codec.MediaType;
 import se.arkalix.net._internal.NettyBodyOutgoing;
 import se.arkalix.net._internal.NettySimpleChannelInboundHandler;
@@ -208,7 +208,7 @@ public class NettyHttpServiceConnection
             .consumer(consumer)
             .build();
 
-        final var kalixResponse = new DefaultHttpServiceResponse();
+        final var kalixResponse = new DefaultHttpServiceResponse(MediaType.getOrCreate(defaultCodecType));
 
         service
             .handle(this.kalixRequest, kalixResponse)
@@ -249,9 +249,10 @@ public class NettyHttpServiceConnection
         }
     }
 
-    private void sendKalixResponseAndCleanup(final DefaultHttpServiceResponse response, final CodecType defaultCodecType)
-        throws IOException
-    {
+    private void sendKalixResponseAndCleanup(
+        final DefaultHttpServiceResponse response,
+        final CodecType defaultCodecType
+    ) throws IOException {
         final var status = response.status()
             .orElseThrow(() -> new IllegalStateException("No HTTP status specified in service response"));
 
@@ -261,21 +262,34 @@ public class NettyHttpServiceConnection
             .orElse(nettyRequest.protocolVersion());
         final var nettyHeaders = ((NettyHttpHeaders) response.headers()).unwrap();
 
-        final var body = NettyBodyOutgoing.from(response.body().orElse(null), channel.alloc());
+        final NettyBodyOutgoing nettyBody;
+        {
+            final var responseBody = response.body().orElse(null);
+            if (responseBody != null) {
+                nettyBody = NettyBodyOutgoing.from(responseBody, channel.alloc());
+
+                if (!nettyHeaders.contains(CONTENT_TYPE)) {
+                    nettyHeaders.set(CONTENT_TYPE, MediaType.getOrCreate(nettyBody.codecType()
+                        .orElse(defaultCodecType)));
+                }
+            }
+            else {
+                nettyBody = null;
+            }
+        }
 
         if (!nettyHeaders.contains(CONTENT_LENGTH)) {
-            nettyHeaders.set(CONTENT_LENGTH, Long.toString(body.length()));
+            nettyHeaders.set(CONTENT_LENGTH, nettyBody != null
+                ? Long.toString(nettyBody.length())
+                : "0");
         }
 
         HttpUtil.setKeepAlive(nettyHeaders, nettyVersion, !isClosing);
 
-        if (!nettyHeaders.contains(CONTENT_TYPE)) {
-            final var codec = body.codec().orElse(defaultCodecType);
-            nettyHeaders.set(CONTENT_TYPE, MediaType.getOrCreate(codec));
-        }
-
         channel.write(new DefaultHttpResponse(nettyVersion, nettyStatus, nettyHeaders));
-        channel.write(body.content());
+        if (nettyBody != null) {
+            channel.write(nettyBody.content());
+        }
         final var future = channel.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
 
         if (isClosing) {

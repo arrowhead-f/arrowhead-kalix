@@ -32,9 +32,9 @@ public abstract class DefaultHttpOutgoing<Self> implements HttpOutgoing<Self> {
     }
 
     @Override
-    public Self contentType(final MediaType mediaType) {
-        headers().set("content-type", mediaType.toString());
-        this.contentType = mediaType;
+    public Self contentType(final MediaType contentType) {
+        headers().set("content-type", contentType.toString());
+        this.contentType = contentType;
         return self();
     }
 

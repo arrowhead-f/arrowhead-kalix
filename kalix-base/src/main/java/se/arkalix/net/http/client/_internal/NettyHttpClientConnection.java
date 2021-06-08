@@ -333,7 +333,7 @@ public class NettyHttpClientConnection
             HttpUtil.setKeepAlive(nettyHeaders, nettyVersion, !close);
 
             if (!nettyHeaders.contains(CONTENT_TYPE)) {
-                body.codec()
+                body.codecType()
                     .ifPresent(codec -> nettyHeaders.set(CONTENT_TYPE, MediaType.getOrCreate(codec)));
             }
 

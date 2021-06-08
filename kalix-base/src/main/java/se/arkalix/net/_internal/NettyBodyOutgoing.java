@@ -67,7 +67,7 @@ public class NettyBodyOutgoing {
         this.content = Objects.requireNonNull(content, "content");
     }
 
-    public Optional<CodecType> codec() {
+    public Optional<CodecType> codecType() {
         return Optional.ofNullable(codecType);
     }
 

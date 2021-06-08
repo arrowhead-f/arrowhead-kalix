@@ -1,5 +1,6 @@
 package se.arkalix.net.http.service._internal;
 
+import se.arkalix.codec.MediaType;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.HttpVersion;
@@ -15,10 +16,15 @@ public class DefaultHttpServiceResponse
     extends DefaultHttpOutgoing<HttpServiceResponse>
     implements HttpServiceResponse
 {
+    private final MediaType defaultContentType;
     private final HttpHeaders headers = new NettyHttpHeaders();
 
     private HttpStatus status = null;
     private HttpVersion version = null;
+
+    public DefaultHttpServiceResponse(final MediaType defaultContentType) {
+        this.defaultContentType = defaultContentType;
+    }
 
     @Override
     protected HttpServiceResponse self() {
@@ -62,5 +68,10 @@ public class DefaultHttpServiceResponse
     public HttpServiceResponse version(final HttpVersion version) {
         this.version = version;
         return this;
+    }
+
+    @Override
+    public Optional<MediaType> contentType() {
+        return super.contentType().or(() -> Optional.ofNullable(defaultContentType));
     }
 }
