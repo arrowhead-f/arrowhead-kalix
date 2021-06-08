@@ -150,30 +150,6 @@ public class NettyHttpServiceConnection
             }
         }
 
-        // Resolve default response codec.
-        final CodecType defaultCodecType;
-        {
-            final var headers = nettyRequest.headers();
-            final var codecs = service.codecs();
-
-            final var acceptHeaders = headers.getAll("accept");
-            if (acceptHeaders != null && acceptHeaders.size() > 0) {
-                defaultCodecType = HttpMediaTypes.findCodecTypeCompatibleWithAcceptHeaders(codecs, acceptHeaders)
-                    .orElse(service.defaultCodecType());
-            }
-            else {
-                final var contentType = headers.get("content-type");
-                if (contentType != null) {
-                    defaultCodecType = HttpMediaTypes.findCodecTypeCompatibleWithContentType(codecs, contentType)
-                        .orElse(service.defaultCodecType());
-                }
-                else {
-                    sendEmptyResponseAndCleanup(ctx, UNSUPPORTED_MEDIA_TYPE);
-                    return;
-                }
-            }
-        }
-
         // Ensure consumer is authenticated and authorized.
         {
             boolean isAuthorized;
@@ -194,6 +170,29 @@ public class NettyHttpServiceConnection
             if (!isAuthorized) {
                 sendEmptyResponseAndCleanup(ctx, FORBIDDEN);
                 return;
+            }
+        }
+
+        // Resolve default response codec.
+        final CodecType defaultCodecType;
+        {
+            final var headers = nettyRequest.headers();
+            final var codecs = service.codecs();
+
+            final var acceptHeaders = headers.getAll("accept");
+            if (acceptHeaders != null && acceptHeaders.size() > 0) {
+                defaultCodecType = HttpMediaTypes.findCodecTypeCompatibleWithAcceptHeaders(codecs, acceptHeaders)
+                    .orElse(service.defaultCodecType());
+            }
+            else {
+                final var contentType = headers.get("content-type");
+                if (contentType != null) {
+                    defaultCodecType = HttpMediaTypes.findCodecTypeCompatibleWithContentType(codecs, contentType)
+                        .orElse(service.defaultCodecType());
+                }
+                else {
+                    defaultCodecType = service.defaultCodecType();
+                }
             }
         }
 
