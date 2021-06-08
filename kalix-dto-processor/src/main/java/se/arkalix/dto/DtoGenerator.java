@@ -367,7 +367,7 @@ public class DtoGenerator {
 
         final var dtoWritableAs = interfaceElement.getAnnotation(DtoWritableAs.class);
         if (dtoWritableAs != null) {
-            final var encode = MethodSpec.methodBuilder("encodableFor")
+            final var encode = MethodSpec.methodBuilder("encodable")
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
                 .returns(ClassName.get(Encodable.class))

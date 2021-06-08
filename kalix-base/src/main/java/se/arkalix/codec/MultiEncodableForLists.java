@@ -52,7 +52,7 @@ public class MultiEncodableForLists implements MultiEncodable {
     }
 
     @Override
-    public Encodable encodableFor(final CodecType codecType) {
+    public Encodable encodable(final CodecType codecType) {
         if (codecType == CodecType.JSON) {
             return encodableForJson();
         }
@@ -73,11 +73,11 @@ public class MultiEncodableForLists implements MultiEncodable {
             writer.writeS8((byte) '[');
 
             if (items.size() > 0) {
-                items.get(0).encodableFor(CodecType.JSON).encode(writer);
+                items.get(0).encodable(CodecType.JSON).encode(writer);
             }
             for (final var item : items.subList(1, items.size())) {
                 writer.writeS8((byte) ',');
-                item.encodableFor(CodecType.JSON).encode(writer);
+                item.encodable(CodecType.JSON).encode(writer);
             }
 
             writer.writeS8((byte) ']');

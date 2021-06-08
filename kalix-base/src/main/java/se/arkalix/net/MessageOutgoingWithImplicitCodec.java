@@ -5,7 +5,6 @@ import se.arkalix.codec.MultiEncodable;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 
 /**
  * An outgoing network message not always required to always have its body
@@ -30,9 +29,11 @@ public interface MessageOutgoingWithImplicitCodec<Self> extends MessageOutgoing<
      *                              {@code null}.
      */
     default Self body(final MultiEncodable encodable) {
-        Objects.requireNonNull(encodable, "encodable");
+        if (encodable == null) {
+            throw new NullPointerException("encodable");
+        }
         return body(BodyOutgoing.create(writer -> encodable
-            .encodableFor(codecType()
+            .encodable(codecType()
                 .orElseThrow(() -> new MessageCodecUnspecified(this)))
             .encode(writer)));
     }
@@ -51,6 +52,9 @@ public interface MessageOutgoingWithImplicitCodec<Self> extends MessageOutgoing<
      * @throws NullPointerException If {@code string} is {@code null}.
      */
     default Self body(final String string) {
+        if (string == null) {
+            throw new NullPointerException("string");
+        }
         return body(BodyOutgoing.create(writer -> {
             CodecType codecType = codecType().orElse(null);
             Charset charset = null;

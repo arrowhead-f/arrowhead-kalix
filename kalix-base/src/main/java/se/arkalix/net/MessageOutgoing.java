@@ -93,7 +93,7 @@ public interface MessageOutgoing<Self> extends Message {
 
         final var codecType = toCodecType.toCodecType();
         return body(BodyOutgoing.create(writer -> encodable
-            .encodableFor(codecType)
+            .encodable(codecType)
             .encode(writer)));
     }
 
@@ -121,7 +121,7 @@ public interface MessageOutgoing<Self> extends Message {
 
         final var codec0 = toCodecType.toCodecType();
         return body(BodyOutgoing.create(writer -> MultiEncodableForLists.of(encodables)
-            .encodableFor(codec0)
+            .encodable(codec0)
             .encode(writer)));
     }
 

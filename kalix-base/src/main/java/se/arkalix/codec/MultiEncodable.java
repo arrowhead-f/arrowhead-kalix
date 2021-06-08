@@ -19,5 +19,5 @@ public interface MultiEncodable {
      * @throws NullPointerException If {@code writer} or {@code codec} is
      *                              {@code null}.
      */
-    Encodable encodableFor(CodecType codecType);
+    Encodable encodable(CodecType codecType);
 }
