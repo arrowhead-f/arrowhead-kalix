@@ -1,9 +1,8 @@
 package se.arkalix.security.access;
 
 import se.arkalix.ArSystem;
-import se.arkalix.description.ServiceDescription;
-import se.arkalix.description.SystemIdentityDescription;
-import se.arkalix.descriptor.SecurityDescriptor;
+import se.arkalix.ServiceRecord;
+import se.arkalix.SystemRecordWithIdentity;
 
 import java.util.*;
 
@@ -22,19 +21,19 @@ public class AccessByCloudCertificate implements AccessPolicy {
     private AccessByCloudCertificate() {}
 
     @Override
-    public SecurityDescriptor descriptor() {
-        return SecurityDescriptor.CERTIFICATE;
+    public AccessPolicyType type() {
+        return AccessPolicyType.CERTIFICATE;
     }
 
     @Override
     public boolean isAuthorized(
-        final SystemIdentityDescription consumer,
+        final SystemRecordWithIdentity consumer,
         final ArSystem provider,
-        final ServiceDescription service,
+        final ServiceRecord service,
         final String token)
     {
-        Objects.requireNonNull(consumer, "Expected consumer");
-        Objects.requireNonNull(service, "Expected service");
+        Objects.requireNonNull(consumer, "consumer");
+        Objects.requireNonNull(service, "service");
 
         return Objects.equals(consumer.identity().cloud(), provider.identity().cloud());
     }

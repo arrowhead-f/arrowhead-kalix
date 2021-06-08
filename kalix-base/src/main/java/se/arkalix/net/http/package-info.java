@@ -1,8 +1,8 @@
 /**
- * <h1>HTTP Transport Utilities</h1>
+ * <h1>HTTP Network Utilities</h1>
  * This package contains classes and other utilities useful for accessing and
- * providing access to resources via the HTTP transport protocols. Currently,
- * only HTTP/1.0 and HTTP/1.1 are supported.
+ * providing access to resources via the HTTP protocols. Currently, only
+ * HTTP/1.0 and HTTP/1.1 are supported.
  * <p>
  * The package is organized into four distinct parts,
  * <ol>

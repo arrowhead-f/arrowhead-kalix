@@ -1,9 +1,6 @@
 package se.arkalix;
 
-import se.arkalix.description.SystemDescription;
-import se.arkalix.description.ServiceDescription;
-import se.arkalix.description.SystemIdentityDescription;
-import se.arkalix.internal.DefaultSystem;
+import se.arkalix._internal.DefaultSystem;
 import se.arkalix.plugin.Plugin;
 import se.arkalix.plugin.PluginFacade;
 import se.arkalix.query.ServiceQuery;
@@ -22,7 +19,7 @@ import java.util.*;
  * An Arrowhead Framework (AHF) system.
  */
 @SuppressWarnings("unused")
-public interface ArSystem extends SystemIdentityDescription {
+public interface ArSystem extends SystemRecordWithIdentity {
     /**
      * Gets human and machine-readable name of this system.
      * <p>
@@ -106,7 +103,7 @@ public interface ArSystem extends SystemIdentityDescription {
      * @return Description of this system.
      */
     @ThreadSafe
-    SystemDescription description();
+    SystemRecord description();
 
     /**
      * Creates new query useful for resolving services provided by other
@@ -135,7 +132,7 @@ public interface ArSystem extends SystemIdentityDescription {
      * has, or has considered to, consume.
      */
     @ThreadSafe
-    ArServiceDescriptionCache consumedServices();
+    ArServiceRecordCache consumedServices();
 
     /**
      * Registers given {@code service} with this system, eventually making it
@@ -158,7 +155,7 @@ public interface ArSystem extends SystemIdentityDescription {
      * @return Stream of service descriptions.
      */
     @ThreadSafe
-    Collection<ServiceDescription> providedServices();
+    Collection<ServiceRecord> providedServices();
 
     /**
      * Gets {@link PluginFacade} associated with the identified system {@link
@@ -357,6 +354,18 @@ public interface ArSystem extends SystemIdentityDescription {
         }
 
         /**
+         * Sets system metadata. Their significance and use depend on the
+         * system.
+         *
+         * @param metadata System metadata to use.
+         * @return This builder.
+         */
+        public final Builder metadata(final Map<String, String> metadata) {
+            inner.metadata(metadata);
+            return this;
+        }
+
+        /**
          * Sets trust store to use for determining what systems are trusted to
          * be communicated by the created system.
          * <p>
@@ -392,10 +401,10 @@ public interface ArSystem extends SystemIdentityDescription {
         }
 
         /**
-         * Sets {@link ArServiceDescriptionCache service cache} to be used by
+         * Sets {@link ArServiceRecordCache service cache} to be used by
          * this system for storing information about remote services of
          * interest. If not provided, a such with a {@link
-         * ArServiceDescriptionCache#withDefaultEntryLifetimeLimit() default
+         * ArServiceRecordCache#withDefaultEntryLifetimeLimit() default
          * entry expiration time} will be used.
          * <p>
          * After system instance creation, the cache will be available via the
@@ -404,7 +413,7 @@ public interface ArSystem extends SystemIdentityDescription {
          * @param serviceCache Desired service cache.
          * @return This builder.
          */
-        public Builder serviceCache(final ArServiceDescriptionCache serviceCache) {
+        public Builder serviceCache(final ArServiceRecordCache serviceCache) {
             inner.serviceCache(serviceCache);
             return this;
         }

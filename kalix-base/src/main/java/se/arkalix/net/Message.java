@@ -1,8 +1,7 @@
 package se.arkalix.net;
 
-import se.arkalix.descriptor.EncodingDescriptor;
+import se.arkalix.codec.CodecType;
 
-import java.nio.charset.Charset;
 import java.util.Optional;
 
 /**
@@ -10,16 +9,11 @@ import java.util.Optional;
  */
 public interface Message {
     /**
-     * Character set used to encode the contents of this message, if specified.
+     * Codec used to encode the contents of this message, if specified.
      *
-     * @return Message character set, if specified.
+     * @return Message codec, if specified.
+     * @throws MessageCodecMisspecified If a message codec is specified in the
+     *                                  message, but it cannot be interpreted.
      */
-    Optional<Charset> charset();
-
-    /**
-     * Encoding used to encode the contents of this message, if specified.
-     *
-     * @return Message encoding, if specified.
-     */
-    Optional<EncodingDescriptor> encoding();
+    Optional<CodecType> codecType();
 }

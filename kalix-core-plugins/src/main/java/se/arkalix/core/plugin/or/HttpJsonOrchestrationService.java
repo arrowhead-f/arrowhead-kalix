@@ -1,14 +1,14 @@
 package se.arkalix.core.plugin.or;
 
 import se.arkalix.ArConsumer;
-import se.arkalix.description.ServiceDescription;
+import se.arkalix.ServiceRecord;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
 import se.arkalix.util.concurrent.Future;
 
 import java.util.Objects;
 
-import static se.arkalix.internal.core.plugin.HttpJsonServices.unwrap;
+import static se.arkalix.core.plugin._internal.HttpJsonServices.unwrap;
 import static se.arkalix.net.http.HttpMethod.POST;
 
 /**
@@ -19,11 +19,11 @@ public class HttpJsonOrchestrationService implements ArConsumer, ArOrchestration
     private final HttpConsumer consumer;
 
     public HttpJsonOrchestrationService(final HttpConsumer consumer) {
-        this.consumer = Objects.requireNonNull(consumer, "Expected consumer");
+        this.consumer = Objects.requireNonNull(consumer, "consumer");
     }
 
     @Override
-    public ServiceDescription service() {
+    public ServiceRecord service() {
         return consumer.service();
     }
 
@@ -33,7 +33,7 @@ public class HttpJsonOrchestrationService implements ArConsumer, ArOrchestration
             .send(new HttpConsumerRequest()
                 .method(POST)
                 .path(service().uri())
-                .body(query))
-            .flatMap(response -> unwrap(response, OrchestrationQueryResultDto.class));
+                .body(query::encodeJson))
+            .flatMap(response -> unwrap(response, OrchestrationQueryResultDto::decodeJson));
     }
 }

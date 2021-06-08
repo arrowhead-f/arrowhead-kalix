@@ -18,6 +18,9 @@ public class OrchestrationPattern {
 
     /**
      * Use {@link #isIncludingService()} instead.
+     *
+     * @return {@code true} if requested services are to be included in
+     * orchestration requests.
      */
     @Deprecated(since = "0.4.2")
     public boolean isDynamic() {
@@ -36,6 +39,10 @@ public class OrchestrationPattern {
 
     /**
      * Use {@link #isIncludingService(boolean)} instead.
+     *
+     * @param isDynamic {@code true} if requested services are to be included in
+     *                  orchestration requests.
+     * @return This pattern.
      */
     @Deprecated(since = "0.4.2")
     public OrchestrationPattern isDynamic(final boolean isDynamic) {
@@ -146,7 +153,7 @@ public class OrchestrationPattern {
      * @return New orchestration query.
      */
     public OrchestrationQueryDto toQuery(final SystemDetailsDto requester, final ServiceQuery query) {
-        return new OrchestrationQueryBuilder()
+        return new OrchestrationQueryDto.Builder()
             .requester(requester)
             .service(isIncludingService && query != null
                 ? se.arkalix.core.plugin.sr.ServiceQuery.from(query)

@@ -7,7 +7,7 @@ import se.arkalix.dto.DtoWritableAs;
 
 import java.util.Map;
 
-import static se.arkalix.dto.DtoEncoding.JSON;
+import static se.arkalix.dto.DtoCodec.JSON;
 
 /**
  * A parameterized reference to a contract template.
@@ -27,12 +27,16 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 @SuppressWarnings("unused")
 public interface TrustedContract {
     /**
-     * Parameterized template.
+     * Name of template parameterized by this contract.
+     *
+     * @return Template name.
      */
     String templateName();
 
     /**
      * Concrete template parameter name/value pairs.
+     *
+     * @return Contract arguments.
      */
     Map<String, String> arguments();
 }

@@ -1,17 +1,12 @@
 package se.arkalix.net.http.service;
 
-import se.arkalix.description.SystemIdentityDescription;
-import se.arkalix.dto.DtoEncoding;
-import se.arkalix.dto.DtoReadable;
+import se.arkalix.SystemRecordWithIdentity;
+import se.arkalix.net.BodyIncoming;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpIncomingRequest;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.net.http.HttpVersion;
-import se.arkalix.util.concurrent.FutureProgress;
 
-import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -33,13 +28,18 @@ public interface HttpServiceRequest extends HttpIncomingRequest<HttpServiceReque
      *
      * @return Consumer system identity description.
      */
-    default SystemIdentityDescription consumer() {
+    default SystemRecordWithIdentity consumer() {
         return connection().remoteSystem();
     }
 
     default HttpServiceRequest cloneAndSet(final List<String> pathParameters) {
         final var self = this;
         return new HttpServiceRequest() {
+            @Override
+            public BodyIncoming body() {
+                return self.body();
+            }
+
             @Override
             public HttpServiceConnection connection() {
                 return self.connection();
@@ -68,40 +68,6 @@ public interface HttpServiceRequest extends HttpIncomingRequest<HttpServiceReque
             @Override
             public HttpVersion version() {
                 return self.version();
-            }
-
-            @Override
-            public <R extends DtoReadable> FutureProgress<R> bodyAs(
-                final DtoEncoding encoding, final Class<R> class_
-            ) {
-                return self.bodyAs(encoding, class_);
-            }
-
-            @Override
-            public FutureProgress<byte[]> bodyAsByteArray() {
-                return self.bodyAsByteArray();
-            }
-
-            @Override
-            public <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(
-                final DtoEncoding encoding, final Class<R> class_
-            ) {
-                return self.bodyAsList(encoding, class_);
-            }
-
-            @Override
-            public FutureProgress<? extends InputStream> bodyAsStream() {
-                return self.bodyAsStream();
-            }
-
-            @Override
-            public FutureProgress<String> bodyAsString(final Charset charset) {
-                return self.bodyAsString(charset);
-            }
-
-            @Override
-            public FutureProgress<Path> bodyTo(final Path path, final boolean append) {
-                return self.bodyTo(path, append);
             }
 
             @Override

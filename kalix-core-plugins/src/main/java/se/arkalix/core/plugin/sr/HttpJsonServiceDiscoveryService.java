@@ -1,10 +1,10 @@
 package se.arkalix.core.plugin.sr;
 
 import se.arkalix.ArSystem;
-import se.arkalix.description.ServiceDescription;
-import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.internal.core.plugin.HttpJsonServices;
-import se.arkalix.internal.core.plugin.Paths;
+import se.arkalix.ServiceRecord;
+import se.arkalix.core.plugin._internal.HttpJsonServices;
+import se.arkalix.codec.CodecType;
+import se.arkalix.net.Uris;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
 import se.arkalix.util.concurrent.Future;
@@ -12,7 +12,7 @@ import se.arkalix.util.concurrent.Future;
 import java.util.Collections;
 import java.util.Objects;
 
-import static se.arkalix.internal.core.plugin.HttpJsonServices.unwrap;
+import static se.arkalix.core.plugin._internal.HttpJsonServices.unwrap;
 import static se.arkalix.net.http.HttpMethod.DELETE;
 import static se.arkalix.net.http.HttpMethod.POST;
 
@@ -27,20 +27,20 @@ public class HttpJsonServiceDiscoveryService implements ArServiceDiscoveryServic
     private final String pathRegister;
     private final String pathUnregister;
 
-    public HttpJsonServiceDiscoveryService(final ArSystem system, final ServiceDescription service) {
-        Objects.requireNonNull(system, "Expected system");
-        Objects.requireNonNull(service, "Expected service");
+    public HttpJsonServiceDiscoveryService(final ArSystem system, final ServiceRecord service) {
+        Objects.requireNonNull(system, "system");
+        Objects.requireNonNull(service, "service");
 
-        consumer = HttpConsumer.create(system, service, Collections.singleton(EncodingDescriptor.JSON));
+        consumer = HttpConsumer.create(system, service, Collections.singleton(CodecType.JSON));
 
         final var basePath = service.uri();
-        pathQuery = Paths.combine(basePath, "query");
-        pathRegister = Paths.combine(basePath, "register");
-        pathUnregister = Paths.combine(basePath, "unregister");
+        pathQuery = Uris.pathOf(basePath, "query");
+        pathRegister = Uris.pathOf(basePath, "register");
+        pathUnregister = Uris.pathOf(basePath, "unregister");
     }
 
     @Override
-    public ServiceDescription service() {
+    public ServiceRecord service() {
         return consumer.service();
     }
 
@@ -50,8 +50,8 @@ public class HttpJsonServiceDiscoveryService implements ArServiceDiscoveryServic
             .send(new HttpConsumerRequest()
                 .method(POST)
                 .path(pathQuery)
-                .body(query))
-            .flatMap(response -> unwrap(response, ServiceQueryResultDto.class));
+                .body(query::encodeJson))
+            .flatMap(response -> unwrap(response, ServiceQueryResultDto::decodeJson));
     }
 
     @Override
@@ -60,13 +60,14 @@ public class HttpJsonServiceDiscoveryService implements ArServiceDiscoveryServic
             .send(new HttpConsumerRequest()
                 .method(POST)
                 .path(pathRegister)
-                .body(registration))
+                .body(registration::encodeJson))
             .flatMap(HttpJsonServices::unwrap);
     }
 
     @Override
     public Future<?> unregister(
         final String serviceName,
+        final String serviceUri,
         final String systemName,
         final String hostname,
         final int port)
@@ -76,6 +77,7 @@ public class HttpJsonServiceDiscoveryService implements ArServiceDiscoveryServic
                 .method(DELETE)
                 .path(pathUnregister)
                 .queryParameter("service_definition", serviceName)
+                .queryParameter("service_uri", serviceUri)
                 .queryParameter("system_name", systemName)
                 .queryParameter("address", hostname)
                 .queryParameter("port", Integer.toString(port)))

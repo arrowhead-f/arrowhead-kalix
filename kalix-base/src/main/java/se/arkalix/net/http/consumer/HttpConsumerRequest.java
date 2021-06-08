@@ -1,14 +1,14 @@
 package se.arkalix.net.http.consumer;
 
-import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.dto.DtoEncoding;
-import se.arkalix.dto.DtoWritable;
-import se.arkalix.net.MessageOutgoingWithImplicitEncoding;
+import se.arkalix.codec.CodecType;
+import se.arkalix.codec.MediaType;
+import se.arkalix.codec.ToCodecType;
+import se.arkalix.net.BodyOutgoing;
+import se.arkalix.net.MessageOutgoingWithImplicitCodec;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.net.http.HttpOutgoingRequest;
 import se.arkalix.net.http.HttpVersion;
-import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.client.HttpClientRequest;
 import se.arkalix.util.annotation.Internal;
 
@@ -24,7 +24,7 @@ import java.util.Optional;
  */
 @SuppressWarnings("unused")
 public class HttpConsumerRequest
-    implements HttpOutgoingRequest<HttpConsumerRequest>, MessageOutgoingWithImplicitEncoding<HttpConsumerRequest>
+    implements HttpOutgoingRequest<HttpConsumerRequest>, MessageOutgoingWithImplicitCodec<HttpConsumerRequest>
 {
     private final HttpClientRequest inner = new HttpClientRequest();
 
@@ -79,25 +79,31 @@ public class HttpConsumerRequest
     }
 
     @Override
-    public Optional<Object> body() {
+    public HttpConsumerRequest codecType(final ToCodecType codecType) {
+        inner.codecType(codecType);
+        return this;
+    }
+
+    @Override
+    public HttpConsumerRequest contentType(final MediaType mediaType) {
+        inner.contentType(mediaType);
+        return this;
+    }
+
+    @Override
+    public Optional<BodyOutgoing> body() {
         return inner.body();
+    }
+
+    @Override
+    public HttpConsumerRequest body(final BodyOutgoing body) {
+        inner.body(body);
+        return this;
     }
 
     @Override
     public HttpConsumerRequest body(final byte[] byteArray) {
         inner.body(byteArray);
-        return this;
-    }
-
-    @Override
-    public HttpConsumerRequest body(final DtoEncoding encoding, final DtoWritable data) {
-        inner.body(encoding, data);
-        return this;
-    }
-
-    @Override
-    public <L extends List<? extends DtoWritable>> HttpConsumerRequest body(final DtoEncoding encoding, final L data) {
-        inner.body(encoding, data);
         return this;
     }
 
@@ -108,8 +114,8 @@ public class HttpConsumerRequest
     }
 
     @Override
-    public HttpConsumerRequest body(final Charset charset, final String string) {
-        inner.body(charset, string);
+    public HttpConsumerRequest body(final String string, final Charset charset) {
+        inner.body(string, charset);
         return this;
     }
 
@@ -131,18 +137,20 @@ public class HttpConsumerRequest
     }
 
     @Override
-    public Optional<Charset> charset() {
-        return inner.charset();
+    public Optional<CodecType> codecType() {
+        return inner.codecType();
     }
 
     @Override
-    public Optional<EncodingDescriptor> encoding() {
-        return inner.encoding();
+    public Optional<MediaType> contentType() {
+        return inner.contentType();
     }
 
     /**
      * <i>Internal API</i>. Might change in breaking ways between patch
      * versions of the Kalix library. Use is not advised.
+     *
+     * @return Inner {@code HttpClientRequest}.
      */
     @Internal
     public HttpClientRequest unwrap() {

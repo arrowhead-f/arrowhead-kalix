@@ -6,7 +6,7 @@ import se.arkalix.ArSystem;
 import se.arkalix.core.plugin.eh.ArEventSubscriberPluginFacade;
 import se.arkalix.core.plugin.eh.EventSubscriptionHandle;
 import se.arkalix.core.plugin.eh.HttpJsonEventSubscriberPlugin;
-import se.arkalix.internal.util.concurrent.FutureCompletion;
+import se.arkalix.util.concurrent._internal.FutureCompletion;
 import se.arkalix.plugin.Plugin;
 import se.arkalix.plugin.PluginAttached;
 import se.arkalix.plugin.PluginFacade;
@@ -110,8 +110,8 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
         private EventSubscriptionHandle eventSubscriptionHandle = null;
 
         private Attached(final ArSystem system, final ArEventSubscriberPluginFacade eventSubscriber) {
-            this.system = Objects.requireNonNull(system, "Expected system");
-            this.eventSubscriber = Objects.requireNonNull(eventSubscriber, "Expected eventSubscriber");
+            this.system = Objects.requireNonNull(system, "system");
+            this.eventSubscriber = Objects.requireNonNull(eventSubscriber, "eventSubscriber");
 
             expectedEvents = new ExpectedEvents(system);
         }
@@ -302,9 +302,9 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
             final String receiverName,
             final Supplier<TrustedContractNegotiatorHandler> handlerFactory)
         {
-            this.system = Objects.requireNonNull(system, "Expected system");
-            this.receiverName = Objects.requireNonNull(receiverName, "Expected receiverName");
-            this.handlerFactory = Objects.requireNonNull(handlerFactory, "Expected handlerFactory");
+            this.system = Objects.requireNonNull(system, "system");
+            this.receiverName = Objects.requireNonNull(receiverName, "receiverName");
+            this.handlerFactory = Objects.requireNonNull(handlerFactory, "handlerFactory");
         }
 
         @Override
@@ -375,15 +375,15 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
             final long negotiationId,
             final Duration expiresIn)
         {
-            this.system = Objects.requireNonNull(system, "Expected system");
-            this.handler = Objects.requireNonNull(handler, "Expected handler");
+            this.system = Objects.requireNonNull(system, "system");
+            this.handler = Objects.requireNonNull(handler, "handler");
             this.negotiationId = negotiationId;
-            Objects.requireNonNull(expiresIn, "Expected expiresIn");
+            Objects.requireNonNull(expiresIn, "expiresIn");
 
             expirationFuture = new AtomicReference<>(Schedulers.fixed().schedule(expiresIn, this::expire));
 
-            this.offerorName = Objects.requireNonNull(offerorName, "Expected offerorName");
-            this.receiverName = Objects.requireNonNull(receiverName, "Expected receiverName");
+            this.offerorName = Objects.requireNonNull(offerorName, "offerorName");
+            this.receiverName = Objects.requireNonNull(receiverName, "receiverName");
         }
 
         private void close() {
@@ -452,7 +452,7 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                         public Future<?> accept() {
                             return system.consume()
                                 .oneUsing(HttpJsonTrustedContractNegotiationService.factory())
-                                .flatMap(service -> service.accept(new TrustedContractAcceptanceBuilder()
+                                .flatMap(service -> service.accept(new TrustedContractAcceptanceDto.Builder()
                                     .negotiationId(negotiation.id())
                                     .offerorName(negotiation.offer().offerorName())
                                     .acceptorName(negotiation.offer().receiverName())
@@ -463,7 +463,7 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
 
                         @Override
                         public Future<?> offer(final SimplifiedContractCounterOffer offer) {
-                            final var counterOffer = new TrustedContractCounterOfferBuilder()
+                            final var counterOffer = new TrustedContractCounterOfferDto.Builder()
                                 .negotiationId(negotiation.id())
                                 .offerorName(negotiation.offer().receiverName())
                                 .receiverName(negotiation.offer().offerorName())
@@ -487,7 +487,7 @@ public class HttpJsonTrustedContractNegotiatorPlugin implements ArTrustedContrac
                         public Future<?> reject() {
                             return system.consume()
                                 .oneUsing(HttpJsonTrustedContractNegotiationService.factory())
-                                .flatMap(service -> service.reject(new TrustedContractRejectionBuilder()
+                                .flatMap(service -> service.reject(new TrustedContractRejectionDto.Builder()
                                     .negotiationId(negotiation.id())
                                     .offerorName(negotiation.offer().offerorName())
                                     .rejectorName(negotiation.offer().receiverName())

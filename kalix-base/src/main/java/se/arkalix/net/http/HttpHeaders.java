@@ -1,9 +1,10 @@
 package se.arkalix.net.http;
 
-import se.arkalix.util.annotation.Internal;
-import io.netty.handler.codec.http.DefaultHttpHeaders;
-
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * A collection of HTTP header name/value pairs, where names are
@@ -21,25 +22,7 @@ import java.util.*;
  * @see <a href="https://www.iana.org/assignments/message-headers/message-headers.xhtml">IANA Message Headers</a>
  */
 @SuppressWarnings({"unused", "UnusedReturnValue"})
-public class HttpHeaders {
-    private final io.netty.handler.codec.http.HttpHeaders headers;
-
-    /**
-     * Creates new empty collection of {@code HttpHeaders}.
-     */
-    public HttpHeaders() {
-        headers = new DefaultHttpHeaders();
-    }
-
-    /**
-     * <i>Internal API</i>. Might change in breaking ways between patch
-     * versions of the Kalix library. Use is not advised.
-     */
-    @Internal
-    public HttpHeaders(final io.netty.handler.codec.http.HttpHeaders headers) {
-        this.headers = headers;
-    }
-
+public interface HttpHeaders {
     /**
      * Acquires value of first header associated with given name, if any such
      * exists in this collection.
@@ -47,8 +30,38 @@ public class HttpHeaders {
      * @param name Name of header. Not case sensitive. Prefer lowercase.
      * @return Desired value, if available.
      */
-    public Optional<String> get(final CharSequence name) {
-        return Optional.ofNullable(headers.get(name));
+    default Optional<String> get(final CharSequence name) {
+        final var values = getAll(name);
+        if (values.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(values.get(0));
+    }
+
+    /**
+     * Acquires value of first header associated with given name, if any such
+     * exists in this collection, and then attempts to transform it using
+     * given mapper function.
+     *
+     * @param <T>    Type of value returned by {@code mapper}.
+     * @param name   Name of header. Not case sensitive. Prefer lowercase.
+     * @param mapper Function to apply to header.
+     * @return Desired value, if available, as returned by {@code mapper}.
+     * @throws HttpHeaderInvalid If value exists but mapper threw any {@link
+     *                           Exception}.
+     */
+    default <T> Optional<T> getAs(final CharSequence name, final Function<String, T> mapper) {
+        String value = null;
+        try {
+            value = get(name).orElse(null);
+            if (value == null || value.isBlank()) {
+                return Optional.empty();
+            }
+            return Optional.ofNullable(mapper.apply(value));
+        }
+        catch (final Exception exception) {
+            throw new HttpHeaderInvalid(name.toString(), value, exception);
+        }
     }
 
     /**
@@ -58,11 +71,11 @@ public class HttpHeaders {
      *
      * @param name Name of header. Not case sensitive. Prefer lowercase.
      * @return Desired value, if available, as integer.
-     * @throws NumberFormatException If value exists and is not a properly
-     *                               formatted number.
+     * @throws HttpHeaderInvalid If value exists but is not a properly
+     *                           formatted number.
      */
-    public Optional<Integer> getAsInteger(final CharSequence name) {
-        return Optional.ofNullable(headers.getInt(name));
+    default Optional<Integer> getAsInteger(final CharSequence name) {
+        return getAs(name, Integer::parseInt);
     }
 
     /**
@@ -72,9 +85,7 @@ public class HttpHeaders {
      *             Note that header names are not case sensitive.
      * @return List of values, which may be empty.
      */
-    public List<String> getAll(final CharSequence name) {
-        return headers.getAll(name);
-    }
+    List<String> getAll(final CharSequence name);
 
     /**
      * Adds header to this collection without replacing any existing header
@@ -85,9 +96,8 @@ public class HttpHeaders {
      * @return This collection.
      * @see <a href="https://tools.ietf.org/html/rfc7230#section-3.2.2">RFC 7230, Section 3.2.2</a>
      */
-    public HttpHeaders add(final CharSequence name, final CharSequence value) {
-        headers.add(name, value);
-        return this;
+    default HttpHeaders add(final CharSequence name, final CharSequence value) {
+        return add(name, Collections.singletonList(value.toString()));
     }
 
     /**
@@ -107,10 +117,7 @@ public class HttpHeaders {
      * @return This collection.
      * @see #add(CharSequence, CharSequence)
      */
-    public HttpHeaders add(final CharSequence name, final Iterable<String> values) {
-        headers.add(name, values);
-        return this;
-    }
+    HttpHeaders add(final CharSequence name, final Iterable<String> values);
 
     /**
      * Adds headers, all with the given name, to this collection without
@@ -129,7 +136,7 @@ public class HttpHeaders {
      * @return This collection.
      * @see #add(CharSequence, CharSequence)
      */
-    public HttpHeaders add(final CharSequence name, final String... values) {
+    default HttpHeaders add(final CharSequence name, final String... values) {
         return add(name, Arrays.asList(values));
     }
 
@@ -141,9 +148,7 @@ public class HttpHeaders {
      * @return {@code true} only if this collection contains at least one
      * header matching given {@code name}.
      */
-    public boolean contains(final CharSequence name) {
-        return headers.contains(name);
-    }
+    boolean contains(final CharSequence name);
 
     /**
      * Sets header, replacing all such previously set with the same name.
@@ -152,9 +157,8 @@ public class HttpHeaders {
      * @param value New header value.
      * @return This collection.
      */
-    public HttpHeaders set(final CharSequence name, final CharSequence value) {
-        headers.set(name, value);
-        return this;
+    default HttpHeaders set(final CharSequence name, final CharSequence value) {
+        return set(name, Collections.singletonList(value.toString()));
     }
 
     /**
@@ -175,10 +179,7 @@ public class HttpHeaders {
      * @return This collection.
      * @see #add(CharSequence, CharSequence)
      */
-    public HttpHeaders set(final CharSequence name, final Iterable<String> values) {
-        headers.set(name, values);
-        return this;
-    }
+    HttpHeaders set(final CharSequence name, final Iterable<String> values);
 
     /**
      * Removes any existing headers with the given name and then adds headers,
@@ -198,7 +199,7 @@ public class HttpHeaders {
      * @return This collection.
      * @see #add(CharSequence, CharSequence)
      */
-    public HttpHeaders set(final CharSequence name, final String... values) {
+    default HttpHeaders set(final CharSequence name, final String... values) {
         return set(name, Arrays.asList(values));
     }
 
@@ -209,9 +210,9 @@ public class HttpHeaders {
      * @param value New header value.
      * @return This collection.
      */
-    public HttpHeaders setIfEmpty(final CharSequence name, final CharSequence value) {
-        if (!headers.contains(name)) {
-            headers.set(name, value);
+    default HttpHeaders setIfEmpty(final CharSequence name, final CharSequence value) {
+        if (!contains(name)) {
+            set(name, value);
         }
         return this;
     }
@@ -235,9 +236,9 @@ public class HttpHeaders {
      * @return This collection.
      * @see #add(CharSequence, CharSequence)
      */
-    public HttpHeaders setIfEmpty(final CharSequence name, final Iterable<String> values) {
-        if (!headers.contains(name)) {
-            headers.set(name, values);
+    default HttpHeaders setIfEmpty(final CharSequence name, final Iterable<String> values) {
+        if (!contains(name)) {
+            set(name, values);
         }
         return this;
     }
@@ -261,9 +262,9 @@ public class HttpHeaders {
      * @return This collection.
      * @see #add(CharSequence, CharSequence)
      */
-    public HttpHeaders setIfEmpty(final CharSequence name, final String... values) {
-        if (!headers.contains(name)) {
-            headers.set(name, Arrays.asList(values));
+    default HttpHeaders setIfEmpty(final CharSequence name, final String... values) {
+        if (!contains(name)) {
+            set(name, Arrays.asList(values));
         }
         return this;
     }
@@ -274,27 +275,12 @@ public class HttpHeaders {
      * @param name Name of pair to remove.
      * @return This collection.
      */
-    public HttpHeaders remove(final CharSequence name) {
-        headers.remove(name);
-        return this;
-    }
+    HttpHeaders remove(final CharSequence name);
 
     /**
      * Removes all headers from this collection.
      *
      * @return This collection.
      */
-    public HttpHeaders clear() {
-        headers.clear();
-        return this;
-    }
-
-    /**
-     * <i>Internal API</i>. Might change in breaking ways between patch
-     * versions of the Kalix library. Use is not advised.
-     */
-    @Internal
-    public io.netty.handler.codec.http.HttpHeaders unwrap() {
-        return headers;
-    }
+    HttpHeaders clear();
 }

@@ -5,11 +5,11 @@ import org.slf4j.LoggerFactory;
 import se.arkalix.ArConsumer;
 import se.arkalix.ArConsumerFactory;
 import se.arkalix.ArSystem;
-import se.arkalix.description.ServiceDescription;
-import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.descriptor.TransportDescriptor;
-import se.arkalix.internal.core.plugin.HttpJsonServices;
-import se.arkalix.internal.core.plugin.Paths;
+import se.arkalix.ServiceRecord;
+import se.arkalix.core.plugin._internal.HttpJsonServices;
+import se.arkalix.codec.CodecType;
+import se.arkalix.net.ProtocolType;
+import se.arkalix.net.Uris;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
 import se.arkalix.util.concurrent.Future;
@@ -19,8 +19,8 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 
-import static se.arkalix.descriptor.EncodingDescriptor.JSON;
-import static se.arkalix.descriptor.TransportDescriptor.HTTP;
+import static se.arkalix.codec.CodecType.JSON;
+import static se.arkalix.net.ProtocolType.HTTP;
 import static se.arkalix.net.http.HttpMethod.POST;
 
 /**
@@ -38,12 +38,12 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
     private final String pathReject;
 
     private HttpJsonTrustedContractNegotiationService(final HttpConsumer consumer) {
-        this.consumer = Objects.requireNonNull(consumer, "Expected consumer");
+        this.consumer = Objects.requireNonNull(consumer, "consumer");
         final var basePath = consumer.service().uri();
-        pathAccept = Paths.combine(basePath, "acceptances");
-        pathCounterOffer = Paths.combine(basePath, "counter-offers");
-        pathOffer = Paths.combine(basePath, "offers");
-        pathReject = Paths.combine(basePath, "rejections");
+        pathAccept = Uris.pathOf(basePath, "acceptances");
+        pathCounterOffer = Uris.pathOf(basePath, "counter-offers");
+        pathOffer = Uris.pathOf(basePath, "offers");
+        pathReject = Uris.pathOf(basePath, "rejections");
     }
 
     /**
@@ -54,7 +54,7 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
     }
 
     @Override
-    public ServiceDescription service() {
+    public ServiceRecord service() {
         return consumer.service();
     }
 
@@ -66,7 +66,7 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
         return consumer.send(new HttpConsumerRequest()
             .method(POST)
             .path(pathAccept)
-            .body(acceptance))
+            .body(acceptance::encodeJson))
             .flatMap(result -> {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Sent acceptance resulted in {}", result);
@@ -83,7 +83,7 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
         return consumer.send(new HttpConsumerRequest()
             .method(POST)
             .path(pathOffer)
-            .body(offer))
+            .body(offer::encodeJson))
             .flatMapResult(result -> {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Sent offer resulted in {}", result);
@@ -131,7 +131,7 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
         return consumer.send(new HttpConsumerRequest()
             .method(POST)
             .path(pathCounterOffer)
-            .body(counterOffer))
+            .body(counterOffer::encodeJson))
             .flatMap(result -> {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Sent counter-offer resulted in {}", result);
@@ -148,7 +148,7 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
         return consumer.send(new HttpConsumerRequest()
             .method(POST)
             .path(pathReject)
-            .body(rejection))
+            .body(rejection::encodeJson))
             .flatMap(result -> {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Sent rejection resulted in {}", result);
@@ -164,22 +164,22 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
         }
 
         @Override
-        public Collection<TransportDescriptor> serviceTransports() {
+        public Collection<ProtocolType> serviceProtocolTypes() {
             return Collections.singleton(HTTP);
         }
 
         @Override
-        public Collection<EncodingDescriptor> serviceEncodings() {
+        public Collection<CodecType> serviceCodecTypes() {
             return Collections.singleton(JSON);
         }
 
         @Override
         public HttpJsonTrustedContractNegotiationService create(
             final ArSystem system,
-            final ServiceDescription service,
-            final Collection<EncodingDescriptor> encodings
+            final ServiceRecord service,
+            final Collection<CodecType> codecTypes
         ) {
-            final var consumer = HttpConsumer.create(system, service, encodings);
+            final var consumer = HttpConsumer.create(system, service, codecTypes);
             return new HttpJsonTrustedContractNegotiationService(consumer);
         }
     }

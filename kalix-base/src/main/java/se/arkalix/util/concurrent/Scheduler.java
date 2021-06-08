@@ -46,6 +46,7 @@ public interface Scheduler {
      * Executes given {@code task} as soon as an execution resource i
      * available.
      *
+     * @param <V>  Type returned by {@code task}.
      * @param task Task to execute.
      * @return {@code Future} completed with the {@code task} return value. If
      * the task throws an exception while being executed, it is rejected with
@@ -61,7 +62,10 @@ public interface Scheduler {
      * Executes given {@code task} as soon as an execution resource is
      * available.
      *
-     * @param task Task to execute.
+     * @param <V>    Type of {@code result}.
+     * @param task   Task to execute.
+     * @param result Result to provide through returned {@link Future} after
+     *               {@code task} completes successfully.
      * @return {@code Future} completed with {@code result} when the given
      * {@code task} completes. If the task throws an exception while being
      * executed, it is rejected with the same exception. If the scheduler
@@ -92,6 +96,7 @@ public interface Scheduler {
      * Executes given {@code callable} no sooner than indicated by given
      * {@code delay}.
      *
+     * @param <V>      Type of result returned by {@code collable}.
      * @param delay    Delay after which to execute given {@code callable}.
      * @param callable Callable to execute.
      * @return {@code Future} completed with {@code null} when the given
@@ -184,7 +189,6 @@ public interface Scheduler {
      *
      * @param listener Listener to no longer be notified of any impending
      *                 scheduler termination.
-     * @apiNote Thread safe.
      */
     @ThreadSafe
     void removeShutdownListener(final SchedulerShutdownListener listener);

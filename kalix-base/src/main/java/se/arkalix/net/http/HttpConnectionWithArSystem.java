@@ -1,7 +1,7 @@
 package se.arkalix.net.http;
 
 import se.arkalix.ArSystem;
-import se.arkalix.description.SystemIdentityDescription;
+import se.arkalix.SystemRecordWithIdentity;
 import se.arkalix.security.SecurityDisabled;
 import se.arkalix.security.identity.OwnedIdentity;
 import se.arkalix.security.identity.SystemIdentity;
@@ -19,9 +19,10 @@ public interface HttpConnectionWithArSystem extends HttpConnection {
     }
 
     /**
-     * Gets the Arrowhead system identity of the connected service provider.
+     * Gets the Arrowhead system identity of the system at the remote end of
+     * this connection.
      *
-     * @return System identity of service provider.
+     * @return Remote system identity.
      * @throws SecurityDisabled If this connection is not secure.
      */
     SystemIdentity remoteIdentity();
@@ -30,12 +31,12 @@ public interface HttpConnectionWithArSystem extends HttpConnection {
      * Gets a description of the Arrowhead system at the remote end of this
      * connection.
      *
-     * @return Provider system identity description.
+     * @return Remote system record.
      */
-    default SystemIdentityDescription remoteSystem() {
+    default SystemRecordWithIdentity remoteSystem() {
         return isSecure()
-            ? SystemIdentityDescription.from(remoteIdentity(), remoteSocketAddress())
-            : SystemIdentityDescription.from("<" + remoteSocketAddress() + ">", remoteSocketAddress());
+            ? SystemRecordWithIdentity.from(remoteIdentity(), remoteSocketAddress())
+            : SystemRecordWithIdentity.from("<" + remoteSocketAddress() + ">", remoteSocketAddress(), null);
     }
 
     @Override
@@ -44,10 +45,10 @@ public interface HttpConnectionWithArSystem extends HttpConnection {
     }
 
     /**
-     * Gets the Arrowhead system identity of the system that established this
-     * connection.
+     * Gets the Arrowhead system identity of the system at the local end of
+     * this connection.
      *
-     * @return System identity of service consumer.
+     * @return Local system identity.
      * @throws SecurityDisabled If this connection is not secure.
      */
     default OwnedIdentity localIdentity() {
@@ -55,9 +56,9 @@ public interface HttpConnectionWithArSystem extends HttpConnection {
     }
 
     /**
-     * Gets the Arrowhead system that established this connection.
+     * Gets the Arrowhead system at the local end of this connection.
      *
-     * @return Arrowhead system.
+     * @return Local Arrowhead system.
      */
     ArSystem localSystem();
 }

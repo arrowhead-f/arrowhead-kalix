@@ -1,13 +1,9 @@
 package se.arkalix;
 
-import se.arkalix.description.ServiceDescription;
-import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.descriptor.TransportDescriptor;
+import se.arkalix.codec.CodecType;
+import se.arkalix.net.ProtocolType;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * A factory useful for creating {@link ArConsumer} instances.
@@ -26,19 +22,19 @@ public interface ArConsumerFactory<C extends ArConsumer> {
     }
 
     /**
-     * @return Application-level transport protocols out of which at least one
-     * must be supported by any services consumed by any consumers created by
-     * this factory.
-     */
-    Collection<TransportDescriptor> serviceTransports();
-
-    /**
-     * @return Message payload encodings out of which at least one must be
+     * @return Application-level protocols out of which at least one must be
      * supported by any services consumed by any consumers created by this
      * factory.
      */
-    default Collection<EncodingDescriptor> serviceEncodings() {
-        return EncodingDescriptor.allWithDtoSupport();
+    Collection<ProtocolType> serviceProtocolTypes();
+
+    /**
+     * @return Message payload codecs out of which at least one must be
+     * supported by any services consumed by any consumers created by this
+     * factory.
+     */
+    default Collection<CodecType> serviceCodecTypes() {
+        return List.of(CodecType.JSON); // TODO: Make configurable, somehow?
     }
 
     /**
@@ -81,21 +77,21 @@ public interface ArConsumerFactory<C extends ArConsumer> {
      * @param service Description of service to be consumed.
      * @return Created {@link ArConsumer} instance.
      */
-    default C create(ArSystem system, ServiceDescription service) {
-        return create(system, service, serviceEncodings());
+    default C create(ArSystem system, ServiceRecord service) {
+        return create(system, service, serviceCodecTypes());
     }
 
     /**
      * Creates new {@link ArConsumer} from given {@code system}, {@code
-     * service} description and {@code encodings}.
+     * service} description and {@code codecs}.
      *
      * @param system    System to consume {@code service}.
      * @param service   Description of service to be consumed.
-     * @param encodings Message payload encodings explicitly designated as
-     *                  supported. If {@link #serviceEncodings()} returns a
-     *                  non- empty result, these encodings must be a subset of
-     *                  the encodings returned by that method.
+     * @param codecTypes Message payload codecs explicitly designated as
+     *                  supported. If {@link #serviceCodecTypes()} returns a
+     *                  non- empty result, these codecs must be a subset of
+     *                  the codecs returned by that method.
      * @return Created {@link ArConsumer} instance.
      */
-    C create(ArSystem system, ServiceDescription service, Collection<EncodingDescriptor> encodings);
+    C create(ArSystem system, ServiceRecord service, Collection<CodecType> codecTypes);
 }

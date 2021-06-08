@@ -5,7 +5,7 @@
 `ar:kalix` is a set of Java libraries designed to simplify the creation of
 Arrowhead Framework compliant industrial IoT systems. The libraries provide a
 platform for modern asynchronous I/O, utilities for seamless message
-encoding/decoding, robust abstractions for creating and communicating with
+codecType/decoding, robust abstractions for creating and communicating with
 Arrowhead-compliant systems, as well as a plugin-system that makes it
 convenient to reuse service integrations.
 

@@ -3,7 +3,7 @@ package se.arkalix.core.plugin.sr;
 import se.arkalix.ArConsumer;
 import se.arkalix.ArSystem;
 import se.arkalix.core.plugin.ServiceDetails;
-import se.arkalix.description.ServiceDescription;
+import se.arkalix.ServiceRecord;
 import se.arkalix.query.ServiceQuery;
 import se.arkalix.util.concurrent.Future;
 
@@ -31,7 +31,7 @@ public interface ArServiceDiscoveryService extends ArConsumer {
      * @return Future completed with the results of the query, if no errors
      * occurred.
      */
-    default Future<Collection<ServiceDescription>> query(final ServiceQuery query) {
+    default Future<Collection<ServiceRecord>> query(final ServiceQuery query) {
         return query(se.arkalix.core.plugin.sr.ServiceQuery.from(query))
             .map(result -> result.services().stream()
                 .map(ServiceDetails::toServiceDescription)
@@ -50,35 +50,37 @@ public interface ArServiceDiscoveryService extends ArConsumer {
     /**
      * Registers a service.
      *
-     * @param serviceDescription Description of service to register.
+     * @param serviceRecord Description of service to register.
      * @return Future completed when the registration attempt is known to have
      * succeeded or failed.
      */
-    default Future<?> register(final ServiceDescription serviceDescription) {
-        return register(ServiceRegistration.from(serviceDescription));
+    default Future<?> register(final ServiceRecord serviceRecord) {
+        return register(ServiceRegistration.from(serviceRecord));
     }
 
     /**
      * Unregisters a service that is currently registered.
      *
      * @param serviceName Name of service of existing entry.
+     * @param serviceUri  URI of service of existing entry.
      * @param systemName  Name of system of existing entry.
      * @param hostname    Address/hostname of existing entry.
      * @param port        Port number of existing entry.
      * @return Future completed when unregistration is known to have succeeded
      * or failed.
      */
-    Future<?> unregister(String serviceName, String systemName, String hostname, int port);
+    Future<?> unregister(String serviceName, String serviceUri, String systemName, String hostname, int port);
 
     /**
      * Unregisters a service that is currently registered.
      *
      * @param serviceName Name of service of existing entry.
+     * @param serviceUri  URI of service of existing entry.
      * @param system      System of existing entry.
      * @return Future completed when unregistration is known to have succeeded
      * or failed.
      */
-    default Future<?> unregister(final String serviceName, final ArSystem system) {
-        return unregister(serviceName, system.name(), system.socketAddress().getHostString(), system.port());
+    default Future<?> unregister(final String serviceName, final String serviceUri, final ArSystem system) {
+        return unregister(serviceName, serviceUri, system.name(), system.socketAddress().getHostString(), system.port());
     }
 }

@@ -1,7 +1,10 @@
 package se.arkalix.net.http;
 
-import se.arkalix.dto.DtoEncoding;
-import se.arkalix.dto.DtoReadable;
+import se.arkalix.codec.*;
+import se.arkalix.net.MessageCodecMisspecified;
+import se.arkalix.net.MessageCodecUnspecified;
+import se.arkalix.net.MessageCodecUnsupported;
+import se.arkalix.net.MessageHasTrailingData;
 import se.arkalix.util.concurrent.Future;
 
 import java.util.List;
@@ -14,89 +17,171 @@ import java.util.List;
 @SuppressWarnings("unused")
 public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<?>> extends HttpIncoming<Self> {
     /**
-     * Retrieves the body of this response, if its status code is in the range
-     * 200-299.
+     * Collects and then converts the incoming message body using the provided
+     * {@code decoder}, if its status code of this message is between 200 and
+     * 299.
      * <p>
-     * If the body is to be decoded, an attempt will be made to automatically
-     * resolve a supported DTO encoding. If the attempt fails an exception is
-     * thrown.
+     * Calling this method consumes the body associated with this message. Any
+     * further attempts to consume the body will cause exceptions to be thrown.
      *
-     * @param class_ Class to decode incoming HTTP body into.
-     * @param <R>    Type of {@code class_}.
-     * @return Future completed immediately with an exception if the status
-     * code is outside the success range, or when the incoming HTTP body has
-     * been fully received and decoded into an instance of {@code class_}.
-     * @throws se.arkalix.net.MessageException If resolving a default encoding
-     *                                         failed.
-     * @throws IllegalStateException           If the body has already been
-     *                                         requested.
+     * @param <T>     Type produced by given {@code decoder}, if successful.
+     * @param decoder Function to use for decoding the message body.
+     * @return Future completed when the incoming message body has been fully
+     * received and decoded.
+     * @throws DecoderException       If the body does not conform to the codec
+     *                                of the given {@code decoder}.
+     * @throws IllegalStateException  If the body has already been consumed.
+     * @throws MessageHasTrailingData If trailing data is discovered in the
+     *                                message body.
+     * @throws NullPointerException   If {@code decoder} is {@code null}.
      */
-    default <R extends DtoReadable> Future<R> bodyAsIfSuccess(final Class<R> class_) {
+    default <T> Future<T> bodyToIfSuccess(final Decoder<T> decoder) {
         if (status().isSuccess()) {
-            return bodyAs(class_);
+            return bodyTo(decoder);
         }
         return Future.failure(reject());
     }
 
     /**
-     * Retrieves the body of this response, if its status code is in the range
-     * 200-299.
-     *
-     * @param encoding Encoding to use if decoding incoming HTTP body.
-     * @param class_   Class to decode incoming HTTP body into.
-     * @param <R>      Type of {@code class_}.
-     * @return Future completed immediately with an exception if the status
-     * code is outside the success range, or when the incoming HTTP body has
-     * been fully received and decoded into an instance of {@code class_}.
-     * @throws IllegalStateException If the body has already been requested.
-     */
-    default <R extends DtoReadable> Future<R> bodyAsIfSuccess(final DtoEncoding encoding, final Class<R> class_) {
-        if (status().isSuccess()) {
-            return bodyAs(encoding, class_);
-        }
-        return Future.failure(reject());
-    }
-
-    /**
-     * Retrieves the body of this response as a list of instances of the
-     * specified class, if its status code is in the range 200-299.
+     * If the status code of this message is between 200 and 299, this method
+     * collects and then converts the incoming message body using the provided
+     * {@code decoder}, which will attempt to select an appropriate decoder
+     * function from any {@link #codecType() codec} specified in the message.
      * <p>
-     * If the body is to be decoded, an attempt will be made to automatically
-     * resolve a supported DTO encoding. If the attempt fails an exception is
-     * thrown.
+     * Calling this method consumes the body associated with this message. Any
+     * further attempts to consume the body will cause exceptions to be thrown.
      *
-     * @param class_ Class to decode incoming HTTP body into.
-     * @param <R>    Type of {@code class_}.
-     * @return Future completed immediately with an exception if the status
-     * code is outside the success range, or when the incoming HTTP body has
-     * been fully received and decoded into an instance of {@code class_}.
-     * @throws se.arkalix.net.MessageException If resolving a default encoding
-     *                                         failed.
-     * @throws IllegalStateException           If the body has already been
-     *                                         requested.
+     * @param <T>     Type produced by given {@code decoder}, if
+     *                successful.
+     * @param decoder Function to use for decoding the message body.
+     * @return Future completed when the incoming message body has been fully
+     * received and decoded.
+     * @throws DecoderException         If the body does not conform to the
+     *                                  codec it states.
+     * @throws IllegalStateException    If the body has already been consumed.
+     * @throws MessageCodecMisspecified If a codec is specified in the
+     *                                  message, but it cannot be interpreted.
+     * @throws MessageCodecUnspecified  If no codec is specified in this
+     *                                  message.
+     * @throws MessageCodecUnsupported  If the codec specified in the
+     *                                  message is not supported by the given
+     *                                  {@code decoder}.
+     * @throws MessageHasTrailingData   If trailing data is discovered in the
+     *                                  message body.
+     * @throws NullPointerException     If {@code decoder} is {@code null}.
      */
-    default <R extends DtoReadable> Future<List<R>> bodyAsListIfSuccess(final Class<R> class_) {
+    default <T> Future<T> bodyToIfSuccess(final MultiDecoder<T> decoder) {
         if (status().isSuccess()) {
-            return bodyAsList(class_);
+            return bodyTo(decoder);
         }
         return Future.failure(reject());
     }
 
     /**
-     * Retrieves the body of this response as a list of instances of the
-     * specified class, if its status code is in the range 200-299.
+     * If the status code of this message is between 200 and 299, this method
+     * collects and then converts the incoming message body using the provided
+     * {@code decoder}, which will attempt to select an appropriate decoder
+     * function from any {@link #codecType() codec} specified in the message.
+     * <p>
+     * Calling this method consumes the body associated with this message. Any
+     * further attempts to consume the body will cause exceptions to be thrown.
      *
-     * @param encoding Encoding to use if decoding incoming HTTP body.
-     * @param class_   Class to decode incoming HTTP body into.
-     * @param <R>      Type of {@code class_}.
-     * @return Future completed immediately with an exception if the status
-     * code is outside the success range, or when the incoming HTTP body has
-     * been fully received and decoded into an instance of {@code class_}.
-     * @throws IllegalStateException If the body has already been requested.
+     * @param <T>         Type produced by given {@code decoder}, if
+     *                    successful.
+     * @param decoder     Function to use for decoding the message body.
+     * @param toCodecType Codec to use when invoking {@code decoder}.
+     * @return Future completed when the incoming message body has been fully
+     * received and decoded.
+     * @throws DecoderException        If the body does not conform to the
+     *                                 codec it states.
+     * @throws IllegalStateException   If the body has already been consumed.
+     * @throws MessageCodecUnsupported If the given codec is not supported by
+     *                                 the given {@code decoder}.
+     * @throws MessageHasTrailingData  If trailing data is discovered in the
+     *                                 message body.
+     * @throws NullPointerException    If {@code decoder} or {@code toCodecType}
+     *                                 is {@code null}.
      */
-    default <R extends DtoReadable> Future<List<R>> bodyAsListIfSuccess(final DtoEncoding encoding, final Class<R> class_) {
+    default <T> Future<T> bodyToIfSuccess(final MultiDecoder<T> decoder, final ToCodecType toCodecType) {
         if (status().isSuccess()) {
-            return bodyAsList(encoding, class_);
+            return bodyTo(decoder, toCodecType);
+        }
+        return Future.failure(reject());
+    }
+
+    /**
+     * If the status code of this message is between 200 and 299, this method
+     * collects and then converts the individual list items of the incoming
+     * message body using the provided {@code decoder}, which will attempt to
+     * select an appropriate decoder function from any {@link #codecType()
+     * codec} specified in the message.
+     * <p>
+     * This method can only succeed for codecs that both support anonymous
+     * lists and are explicitly listed as supported by {@link
+     * MultiDecoderForLists#supportedEncodings()}.
+     * <p>
+     * Calling this method consumes the body associated with this message. Any
+     * further attempts to consume the body will cause exceptions to be thrown.
+     *
+     * @param <T>     Type produced by given {@code decoder}, if successful.
+     * @param decoder Function to use for decoding the message body.
+     * @return Future completed when the incoming message body has been fully
+     * received and decoded.
+     * @throws DecoderException         If the body does not conform to the
+     *                                  codec it states.
+     * @throws IllegalStateException    If the body has already been consumed.
+     * @throws MessageCodecMisspecified If a codec is specified in the
+     *                                  message, but it cannot be interpreted.
+     * @throws MessageCodecUnspecified  If no codec is specified in this
+     *                                  message.
+     * @throws MessageCodecUnsupported  If the codec specified in the message
+     *                                  is not supported by the given {@code
+     *                                  decoder}.
+     * @throws MessageHasTrailingData   If trailing data is discovered in the
+     *                                  message body.
+     * @throws NullPointerException     If {@code decoder} is {@code null}.
+     */
+    default <T> Future<List<T>> bodyListItemsToIfSuccess(final MultiDecoder<T> decoder) {
+        if (status().isSuccess()) {
+            return bodyListItemsTo(decoder);
+        }
+        return Future.failure(reject());
+    }
+
+    /**
+     * If the status code of this message is between 200 and 299, this method
+     * collects and then converts the individual list items of the incoming
+     * message body using the provided {@code decoder}, which will attempt to
+     * select a decoder function named by {@code toCodecType}.
+     * <p>
+     * This method can only succeed for codecs that both support anonymous
+     * lists and are explicitly listed as supported by {@link
+     * MultiDecoderForLists#supportedEncodings()}.
+     * <p>
+     * Calling this method consumes the body associated with this message. Any
+     * further attempts to consume the body will cause exceptions to be thrown.
+     *
+     * @param <T>         Type produced by given {@code decoder}, if successful.
+     * @param decoder     Function to use for decoding the message body.
+     * @param toCodecType Codec to use when invoking {@code decoder}.
+     * @return Future completed when the incoming message body has been fully
+     * received and decoded.
+     * @throws DecoderException        If the body does not conform to the
+     *                                 codec it states.
+     * @throws IllegalStateException   If the body has already been consumed.
+     * @throws MessageCodecUnsupported If the given codec is not supported by
+     *                                 the given {@code decoder}.
+     * @throws MessageHasTrailingData  If trailing data is discovered in the
+     *                                 message body.
+     * @throws NullPointerException    If {@code decoder} or {@code
+     *                                 toCodecType} is {@code null}.
+     */
+    default <T> Future<List<T>> bodyListItemsToIfSuccess(
+        final MultiDecoder<T> decoder,
+        final ToCodecType toCodecType
+    ) {
+        if (status().isSuccess()) {
+            return bodyListItemsTo(decoder, toCodecType);
         }
         return Future.failure(reject());
     }
@@ -148,8 +233,8 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
      * This method is primarily intended to be used when receiving messages
      * that contain unexpected status codes and no response body is expected.
      * If a response body <i>is</i> expected, please use
-     * {@link #bodyAsIfSuccess(DtoEncoding, Class)} instead. If the
-     * reason behind the rejection requires more explanation, please use
+     * {@link #bodyToIfSuccess(MultiDecoder)} instead. If the reason behind
+     * the rejection requires more explanation, please use
      * {@link #rejectIfNotSuccess(String)} instead.
      *
      * @return Future completed with exception only if this response contains a
@@ -169,7 +254,7 @@ public interface HttpIncomingResponse<Self, Request extends HttpOutgoingRequest<
      * This method is primarily intended to be used when receiving messages
      * that contain unexpected status codes and no response body is expected.
      * If a response body <i>is</i> expected, please use
-     * {@link #bodyAsIfSuccess(DtoEncoding, Class)} instead.
+     * {@link #bodyToIfSuccess(MultiDecoder)} instead.
      *
      * @param reason Description of what expectations this request fails to
      *               fulfill.

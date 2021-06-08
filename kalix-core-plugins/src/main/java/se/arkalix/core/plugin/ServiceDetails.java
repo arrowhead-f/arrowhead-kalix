@@ -1,20 +1,21 @@
 package se.arkalix.core.plugin;
 
+import se.arkalix.security.access.AccessPolicyType;
 import se.arkalix.core.plugin.sr.ServiceQueryResult;
-import se.arkalix.description.ServiceDescription;
-import se.arkalix.descriptor.SecurityDescriptor;
+import se.arkalix.ServiceRecord;
+import se.arkalix.ServiceInterface;
 import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoToString;
-import se.arkalix.dto.json.JsonName;
-import se.arkalix.internal.core.plugin.Instants;
+import se.arkalix.dto.json.DtoJsonName;
+import se.arkalix.core.plugin._internal.Instants;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static se.arkalix.dto.DtoEncoding.JSON;
+import static se.arkalix.dto.DtoCodec.JSON;
 
 /**
  * A service definition, as it appears in a {@link ServiceQueryResult}.
@@ -25,63 +26,77 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 public interface ServiceDetails {
     /**
      * Service name.
+     *
+     * @return Service name.
      */
-    @JsonName("serviceDefinition")
+    @DtoJsonName("serviceDefinition")
     ServiceName name();
 
     /**
      * Service provider.
+     *
+     * @return Service provider details.
      */
     SystemDetails provider();
 
     /**
      * Service qualifier, also referred to as service URI.
      * <p>
-     * The significance of this value depends on the application-level
-     * transport protocol employed by the service. If, for example, HTTP is
-     * used, then this is a base path.
+     * The significance of this value depends on the network protocol employed
+     * by the service. If, for example, HTTP is used, then this is a base path.
+     *
+     * @return Service URI.
      */
-    @JsonName("serviceUri")
+    @DtoJsonName("serviceUri")
     String uri();
 
     /**
      * The date and time at which the service definition entry expires, if
      * ever.
+     *
+     * @return Instant at which this service record expires.
      */
-    @JsonName("endOfValidity")
+    @DtoJsonName("endOfValidity")
     Optional<String> expiresAt();
 
     /**
      * The security/authentication mode supported by the service.
+     *
+     * @return Access policy type supported by the service.
      */
-    @JsonName("secure")
-    SecurityDescriptor security();
+    @DtoJsonName("secure")
+    AccessPolicyType security();
 
     /**
      * Arbitrary service metadata.
+     *
+     * @return Service metadata map.
      */
     Map<String, String> metadata();
 
     /**
      * Service version.
+     *
+     * @return Service version.
      */
     int version();
 
     /**
      * List of supported network interface triplets.
      *
-     * @see se.arkalix.descriptor.InterfaceDescriptor InterfaceDescriptor
+     * @return List of supported network interface triplets.
+     * @see ServiceInterface InterfaceDescriptor
      */
     List<InterfaceName> interfaces();
 
     /**
-     * Converts this objects into a {@link ServiceDescription}.
+     * Converts this objects into a {@link ServiceRecord}.
      *
-     * @return New {@link ServiceDescription}.
+     * @return New {@link ServiceRecord}.
      * @throws RuntimeException If the type of public key held by {@link
      *                          #provider()}, if any, is not supported.
      */
-    default ServiceDescription toServiceDescription() {
+    default ServiceRecord toServiceDescription() {
         final var provider = provider().toSystemDescription();
         if (!provider.isSecure() && security().isSecure()) {
             throw new IllegalStateException("The description of the \"" +
@@ -89,14 +104,14 @@ public interface ServiceDetails {
                 "a secure transport, but its provider \"" + provider.name() +
                 "\" does not specify a public key");
         }
-        return new ServiceDescription.Builder()
+        return new ServiceRecord.Builder()
             .name(name().name())
             .provider(provider)
             .uri(uri())
             .expiresAt(expiresAt()
                 .map(Instants::fromAitiaDateTimeString)
                 .orElse(null))
-            .security(security())
+            .accessPolicyType(security())
             .metadata(metadata())
             .version(version())
             .interfaces(interfaces()
@@ -106,18 +121,18 @@ public interface ServiceDetails {
             .build();
     }
 
-    static ServiceDetailsDto from(final ServiceDescription description) {
-        return new ServiceDetailsBuilder()
-            .name(new ServiceNameBuilder().name(description.name()).build())
+    static ServiceDetailsDto from(final ServiceRecord description) {
+        return new ServiceDetailsDto.Builder()
+            .name(new ServiceNameDto.Builder().name(description.name()).build())
             .provider(SystemDetails.from(description.provider()))
             .uri(description.uri())
             .expiresAt(Instants.toAitiaDateTimeString(description.expiresAt()))
-            .security(description.security())
+            .security(description.accessPolicyType())
             .metadata(description.metadata())
             .version(description.version())
             .interfaces(description.interfaces()
                 .stream()
-                .map(descriptor -> new InterfaceNameBuilder().name(descriptor).build())
+                .map(descriptor -> new InterfaceNameDto.Builder().name(descriptor).build())
                 .collect(Collectors.toUnmodifiableList()))
             .build();
     }

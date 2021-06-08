@@ -1,9 +1,7 @@
 package se.arkalix;
 
-import se.arkalix.description.ServiceDescription;
-import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.descriptor.InterfaceDescriptor;
-import se.arkalix.descriptor.TransportDescriptor;
+import se.arkalix.codec.CodecType;
+import se.arkalix.net.ProtocolType;
 import se.arkalix.security.access.AccessPolicy;
 
 import java.util.List;
@@ -30,12 +28,12 @@ public interface ArService {
     String uri();
 
     /**
-     * Gets descriptor for application-level transport protocol through which
-     * service is made available to other systems.
+     * Gets identifier for network protocol stack through which this service is
+     * made available to other systems.
      *
-     * @return Service transport descriptor.
+     * @return Service protocol type.
      */
-    TransportDescriptor transport();
+    ProtocolType protocolType();
 
     /**
      * Gets access policy enforced by this service.
@@ -45,11 +43,11 @@ public interface ArService {
     AccessPolicy accessPolicy();
 
     /**
-     * Gets encodings the service can read and write.
+     * Gets codecs this service can read and write.
      *
-     * @return Unmodifiable list of supported encodings.
+     * @return Unmodifiable list of supported codecs.
      */
-    List<EncodingDescriptor> encodings();
+    List<CodecType> codecTypes();
 
     /**
      * Gets service metadata.
@@ -79,19 +77,20 @@ public interface ArService {
     /**
      * Creates a new description of this service.
      *
+     * @param system System providing this service.
      * @return New description.
      */
-    default ServiceDescription describeAsIfProvidedBy(final ArSystem system) {
+    default ServiceRecord describeAsIfProvidedBy(final ArSystem system) {
         final var isSecure = system.isSecure();
-        return new ServiceDescription.Builder()
+        return new ServiceRecord.Builder()
             .name(name())
             .provider(system.description())
             .uri(uri())
-            .security(accessPolicy().descriptor())
+            .accessPolicyType(accessPolicy().type())
             .metadata(metadata())
             .version(version())
-            .interfaces(encodings().stream()
-                .map(encoding -> InterfaceDescriptor.getOrCreate(transport(), isSecure, encoding))
+            .interfaces(codecTypes().stream()
+                .map(codec -> ServiceInterface.getOrCreate(protocolType(), isSecure, codec))
                 .collect(Collectors.toUnmodifiableList()))
             .build();
     }

@@ -62,6 +62,7 @@ public class Result<V> {
     /**
      * Creates new successful {@code Result} with {@code null} value.
      *
+     * @param <V> Arbitrary type.
      * @return New {@code Result}.
      */
     @SuppressWarnings("unchecked")

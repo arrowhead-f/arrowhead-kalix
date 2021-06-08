@@ -1,11 +1,12 @@
 package se.arkalix.net.http.client;
 
-import se.arkalix.internal.net.DefaultMessageOutgoing;
-import se.arkalix.internal.net.http.HttpPaths;
+import se.arkalix.net.Uris;
 import se.arkalix.net.http.HttpHeaders;
 import se.arkalix.net.http.HttpMethod;
 import se.arkalix.net.http.HttpOutgoingRequest;
 import se.arkalix.net.http.HttpVersion;
+import se.arkalix.net.http._internal.DefaultHttpOutgoing;
+import se.arkalix.net.http._internal.NettyHttpHeaders;
 
 import java.util.*;
 
@@ -13,10 +14,10 @@ import java.util.*;
  * An HTTP request that can be sent to an HTTP server via an {@link HttpClient}.
  */
 public class HttpClientRequest
-    extends DefaultMessageOutgoing<HttpClientRequest>
+    extends DefaultHttpOutgoing<HttpClientRequest>
     implements HttpOutgoingRequest<HttpClientRequest>
 {
-    private final HttpHeaders headers = new HttpHeaders();
+    private final HttpHeaders headers = new NettyHttpHeaders();
     private final Map<String, List<String>> queryParameters = new HashMap<>();
 
     private HttpMethod method = null;
@@ -41,7 +42,7 @@ public class HttpClientRequest
 
     @Override
     public HttpClientRequest path(final String path) {
-        if (path != null && !HttpPaths.isValidPath(path)) {
+        if (path != null && !Uris.isValidPath(path)) {
             throw new IllegalArgumentException("Invalid RFC3986 path: " + path);
         }
         this.path = path;

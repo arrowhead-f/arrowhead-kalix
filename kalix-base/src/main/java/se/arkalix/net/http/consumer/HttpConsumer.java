@@ -3,10 +3,10 @@ package se.arkalix.net.http.consumer;
 import se.arkalix.ArConsumer;
 import se.arkalix.ArConsumerFactory;
 import se.arkalix.ArSystem;
-import se.arkalix.description.ServiceDescription;
-import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.descriptor.TransportDescriptor;
-import se.arkalix.internal.net.http.consumer.DefaultHttpConsumer;
+import se.arkalix.ServiceRecord;
+import se.arkalix.codec.CodecType;
+import se.arkalix.net.ProtocolType;
+import se.arkalix.net.http.consumer._internal.DefaultHttpConsumer;
 import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.util.concurrent.Future;
 
@@ -15,44 +15,27 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
 
-import static se.arkalix.descriptor.TransportDescriptor.HTTP;
+import static se.arkalix.net.ProtocolType.HTTP;
 
 /**
  * Client useful for consuming an {@link se.arkalix.security secure or
  * insecure} HTTP {@link se.arkalix service}.
  * <p>
  * This class provides similar functionality to {@link HttpClient}, with the
- * exception that hostnames, encodings, authorization tokens and other
+ * exception that hostnames, codecs, authorization tokens and other
  * details may be managed automatically.
  */
 public interface HttpConsumer extends ArConsumer {
     /**
-     * Creates new service consumer.
-     *
-     * @param system  Arrowhead system consuming {@code service}.
-     * @param service Service to be consumed.
-     * @throws NullPointerException     If {@code system} or {@code service} is
-     *                                  {@code null}.
-     * @throws IllegalArgumentException If the security modes of {@code system}
-     *                                  and {@code service} do not match (e.g.
-     *                                  the system is secure but the service is
-     *                                  not).
-     */
-    static HttpConsumer create(final ArSystem system, final ServiceDescription service) {
-        return create(system, service, null);
-    }
-
-    /**
      * Creates new service consumer, limiting itself to a subset of the
-     * encodings supported by {@code service}.
+     * codecs supported by {@code service}.
      *
      * @param system    Arrowhead system consuming {@code service}.
      * @param service   Service to be consumed.
-     * @param encodings Supported request/response encodings. If specified as
-     *                  {@code null}, the encodings returned by
-     *                  {@link EncodingDescriptor#allWithDtoSupport()} are used.
-     * @throws NullPointerException     If {@code system} or {@code service} is
-     *                                  {@code null}.
+     * @param codecTypes Supported request/response codecs.
+     * @return New {@code HttpConsumer}.
+     * @throws NullPointerException     If {@code system}, {@code service} or
+     *                                  {@code codecs} is {@code null}.
      * @throws IllegalArgumentException If the security modes of {@code system}
      *                                  and {@code service} do not match (e.g.
      *                                  the system is secure but the service is
@@ -60,10 +43,10 @@ public interface HttpConsumer extends ArConsumer {
      */
     static HttpConsumer create(
         final ArSystem system,
-        final ServiceDescription service,
-        final Collection<EncodingDescriptor> encodings
+        final ServiceRecord service,
+        final Collection<CodecType> codecTypes
     ) {
-        return factory().create(system, service, encodings);
+        return factory().create(system, service, codecTypes);
     }
 
     /**
@@ -109,7 +92,7 @@ public interface HttpConsumer extends ArConsumer {
      *                              {@code request} is {@code null}.
      */
     default Future<HttpConsumerResponse> send(final HttpConsumerRequest request) {
-        Objects.requireNonNull(request, "Expected request");
+        Objects.requireNonNull(request, "request");
         return connect()
             .flatMap(connection -> connection.sendAndClose(request));
     }
@@ -140,17 +123,17 @@ public interface HttpConsumer extends ArConsumer {
         private static final Factory instance = new Factory();
 
         @Override
-        public Collection<TransportDescriptor> serviceTransports() {
+        public Collection<ProtocolType> serviceProtocolTypes() {
             return Collections.singleton(HTTP);
         }
 
         @Override
         public HttpConsumer create(
             final ArSystem system,
-            final ServiceDescription service,
-            final Collection<EncodingDescriptor> encodings
+            final ServiceRecord service,
+            final Collection<CodecType> codecTypes
         ) {
-            return new DefaultHttpConsumer(system, service, encodings);
+            return new DefaultHttpConsumer(system, service, codecTypes);
         }
     }
 }

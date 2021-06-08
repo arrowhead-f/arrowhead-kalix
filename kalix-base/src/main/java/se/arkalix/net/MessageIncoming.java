@@ -1,10 +1,8 @@
 package se.arkalix.net;
 
-import se.arkalix.dto.DtoEncoding;
-import se.arkalix.dto.DtoReadable;
-import se.arkalix.util.concurrent.FutureProgress;
+import se.arkalix.codec.*;
+import se.arkalix.util.concurrent.Future;
 
-import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -16,195 +14,186 @@ import java.util.List;
 @SuppressWarnings("unused")
 public interface MessageIncoming extends Message {
     /**
-     * Requests that the incoming message body be collected and parsed as an
-     * instance of the provided {@code class_}.
-     * <p>
-     * An attempt will be made to automatically resolve a default DTO encoding.
-     * If the attempt fails the method throws.
-     * <p>
-     * Note that only so-called Data Transfer Object (DTO) types may be decoded
-     * using this method. More details about such types can be read in the
-     * documentation for the {@link se.arkalix.dto} package.
-     * <p>
-     * Note also that a body can typically only be requested once via this
-     * interface. Any further requests will likely cause exceptions to be
-     * thrown.
+     * Gets handle representing the payload of this message.
      *
-     * @param class_ Class to decode incoming message body into.
-     * @param <R>    Type of {@code class_}.
-     * @return Future completed when the incoming message body has been fully
-     * received and then decoded into an instance of {@code class_}.
-     * @throws MessageException      If no default encoding can be acquired.
-     * @throws IllegalStateException If the body has already been requested.
+     * @return Message payload handle.
      */
-    default <R extends DtoReadable> FutureProgress<R> bodyAs(final Class<R> class_) {
-        return bodyAs(encodingAsDtoOrThrow(), class_);
-    }
-
-    /**
-     * Requests that the incoming message body be collected and parsed using
-     * {@code encoding} as an instance of the provided {@code class_}.
-     * <p>
-     * Note that only so-called Data Transfer Object (DTO) types may be decoded
-     * using this method. More details about such types can be read in the
-     * documentation for the {@link se.arkalix.dto} package.
-     * <p>
-     * Note also that a body can typically only be requested once via this
-     * interface. Any further requests will likely cause exceptions to be
-     * thrown.
-     *
-     * @param encoding Encoding to use when decoding incoming message body.
-     * @param class_   Class to decode incoming message body into.
-     * @param <R>      Type of {@code class_}.
-     * @return Future completed when the incoming message body has been fully
-     * received and then decoded into an instance of {@code class_}.
-     * @throws IllegalStateException If the body has already been requested.
-     */
-    <R extends DtoReadable> FutureProgress<R> bodyAs(final DtoEncoding encoding, final Class<R> class_);
+    BodyIncoming body();
 
     /**
      * Requests that the incoming message body be collected into a regular Java
      * byte array ({@code byte[]}).
      * <p>
-     * Note that a body can typically only be requested once via this
-     * interface. Any further requests will likely cause exceptions to be
-     * thrown.
+     * Calling this method consumes the body associated with this message. Any
+     * further attempts to consume the body will cause exceptions to be thrown.
      *
      * @return Future completed when the incoming message body has been fully
      * collected into a single byte array.
      * @throws IllegalStateException If the body has already been requested.
      */
-    FutureProgress<byte[]> bodyAsByteArray();
-
-    /**
-     * Requests that the incoming message body be collected and parsed as a
-     * list of instances of the provided {@code class_}.
-     * <p>
-     * An attempt will be made to automatically resolve a default DTO encoding.
-     * If the attempt fails the method throws.
-     * <p>
-     * Note that only so-called Data Transfer Object (DTO) types may be decoded
-     * using this method. More details about such types can be read in the
-     * documentation for the {@link se.arkalix.dto} package.
-     * <p>
-     * Note also that a body can typically only be requested once via this
-     * interface. Any further requests will likely cause exceptions to be
-     * thrown.
-     *
-     * @param class_ Class to decode incoming message body into.
-     * @param <R>    Type of {@code class_}.
-     * @return Future completed when the incoming message body has been fully
-     * received and then decoded into an instance of {@code class_}.
-     * @throws MessageException      If no default encoding can be acquired.
-     * @throws IllegalStateException If the body has already been requested.
-     */
-    default <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(final Class<R> class_) {
-        return bodyAsList(encodingAsDtoOrThrow(), class_);
+    default Future<byte[]> bodyAsByteArray() {
+        return body()
+            .buffer()
+            .map(reader -> {
+                try (reader) {
+                    final var byteArray = new byte[reader.readableBytes()];
+                    reader.read(byteArray);
+                    return byteArray;
+                }
+            });
     }
-
-    /**
-     * Requests that the incoming message body be collected and parsed using
-     * {@code encoding} as a list of instances of the provided {@code class_}.
-     * <p>
-     * Note that only so-called Data Transfer Object (DTO) types may be decoded
-     * using this method. More details about such types can be read in the
-     * documentation for the {@link se.arkalix.dto} package.
-     * <p>
-     * Note also that a body can typically only be requested once via this
-     * interface. Any further requests will likely cause exceptions to be
-     * thrown.
-     *
-     * @param encoding Encoding to use when decoding incoming message body.
-     * @param class_   Class to decode list elements of incoming message body
-     *                 into.
-     * @param <R>      Type of {@code class_}.
-     * @return Future completed when the incoming message body has been fully
-     * received and then decoded into instances of {@code class_}.
-     * @throws IllegalStateException If the body has already been requested.
-     */
-    <R extends DtoReadable> FutureProgress<List<R>> bodyAsList(final DtoEncoding encoding, final Class<R> class_);
-
-    /**
-     * Requests that the incoming message body be collected into a regular Java
-     * {@code InputStream}.
-     * <p>
-     * The returned {@code Future} is not completed with the stream until the
-     * incoming body has been received in full. However, in comparison to
-     * {@link #bodyAsByteArray()}, this method does not necessitate copying the
-     * body into a contiguous byte array, which in some cases can lead to
-     * performance gains.
-     * <p>
-     * While it would be technically possible to return an {@code InputStream}
-     * without waiting for the body to have arrived in full, reading from that
-     * stream would require blocking the current thread until more of the body
-     * arrives. That behavior does not rhyme well with the concurrency model of
-     * the Kalix library, which tries to promote avoiding blocking I/O as far
-     * as possible. If expecting to receive a very large incoming message body,
-     * consider using the {@link #bodyTo(Path, boolean)} method, which writes
-     * the body directly to a file, as it arrives.
-     * <p>
-     * Note that a body can typically only be requested once via this
-     * interface. Any further requests will likely cause exceptions to be
-     * thrown.
-     *
-     * @return Future completed when the incoming message body has been fully
-     * collected and can be presented as an input stream.
-     * @throws IllegalStateException If the body has already been requested.
-     */
-    FutureProgress<? extends InputStream> bodyAsStream();
 
     /**
      * Requests that the incoming message body be decoded into a regular Java
      * {@code String}.
      * <p>
-     * If a character encoding supported by Java is {@link #encoding()}
-     * specified in the message, it will be used when decoding the body into
-     * a {@code String}. In any other case, UTF-8 will be assumed to be
-     * adequate.
+     * If a character codec supported by Java is specified in the message,
+     * it will be used when decoding the body into a {@code String}. In any
+     * other case, UTF-8 will be assumed to be adequate.
      * <p>
-     * Note that a body can typically only be requested once via this
-     * interface. Any further requests will likely cause exceptions to be
-     * thrown.
+     * Calling this method consumes the body associated with this message. Any
+     * further attempts to consume the body will cause exceptions to be thrown.
      *
      * @return Future completed when the incoming message body becomes has been
      * fully collected into a {@code String}.
      * @throws IllegalStateException If the body has already been requested.
      */
-    default FutureProgress<String> bodyAsString() {
-        return bodyAsString(charset().orElse(StandardCharsets.UTF_8));
+    default Future<String> bodyAsString() {
+        return bodyAsString(codecType()
+            .map(ToCodecType::toCodecType)
+            .flatMap(CodecType::charset)
+            .orElse(StandardCharsets.UTF_8));
     }
 
     /**
      * Requests that the incoming message body be decoded into a regular Java
      * {@code String} using the specified character set.
      * <p>
-     * Note that a body can typically only be requested once via this
-     * interface. Any further requests will likely cause exceptions to be
-     * thrown.
+     * Calling this method consumes the body associated with this message. Any
+     * further attempts to consume the body will cause exceptions to be thrown.
      *
+     * @param charset Charset to use when decoding body.
      * @return Future completed when the incoming message body becomes has been
      * fully collected into a {@code String}.
      * @throws IllegalStateException If the body has already been requested.
+     * @throws NullPointerException  If {@code charset} is {@code null}.
      */
-    FutureProgress<String> bodyAsString(final Charset charset);
+    default Future<String> bodyAsString(final Charset charset) {
+        if (charset == null) {
+            throw new NullPointerException("charset");
+        }
+        return bodyAsByteArray().map(bytes -> new String(bytes, charset));
+    }
 
     /**
-     * Requests that the incoming message body be written to the file at the
-     * specified file system path, overwriting it if it already exists.
+     * Collects and then converts the incoming message body using the provided
+     * {@code decoder}.
      * <p>
-     * Note that a body can typically only be requested once via this
-     * interface. Any further requests will likely cause exceptions to be
-     * thrown.
+     * Calling this method consumes the body associated with this message. Any
+     * further attempts to consume the body will cause exceptions to be thrown.
      *
-     * @param path Path to file to contain incoming message body.
-     * @return Future completed successfully with given path only if the
-     * incoming message body is fully received and written to the file at that
-     * path.
-     * @throws IllegalStateException If the body has already been requested.
-     * @see #bodyTo(Path, boolean)
+     * @param <T>     Type produced by given {@code decoder}, if successful.
+     * @param decoder Function to use for decoding the message body.
+     * @return Future completed when the incoming message body has been fully
+     * received and decoded.
+     * @throws DecoderException       If the body does not conform to the
+     *                                codec of the given {@code decoder}.
+     * @throws IllegalStateException  If the body has already been consumed.
+     * @throws MessageHasTrailingData If trailing data is discovered in the
+     *                                message body.
+     * @throws NullPointerException   If {@code decoder} is {@code null}.
      */
-    default FutureProgress<Path> bodyTo(final Path path) {
-        return bodyTo(path, false);
+    default <T> Future<T> bodyTo(final Decoder<T> decoder) {
+        if (decoder == null) {
+            throw new NullPointerException("decoder");
+        }
+        return body()
+            .buffer()
+            .map(reader -> {
+                try (reader) {
+                    final var result = decoder.decode(reader);
+                    if (reader.readableBytes() > 0) {
+                        throw new MessageHasTrailingData(this);
+                    }
+                    return result;
+                }
+            });
+    }
+
+    /**
+     * Collects and then converts the incoming message body using the provided
+     * {@code decoder}, which will attempt to select an appropriate
+     * decoder function from any {@link #codecType() codec} specified in the
+     * message.
+     * <p>
+     * Calling this method consumes the body associated with this message. Any
+     * further attempts to consume the body will cause exceptions to be thrown.
+     *
+     * @param <T>     Type produced by given {@code decoder}, if successful.
+     * @param decoder Function to use for decoding the message body.
+     * @return Future completed when the incoming message body has been fully
+     * received and decoded.
+     * @throws DecoderException         If the body does not conform to the
+     *                                  codec it states.
+     * @throws IllegalStateException    If the body has already been consumed.
+     * @throws MessageCodecMisspecified If a codec is specified in the
+     *                                  message, but it cannot be interpreted.
+     * @throws MessageCodecUnspecified  If no codec is specified in this
+     *                                  message.
+     * @throws MessageCodecUnsupported  If the codec specified in the
+     *                                  message is not supported by the given
+     *                                  {@code decoder}.
+     * @throws MessageHasTrailingData   If trailing data is discovered in the
+     *                                  message body.
+     * @throws NullPointerException     If {@code decoder} is {@code null}.
+     */
+    default <T> Future<T> bodyTo(final MultiDecoder<T> decoder) {
+        return bodyTo(decoder, codecType().orElseThrow(() -> new MessageCodecUnspecified(this)));
+    }
+
+    /**
+     * Collects and then converts the incoming message body using the provided
+     * {@code decoder}, which will attempt to select a decoder
+     * function named by {@code toCodecType}.
+     * <p>
+     * Calling this method consumes the body associated with this message. Any
+     * further attempts to consume the body will cause exceptions to be thrown.
+     *
+     * @param <T>         Type produced by given {@code decoder}, if successful.
+     * @param decoder     Function to use for decoding the message body.
+     * @param toCodecType Codec to use when invoking {@code decoder}.
+     * @return Future completed when the incoming message body has been fully
+     * received and decoded.
+     * @throws DecoderException        If the body does not conform to the
+     *                                 codec it states.
+     * @throws IllegalStateException   If the body has already been consumed.
+     * @throws MessageCodecUnsupported If the given codec is not supported by
+     *                                 the given {@code decoder}.
+     * @throws MessageHasTrailingData  If trailing data is discovered in the
+     *                                 message body.
+     * @throws NullPointerException    If {@code decoder} or {@code toCodecType}
+     *                                 is {@code null}.
+     */
+    default <T> Future<T> bodyTo(final MultiDecoder<T> decoder, final ToCodecType toCodecType) {
+        if (decoder == null) {
+            throw new NullPointerException("decoder");
+        }
+        if (toCodecType == null) {
+            throw new NullPointerException("toCodecType");
+        }
+        final var codecType = toCodecType.toCodecType();
+        return body()
+            .buffer()
+            .map(reader -> {
+                try (reader) {
+                    final var result = decoder.decoder(codecType)
+                        .decode(reader);
+                    if (reader.readableBytes() > 0) {
+                        throw new MessageHasTrailingData(this);
+                    }
+                    return result;
+                }
+            });
     }
 
     /**
@@ -216,14 +205,12 @@ public interface MessageIncoming extends Message {
      * overwritten.
      * <p>
      * Using this method, or {@link #bodyTo(Path)}, is the preferred way of
-     * receiving data objects that are too large to realistically fit in
-     * primary memory. This as received data is written directly to the target
-     * file as it is received, rather than being buffered until all of it
-     * becomes available.
+     * receiving data objects that are too large to handle in-memory. This as
+     * received data is written directly to the target file as it is received,
+     * rather than being buffered until all of it becomes available.
      * <p>
-     * Note that a body can typically only be requested once via this
-     * interface. Any further requests will likely cause exceptions to be
-     * thrown.
+     * Calling this method consumes the body associated with this message. Any
+     * further attempts to consume the body will cause exceptions to be thrown.
      *
      * @param path   Path to file to contain incoming message body.
      * @param append If {@code true}, any existing file at {@code path} will
@@ -233,23 +220,107 @@ public interface MessageIncoming extends Message {
      * incoming message body is fully received and written to the file at that
      * path.
      * @throws IllegalStateException If the body has already been requested.
+     * @throws NullPointerException  If {@code path} is {@code null}.
      */
-    FutureProgress<Path> bodyTo(final Path path, boolean append);
+    default Future<?> bodyTo(final Path path, boolean append) {
+        return body().writeTo(path, append);
+    }
 
     /**
-     * Resolves the {@link DtoEncoding} from the {@link #encoding() encoding
-     * associated with this message}, or throws an exception if the operation
-     * fails.
+     * Requests that the incoming message body be written to the file at the
+     * specified file system path.
+     * <p>
+     * The file will be created if it does not exist, or overwritten if it does
+     * exist.
+     * <p>
+     * Using this method, or {@link #bodyTo(Path, boolean)}, is the preferred
+     * way of receiving data objects that are too large to handle in-memory.
+     * This as received data is written directly to the target file as it is
+     * received, rather than being buffered until all of it becomes available.
+     * <p>
+     * Calling this method consumes the body associated with this message. Any
+     * further attempts to consume the body will cause exceptions to be thrown.
      *
-     * @return DTO variant of message encoding.
-     * @throws MessageException If resolving DTO encoding from this message
-     *                          fails.
+     * @param path Path to file to contain incoming message body.
+     * @return Future completed successfully with given path only if the
+     * incoming message body is fully received and written to the file at that
+     * path.
+     * @throws IllegalStateException If the body has already been requested.
+     * @throws NullPointerException  If {@code path} is {@code null}.
      */
-    default DtoEncoding encodingAsDtoOrThrow() {
-        final var encoding = encoding()
-            .orElseThrow(() -> new MessageEncodingUnspecified(this));
+    default Future<?> bodyTo(final Path path) {
+        return body().writeTo(path);
+    }
 
-        return encoding.asDto()
-            .orElseThrow(() -> new MessageEncodingUnsupported(this, encoding));
+    /**
+     * Collects and then converts the individual list items of the incoming
+     * message body using the provided {@code decoder}, which will attempt to
+     * select an appropriate decoder function from any {@link #codecType()
+     * codec} specified in the message.
+     * <p>
+     * This method can only succeed for codecs that both support anonymous
+     * lists and are explicitly listed as supported by {@link
+     * MultiDecoderForLists#supportedEncodings()}.
+     * <p>
+     * Calling this method consumes the body associated with this message. Any
+     * further attempts to consume the body will cause exceptions to be thrown.
+     *
+     * @param <T>     Type produced by given {@code decoder}, if successful.
+     * @param decoder Function to use for decoding the message body.
+     * @return Future completed when the incoming message body has been fully
+     * received and decoded.
+     * @throws DecoderException         If the body does not conform to the
+     *                                  codec it states.
+     * @throws IllegalStateException    If the body has already been consumed.
+     * @throws MessageCodecMisspecified If a codec is specified in the
+     *                                  message, but it cannot be interpreted.
+     * @throws MessageCodecUnspecified  If no codec is specified in this
+     *                                  message.
+     * @throws MessageCodecUnsupported  If the codec specified in the message
+     *                                  is not supported by the given {@code
+     *                                  decoder}.
+     * @throws MessageHasTrailingData   If trailing data is discovered in the
+     *                                  message body.
+     * @throws NullPointerException     If {@code decoder} is {@code null}.
+     */
+    default <T> Future<List<T>> bodyListItemsTo(final MultiDecoder<T> decoder) {
+        return bodyListItemsTo(decoder, codecType().orElseThrow(() -> new MessageCodecUnspecified(this)));
+    }
+
+    /**
+     * Collects and then converts the individual list items of the incoming
+     * message body using the provided {@code decoder}, which will attempt to
+     * select a decoder function named by {@code toCodecType}.
+     * <p>
+     * This method can only succeed for codecs that both support anonymous
+     * lists and are explicitly listed as supported by {@link
+     * MultiDecoderForLists#supportedEncodings()}.
+     * <p>
+     * Calling this method consumes the body associated with this message. Any
+     * further attempts to consume the body will cause exceptions to be thrown.
+     *
+     * @param <T>         Type produced by given {@code decoder}, if successful.
+     * @param decoder     Function to use for decoding the message body.
+     * @param toCodecType Codec to use when invoking {@code decoder}.
+     * @return Future completed when the incoming message body has been fully
+     * received and decoded.
+     * @throws DecoderException        If the body does not conform to the
+     *                                 codec it states.
+     * @throws IllegalStateException   If the body has already been consumed.
+     * @throws MessageCodecUnsupported If the given codec is not supported by
+     *                                 the given {@code decoder}.
+     * @throws MessageHasTrailingData  If trailing data is discovered in the
+     *                                 message body.
+     * @throws NullPointerException    If {@code decoder} or {@code
+     *                                 toCodecType} is {@code null}.
+     */
+    default <T> Future<List<T>> bodyListItemsTo(
+        final MultiDecoder<T> decoder,
+        final ToCodecType toCodecType
+    ) {
+        if (toCodecType == null) {
+            throw new NullPointerException("toCodecType");
+        }
+        return bodyTo(MultiDecoderForLists.of(decoder), toCodecType.toCodecType());
     }
 }

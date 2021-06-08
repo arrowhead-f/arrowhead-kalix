@@ -1,9 +1,8 @@
 package se.arkalix.security.access;
 
 import se.arkalix.ArSystem;
-import se.arkalix.description.ServiceDescription;
-import se.arkalix.description.SystemIdentityDescription;
-import se.arkalix.descriptor.SecurityDescriptor;
+import se.arkalix.ServiceRecord;
+import se.arkalix.SystemRecordWithIdentity;
 import se.arkalix.security.identity.SystemIdentity;
 import se.arkalix.util.annotation.ThreadSafe;
 
@@ -24,10 +23,12 @@ import java.util.List;
  */
 public interface AccessPolicy {
     /**
-     * @return Access policy descriptor.
+     * Gets type of access policy.
+     *
+     * @return Access policy type.
      */
     @ThreadSafe
-    SecurityDescriptor descriptor();
+    AccessPolicyType type();
 
     /**
      * Determines whether or not the described {@code system} may consume the
@@ -41,12 +42,13 @@ public interface AccessPolicy {
      * @param token    Access token presented by the {@code consumer}, if any.
      * @return {@code true} only if {@code consumer} is permitted to consume
      * {@code service}.
+     * @throws AccessTokenException If given {@code token} is invalid.
      */
     @ThreadSafe
     boolean isAuthorized(
-        SystemIdentityDescription consumer,
+        SystemRecordWithIdentity consumer,
         ArSystem provider,
-        ServiceDescription service,
+        ServiceRecord service,
         String token
     )
         throws AccessTokenException;
@@ -82,16 +84,16 @@ public interface AccessPolicy {
     }
 
     /**
-     * Creates new access policy granting access to consumers with certificate
-     * chains sharing the same
-     * {@link SystemIdentity master}
-     * certificate as the provider of the service being consumed, as well as
-     * being able to present a token from the authorization system represented
-     * by the given public key.
+     * Creates new access policy granting access to consumers that both have a
+     * the same {@link SystemIdentity master} certificate as the provider of
+     * the service and are able to present a token from the authorization
+     * system represented by the given public key.
      * <p>
      * Note that access policy instances of this type can be shared by multiple
      * services.
      *
+     * @param authorizationKey Public key representing accepted issuer of
+     *                         access tokens.
      * @return New token access policy.
      */
     @ThreadSafe

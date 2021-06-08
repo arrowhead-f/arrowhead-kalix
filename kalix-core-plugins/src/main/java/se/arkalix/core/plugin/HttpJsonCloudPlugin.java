@@ -8,13 +8,13 @@ import se.arkalix.core.plugin.or.HttpJsonOrchestrationService;
 import se.arkalix.core.plugin.or.OrchestrationPattern;
 import se.arkalix.core.plugin.or.OrchestrationStrategy;
 import se.arkalix.core.plugin.sr.HttpJsonServiceDiscoveryService;
-import se.arkalix.core.plugin.sr.ServiceQueryBuilder;
+import se.arkalix.core.plugin.sr.ServiceQueryDto;
 import se.arkalix.core.plugin.sr.ServiceRegistration;
-import se.arkalix.description.SystemDescription;
-import se.arkalix.description.ServiceDescription;
-import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.descriptor.InterfaceDescriptor;
-import se.arkalix.internal.security.identity.X509Keys;
+import se.arkalix.SystemRecord;
+import se.arkalix.ServiceRecord;
+import se.arkalix.codec.CodecType;
+import se.arkalix.ServiceInterface;
+import se.arkalix.security.identity._internal.X509Keys;
 import se.arkalix.net.http.client.HttpClient;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.plugin.Plugin;
@@ -35,9 +35,9 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static se.arkalix.descriptor.SecurityDescriptor.CERTIFICATE;
-import static se.arkalix.descriptor.SecurityDescriptor.NOT_SECURE;
-import static se.arkalix.descriptor.TransportDescriptor.HTTP;
+import static se.arkalix.security.access.AccessPolicyType.CERTIFICATE;
+import static se.arkalix.security.access.AccessPolicyType.NOT_SECURE;
+import static se.arkalix.net.ProtocolType.HTTP;
 import static se.arkalix.util.concurrent.Future.done;
 
 /**
@@ -63,7 +63,7 @@ import static se.arkalix.util.concurrent.Future.done;
 public class HttpJsonCloudPlugin implements Plugin {
     private static final Logger logger = LoggerFactory.getLogger(HttpJsonCloudPlugin.class);
 
-    private final Predicate<ServiceDescription> serviceRegistrationPredicate;
+    private final Predicate<ServiceRecord> serviceRegistrationPredicate;
     private final InetSocketAddress serviceRegistrySocketAddress;
     private final String serviceDiscoveryBasePath;
     private final OrchestrationStrategy orchestrationStrategy;
@@ -72,7 +72,7 @@ public class HttpJsonCloudPlugin implements Plugin {
         serviceRegistrationPredicate = Objects.requireNonNullElse(builder.serviceRegistrationPredicate, service -> true);
         serviceDiscoveryBasePath = Objects.requireNonNullElse(builder.serviceDiscoveryBasePath, "/serviceregistry");
         serviceRegistrySocketAddress = Objects.requireNonNull(builder.serviceRegistrySocketAddress,
-            "Expected serviceRegistrySocketAddress");
+            "serviceRegistrySocketAddress");
         orchestrationStrategy = Objects.requireNonNullElse(builder.orchestrationStrategy,
             OrchestrationStrategy.STORED_ONLY);
     }
@@ -115,11 +115,11 @@ public class HttpJsonCloudPlugin implements Plugin {
 
         private FutureAnnouncement<PublicKey> authorizationKeyAnnouncement = null;
         private FutureAnnouncement<HttpJsonOrchestrationService> orchestrationAnnouncement = null;
-        private FutureAnnouncement<Collection<ServiceDescription>> orchestrationPlainStoreQueryAnnouncement = null;
+        private FutureAnnouncement<Collection<ServiceRecord>> orchestrationPlainStoreQueryAnnouncement = null;
         private FutureAnnouncement<HttpJsonServiceDiscoveryService> serviceDiscoveryAnnouncement = null;
 
         Attached(final ArSystem system) {
-            this.system = Objects.requireNonNull(system, "Expected system");
+            this.system = Objects.requireNonNull(system, "system");
             this.systemDetails = SystemDetails.from(system);
             this.client = HttpClient.from(system);
 
@@ -154,7 +154,7 @@ public class HttpJsonCloudPlugin implements Plugin {
         }
 
         @Override
-        public Future<?> onServiceProvided(final ServiceDescription service) {
+        public Future<?> onServiceProvided(final ServiceRecord service) {
             if (!serviceRegistrationPredicate.test(service)) {
                 if (logger.isInfoEnabled()) {
                     logger.info("HTTP/JSON cloud ignoring to register \"{}\" " +
@@ -179,6 +179,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                         if ("INVALID_PARAMETER".equals(error.type())) {
                             return serviceDiscovery.unregister(
                                 service.name(),
+                                service.uri(),
                                 provider.name(),
                                 providerSocketAddress.getHostString(),
                                 providerSocketAddress.getPort())
@@ -209,7 +210,7 @@ public class HttpJsonCloudPlugin implements Plugin {
         }
 
         @Override
-        public void onServiceDismissed(final ServiceDescription service) {
+        public void onServiceDismissed(final ServiceRecord service) {
             if (!serviceRegistrationPredicate.test(service)) {
                 if (logger.isInfoEnabled()) {
                     logger.info("HTTP/JSON cloud ignoring to unregister \"{}\" " +
@@ -227,6 +228,7 @@ public class HttpJsonCloudPlugin implements Plugin {
             requestServiceDiscovery()
                 .flatMap(serviceDiscovery -> serviceDiscovery.unregister(
                     service.name(),
+                    service.uri(),
                     provider.name(),
                     providerSocketAddress.getHostString(),
                     providerSocketAddress.getPort()))
@@ -250,7 +252,7 @@ public class HttpJsonCloudPlugin implements Plugin {
         }
 
         @Override
-        public Future<Collection<ServiceDescription>> onServiceQueried(final ServiceQuery query) {
+        public Future<Collection<ServiceRecord>> onServiceQueried(final ServiceQuery query) {
             return Futures.flatReducePlain(new ArrayList<>(), (services, pattern) -> {
                 if (pattern.isPlainStorePattern()) {
                     synchronized (this) {
@@ -273,11 +275,11 @@ public class HttpJsonCloudPlugin implements Plugin {
             }, orchestrationStrategy.patterns());
         }
 
-        private Future<Collection<ServiceDescription>> executeOrchestrationQueryUsing(
+        private Future<Collection<ServiceRecord>> executeOrchestrationQueryUsing(
             final ServiceQuery query,
             final OrchestrationPattern pattern
         ) {
-            Objects.requireNonNull(pattern, "Expected pattern");
+            Objects.requireNonNull(pattern, "pattern");
 
             return requestOrchestration()
                 .ifSuccess(ignored -> {
@@ -303,7 +305,7 @@ public class HttpJsonCloudPlugin implements Plugin {
             if (serviceDiscoveryAnnouncement == null) {
                 if (logger.isInfoEnabled()) {
                     logger.info("HTTP/JSON cloud plugin connecting to " +
-                        "\"service_registry\" system at {} ...", serviceRegistrySocketAddress);
+                        "\"serviceregistry\" system at {} ...", serviceRegistrySocketAddress);
                 }
                 serviceDiscoveryAnnouncement = client.connect(serviceRegistrySocketAddress)
                     .mapResult(result -> {
@@ -321,39 +323,39 @@ public class HttpJsonCloudPlugin implements Plugin {
                                 : "not running in secure mode, while this system is")
                                 + "; failed to resolve service discovery service "));
                         }
-                        final SystemDescription provider;
+                        final SystemRecord provider;
                         if (isSecure) {
                             final var identity = new SystemIdentity(connection.remoteCertificateChain());
                             final var name = identity.name();
-                            if (!Objects.equals(name, "service_registry")) {
+                            if (!Objects.equals(name, "serviceregistry")) {
                                 return Result.failure(new CloudException("" +
                                     "HTTP/JSON cloud plugin connected to " +
                                     "system at " + serviceRegistrySocketAddress +
                                     " and found that its certificate name " +
                                     "is \"" + name + "\" while expecting it " +
-                                    "to be \"service_registry\"; failed to " +
+                                    "to be \"serviceregistry\"; failed to " +
                                     "resolve service discovery service "));
                             }
-                            provider = SystemDescription.from(name, identity.publicKey(), serviceRegistrySocketAddress);
+                            provider = SystemRecord.from(name, identity.publicKey(), serviceRegistrySocketAddress, null);
                         }
                         else {
-                            provider = SystemDescription.from("service_registry", serviceRegistrySocketAddress);
+                            provider = SystemRecord.from("serviceregistry", serviceRegistrySocketAddress);
                         }
 
                         final var serviceDiscovery = new HttpJsonServiceDiscoveryService(system,
-                            new ServiceDescription.Builder()
+                            new ServiceRecord.Builder()
                                 .name("service-discovery")
                                 .provider(provider)
                                 .uri(serviceDiscoveryBasePath)
-                                .security(isSecure ? CERTIFICATE : NOT_SECURE)
-                                .interfaces(InterfaceDescriptor.getOrCreate(HTTP, isSecure, EncodingDescriptor.JSON))
+                                .accessPolicyType(isSecure ? CERTIFICATE : NOT_SECURE)
+                                .interfaces(ServiceInterface.getOrCreate(HTTP, isSecure, CodecType.JSON))
                                 .build());
 
                         connection.close();
 
                         if (logger.isInfoEnabled()) {
                             logger.info("HTTP/JSON cloud plugin " +
-                                "connected to \"service_registry\" system " +
+                                "connected to \"serviceregistry\" system " +
                                 "at {}", serviceRegistrySocketAddress);
                         }
 
@@ -362,7 +364,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                     .ifFailure(Throwable.class, fault -> {
                         if (logger.isErrorEnabled()) {
                             logger.error("HTTP/JSON cloud plugin failed to " +
-                                "connect to \"service_registry\" system at " +
+                                "connect to \"serviceregistry\" system at " +
                                 serviceRegistrySocketAddress, fault);
                         }
                     })
@@ -377,7 +379,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                     logger.info("HTTP/JSON cloud plugin requesting authorization key ...");
                 }
                 authorizationKeyAnnouncement = requestServiceDiscovery()
-                    .flatMap(serviceDiscovery -> serviceDiscovery.query(new ServiceQueryBuilder()
+                    .flatMap(serviceDiscovery -> serviceDiscovery.query(new ServiceQueryDto.Builder()
                         .name("auth-public-key")
                         .build()))
                     .mapResult(result -> {
@@ -445,10 +447,10 @@ public class HttpJsonCloudPlugin implements Plugin {
                 }
                 final var isSecure = client.isSecure();
                 orchestrationAnnouncement = requestServiceDiscovery()
-                    .flatMap(serviceDiscovery -> serviceDiscovery.query(new ServiceQueryBuilder()
+                    .flatMap(serviceDiscovery -> serviceDiscovery.query(new ServiceQueryDto.Builder()
                         .name("orchestration-service")
-                        .interfaces(InterfaceDescriptor.getOrCreate(HTTP, isSecure, EncodingDescriptor.JSON))
-                        .securityModes(isSecure ? CERTIFICATE : NOT_SECURE)
+                        .interfaces(ServiceInterface.getOrCreate(HTTP, isSecure, CodecType.JSON))
+                        .accessPolicyTypes(isSecure ? CERTIFICATE : NOT_SECURE)
                         .build()))
                     .flatMapResult(result -> {
                         if (result.isFailure()) {
@@ -464,7 +466,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                         final var orchestration = new HttpJsonOrchestrationService(HttpConsumer.create(
                             system,
                             services.get(0).toServiceDescription(),
-                            Collections.singleton(EncodingDescriptor.JSON)));
+                            Collections.singleton(CodecType.JSON)));
 
                         if (logger.isInfoEnabled()) {
                             logger.info("HTTP/JSON cloud plugin resolved " +
@@ -492,7 +494,7 @@ public class HttpJsonCloudPlugin implements Plugin {
     @SuppressWarnings("unused")
     public static class Builder {
         private String serviceDiscoveryBasePath;
-        private Predicate<ServiceDescription> serviceRegistrationPredicate;
+        private Predicate<ServiceRecord> serviceRegistrationPredicate;
         private InetSocketAddress serviceRegistrySocketAddress;
         private OrchestrationStrategy orchestrationStrategy;
 
@@ -521,7 +523,7 @@ public class HttpJsonCloudPlugin implements Plugin {
          * @param serviceRegistrationPredicate Service registration predicate.
          * @return This builder.
          */
-        public Builder serviceRegistrationPredicate(final Predicate<ServiceDescription> serviceRegistrationPredicate) {
+        public Builder serviceRegistrationPredicate(final Predicate<ServiceRecord> serviceRegistrationPredicate) {
             this.serviceRegistrationPredicate = serviceRegistrationPredicate;
             return this;
         }

@@ -1,8 +1,6 @@
 package se.arkalix.net;
 
-import se.arkalix.dto.DtoEncoding;
-import se.arkalix.dto.DtoWritable;
-import se.arkalix.dto.DtoWritableAs;
+import se.arkalix.codec.*;
 
 import java.nio.charset.Charset;
 import java.nio.file.Path;
@@ -17,85 +15,118 @@ import java.util.Optional;
 @SuppressWarnings("UnusedReturnValue")
 public interface MessageOutgoing<Self> extends Message {
     /**
+     * Sets type of codec used to represent the body of this message.
+     * <p>
+     * This method only needs to be called if the codec cannot be determined
+     * automatically from the set {@link #body(BodyOutgoing) body}, such as
+     * when using {@link #body(byte[])}. Note that whatever object is sending
+     * this message might set the codec automatically if required.
+     *
+     * @param codecType Codec to set.
+     * @return This message.
+     */
+    Self codecType(final ToCodecType codecType);
+
+    /**
      * Gets outgoing message body, if any is set.
      *
      * @return Any currently set response body.
      */
-    Optional<Object> body();
+    Optional<BodyOutgoing> body();
 
     /**
-     * Sets outgoing message body, replacing any previously set such.
+     * Sets outgoing message body, replacing any previously set.
+     *
+     * @param body Desired message body.
+     * @return This message.
+     */
+    Self body(BodyOutgoing body);
+
+    /**
+     * Sets given {@code byteArray} as outgoing message body.
      * <p>
-     * The provided byte array is scheduled for transmission to the outgoing
-     * body receiver as-is. It becomes the responsibility of the caller to
-     * ensure that the message receiver knows how to interpret the body.
+     * It becomes the responsibility of the caller to ensure that the message
+     * receiver knows how to interpret the body.
      *
      * @param byteArray Bytes to send to message receiver.
      * @return This message.
+     * @throws NullPointerException If {@code byteArray} is {@code null}.
      */
-    Self body(final byte[] byteArray);
-
-    /**
-     * Sets outgoing message body, replacing any previously set such.
-     * <p>
-     * The provided writable data transfer object is scheduled for encoding,
-     * using the given {@code encoding}, and transmission to the message
-     * receiver. Please refer to the Javadoc for the {@code @DtoWritableAs}
-     * annotation for more information about writable data transfer objects.
-     *
-     * @param encoding Encoding to use when encoding {@code data}, or {@code
-     *                 null} if an attempt is to be made to resolve the
-     *                 encoding automatically.
-     * @param data     Data transfer object to send to message receiver.
-     * @return This message.
-     * @throws NullPointerException If {@code data} is {@code null}.
-     * @see DtoWritableAs @DtoWritableAs
-     */
-    Self body(final DtoEncoding encoding, final DtoWritable data);
-
-    /**
-     * Sets outgoing message body, replacing any previously set such.
-     * <p>
-     * The provided array of writable data transfer objects are scheduled for
-     * encoding, using the given {@code encoding}, and transmission to the
-     * message receiver. Please refer to the Javadoc for the
-     * {@code @DtoWritableAs} annotation for more information about writable
-     * data transfer objects.
-     *
-     * @param encoding Encoding to use when encoding {@code data}, or {@code
-     *                 null} if an attempt is to be made to resolve the
-     *                 encoding automatically.
-     * @param data     Data transfer objects to send to message receiver.
-     * @return This message.
-     * @throws NullPointerException If {@code data} is {@code null}.
-     * @see DtoWritableAs @DtoWritableAs
-     */
-    default Self body(final DtoEncoding encoding, final DtoWritable... data) {
-        return body(encoding, List.of(data));
+    default Self body(final byte[] byteArray) {
+        if (byteArray == null) {
+            throw new NullPointerException("byteArray");
+        }
+        return body(BodyOutgoing.create(writer -> {
+            writer.write(byteArray);
+            return CodecType.NONE;
+        }));
     }
 
     /**
-     * Sets outgoing message body, replacing any previously set such.
-     * <p>
-     * The provided list of writable data transfer objects are scheduled for
-     * encoding, using the given {@code encoding}, and transmission to the
-     * message receiver. Please refer to the Javadoc for the
-     * {@code @DtoWritableAs} annotation for more information about writable
-     * data transfer objects.
+     * Sets given {@code encodable} as outgoing message body.
      *
-     * @param encoding Encoding to use when encoding {@code data}, or {@code
-     *                 null} if an attempt is to be made to resolve the
-     *                 encoding automatically.
-     * @param data     List of data transfer objects to send to message
-     *                 receiver.
+     * @param encodable Object to use, in encoded form, as message body.
      * @return This message.
-     * @throws NullPointerException If {@code data} is {@code null}.
-     * @see DtoWritableAs @DtoWritableAs
+     * @throws NullPointerException If {@code encodable} is {@code null}.
      */
-    <L extends List<? extends DtoWritable>> Self body(final DtoEncoding encoding, final L data);
+    default Self body(final Encodable encodable) {
+        return body(BodyOutgoing.create(encodable));
+    }
 
     /**
-     * Sets outgoing message body, replacing any previously set such.
+     * Sets given {@code encodable} as outgoing message body, to be encoded
+     * using given {@code toCodecType}.
+     *
+     * @param encodable   Object to use, in encoded form, as message body.
+     * @param toCodecType Codec to provide to {@code encodable}.
+     * @return This message.
+     * @throws NullPointerException If {@code toCodecType} or {@code encodable}
+     *                              is {@code null}.
+     */
+    default Self body(final MultiEncodable encodable, final ToCodecType toCodecType) {
+        if (encodable == null) {
+            throw new NullPointerException("encodable");
+        }
+        if (toCodecType == null) {
+            throw new NullPointerException("codec");
+        }
+
+        final var codecType = toCodecType.toCodecType();
+        return body(BodyOutgoing.create(writer -> encodable
+            .encodable(codecType)
+            .encode(writer)));
+    }
+
+    /**
+     * Sets given {@code encodables} as outgoing message body, to be encoded
+     * using given {@code toCodecType}.
+     * <p>
+     * This method can only succeed for codecs that both support anonymous
+     * lists and are explicitly listed as supported by {@link
+     * MultiEncodableForLists#supportedEncodings()}.
+     *
+     * @param encodables  Objects to use, in encoded form, as message body.
+     * @param toCodecType Codec to use when codec {@code encodable}.
+     * @return This message.
+     * @throws NullPointerException If {@code toCodecType} or {@code encodables}
+     *                              is {@code null}.
+     */
+    default Self body(final List<? extends MultiEncodable> encodables, final ToCodecType toCodecType) {
+        if (encodables == null) {
+            throw new NullPointerException("encodables");
+        }
+        if (toCodecType == null) {
+            throw new NullPointerException("codec");
+        }
+
+        final var codec0 = toCodecType.toCodecType();
+        return body(BodyOutgoing.create(writer -> MultiEncodableForLists.of(encodables)
+            .encodable(codec0)
+            .encode(writer)));
+    }
+
+    /**
+     * Sets file at given {@code path} as outgoing message body.
      * <p>
      * The contents of the file at the provided file system path are scheduled
      * for transmission to the message receiver as-is. It becomes the
@@ -106,45 +137,43 @@ public interface MessageOutgoing<Self> extends Message {
      * @return This message.
      * @throws NullPointerException If {@code path} is {@code null}.
      */
-    Self body(final Path path);
-
-    /**
-     * Sets outgoing message body, replacing any previously set such.
-     * <p>
-     * The provided string is scheduled for transmission to the outgoing
-     * message receiver encoded using an automatically selected character set.
-     * It becomes the responsibility of the caller to ensure that the message
-     * receiver knows  how to interpret the body, unless it is to be received
-     * only as an unstructured text.
-     *
-     * @param string String to send to message receiver.
-     * @return This message.
-     * @throws NullPointerException If {@code string} is {@code null}.
-     */
-    default Self body(final String string) {
-        return body(null, string);
+    default Self body(final Path path) {
+        return body(BodyOutgoing.create(path));
     }
 
     /**
-     * Sets outgoing message body, replacing any previously set such.
+     * Sets given {@code string} as outgoing message body.
      * <p>
-     * The provided string is scheduled for transmission to the outgoing
-     * message receiver encoded using specified {@code charset}. It becomes the
-     * responsibility of the caller to ensure that the message receiver knows
-     * how to interpret the body, unless it is to be received only as an
-     * unstructured text.
+     * It becomes the responsibility of the caller to ensure that the message
+     * receiver knows how to interpret the body.
      *
-     * @param charset Character set to use for encoding {@code string}.
      * @param string  String to send to message receiver.
+     * @param charset Character set to use for codec {@code string}.
      * @return This message.
-     * @throws NullPointerException If {@code string} is {@code null}.
+     * @throws NullPointerException If {@code string} or {@code charset} is
+     *                              {@code null}.
      */
-    Self body(final Charset charset, final String string);
+    default Self body(final String string, final Charset charset) {
+        if (string == null) {
+            throw new NullPointerException("string");
+        }
+        if (charset == null) {
+            throw new NullPointerException("charset");
+        }
+
+        final var codec = CodecType.getOrRegister(charset);
+        return body(BodyOutgoing.create(writer -> {
+            writer.write(string.getBytes(charset));
+            return codec;
+        }));
+    }
 
     /**
      * Removes any currently set outgoing message body.
      *
      * @return This message.
      */
-    Self clearBody();
+    default Self clearBody() {
+        return body((BodyOutgoing) null);
+    }
 }

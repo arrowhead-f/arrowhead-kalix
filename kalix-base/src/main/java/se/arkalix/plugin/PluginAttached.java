@@ -2,7 +2,7 @@ package se.arkalix.plugin;
 
 import se.arkalix.ArService;
 import se.arkalix.ArSystem;
-import se.arkalix.description.ServiceDescription;
+import se.arkalix.ServiceRecord;
 import se.arkalix.query.ServiceQuery;
 import se.arkalix.util.annotation.ThreadSafe;
 import se.arkalix.util.concurrent.Future;
@@ -64,7 +64,7 @@ public interface PluginAttached {
      * <p>
      * This method provides the only opportunity for this plugin to affect the
      * internals of provided services. Note, however, that it being called does
-     * not guarantee that {@link #onServiceProvided(ServiceDescription)} will
+     * not guarantee that {@link #onServiceProvided(ServiceRecord)} will
      * be called for the same {@code service}, as when this method is invoked
      * it has not yet been verified if the {@code service} has been configured
      * correctly or if its configuration clashes with an existing service. This
@@ -81,6 +81,7 @@ public interface PluginAttached {
      * the {@link Future} is completed with a fault, the service is never
      * provided and the fault is relayed to the caller trying to cause the
      * service to be provided.
+     * @throws Exception Any exception.
      */
     @ThreadSafe
     default Future<?> onServicePrepared(final ArService service) throws Exception {
@@ -93,7 +94,7 @@ public interface PluginAttached {
      * <p>
      * By the time this method is called, it is known that the {@code service}
      * in question will be, or already is, provided by this plugin's system.
-     * Furthermore, {@link #onServiceDismissed(ServiceDescription)} is
+     * Furthermore, {@link #onServiceDismissed(ServiceRecord)} is
      * guaranteed to be called for every {@code service} this method is
      * provided, given that the application is not shutdown abnormally.
      * <p>
@@ -107,9 +108,10 @@ public interface PluginAttached {
      * {@link Future} is completed with a fault, the service is never provided
      * and the fault is relayed to the caller trying to cause the service to be
      * provided.
+     * @throws Exception Any exception.
      */
     @ThreadSafe
-    default Future<?> onServiceProvided(final ServiceDescription service) throws Exception {
+    default Future<?> onServiceProvided(final ServiceRecord service) throws Exception {
         return Future.done();
     }
 
@@ -123,7 +125,7 @@ public interface PluginAttached {
      * @param service A description of the service being removed.
      */
     @ThreadSafe
-    default void onServiceDismissed(final ServiceDescription service) {}
+    default void onServiceDismissed(final ServiceRecord service) {}
 
     /**
      * Called to notify the plugin that its {@link ArSystem} desires to resolve
@@ -136,9 +138,10 @@ public interface PluginAttached {
      * @param query An incomplete description of the service being queried.
      * @return {@link Future} that will complete with a collection of service
      * descriptions, out of which some <i>may</i> match the provided query.
+     * @throws Exception Any exception.
      */
     @ThreadSafe
-    default Future<Collection<ServiceDescription>> onServiceQueried(final ServiceQuery query)
+    default Future<Collection<ServiceRecord>> onServiceQueried(final ServiceQuery query)
         throws Exception
     {
         return Future.success(Collections.emptyList());

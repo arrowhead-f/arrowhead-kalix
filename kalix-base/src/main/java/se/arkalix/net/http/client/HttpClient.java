@@ -1,8 +1,8 @@
 package se.arkalix.net.http.client;
 
 import se.arkalix.ArSystem;
-import se.arkalix.internal.net.http.client.NettyHttpClient;
-import se.arkalix.internal.net.http.consumer.DefaultHttpConsumer;
+import se.arkalix.net.http.client._internal.NettyHttpClient;
+import se.arkalix.net.http.consumer._internal.DefaultHttpConsumer;
 import se.arkalix.security.identity.OwnedIdentity;
 import se.arkalix.security.identity.TrustStore;
 import se.arkalix.util.annotation.ThreadSafe;
@@ -144,7 +144,7 @@ public interface HttpClient {
         final InetSocketAddress remoteSocketAddress,
         final HttpClientRequest request
     ) {
-        Objects.requireNonNull(request, "Expected request");
+        Objects.requireNonNull(request, "request");
         return connect(remoteSocketAddress, localSocketAddress().orElse(null))
             .flatMap(connection -> connection.sendAndClose(request));
     }

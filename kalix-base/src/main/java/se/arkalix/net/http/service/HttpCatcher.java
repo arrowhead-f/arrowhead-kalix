@@ -40,8 +40,8 @@ public class HttpCatcher<T extends Throwable> implements HttpRoutable {
         this.ordinal = ordinal;
         this.method = method;
         this.pattern = pattern;
-        this.exceptionClass = Objects.requireNonNull(exceptionClass, "Expected exceptionClass");
-        this.handler = Objects.requireNonNull(handler, "Expected handler");
+        this.exceptionClass = Objects.requireNonNull(exceptionClass, "exceptionClass");
+        this.handler = Objects.requireNonNull(handler, "handler");
     }
 
     /**

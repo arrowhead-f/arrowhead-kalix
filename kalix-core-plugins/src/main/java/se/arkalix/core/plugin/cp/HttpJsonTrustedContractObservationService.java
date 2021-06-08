@@ -3,10 +3,10 @@ package se.arkalix.core.plugin.cp;
 import se.arkalix.ArConsumer;
 import se.arkalix.ArConsumerFactory;
 import se.arkalix.ArSystem;
-import se.arkalix.description.ServiceDescription;
-import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.descriptor.TransportDescriptor;
-import se.arkalix.internal.core.plugin.Paths;
+import se.arkalix.ServiceRecord;
+import se.arkalix.codec.CodecType;
+import se.arkalix.net.ProtocolType;
+import se.arkalix.net.Uris;
 import se.arkalix.net.http.consumer.HttpConsumer;
 import se.arkalix.net.http.consumer.HttpConsumerRequest;
 import se.arkalix.util.concurrent.Future;
@@ -16,9 +16,9 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 
-import static se.arkalix.descriptor.EncodingDescriptor.JSON;
-import static se.arkalix.descriptor.TransportDescriptor.HTTP;
-import static se.arkalix.internal.core.plugin.HttpJsonServices.unwrapOptional;
+import static se.arkalix.core.plugin._internal.HttpJsonServices.unwrapOptional;
+import static se.arkalix.codec.CodecType.JSON;
+import static se.arkalix.net.ProtocolType.HTTP;
 import static se.arkalix.net.http.HttpMethod.GET;
 
 /**
@@ -32,8 +32,8 @@ public class HttpJsonTrustedContractObservationService implements ArConsumer, Ar
     private final String uriGet;
 
     private HttpJsonTrustedContractObservationService(final HttpConsumer consumer) {
-        this.consumer = Objects.requireNonNull(consumer, "Expected consumer");
-        uriGet = Paths.combine(consumer.service().uri(), "negotiations");
+        this.consumer = Objects.requireNonNull(consumer, "consumer");
+        uriGet = Uris.pathOf(consumer.service().uri(), "negotiations");
     }
 
     /**
@@ -44,7 +44,7 @@ public class HttpJsonTrustedContractObservationService implements ArConsumer, Ar
     }
 
     @Override
-    public ServiceDescription service() {
+    public ServiceRecord service() {
         return consumer.service();
     }
 
@@ -60,7 +60,7 @@ public class HttpJsonTrustedContractObservationService implements ArConsumer, Ar
             .queryParameter("name1", name1)
             .queryParameter("name2", name2)
             .queryParameter("id", "" + id))
-            .flatMap(response -> unwrapOptional(response, TrustedContractNegotiationDto.class));
+            .flatMap(response -> unwrapOptional(response, TrustedContractNegotiationDto::decodeJson));
     }
 
     private static class Factory implements ArConsumerFactory<HttpJsonTrustedContractObservationService> {
@@ -70,22 +70,22 @@ public class HttpJsonTrustedContractObservationService implements ArConsumer, Ar
         }
 
         @Override
-        public Collection<TransportDescriptor> serviceTransports() {
+        public Collection<ProtocolType> serviceProtocolTypes() {
             return Collections.singleton(HTTP);
         }
 
         @Override
-        public Collection<EncodingDescriptor> serviceEncodings() {
+        public Collection<CodecType> serviceCodecTypes() {
             return Collections.singleton(JSON);
         }
 
         @Override
         public HttpJsonTrustedContractObservationService create(
             final ArSystem system,
-            final ServiceDescription service,
-            final Collection<EncodingDescriptor> encodings
+            final ServiceRecord service,
+            final Collection<CodecType> codecTypes
         ) {
-            final var consumer = HttpConsumer.create(system, service, encodings);
+            final var consumer = HttpConsumer.create(system, service, codecTypes);
             return new HttpJsonTrustedContractObservationService(consumer);
         }
     }

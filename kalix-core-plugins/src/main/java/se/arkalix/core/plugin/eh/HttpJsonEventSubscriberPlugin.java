@@ -7,7 +7,7 @@ import se.arkalix.core.plugin.CloudException;
 import se.arkalix.core.plugin.ErrorResponseException;
 import se.arkalix.core.plugin.SystemDetails;
 import se.arkalix.core.plugin.SystemDetailsDto;
-import se.arkalix.description.SystemDescription;
+import se.arkalix.SystemRecord;
 import se.arkalix.net.http.HttpStatus;
 import se.arkalix.net.http.service.HttpService;
 import se.arkalix.plugin.Plugin;
@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import static se.arkalix.descriptor.EncodingDescriptor.JSON;
+import static se.arkalix.codec.CodecType.JSON;
 
 /**
  * HTTP/JSON event subscriber plugin.
@@ -102,11 +102,11 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
                         .name("event-subscriber")
                         .basePath(basePath)
                         .accessPolicy(AccessPolicy.whitelist(eventSubscribe.service().provider().name()))
-                        .encodings(JSON)
+                        .codecs(JSON)
 
                         .post("/#topic", (request, response) -> {
                             final var topicName = request.pathParameter(0);
-                            return request.bodyAs(EventIncomingDto.class)
+                            return request.bodyTo(EventIncomingDto::decodeJson)
                                 .ifSuccess(event -> {
                                     try {
                                         final var topic = nameToTopic.get(topicName.toLowerCase());
@@ -294,15 +294,15 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
         private final Set<Handle> handles = Collections.synchronizedSet(new HashSet<>());
 
         private Topic(final String name, final Consumer<String> onEmpty) {
-            this.name = Objects.requireNonNull(name, "Expected name");
-            this.onEmpty = Objects.requireNonNull(onEmpty, "Expected onEmpty");
+            this.name = Objects.requireNonNull(name, "name");
+            this.onEmpty = Objects.requireNonNull(onEmpty, "onEmpty");
         }
 
         public String name() {
             return name;
         }
 
-        public void publish(final SystemDescription provider, final Map<String, String> metadata, final String data) {
+        public void publish(final SystemRecord provider, final Map<String, String> metadata, final String data) {
             for (final var subscription : handles) {
                 try {
                     subscription.publish(provider, metadata, data);
@@ -333,7 +333,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
     private static class Handle implements EventSubscriptionHandle {
         private final EventSubscriptionHandler handler;
         private final Map<String, String> metadata;
-        private final Set<SystemDescription> providers;
+        private final Set<SystemRecord> providers;
         private final Consumer<Handle> onUnsubscribe;
         private final AtomicBoolean isUnsubscribed = new AtomicBoolean(false);
 
@@ -341,8 +341,8 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
             final EventSubscription subscription,
             final Consumer<Handle> onUnsubscribe)
         {
-            Objects.requireNonNull(subscription, "Expected subscription");
-            this.onUnsubscribe = Objects.requireNonNull(onUnsubscribe, "Expected onUnsubscribe");
+            Objects.requireNonNull(subscription, "subscription");
+            this.onUnsubscribe = Objects.requireNonNull(onUnsubscribe, "onUnsubscribe");
 
             handler = subscription.handler()
                 .orElseThrow(() -> new IllegalArgumentException(subscription +
@@ -352,7 +352,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
             providers = subscription.providers().isEmpty() ? null : subscription.providers();
         }
 
-        public void publish(final SystemDescription provider, final Map<String, String> metadata, final String data) {
+        public void publish(final SystemRecord provider, final Map<String, String> metadata, final String data) {
             if (providers != null && !providers.contains(provider)) {
                 return;
             }

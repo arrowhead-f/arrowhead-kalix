@@ -23,30 +23,30 @@ public class ServiceNotFoundException extends Exception {
             .append(", isSecure=")
             .append(query.isSecure());
 
-        final var encodings = query.encodings();
-        if (encodings.size() > 0) {
-            builder.append(", encodings=[");
+        final var codecs = query.codecTypes();
+        if (codecs.size() > 0) {
+            builder.append(", codecs=[");
             var isFirst = true;
-            for (final var encoding : encodings) {
+            for (final var codec : codecs) {
                 if (!isFirst) {
                     builder.append(", ");
                 }
                 isFirst = false;
-                builder.append(encoding.name());
+                builder.append(codec.name());
             }
             builder.append(']');
         }
 
-        final var transports = query.transports();
-        if (transports.size() > 0) {
-            builder.append(", transports=[");
+        final var protocolTypes = query.protocolTypes();
+        if (protocolTypes.size() > 0) {
+            builder.append(", protocolTypes=[");
             var isFirst = true;
-            for (final var transport : transports) {
+            for (final var protocolType : protocolTypes) {
                 if (!isFirst) {
                     builder.append(", ");
                 }
                 isFirst = false;
-                builder.append(transport.name());
+                builder.append(protocolType.name());
             }
             builder.append(']');
         }

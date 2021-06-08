@@ -13,8 +13,8 @@ public class HttpRouteTask {
 
     private HttpRouteTask(final Builder builder) {
         basePath = builder.basePath;
-        request = Objects.requireNonNull(builder.request, "Expected request");
-        response = Objects.requireNonNull(builder.response, "Expected response");
+        request = Objects.requireNonNull(builder.request, "request");
+        response = Objects.requireNonNull(builder.response, "response");
     }
 
     /**

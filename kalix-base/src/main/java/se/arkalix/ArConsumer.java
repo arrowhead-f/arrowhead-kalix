@@ -1,7 +1,5 @@
 package se.arkalix;
 
-import se.arkalix.description.ServiceDescription;
-
 /**
  * Some object useful for consuming one particular Arrowhead service.
  * <p>
@@ -17,5 +15,5 @@ public interface ArConsumer {
     /**
      * @return Description of consumed service.
      */
-    ServiceDescription service();
+    ServiceRecord service();
 }

@@ -1,10 +1,9 @@
 package se.arkalix.security.access;
 
 import se.arkalix.ArSystem;
-import se.arkalix.description.SystemIdentityDescription;
-import se.arkalix.description.ServiceDescription;
-import se.arkalix.descriptor.SecurityDescriptor;
-import se.arkalix.internal.security.access.AccessToken;
+import se.arkalix.SystemRecordWithIdentity;
+import se.arkalix.ServiceRecord;
+import se.arkalix.security.access._internal.AccessToken;
 import se.arkalix.util.annotation.ThreadSafe;
 
 import java.security.PublicKey;
@@ -74,20 +73,20 @@ public class AccessByToken implements AccessPolicy {
     }
 
     @Override
-    public SecurityDescriptor descriptor() {
-        return SecurityDescriptor.TOKEN;
+    public AccessPolicyType type() {
+        return AccessPolicyType.TOKEN;
     }
 
     @Override
     public boolean isAuthorized(
-        final SystemIdentityDescription consumer,
+        final SystemRecordWithIdentity consumer,
         final ArSystem provider,
-        final ServiceDescription service,
+        final ServiceRecord service,
         final String token)
         throws AccessTokenException
     {
-        Objects.requireNonNull(consumer, "Expected consumer");
-        Objects.requireNonNull(service, "Expected service");
+        Objects.requireNonNull(consumer, "consumer");
+        Objects.requireNonNull(service, "service");
 
         if (token == null) {
             return false;

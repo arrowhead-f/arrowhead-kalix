@@ -1,7 +1,7 @@
 package se.arkalix.core.plugin.eh;
 
 import se.arkalix.ArSystem;
-import se.arkalix.internal.core.plugin.Instants;
+import se.arkalix.core.plugin._internal.Instants;
 import se.arkalix.core.plugin.SystemDetails;
 import se.arkalix.util.concurrent.Future;
 
@@ -51,7 +51,7 @@ public interface ArEventPublishService {
         final Map<String, String> metadata,
         final String data)
     {
-        return publish(new EventOutgoingBuilder()
+        return publish(new EventOutgoingDto.Builder()
             .topic(topic)
             .publisher(SystemDetails.from(publisher))
             .metadata(metadata)

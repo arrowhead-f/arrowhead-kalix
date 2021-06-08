@@ -3,9 +3,9 @@ package se.arkalix.query;
 import se.arkalix.ArConsumer;
 import se.arkalix.ArConsumerFactory;
 import se.arkalix.ArSystem;
-import se.arkalix.description.ServiceDescription;
-import se.arkalix.descriptor.EncodingDescriptor;
-import se.arkalix.descriptor.TransportDescriptor;
+import se.arkalix.ServiceRecord;
+import se.arkalix.codec.CodecType;
+import se.arkalix.net.ProtocolType;
 import se.arkalix.util.Result;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.function.ThrowingFunction;
@@ -33,7 +33,7 @@ import java.util.stream.Stream;
  *         {@link ServiceQuery#resolveOne() resolveOne()} are used to complete
  *         the query and start service resolution. If any of the {@link
  *         ServiceQuery#oneUsing(ArConsumerFactory) oneUsing()} or {@link
- *         ServiceQuery#allUsing(ArConsumerFactory) allUsing()} method are
+ *         ServiceQuery#allUsing(ArConsumerFactory) allUsing()} methods are
  *         used, the provided factory automatically provides additional details
  *         to the query before it is executed. Make sure to read the
  *         documentation for the {@link ArConsumerFactory} you want to use with
@@ -47,11 +47,11 @@ import java.util.stream.Stream;
 @SuppressWarnings("unused")
 public class ServiceQuery {
     private final ArSystem consumer;
-    private final ThrowingFunction<ServiceQuery, Future<Set<ServiceDescription>>> resolver;
+    private final ThrowingFunction<ServiceQuery, Future<Set<ServiceRecord>>> resolver;
 
     private String name;
-    private Collection<EncodingDescriptor> encodings;
-    private Collection<TransportDescriptor> transports;
+    private Collection<CodecType> codecTypes;
+    private Collection<ProtocolType> protocolTypes;
     private Map<String, String> metadata;
     private Integer version;
     private Integer versionMax;
@@ -65,10 +65,10 @@ public class ServiceQuery {
      */
     public ServiceQuery(
         final ArSystem consumer,
-        final ThrowingFunction<ServiceQuery, Future<Set<ServiceDescription>>> resolver
+        final ThrowingFunction<ServiceQuery, Future<Set<ServiceRecord>>> resolver
     ) {
-        this.consumer = Objects.requireNonNull(consumer, "Expected consumer");
-        this.resolver = Objects.requireNonNull(resolver, "Expected resolver");
+        this.consumer = Objects.requireNonNull(consumer, "consumer");
+        this.resolver = Objects.requireNonNull(resolver, "resolver");
     }
 
     /**
@@ -96,58 +96,61 @@ public class ServiceQuery {
     }
 
     /**
-     * @return Application-level transport protocols that may be employed by
-     * the consumed service.
+     * Gets network protocols that may be employed by the consumed service.
+     *
+     * @return Supported network protocols.
      */
-    public Collection<TransportDescriptor> transports() {
-        return transports != null ? transports : Collections.emptyList();
+    public Collection<ProtocolType> protocolTypes() {
+        return protocolTypes != null ? protocolTypes : Collections.emptyList();
     }
 
     /**
-     * @param transports Application-level transport protocols that may be
-     *                   employed by the consumed service.
+     * Sets network protocols that may be employed by the consumed service.
+     *
+     * @param protocolTypes Supported network protocols.
      * @return This query.
      */
-    public ServiceQuery transports(final Collection<TransportDescriptor> transports) {
-        this.transports = transports;
+    public ServiceQuery protocolTypes(final Collection<ProtocolType> protocolTypes) {
+        this.protocolTypes = protocolTypes;
         return this;
     }
 
     /**
-     * @param transports Application-level transport protocols that may be
-     *                   employed by the consumed service.
+     * Sets network protocols that may be employed by the consumed service.
+     *
+     * @param protocolTypes Supported network protocols.
      * @return This query.
      */
-    public ServiceQuery transports(final TransportDescriptor... transports) {
-        this.transports = Arrays.asList(transports);
+    public ServiceQuery protocolTypes(final ProtocolType... protocolTypes) {
+        this.protocolTypes = Arrays.asList(protocolTypes);
         return this;
     }
 
     /**
-     * @return Message payload encodings that may be employed by the consumed
+     * @return Message payload codecs that may be employed by the consumed
      * service.
      */
-    public Collection<EncodingDescriptor> encodings() {
-        return encodings != null ? encodings : Collections.emptyList();
+    public Collection<CodecType> codecTypes() {
+        return codecTypes != null ? codecTypes : Collections.emptyList();
     }
 
     /**
-     * @param encodings Message payload encodings that may be employed by the
-     *                  consumed service.
+     * @param codecTypes Message payload codecs that may be employed by the
+     *                   consumed service.
      * @return This query.
      */
-    public ServiceQuery encodings(final Collection<EncodingDescriptor> encodings) {
-        this.encodings = encodings;
+    public ServiceQuery codecTypes(final Collection<CodecType> codecTypes) {
+        this.codecTypes = codecTypes;
         return this;
     }
 
     /**
-     * @param encodings Message payload encodings that may be employed by the
-     *                  consumed service.
+     * @param codecTypes Message payload codecs that may be employed by the
+     *                   consumed service.
      * @return This query.
      */
-    public ServiceQuery encodings(final EncodingDescriptor... encodings) {
-        this.encodings = Arrays.asList(encodings);
+    public ServiceQuery codecTypes(final CodecType... codecTypes) {
+        this.codecTypes = Arrays.asList(codecTypes);
         return this;
     }
 
@@ -235,7 +238,7 @@ public class ServiceQuery {
         }
         return resolveAll()
             .map(services -> services.stream()
-                .map(service -> factory.create(consumer, service, encodings)));
+                .map(service -> factory.create(consumer, service, codecTypes)));
     }
 
     /**
@@ -258,7 +261,7 @@ public class ServiceQuery {
             return Future.failure(throwable);
         }
         return resolveOne()
-            .map(service -> factory.create(consumer, service, encodings));
+            .map(service -> factory.create(consumer, service, codecTypes));
     }
 
     private Throwable updateAndValidateUsing(final ArConsumerFactory<?> factory) {
@@ -286,41 +289,41 @@ public class ServiceQuery {
             }
         }
 
-        // Set and check service transports.
-        Collection<TransportDescriptor> currentTransports = Collections.emptyList();
-        if (transports == null) {
-            transports = factory.serviceTransports();
+        // Set and check service protocol types.
+        Collection<ProtocolType> currentProtocolTypes = Collections.emptyList();
+        if (protocolTypes == null) {
+            protocolTypes = factory.serviceProtocolTypes();
         }
         else {
-            currentTransports = transports;
-            transports.retainAll(factory.serviceTransports());
+            currentProtocolTypes = protocolTypes;
+            protocolTypes.retainAll(factory.serviceProtocolTypes());
         }
-        if (transports.isEmpty()) {
+        if (protocolTypes.isEmpty()) {
             return new IllegalStateException("The provided " +
                 "consumer factory \"" + factory + "\" only supports the " +
-                "following application-level transport protocols: " +
-                factory.serviceTransports() + ", while this query was " +
+                "following network protocols: " +
+                factory.serviceProtocolTypes() + ", while this query was " +
                 "already configured to require that any out of " +
-                currentTransports + " be supported; no factory-" +
-                "supported transports are present in the existing " +
+                currentProtocolTypes + " be supported; no factory-" +
+                "supported protocols are present in the existing " +
                 "collection; cannot resolve service");
         }
 
-        // Set and check service encodings.
-        Collection<EncodingDescriptor> currentEncodings = Collections.emptyList();
-        if (encodings == null) {
-            encodings = factory.serviceEncodings();
+        // Set and check service codecs.
+        Collection<CodecType> currentCodecTypes = Collections.emptyList();
+        if (codecTypes == null) {
+            codecTypes = factory.serviceCodecTypes();
         }
         else {
-            encodings.retainAll(factory.serviceEncodings());
+            codecTypes.retainAll(factory.serviceCodecTypes());
         }
-        if (encodings.isEmpty()) {
+        if (codecTypes.isEmpty()) {
             return new IllegalStateException("The provided " +
                 "consumer factory \"" + factory + "\" only supports the " +
-                "following encodings: " + factory.serviceEncodings() + ", " +
+                "following codecs: " + factory.serviceCodecTypes() + ", " +
                 "while this query was already configured to require that " +
-                "any out of " + currentEncodings + " be supported; no " +
-                "factory-supported encodings are present in the existing " +
+                "any out of " + currentCodecTypes + " be supported; no " +
+                "factory-supported codecs are present in the existing " +
                 "collection; cannot resolve service");
         }
 
@@ -420,7 +423,7 @@ public class ServiceQuery {
      * @return {@link Future} completed, if successful, with a set of service
      * descriptions matching this query.
      */
-    public Future<Set<ServiceDescription>> resolveAll() {
+    public Future<Set<ServiceRecord>> resolveAll() {
         try {
             return resolver.apply(this);
         }
@@ -439,7 +442,7 @@ public class ServiceQuery {
      * resolved, the {@link Future} is failed with a {@link
      * ServiceNotFoundException}.
      */
-    public Future<ServiceDescription> resolveOne() {
+    public Future<ServiceRecord> resolveOne() {
         return resolveAll().mapResult(result -> {
             if (result.isFailure()) {
                 return Result.failure(result.fault());
@@ -459,23 +462,23 @@ public class ServiceQuery {
      * @return {@code true} only if the given {@code service} satisfies the
      * requirements of this query.
      */
-    public boolean matches(final ServiceDescription service) {
+    public boolean matches(final ServiceRecord service) {
         if (name != null && !name.equals(service.name())) {
             return false;
         }
 
         final var serviceInterfaces = service.interfaces();
 
-        final var queryTransports = transports();
-        if (!queryTransports.isEmpty() && serviceInterfaces.stream()
-            .noneMatch(triplet -> queryTransports.contains(triplet.transport())))
+        final var queryProtocolTypes = protocolTypes();
+        if (!queryProtocolTypes.isEmpty() && serviceInterfaces.stream()
+            .noneMatch(triplet -> queryProtocolTypes.contains(triplet.protocolType())))
         {
             return false;
         }
 
-        final var queryEncodings = encodings();
-        if (!queryEncodings.isEmpty() && serviceInterfaces.stream()
-            .noneMatch(triplet -> queryEncodings.contains(triplet.encoding())))
+        final var queryCodecs = codecTypes();
+        if (!queryCodecs.isEmpty() && serviceInterfaces.stream()
+            .noneMatch(triplet -> queryCodecs.contains(triplet.codecType())))
         {
             return false;
         }
@@ -500,7 +503,7 @@ public class ServiceQuery {
             return false;
         }
 
-        return service.security().isSecure() == isSecure();
+        return service.accessPolicyType().isSecure() == isSecure();
     }
 
     @Override
@@ -509,8 +512,8 @@ public class ServiceQuery {
             "consumer=" + consumer +
             ", resolver=" + resolver +
             ", name='" + name + '\'' +
-            ", encodings=" + encodings +
-            ", transports=" + transports +
+            ", codecTypes=" + codecTypes +
+            ", protocolTypes=" + protocolTypes +
             ", metadata=" + metadata +
             ", version=" + version +
             ", versionMax=" + versionMax +

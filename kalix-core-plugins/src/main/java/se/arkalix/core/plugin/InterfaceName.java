@@ -1,15 +1,15 @@
 package se.arkalix.core.plugin;
 
-import se.arkalix.descriptor.InterfaceDescriptor;
+import se.arkalix.ServiceInterface;
 import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoToString;
-import se.arkalix.dto.json.JsonName;
+import se.arkalix.dto.json.DtoJsonName;
 
-import static se.arkalix.dto.DtoEncoding.JSON;
+import static se.arkalix.dto.DtoCodec.JSON;
 
 /**
- * The name of an {@link InterfaceDescriptor interface triplet}.
+ * The name of an {@link ServiceInterface interface triplet}.
  */
 @DtoReadableAs(JSON)
 @DtoEqualsHashCode
@@ -17,7 +17,9 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 public interface InterfaceName {
     /**
      * Interface triplet.
+     *
+     * @return Service interface triplet.
      */
-    @JsonName("interfaceName")
-    InterfaceDescriptor name();
+    @DtoJsonName("interfaceName")
+    ServiceInterface name();
 }

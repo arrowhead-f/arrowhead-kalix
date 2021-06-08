@@ -13,14 +13,14 @@ import se.arkalix.net.http.client.HttpClientConnection;
  * trace, some other exception type should be used instead.
  */
 public class HttpIncomingResponseUnexpected extends HttpOutgoingRequestException {
-    private final HttpIncomingResponse response;
+    private final HttpIncomingResponse<?, ?> response;
 
     /**
      * Creates new HTTP response rejection exception from given response.
      *
      * @param response Response not containing the expected result.
      */
-    public HttpIncomingResponseUnexpected(final HttpIncomingResponse response) {
+    public HttpIncomingResponseUnexpected(final HttpIncomingResponse<?, ?> response) {
         this(response, null, null);
     }
 
@@ -31,7 +31,7 @@ public class HttpIncomingResponseUnexpected extends HttpOutgoingRequestException
      * @param response Response not containing the expected result.
      * @param message  Human-readable description of issue.
      */
-    public HttpIncomingResponseUnexpected(final HttpIncomingResponse response, final String message) {
+    public HttpIncomingResponseUnexpected(final HttpIncomingResponse<?, ?> response, final String message) {
         this(response, message, null);
     }
 
@@ -45,7 +45,7 @@ public class HttpIncomingResponseUnexpected extends HttpOutgoingRequestException
      *                 result.
      */
     public HttpIncomingResponseUnexpected(
-        final HttpIncomingResponse response,
+        final HttpIncomingResponse<?, ?> response,
         final String message,
         final Throwable cause
     ) {
@@ -70,7 +70,7 @@ public class HttpIncomingResponseUnexpected extends HttpOutgoingRequestException
     /**
      * @return Offending response.
      */
-    public HttpIncomingResponse response() {
+    public HttpIncomingResponse<?, ?> response() {
         return response;
     }
 

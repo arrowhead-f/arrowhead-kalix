@@ -70,7 +70,7 @@ public interface ArTrustedContractNegotiatorPluginFacade extends PluginFacade {
         final TrustedContractNegotiatorHandler handler)
     {
         final var now = Instant.now();
-        return offer(new TrustedContractOfferBuilder()
+        return offer(new TrustedContractOfferDto.Builder()
             .offerorName(offerorName)
             .receiverName(receiverName)
             .validAfter(now)

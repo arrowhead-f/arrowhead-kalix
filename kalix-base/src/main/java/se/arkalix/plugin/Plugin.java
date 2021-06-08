@@ -40,6 +40,9 @@ public interface Plugin {
      * <p>
      * Dependencies are always {@link #attachTo(ArSystem, Map)} attached}
      * <i>before</i> the plugins that depend on them.
+     *
+     * @return Set of {@link Plugin} class names, each of which is a dependency
+     * of this plugin.
      */
     default Set<Class<? extends Plugin>> dependencies() {
         return Collections.emptySet();
@@ -79,6 +82,7 @@ public interface Plugin {
      * @return {@link Future} that, if successful, completes with an object
      * useful for concretely handling the life-cycle events of the given
      * {@code system}.
+     * @throws Exception Any exception.
      */
     Future<PluginAttached> attachTo(ArSystem system, Map<Class<? extends Plugin>, PluginFacade> dependencies)
         throws Exception;

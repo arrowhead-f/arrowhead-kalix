@@ -1,6 +1,6 @@
 package se.arkalix.net.http.service;
 
-import se.arkalix.internal.net.http.HttpPaths;
+import se.arkalix.net.Uris;
 
 import java.util.*;
 
@@ -14,12 +14,12 @@ import java.util.*;
  * for segments to contain only the alphanumeric ASCII characters and hyphens
  * to maximize compatibility with various HTTP libraries and frameworks, RFC
  * 3986 explicitly allows the following characters, as well as so-called
- * <i>percent encodings</i> to be used:
+ * <i>percent codecs</i> to be used:
  * <pre>
  * A–Z a–z 0–9 - . _ ~ ! $ &amp; ' ( ) * + , ; = : @
  * </pre>
  * While all these characters are allowed in segments provided to this pattern
- * implementation, percent encodings are not (e.g. {@code %20} as a
+ * implementation, percent codecs are not (e.g. {@code %20} as a
  * representation for ASCII space).
  * <p>
  * It is frequently useful to allow certain pattern segments to match any
@@ -215,7 +215,7 @@ public class HttpPattern implements Comparable<HttpPattern> {
      * <p>
      * Valid patterns must start with a forward slash and consist of zero or
      * more segments separated by forward slashes. A segment must not contain
-     * percent encodings, but may otherwise consist of any valid path segment
+     * percent codecs, but may otherwise consist of any valid path segment
      * character, as defined by RFC 3986. A segment may optionally start with
      * a hash ({@code #}) to make it into a path parameter. The last segment
      * may consist only of a right angle bracket ({@code >}) to make the
@@ -248,10 +248,10 @@ public class HttpPattern implements Comparable<HttpPattern> {
         for (var q0 = 0; q0 < q1; ++q0) {
             var c = pattern.charAt(q0);
             if (c == '%') {
-                throw new IllegalArgumentException("Percent encodings may not be used in patterns");
+                throw new IllegalArgumentException("Percent codecs may not be used in patterns");
             }
             if (c != '/') {
-                if (HttpPaths.isValidPathCharacter(c)) {
+                if (Uris.isValidPathCharacter(c)) {
                     builder.append(c);
                     continue;
                 }

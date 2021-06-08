@@ -1,7 +1,7 @@
 package se.arkalix.security.identity;
 
-import se.arkalix.internal.net.dns.DnsNames;
-import se.arkalix.internal.security.identity.X509Names;
+import se.arkalix.net._internal.dns.DnsNames;
+import se.arkalix.security.identity._internal.X509Names;
 
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;

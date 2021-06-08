@@ -4,9 +4,9 @@ import se.arkalix.dto.DtoEqualsHashCode;
 import se.arkalix.dto.DtoReadableAs;
 import se.arkalix.dto.DtoToString;
 import se.arkalix.dto.DtoWritableAs;
-import se.arkalix.dto.json.JsonName;
+import se.arkalix.dto.json.DtoJsonName;
 
-import static se.arkalix.dto.DtoEncoding.JSON;
+import static se.arkalix.dto.DtoCodec.JSON;
 
 /**
  * An error description, as provided by the core services when a request
@@ -19,19 +19,25 @@ import static se.arkalix.dto.DtoEncoding.JSON;
 public interface ErrorResponse {
     /**
      * Human-readable description of error.
+     *
+     * @return Error description.
      */
-    @JsonName("errorMessage")
+    @DtoJsonName("errorMessage")
     String message();
 
     /**
      * Error code.
+     *
+     * @return Error code.
      */
-    @JsonName("errorCode")
+    @DtoJsonName("errorCode")
     int code();
 
     /**
      * Error type descriptor.
+     *
+     * @return Error type descriptor.
      */
-    @JsonName("exceptionType")
+    @DtoJsonName("exceptionType")
     String type();
 }

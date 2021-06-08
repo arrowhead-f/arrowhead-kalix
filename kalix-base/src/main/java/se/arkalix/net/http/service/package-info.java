@@ -9,8 +9,8 @@
  *         name},</li>
  *     <li>its {@link se.arkalix.net.http.service.HttpService#basePath(java.lang.String)
  *         base path},</li>
- *     <li>what {@link se.arkalix.net.http.service.HttpService#encodings(se.arkalix.descriptor.EncodingDescriptor...)
- *         encodings} it supports, as well as</li>
+ *     <li>what {@link se.arkalix.net.http.service.HttpService#codecs(CodecType...)
+ *         codecs} it supports, as well as</li>
  *     <li>what {@link se.arkalix.net.http.service.HttpService#accessPolicy(se.arkalix.security.access.AccessPolicy)
  *         access policy} it should use, unless the {@link se.arkalix.ArSystem
  *         system} that is to {@link
@@ -88,3 +88,5 @@
  * se.arkalix.net.http.service.HttpPattern here}.
  */
 package se.arkalix.net.http.service;
+
+import se.arkalix.codec.CodecType;

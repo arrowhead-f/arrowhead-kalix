@@ -51,7 +51,7 @@ public class OwnedIdentity extends SystemIdentity {
      */
     public OwnedIdentity(final Certificate[] chain, final PrivateKey privateKey) {
         super(chain);
-        this.privateKey = Objects.requireNonNull(privateKey, "Expected privateKey");
+        this.privateKey = Objects.requireNonNull(privateKey, "privateKey");
         verify();
     }
 
@@ -77,7 +77,7 @@ public class OwnedIdentity extends SystemIdentity {
      */
     public OwnedIdentity(final X509Certificate[] chain, final PrivateKey privateKey) {
         super(chain);
-        this.privateKey = Objects.requireNonNull(privateKey, "Expected privateKey");
+        this.privateKey = Objects.requireNonNull(privateKey, "privateKey");
         verify();
     }
 
@@ -96,7 +96,7 @@ public class OwnedIdentity extends SystemIdentity {
      */
     public OwnedIdentity(final SystemIdentity identity, final PrivateKey privateKey) {
         super(identity);
-        this.privateKey = Objects.requireNonNull(privateKey, "Expected privateKey");
+        this.privateKey = Objects.requireNonNull(privateKey, "privateKey");
         verify();
     }
 
@@ -115,7 +115,7 @@ public class OwnedIdentity extends SystemIdentity {
      */
     public OwnedIdentity(final TrustedIdentity identity, final PrivateKey privateKey) {
         super(identity);
-        this.privateKey = Objects.requireNonNull(privateKey, "Expected privateKey");
+        this.privateKey = Objects.requireNonNull(privateKey, "privateKey");
         verify();
     }
 
@@ -271,7 +271,7 @@ public class OwnedIdentity extends SystemIdentity {
          */
         public OwnedIdentity load() throws GeneralSecurityException, IOException {
             if (keyStore == null && keyStorePath == null) {
-                throw new NullPointerException("Expected keyStore or keyStorePath");
+                throw new NullPointerException("keyStore or keyStorePath");
             }
             if (keyStore != null && keyStorePath != null) {
                 throw new IllegalStateException("Provided both keyStore and keyStorePath");
