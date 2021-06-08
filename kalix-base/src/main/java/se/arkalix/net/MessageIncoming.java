@@ -186,7 +186,7 @@ public interface MessageIncoming extends Message {
             .buffer()
             .map(reader -> {
                 try (reader) {
-                    final var result = decoder.decoderFor(codecType)
+                    final var result = decoder.decoder(codecType)
                         .decode(reader);
                     if (reader.readableBytes() > 0) {
                         throw new MessageHasTrailingData(this);

@@ -19,5 +19,5 @@ public interface MultiDecoder<T> {
      * @throws NullPointerException If {@code reader} or {@code codec} is
      *                              {@code null}.
      */
-    Decoder<T> decoderFor(CodecType codecType);
+    Decoder<T> decoder(CodecType codecType);
 }

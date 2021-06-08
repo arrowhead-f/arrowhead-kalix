@@ -346,7 +346,7 @@ public class DtoGenerator {
 
         final var dtoReadableAs = interfaceElement.getAnnotation(DtoReadableAs.class);
         if (dtoReadableAs != null) {
-            final var decode = MethodSpec.methodBuilder("decoderFor")
+            final var decode = MethodSpec.methodBuilder("decoder")
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .returns(ParameterizedTypeName.get(ClassName.get(Decoder.class), implementationClassName))
                 .addParameter(ClassName.get(CodecType.class), "codecType", Modifier.FINAL);

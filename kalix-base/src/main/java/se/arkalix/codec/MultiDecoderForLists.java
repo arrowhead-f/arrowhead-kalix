@@ -1,7 +1,5 @@
 package se.arkalix.codec;
 
-import se.arkalix.io.buf.BufferReader;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -48,7 +46,7 @@ public class MultiDecoderForLists<T> implements MultiDecoder<List<T>> {
     }
 
     @Override
-    public Decoder<List<T>> decoderFor(final CodecType codecType) {
+    public Decoder<List<T>> decoder(final CodecType codecType) {
         if (codecType == CodecType.JSON) {
             return decoderForJson();
         }
@@ -91,7 +89,7 @@ public class MultiDecoderForLists<T> implements MultiDecoder<List<T>> {
                         b = reader.readS8();
                     } while (b == ' ' || b == '\t' || b == '\r' || b == '\n');
 
-                    list.add(decoder.decoderFor(CodecType.JSON).decode(reader));
+                    list.add(decoder.decoder(CodecType.JSON).decode(reader));
 
                     do {
                         b = reader.readS8();
