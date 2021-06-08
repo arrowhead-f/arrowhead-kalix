@@ -18,6 +18,25 @@ public interface SystemRecord {
      * @param publicKey           System public key.
      * @param remoteSocketAddress IP-address/hostname and port through which
      *                            the system can be contacted.
+     * @return Description of provider system.
+     * @throws NullPointerException If {@code name} or {@code
+     *                              remoteSocketAddress} is {@code null}.
+     */
+    static SystemRecord from(
+        final String name,
+        final PublicKey publicKey,
+        final InetSocketAddress remoteSocketAddress
+    ) {
+        return new DefaultSystemRecord(name, publicKey, remoteSocketAddress, null);
+    }
+
+    /**
+     * Creates new Arrowhead provider system description.
+     *
+     * @param name                System name.
+     * @param publicKey           System public key.
+     * @param remoteSocketAddress IP-address/hostname and port through which
+     *                            the system can be contacted.
      * @param metadata            System metadata.
      * @return Description of provider system.
      * @throws NullPointerException If {@code name} or {@code
@@ -36,7 +55,7 @@ public interface SystemRecord {
      * Creates new Arrowhead provider system description.
      * <p>
      * This constructor is meant to be used only if the system invoking it is
-     * running in insecure mode.
+     * running in <i>insecure</i> mode.
      *
      * @param name                System name.
      * @param remoteSocketAddress IP-address/hostname and port through which
@@ -50,6 +69,28 @@ public interface SystemRecord {
     }
 
     /**
+     * Creates new Arrowhead provider system description.
+     * <p>
+     * This constructor is meant to be used only if the system invoking it is
+     * running in <i>insecure</i> mode.
+     *
+     * @param name                System name.
+     * @param remoteSocketAddress IP-address/hostname and port through which
+     *                            the system can be contacted.
+     * @param metadata            System metadata.
+     * @return Description of provider system.
+     * @throws NullPointerException If {@code name} or {@code
+     *                              remoteSocketAddress} is {@code null}.
+     */
+    static SystemRecord from(
+        final String name,
+        final InetSocketAddress remoteSocketAddress,
+        final Map<String, String> metadata
+    ) {
+        return new DefaultSystemRecord(name, null, remoteSocketAddress, metadata);
+    }
+
+    /**
      * Gets name of described system.
      *
      * @return System name.
@@ -59,7 +100,7 @@ public interface SystemRecord {
     /**
      * Gets metadata related to the described system.
      *
-     * @return System metadata
+     * @return System metadata.
      */
     Map<String, String> metadata();
 
