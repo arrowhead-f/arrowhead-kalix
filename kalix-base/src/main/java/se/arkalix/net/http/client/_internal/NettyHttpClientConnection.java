@@ -9,13 +9,12 @@ import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.codec.MediaType;
+import se.arkalix.net.TransportException;
 import se.arkalix.net._internal.NettyBodyOutgoing;
 import se.arkalix.net._internal.NettySimpleChannelInboundHandler;
+import se.arkalix.net.http.HttpOutgoingRequestException;
 import se.arkalix.net.http._internal.NettyHttpConverters;
 import se.arkalix.net.http._internal.NettyHttpHeaders;
-import se.arkalix.util.concurrent._internal.FutureCompletion;
-import se.arkalix.util.concurrent._internal.FutureCompletionUnsafe;
-import se.arkalix.net.http.*;
 import se.arkalix.net.http.client.HttpClientConnection;
 import se.arkalix.net.http.client.HttpClientConnectionException;
 import se.arkalix.net.http.client.HttpClientRequest;
@@ -25,12 +24,14 @@ import se.arkalix.util.InternalException;
 import se.arkalix.util.Result;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;
+import se.arkalix.util.concurrent._internal.FutureCompletion;
+import se.arkalix.util.concurrent._internal.FutureCompletionUnsafe;
 
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import java.net.InetSocketAddress;
-import java.nio.channels.ClosedChannelException;
 import java.security.cert.Certificate;
 import java.util.LinkedList;
 import java.util.Objects;
@@ -96,14 +97,8 @@ public class NettyHttpClientConnection
                         futureConnection.complete(Result.failure(cause));
                         futureConnection = null;
                     }
-                    else if (cause instanceof ClosedChannelException) {
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("Connection closed by " + channel.remoteAddress() +
-                                " before TLS handshake could take place", cause);
-                        }
-                    }
-                    else if (logger.isDebugEnabled()) {
-                        logger.debug("Failed to complete TLS handshake with " +
+                    else if (logger.isErrorEnabled()) {
+                        logger.error("SSL/TLS connection failed unexpectedly; remote host: " +
                             channel.remoteAddress(), cause);
                     }
                     ctx.close();
@@ -169,12 +164,12 @@ public class NettyHttpClientConnection
     }
 
     @Override
-    public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
+    public void exceptionCaught(final ChannelHandlerContext ctx, Throwable cause) {
         if (cause instanceof SSLHandshakeException) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("SSL handshake failed", cause);
-            }
-            return;
+            cause = TransportException.from((SSLHandshakeException) cause);
+        }
+        if (cause instanceof SSLException) {
+            cause = TransportException.from((SSLException) cause);
         }
         if (futureConnection != null) {
             futureConnection.complete(Result.failure(cause));
