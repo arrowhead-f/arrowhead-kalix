@@ -249,7 +249,7 @@ public class ClosedBuffer implements Buffer {
     }
 
     @Override
-    public void skip(final int bytesToSkip) {
+    public void skip(final int length) {
         throw new BufferIsClosed();
     }
 

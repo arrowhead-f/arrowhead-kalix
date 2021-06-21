@@ -442,10 +442,10 @@ public abstract class CheckedBuffer implements Buffer {
     protected abstract long readU48NeUnchecked();
 
     @Override
-    public void skip(final int bytesToSkip) {
+    public void skip(final int length) {
         checkIfOpen();
-        checkReadLength(bytesToSkip);
-        skipUnchecked(bytesToSkip);
+        checkReadLength(length);
+        skipUnchecked(length);
     }
 
     protected abstract void skipUnchecked(int bytesToSkip);
@@ -891,8 +891,8 @@ public abstract class CheckedBuffer implements Buffer {
         }
     }
 
-    protected void checkReadLength(final int bytesToRead) {
-        if (readOffset() > writeOffset() - bytesToRead) {
+    protected void checkReadLength(final int length) {
+        if (readOffset() > writeOffset() - length) {
             throw new IndexOutOfBoundsException();
         }
     }
@@ -914,7 +914,7 @@ public abstract class CheckedBuffer implements Buffer {
         writeEnd(rangeEnd);
     }
 
-    protected void ensureWriteLength(final int byteToWrite) {
-        ensureWriteRange(writeOffset(), byteToWrite);
+    protected void ensureWriteLength(final int length) {
+        ensureWriteRange(writeOffset(), length);
     }
 }

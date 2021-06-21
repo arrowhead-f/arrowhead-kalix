@@ -5,11 +5,28 @@ import se.arkalix.io.buf._internal.DefaultBufferReader;
 import se.arkalix.io.buf._internal.DefaultBufferWriter;
 import se.arkalix.io.buf._internal.EmptyBuffer;
 import se.arkalix.io.buf._internal.NettyBuffer;
+import se.arkalix.util.annotation.Unsafe;
 
 import java.nio.ByteBuffer;
 
 /**
  * A collection of memory that can be read from or written to.
+ * <p>
+ * When no longer in use, every allocated buffer <b>must</b> be {@link #close()
+ * closed} exactly once.
+ * <p>
+ * This interface is modeled after Java NIO {@link ByteBuffer} and
+ * {@code ByteBuf} of the Netty library. Its purpose is to make room for
+ * automatic buffer recycling by being {@link #close() closeable}, as well as
+ * to make buffer handling less prone to mistakes than its NIO counterpart,
+ * primarily by relying on the same kinds of strategies as the Netty ByteBuf
+ * class. It can, for example, support automatic memory reallocation as
+ * capacity runs out, has separate read and write offsets, and requires that
+ * endianess is decided upon when choosing what method to invoke rather than
+ * having an endianess property that can be changed at any time.
+ *
+ * @see BufferReader
+ * @see BufferWriter
  */
 public interface Buffer extends BufferReader, BufferWriter {
     /**
@@ -18,6 +35,9 @@ public interface Buffer extends BufferReader, BufferWriter {
      * If the initial capacity is exhausted by writing memory to the buffer, it
      * will be reallocated until it reaches the maximum capacity. The buffer
      * will reside in memory managed by the JVM.
+     * <p>
+     * The returned buffer <b>must</b> be {@link #close() closed} once no
+     * longer in use.
      *
      * @param initialCapacity Desired initial capacity, in bytes.
      * @param maximumCapacity Desired maximum capacity, in bytes.
@@ -38,6 +58,9 @@ public interface Buffer extends BufferReader, BufferWriter {
      * will reside in memory <i>not</i> managed by the JVM. Direct memory can
      * be faster for operations that require interaction with the operating
      * system, such as writing to a socket or reading from a file.
+     * <p>
+     * The returned buffer <b>must</b> be {@link #close() closed} once no
+     * longer in use.
      *
      * @param initialCapacity Desired initial capacity, in bytes.
      * @param maximumCapacity Desired maximum capacity, in bytes.
@@ -51,7 +74,7 @@ public interface Buffer extends BufferReader, BufferWriter {
     }
 
     /**
-     * Gets reference to singleton buffer that always reports being empty.
+     * Gets reference to singleton buffer that always remains empty.
      *
      * @return Reference to empty buffer.
      */
@@ -61,10 +84,18 @@ public interface Buffer extends BufferReader, BufferWriter {
 
     /**
      * Wraps given {@link ByteBuffer} into a {@link Buffer}.
+     * <p>
+     * It is <i>not safe</i> to use {@link ByteBuffer ByteBuffers} that have
+     * been previously provided to this method.
+     * <p>
+     * The returned buffer <b>should</b> be {@link #close() closed} once no
+     * longer in use.
      *
      * @param byteBuffer Buffer to wrap.
      * @return Wrapped buffer.
+     * @throws NullPointerException If {@code byteBuffer} is {@code null}.
      */
+    @Unsafe
     static Buffer wrap(final ByteBuffer byteBuffer) {
         return new NettyBuffer(Unpooled.wrappedBuffer(byteBuffer));
     }
@@ -88,6 +119,9 @@ public interface Buffer extends BufferReader, BufferWriter {
      * Note that while the returned buffer can only be read from, it accesses
      * the same memory as this buffer, which means that you can still write to
      * that memory by using this buffer.
+     * <p>
+     * The returned buffer <b>should</b> be {@link #close() closed} once no
+     * longer in use.
      *
      * @return Read-only buffer.
      */
@@ -101,6 +135,9 @@ public interface Buffer extends BufferReader, BufferWriter {
      * Note that while the returned buffer can only be written to, it updates
      * the same memory as this buffer, which means that you can still read from
      * that memory by using this buffer.
+     * <p>
+     * The returned buffer <b>should</b> be {@link #close() closed} once no
+     * longer in use.
      *
      * @return Write-only buffer.
      */

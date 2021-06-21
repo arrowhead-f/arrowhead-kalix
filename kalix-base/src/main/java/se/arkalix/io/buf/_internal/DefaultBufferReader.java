@@ -232,8 +232,8 @@ public class DefaultBufferReader implements BufferReader {
     }
 
     @Override
-    public void skip(final int bytesToSkip) {
-        inner.skip(bytesToSkip);
+    public void skip(final int length) {
+        inner.skip(length);
     }
 
     @Override
