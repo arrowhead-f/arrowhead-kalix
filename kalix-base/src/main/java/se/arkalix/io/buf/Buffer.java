@@ -1,10 +1,9 @@
 package se.arkalix.io.buf;
 
-import io.netty.buffer.Unpooled;
 import se.arkalix.io.buf._internal.DefaultBufferReader;
 import se.arkalix.io.buf._internal.DefaultBufferWriter;
 import se.arkalix.io.buf._internal.EmptyBuffer;
-import se.arkalix.io.buf._internal.NettyBuffer;
+import se.arkalix.io.buf._internal.NioBuffer;
 import se.arkalix.util.annotation.Unsafe;
 
 import java.nio.ByteBuffer;
@@ -47,7 +46,7 @@ public interface Buffer extends BufferReader, BufferWriter {
         if (initialCapacity < 0 || initialCapacity > maximumCapacity) {
             throw new IndexOutOfBoundsException();
         }
-        return new NettyBuffer(Unpooled.buffer(initialCapacity, maximumCapacity));
+        return new NioBuffer(ByteBuffer.allocate(initialCapacity), maximumCapacity);
     }
 
     /**
@@ -70,7 +69,7 @@ public interface Buffer extends BufferReader, BufferWriter {
         if (initialCapacity < 0 || initialCapacity > maximumCapacity) {
             throw new IndexOutOfBoundsException();
         }
-        return new NettyBuffer(Unpooled.directBuffer(initialCapacity, maximumCapacity));
+        return new NioBuffer(ByteBuffer.allocateDirect(initialCapacity), maximumCapacity);
     }
 
     /**
@@ -97,7 +96,10 @@ public interface Buffer extends BufferReader, BufferWriter {
      */
     @Unsafe
     static Buffer wrap(final ByteBuffer byteBuffer) {
-        return new NettyBuffer(Unpooled.wrappedBuffer(byteBuffer));
+        if (byteBuffer == null) {
+            throw new NullPointerException("byteBuffer");
+        }
+        return new NioBuffer(byteBuffer.duplicate(), byteBuffer.capacity());
     }
 
     /**
@@ -105,12 +107,39 @@ public interface Buffer extends BufferReader, BufferWriter {
      * <p>
      * If you want to write to the wrapped byte array through the returned
      * buffer, make sure to call {@link #clear()} before you write.
+     * <p>
+     * The returned buffer <b>should</b> be {@link #close() closed} once no
+     * longer in use.
      *
      * @param byteArray Byte array to wrap.
      * @return Wrapped byte array.
+     * @throws NullPointerException If {@code byteArray} is {@code null}.
      */
     static Buffer wrap(final byte[] byteArray) {
-        return new NettyBuffer(Unpooled.wrappedBuffer(byteArray));
+        return wrap(byteArray, 0, byteArray.length);
+    }
+
+    /**
+     * Wraps identified range of given byte array into a {@link Buffer}.
+     * <p>
+     * If you want to write to the wrapped byte array through the returned
+     * buffer, make sure to call {@link #clear()} before you write.
+     * <p>
+     * The returned buffer <b>should</b> be {@link #close() closed} once no
+     * longer in use.
+     *
+     * @param byteArray Byte array to wrap.
+     * @param offset    Offset from beginning of {@code byteArray}, in bytes.
+     * @param length    Number of bytes, beginning at {@code offset}, to
+     *                  include in the returned {@link Buffer}.
+     * @return Wrapped byte array.
+     * @throws NullPointerException If {@code byteArray} is {@code null}.
+     */
+    static Buffer wrap(final byte[] byteArray, final int offset, final int length) {
+        if (byteArray == null) {
+            throw new NullPointerException("byteArray");
+        }
+        return new NioBuffer(ByteBuffer.wrap(byteArray, offset, length), length);
     }
 
     /**
@@ -152,32 +181,6 @@ public interface Buffer extends BufferReader, BufferWriter {
      * offsets. It will likely not do anything to the actual buffer memory.
      */
     void clear();
-
-    /**
-     * Creates a new buffer containing a copy of the contents of this buffer.
-     * <p>
-     * Writing to the returned buffer does not affect this buffer, and vice
-     * versa. The copy will only contain the bytes of this buffer that can be
-     * read when the method was called. The internal read offset is not
-     * affected by this method.
-     *
-     * @return Copy of this buffer.
-     */
-    default Buffer copy() {
-        return copy(readOffset(), readableBytes());
-    }
-
-    /**
-     * Creates a new buffer containing a copy of the specified byte range.
-     * <p>
-     * Writing to the returned buffer does not affect this buffer, and vice
-     * versa. The internal read offset is not affected by this method.
-     *
-     * @param offset Position in this buffer from which copying is to start.
-     * @param length Number of bytes from {@code offset} to copy.
-     * @return Copy of this buffer.
-     */
-    Buffer copy(int offset, int length);
 
     /**
      * Creates a new buffer being a dupe of this buffer.

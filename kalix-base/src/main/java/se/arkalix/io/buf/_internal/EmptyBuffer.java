@@ -43,11 +43,6 @@ public class EmptyBuffer extends CheckedBuffer {
     }
 
     @Override
-    protected Buffer copyUnchecked(final int offset, final int length) {
-        return this;
-    }
-
-    @Override
     protected Buffer dupeUnchecked() {
         return this;
     }
@@ -459,6 +454,11 @@ public class EmptyBuffer extends CheckedBuffer {
 
     @Override
     public ByteBuffer asByteBuffer() {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public ByteBuffer asReadOnlyByteBuffer() {
         throw new IllegalStateException();
     }
 

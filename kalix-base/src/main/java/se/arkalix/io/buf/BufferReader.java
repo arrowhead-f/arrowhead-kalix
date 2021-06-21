@@ -43,7 +43,7 @@ public interface BufferReader extends AutoCloseable {
      * @return Read-only NIO {@link ByteBuffer}.
      * @throws BufferIsClosed If this buffer is closed.
      */
-    ByteBuffer asByteBuffer();
+    ByteBuffer asReadOnlyByteBuffer();
 
     @Override
     void close();

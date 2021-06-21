@@ -22,15 +22,6 @@ public abstract class CheckedBuffer implements Buffer {
     }
 
     @Override
-    public Buffer copy(final int offset, final int length) {
-        checkIfOpen();
-        checkCopyRange(offset, length);
-        return copyUnchecked(offset, length);
-    }
-
-    protected abstract Buffer copyUnchecked(final int offset, final int length);
-
-    @Override
     public final Buffer dupe() {
         checkIfOpen();
         return dupeUnchecked();
@@ -67,11 +58,13 @@ public abstract class CheckedBuffer implements Buffer {
 
     @Override
     public int readableBytes() {
+        checkIfOpen();
         return writeOffset() - readOffset();
     }
 
     @Override
     public void readOffset(final int readOffset) {
+        checkIfOpen();
         checkOffsets(readOffset, writeOffset(), writeEnd());
         readOffsetUnchecked(readOffset);
     }
@@ -869,12 +862,6 @@ public abstract class CheckedBuffer implements Buffer {
 
     protected static void checkOffsets(final int readOffset, final int writeOffset, final int writeEnd) {
         if (readOffset < 0 || readOffset > writeOffset || writeOffset > writeEnd) {
-            throw new IndexOutOfBoundsException();
-        }
-    }
-
-    protected void checkCopyRange(final int copyOffset, final int length) {
-        if (BinaryMath.isRangeOutOfBounds(copyOffset, length, writeEnd())) {
             throw new IndexOutOfBoundsException();
         }
     }

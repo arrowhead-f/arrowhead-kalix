@@ -6,7 +6,7 @@ import io.netty.buffer.CompositeByteBuf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.io.buf.BufferReader;
-import se.arkalix.io.buf._internal.NettyBuffer;
+import se.arkalix.io.buf._internal.NioBuffer;
 import se.arkalix.net.BodyIncoming;
 import se.arkalix.util.Result;
 import se.arkalix.util.concurrent.Future;
@@ -65,7 +65,7 @@ public class NettyBodyReceiverBuffered implements NettyBodyReceiver, Future<Buff
     @Override
     public void close() {
         if (result == null) {
-            result = Result.success(new NettyBuffer(buffer));
+            result = Result.success(new NioBuffer(buffer));
         }
         if (consumer != null) {
             final var consumer0 = consumer;

@@ -16,9 +16,8 @@ public class DefaultBufferReader implements BufferReader {
     }
 
     @Override
-    public ByteBuffer asByteBuffer() {
-        return inner.asByteBuffer()
-            .asReadOnlyBuffer();
+    public ByteBuffer asReadOnlyByteBuffer() {
+        return inner.asReadOnlyByteBuffer();
     }
 
     @Override

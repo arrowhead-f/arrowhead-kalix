@@ -24,11 +24,6 @@ public class ClosedBuffer implements Buffer {
     }
 
     @Override
-    public Buffer copy(final int offset, final int length) {
-        throw new BufferIsClosed();
-    }
-
-    @Override
     public Buffer dupe() {
         throw new BufferIsClosed();
     }
@@ -40,6 +35,11 @@ public class ClosedBuffer implements Buffer {
 
     @Override
     public ByteBuffer asByteBuffer() {
+        throw new BufferIsClosed();
+    }
+
+    @Override
+    public ByteBuffer asReadOnlyByteBuffer() {
         throw new BufferIsClosed();
     }
 

@@ -6,7 +6,7 @@ import io.netty.channel.DefaultFileRegion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.codec.CodecType;
-import se.arkalix.io.buf._internal.NettyBuffer;
+import se.arkalix.io.buf._internal.NioBuffer;
 import se.arkalix.net.BodyOutgoing;
 
 import java.io.IOException;
@@ -36,7 +36,7 @@ public class NettyBodyOutgoing {
         else if (body.asEncodable().isPresent()) {
             final var encodable = body.asEncodable().get();
             final var buffer = allocator.buffer();
-            final var bufferWriter = new NettyBuffer(buffer);
+            final var bufferWriter = new NioBuffer(buffer);
             codecType = encodable.encode(bufferWriter);
             length = buffer.readableBytes();
             content = buffer;
