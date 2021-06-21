@@ -12,7 +12,7 @@ allprojects {
 
 subprojects {
     group = 'se.arkalix'
-    version = '0.6.1-SNAPSHOT'
+    version = '0.7.0-SNAPSHOT'
 
     tasks.withType(JavaCompile) {
         sourceCompatibility = '11'
