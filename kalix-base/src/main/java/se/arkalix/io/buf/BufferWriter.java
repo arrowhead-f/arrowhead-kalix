@@ -2,8 +2,40 @@ package se.arkalix.io.buf;
 
 import java.nio.ByteBuffer;
 
+/**
+ * A {@link Buffer} that can be written to.
+ * <p>
+ * Keeps track of an {@link #writeOffset() internal write offset}, which is
+ * increased automatically whenever a write operation is performed on this
+ * buffer. It also keeps tack of a {@link #writeEnd() internal write end},
+ * which may never be passed by the internal write offset.
+ * <p>
+ * The following diagram illustrates how this works in practice. The buffer
+ * consists of a sequence of byte slots, denoted by squares in the diagram.
+ * Each square has an <i>offset</i>, as well as a byte <i>value</i>. The
+ * internal write offset and end both point to offsets within the buffer.
+ * Whenever a byte is written to the buffer, the internal write offset is moved
+ * closer to the internal end offset.
+ * <pre>
+ *   Offset:   0   1   2   3   4   5   6   7
+ *           +---+---+---+---+---+---+---+---+
+ *    Value: | 9 | 3 | 0 | 0 | 0 | 0 | 0 | 0 |
+ *           +---+---+---+---+---+---+---+---+
+ *                     A                        A
+ *                     |                        |
+ *                Write Offset              Write End
+ * </pre>
+ * To support writing to this buffer without affecting its internal write
+ * offset, this interface also provides numerous {@code set*} methods.
+ */
 @SuppressWarnings("unused")
 public interface BufferWriter extends AutoCloseable {
+    /**
+     * Converts this buffer writer into a writable NIO {@link ByteBuffer}.
+     *
+     * @return NIO {@link ByteBuffer}.
+     * @throws BufferIsClosed If this buffer is closed.
+     */
     ByteBuffer asByteBuffer();
 
     @Override

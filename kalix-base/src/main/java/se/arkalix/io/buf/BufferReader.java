@@ -12,23 +12,22 @@ import java.nio.ByteBuffer;
  * <p>
  * The following diagram illustrates how this works in practice. The buffer
  * consists of a sequence of byte slots, denoted by squares in the diagram.
- * Each square has an <i>offset</i>, as well as a <i>value</i>. The internal
- * read offset and end both point to offsets within the buffer. Whenever a byte
- * is read from the buffer, the internal read offset is moved closer to the
- * internal end offset. If the buffer is written to through some other class or
- * interface, the internal read end may move further away from the internal
- * read offset.
+ * Each square has an <i>offset</i>, as well as a byte <i>value</i>. The
+ * internal read offset and end both point to offsets within the buffer.
+ * Whenever a byte is read from the buffer, the internal read offset is moved
+ * closer to the internal end offset. If the buffer is written to through some
+ * other class or interface, the internal read end may move further away from
+ * the internal read offset.
  * <pre>
- *   Offset:   0   1   2   3   4   5   6   7
- *           +---+---+---+---+---+---+---+---+
- *    Value: | 0 | 0 | 5 | 1 | 9 | 0 | 1 | 0 |
- *           +---+---+---+---+---+---+---+---+
+ *   Offset:   0   1   2   3   4   5   6   7   ...
+ *           +---+---+---+---+---+---+---+---+-----+
+ *    Value: | 0 | 0 | 5 | 1 | 9 | 0 | 1 | 0 | ... |
+ *           +---+---+---+---+---+---+---+---+-----+
  *                 A               A
  *                 |               |
- *       Internal Read Offset      |
- *                         Internal Read End
+ *            Read Offset          |
+ *                              Read End
  * </pre>
- * <p>
  * To support getting the contents of the buffer without its internal read
  * offset being updated, this interface also provides numerous {@code get*} and
  * {@code peek*} methods. The former category of methods read bytes from an

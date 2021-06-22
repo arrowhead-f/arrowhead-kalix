@@ -9,7 +9,7 @@ import se.arkalix.util.annotation.Unsafe;
 import java.nio.ByteBuffer;
 
 /**
- * A collection of memory that can be read from or written to.
+ * A collection of memory that can be read from and/or written to.
  * <p>
  * When no longer in use, every allocated buffer <b>must</b> be {@link #close()
  * closed} exactly once.
@@ -18,11 +18,11 @@ import java.nio.ByteBuffer;
  * {@code ByteBuf} of the Netty library. Its purpose is to make room for
  * automatic buffer recycling by being {@link #close() closeable}, as well as
  * to make buffer handling less prone to mistakes than its NIO counterpart,
- * primarily by relying on the same kinds of strategies as the Netty ByteBuf
- * class. It can, for example, support automatic memory reallocation as
- * capacity runs out, has separate read and write offsets, and requires that
- * endianess is decided upon when choosing what method to invoke rather than
- * having an endianess property that can be changed at any time.
+ * primarily by relying on the same kinds of strategies as the Netty {@code
+ * ByteBuf} class. It can, for example, support automatic memory reallocation
+ * as capacity runs out, has separate read and write offsets, and requires that
+ * endianess is decided upon when choosing what read or write method to invoke
+ * rather than having an endianess property that can be changed at any time.
  *
  * @see BufferReader
  * @see BufferWriter
@@ -199,8 +199,9 @@ public interface Buffer extends BufferReader, BufferWriter {
      *
      * @param readOffset  Desired read offset.
      * @param writeOffset Desired write offset.
-     * @throws IndexOutOfBoundsException If the read offset is smaller than
-     *                                   zero or larger than writeOffset.
+     * @throws IndexOutOfBoundsException If the {@code readOffset} is smaller
+     *                                   than zero or larger than {@code
+     *                                   writeOffset}.
      */
     void offsets(int readOffset, int writeOffset);
 
