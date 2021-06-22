@@ -4,7 +4,6 @@ import se.arkalix.io.buf._internal.DefaultBufferReader;
 import se.arkalix.io.buf._internal.DefaultBufferWriter;
 import se.arkalix.io.buf._internal.EmptyBuffer;
 import se.arkalix.io.buf._internal.NioBuffer;
-import se.arkalix.util.annotation.Unsafe;
 
 import java.nio.ByteBuffer;
 
@@ -84,9 +83,6 @@ public interface Buffer extends BufferReader, BufferWriter {
     /**
      * Wraps given {@link ByteBuffer} into a {@link Buffer}.
      * <p>
-     * It is <i>not safe</i> to use {@link ByteBuffer ByteBuffers} that have
-     * been previously provided to this method.
-     * <p>
      * The returned buffer <b>should</b> be {@link #close() closed} once no
      * longer in use.
      *
@@ -94,7 +90,6 @@ public interface Buffer extends BufferReader, BufferWriter {
      * @return Wrapped buffer.
      * @throws NullPointerException If {@code byteBuffer} is {@code null}.
      */
-    @Unsafe
     static Buffer wrap(final ByteBuffer byteBuffer) {
         if (byteBuffer == null) {
             throw new NullPointerException("byteBuffer");
