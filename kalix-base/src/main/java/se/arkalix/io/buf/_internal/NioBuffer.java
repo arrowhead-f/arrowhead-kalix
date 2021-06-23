@@ -1,6 +1,7 @@
 package se.arkalix.io.buf._internal;
 
 import se.arkalix.io.buf.Buffer;
+import se.arkalix.io.buf.BufferIsClosed;
 import se.arkalix.io.buf.BufferReader;
 import se.arkalix.io.buf.BufferWriter;
 import se.arkalix.util._internal.BinaryMath;
@@ -8,6 +9,8 @@ import se.arkalix.util.annotation.Internal;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+
+import static se.arkalix.util._internal.BinaryMath.roundUpToMultipleOfPowerOfTwo;
 
 @Internal
 public class NioBuffer extends CheckedBuffer {
@@ -463,6 +466,9 @@ public class NioBuffer extends CheckedBuffer {
 
     @Override
     public int writeEnd() {
+        if (byteBuffer == null) {
+            throw new BufferIsClosed();
+        }
         return byteBuffer.limit();
     }
 
@@ -483,20 +489,21 @@ public class NioBuffer extends CheckedBuffer {
 
     @Override
     protected void writeEndUnchecked(final int writeEnd) {
-        if (byteBuffer.capacity() >= writeEnd) {
-            byteBuffer.limit(writeEnd);
-            if (writeEnd < writeOffset) {
-                readOffset = Math.min(readOffset, writeEnd);
-                writeOffset = writeEnd;
-            }
-            return;
+        if (writeEnd > byteBuffer.capacity()) {
+            final int capacity = roundUpToMultipleOfPowerOfTwo(writeEnd, 4096)
+                .orElse(writeEnd);
+            byteBuffer = (byteBuffer.isDirect()
+                ? ByteBuffer.allocateDirect(capacity)
+                : ByteBuffer.allocate(capacity))
+                .put(byteBuffer.position(0)
+                    .limit(writeOffset()))
+                .clear();
         }
-        byteBuffer = (byteBuffer.isDirect()
-            ? ByteBuffer.allocateDirect(writeEnd)
-            : ByteBuffer.allocate(writeEnd))
-            .put(byteBuffer.position(0)
-                .limit(writeOffset()))
-            .clear();
+        else if (writeEnd < writeOffset) {
+            readOffset = Math.min(readOffset, writeEnd);
+            writeOffset = writeEnd;
+        }
+        byteBuffer.limit(writeEnd);
     }
 
     @Override
