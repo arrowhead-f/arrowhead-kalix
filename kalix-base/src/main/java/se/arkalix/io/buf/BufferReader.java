@@ -1619,7 +1619,8 @@ public interface BufferReader extends AutoCloseable {
      * Gets the number of bytes that can currently be read from this buffer.
      *
      * @return Current number of readable bytes.
-     * @throws BufferIsClosed If this buffer is closed.
+     * @throws BufferIsClosed If this buffer is closed, this exception may be
+     *                        thrown.
      */
     int readableBytes();
 
@@ -1628,7 +1629,8 @@ public interface BufferReader extends AutoCloseable {
      * byte will be read.
      *
      * @return Copy of internal read offset.
-     * @throws BufferIsClosed If this buffer is closed.
+     * @throws BufferIsClosed If this buffer is closed, this exception may be
+     *                        thrown.
      */
     int readOffset();
 
@@ -1646,6 +1648,8 @@ public interface BufferReader extends AutoCloseable {
      * Gets position of the last readable byte in this buffer.
      *
      * @return Offset of last readable byte in this buffer.
+     * @throws BufferIsClosed If this buffer is closed, this exception may be
+     *                        thrown.
      */
     int readEnd();
 

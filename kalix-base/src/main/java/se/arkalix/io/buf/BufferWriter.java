@@ -8,25 +8,34 @@ import java.nio.ByteBuffer;
  * Keeps track of an {@link #writeOffset() internal write offset}, which is
  * increased automatically whenever a write operation is performed on this
  * buffer. It also keeps tack of a {@link #writeEnd() internal write end},
- * which may never be passed by the internal write offset.
+ * which indicates how much memory is currently allocated, or can be cheaply
+ * written to. If exceeded, the write end will be moved automatically, given
+ * that the buffer can be expanded, until it reaches the {@link #writeEndMax()
+ * internal write end max}, which can never be exceeded.
  * <p>
  * The following diagram illustrates how this works in practice. The buffer
  * consists of a sequence of byte slots, denoted by squares in the diagram.
  * Each square has an <i>offset</i>, as well as a byte <i>value</i>. The
- * internal write offset and end both point to offsets within the buffer.
- * Whenever a byte is written to the buffer, the internal write offset is moved
- * closer to the internal end offset.
+ * internal write offset points within the buffer, while the write end and
+ * write end max point just after and beyond the end of the buffer,
+ * respectively. Whenever a byte is written to the buffer, the internal write
+ * offset is moved closer to the internal end offset. As we already mentioned,
+ * if the write end is exceeded, it will be moved further right until it
+ * reaches the write end max, if more memory can be allocated for the buffer.
  * <pre>
- *   Offset:   0   1   2   3   4   5   6   7
- *           +---+---+---+---+---+---+---+---+
- *    Value: | 9 | 3 | 0 | 0 | 0 | 0 | 0 | 0 |
- *           +---+---+---+---+---+---+---+---+
- *                     A                        A
- *                     |                        |
- *                Write Offset              Write End
+ *   Offset:   0   1   2   3   4   5   6   7   8   9   A   B
+ *           +---+---+---+---+---+---+---+---+   +   +   +   +
+ *    Value: | 9 | 3 | 0 | 0 | 0 | 0 | 0 | 0 | .   .   .   .
+ *           +---+---+---+---+---+---+---+---+   +   +   +   +
+ *                     A                       A           A
+ *                     |                       |           |
+ *                Write Offset             Write End  Write End Max
+ *
  * </pre>
  * To support writing to this buffer without affecting its internal write
- * offset, this interface also provides numerous {@code set*} methods.
+ * offset, this interface also provides numerous {@code set*} methods. If data
+ * is written after the write end using a {@code set*} method, the write end
+ * will be moved if possible.
  */
 @SuppressWarnings("unused")
 public interface BufferWriter extends AutoCloseable {
@@ -41,6 +50,12 @@ public interface BufferWriter extends AutoCloseable {
     @Override
     void close();
 
+    /**
+     * Determines if this buffer reader has been {@link #close() closed}.
+     *
+     * @return {@code true} only if this buffer reader is {@link #close()
+     * closed}.
+     */
     boolean isClosed();
 
     default void setAt(final int offset, final byte[] source) {
@@ -233,14 +248,61 @@ public interface BufferWriter extends AutoCloseable {
         return writeEndMax() - writeOffset();
     }
 
+    /**
+     * Gets position of the first byte outside the writable range of this
+     * buffer.
+     *
+     * @return Offset of first byte outside the writable range of this buffer.
+     * @throws BufferIsClosed If this buffer is closed, this exception may be
+     *                        thrown.
+     */
     int writeEnd();
 
+    /**
+     * Updates the internal write end by setting it to the given value.
+     * <p>
+     * If the given {@code writeEnd} larger than the current
+     * {@link #writeEnd()}, this call may trigger memory allocations.
+     *
+     * @param writeEnd Desired new internal write end.
+     * @throws BufferIsClosed            If this buffer is closed.
+     * @throws IndexOutOfBoundsException If {@code writeEnd < 0 ||
+     *                                   writeEnd > writeEndMax()}.
+     */
     void writeEnd(int writeEnd);
 
+    /**
+     * Gets position of the first byte outside the range of this buffer that
+     * could become writable.
+     * <p>
+     * In other words, this method returns the offset beyond which this buffer
+     * can never grow. The offset can also be interpreted as the maximum size,
+     * in bytes, of this buffer.
+     *
+     * @return Maximum buffer size.
+     * @throws BufferIsClosed If this buffer is closed, this exception may be
+     *                        thrown.
+     */
     int writeEndMax();
 
+    /**
+     * Gets copy of internal write offset, which determines from where the next
+     * byte will be written.
+     *
+     * @return Copy of internal write offset.
+     * @throws BufferIsClosed If this buffer is closed, this exception may be
+     *                        thrown.
+     */
     int writeOffset();
 
+    /**
+     * Updates the internal write offset by setting it to the given value.
+     *
+     * @param writeOffset Desired new internal write offset.
+     * @throws BufferIsClosed            If this buffer is closed.
+     * @throws IndexOutOfBoundsException If {@code writeOffset < 0 ||
+     *                                   writeEnd() < writeOffset}.
+     */
     void writeOffset(int writeOffset);
 
     default void write(final byte[] source) {
