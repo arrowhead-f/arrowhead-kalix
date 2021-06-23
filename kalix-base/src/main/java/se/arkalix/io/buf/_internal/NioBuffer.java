@@ -1,11 +1,11 @@
 package se.arkalix.io.buf._internal;
 
-import se.arkalix.io.buf.Buffer;
 import se.arkalix.io.buf.BufferIsClosed;
 import se.arkalix.io.buf.BufferReader;
 import se.arkalix.io.buf.BufferWriter;
 import se.arkalix.util._internal.BinaryMath;
 import se.arkalix.util.annotation.Internal;
+import se.arkalix.util.annotation.Unsafe;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -14,37 +14,30 @@ import static se.arkalix.util._internal.BinaryMath.roundUpToMultipleOfPowerOfTwo
 
 @Internal
 public class NioBuffer extends CheckedBuffer {
-    private final int capacityMax;
+    private final int writeEnd;
 
     private ByteBuffer byteBuffer;
     private int readOffset;
     private int writeOffset;
 
-    public NioBuffer(final ByteBuffer byteBuffer, final int capacityMax) {
+    /**
+     * The provided {@code byteBuffer} <b>must</b> never be used outside of
+     * the created class instance.
+     */
+    @Unsafe
+    public NioBuffer(final ByteBuffer byteBuffer, final int writeEnd) {
         if (byteBuffer == null) {
             throw new NullPointerException("byteBuffer");
         }
-        if (capacityMax < byteBuffer.capacity()) {
+        if (writeEnd < 0) {
             throw new IndexOutOfBoundsException();
         }
 
-        this.byteBuffer = byteBuffer.order(ByteOrder.BIG_ENDIAN);
-        this.capacityMax = capacityMax;
-    }
+        this.byteBuffer = byteBuffer.position(0)
+            .limit(Math.min(byteBuffer.capacity(), writeEnd))
+            .order(ByteOrder.BIG_ENDIAN);
 
-    @Override
-    public ByteBuffer asByteBuffer() {
-        return byteBuffer.duplicate();
-    }
-
-    @Override
-    public ByteBuffer asReadOnlyByteBuffer() {
-        return byteBuffer.asReadOnlyBuffer();
-    }
-
-    @Override
-    protected Buffer dupeUnchecked() {
-        return new NioBuffer(byteBuffer.duplicate(), capacityMax);
+        this.writeEnd = writeEnd;
     }
 
     @Override
@@ -61,22 +54,21 @@ public class NioBuffer extends CheckedBuffer {
 
     @Override
     protected void getAtUnchecked(
-        final int offset,
+        int offset,
         final BufferWriter destination,
         final int destinationOffset,
         final int length
     ) {
-        destination.asByteBuffer()
-            .position(destinationOffset)
-            .limit(destinationOffset + length)
-            .put(byteBuffer.asReadOnlyBuffer()
-                .position(offset));
+        destination.setAt(destinationOffset, byteBuffer.asReadOnlyBuffer()
+            .position(offset)
+            .limit(offset + length));
     }
 
     @Override
     protected void getAtUnchecked(final int offset, final ByteBuffer destination) {
         destination.put(byteBuffer.asReadOnlyBuffer()
-            .position(offset));
+            .position(offset)
+            .limit(offset + destination.remaining()));
     }
 
     @Override
@@ -343,11 +335,9 @@ public class NioBuffer extends CheckedBuffer {
         final int sourceOffset,
         final int length
     ) {
-        byteBuffer.duplicate()
+        source.getAt(sourceOffset, byteBuffer.duplicate()
             .position(offset)
-            .put(source.asReadOnlyByteBuffer()
-                .position(sourceOffset)
-                .limit(sourceOffset + length));
+            .limit(offset + length));
     }
 
     @Override
@@ -466,15 +456,7 @@ public class NioBuffer extends CheckedBuffer {
 
     @Override
     public int writeEnd() {
-        if (byteBuffer == null) {
-            throw new BufferIsClosed();
-        }
-        return byteBuffer.limit();
-    }
-
-    @Override
-    public int writeEndMax() {
-        return capacityMax;
+        return writeEnd;
     }
 
     @Override
@@ -485,25 +467,6 @@ public class NioBuffer extends CheckedBuffer {
     @Override
     protected void skipUnchecked(final int bytesToSkip) {
         writeOffset += bytesToSkip;
-    }
-
-    @Override
-    protected void writeEndUnchecked(final int writeEnd) {
-        if (writeEnd > byteBuffer.capacity()) {
-            final int capacity = roundUpToMultipleOfPowerOfTwo(writeEnd, 4096)
-                .orElse(writeEnd);
-            byteBuffer = (byteBuffer.isDirect()
-                ? ByteBuffer.allocateDirect(capacity)
-                : ByteBuffer.allocate(capacity))
-                .put(byteBuffer.position(0)
-                    .limit(writeOffset()))
-                .clear();
-        }
-        else if (writeEnd < writeOffset) {
-            readOffset = Math.min(readOffset, writeEnd);
-            writeOffset = writeEnd;
-        }
-        byteBuffer.limit(writeEnd);
     }
 
     @Override
@@ -624,5 +587,32 @@ public class NioBuffer extends CheckedBuffer {
     protected void writeS64NeUnchecked(final long value) {
         setS64NeAtUnchecked(writeOffset, value);
         writeOffset += 8;
+    }
+
+    @Override
+    protected int capacity() {
+        if (byteBuffer == null) {
+            throw new BufferIsClosed();
+        }
+        return byteBuffer.limit();
+    }
+
+    @Override
+    protected void capacity(int capacity) {
+        if (capacity > byteBuffer.capacity()) {
+            capacity = roundUpToMultipleOfPowerOfTwo(capacity, 4096)
+                .orElse(capacity);
+            byteBuffer = (byteBuffer.isDirect()
+                ? ByteBuffer.allocateDirect(capacity)
+                : ByteBuffer.allocate(capacity))
+                .put(byteBuffer.position(0)
+                    .limit(writeOffset()))
+                .clear();
+        }
+        else if (capacity < writeOffset) {
+            readOffset = Math.min(readOffset, capacity);
+            writeOffset = capacity;
+        }
+        byteBuffer.limit(capacity);
     }
 }

@@ -8,13 +8,47 @@ import se.arkalix.io.buf._internal.NioBuffer;
 import java.nio.ByteBuffer;
 
 /**
- * A collection of memory that can be read from and/or written to.
+ * A collection of memory that can be read from and written to.
  * <p>
+ * The memory contains as if being a contiguous region of bytes, where each
+ * byte has its own <i>offset</i>, or position, relative to the beginning of
+ * the region. Five kinds of read/write methods are provided for acquiring or
+ * mutating those bytes, prefixed as follows:
+ * <ul>
+ *     <li><b>get</b>: Copies memory <i>from</i> this buffer, beginning at an
+ *     explicitly specified offset. The <i>read offset</i> of this buffer is
+ *     <i>not changed</i>.
+ *     <li><b>peek</b>: Copies memory <i>from</i> this buffer, beginning at its
+ *     current <i>read offset</i>. The read offset is <i>not changed</i>.
+ *     <li><b>read</b>: Copies memory <i>from</i> this buffer, beginning at its
+ *     current <i>read offset</i>. The read offset is increased to make it
+ *     point to the first byte right after the read region.
+ *     <li><b>set</b>: Copies memory <i>to</i> this buffer, beginning at an
+ *     explicitly specified offset. The write offset of this buffer is <i>not
+ *     changed</i>.
+ *     <li><b>write</b>: Copies memory <i>to</i> this buffer, beginning at its
+ *     current write offset. The write offset is increased to make it point to
+ *     the first byte right after the memory region written to.
+ * </ul>
+ * As implied by the above descriptions, four pointers are maintained into the
+ * memory of the buffer. Those are:
+ * <ol>
+ *     <li>{@link #readOffset()}: The offset of the first byte in the region of
+ *     bytes that can be read from.
+ *     <li>{@link #readEnd()}: The offset of the first byte outside the region
+ *     of bytes that can be read from.
+ *     <li>{@link #writeOffset()}: The offset of the first byte in the region
+ *     of bytes that can be written to.
+ *     <li>{@link #writeEnd()}: The offset of the first byte outside the region
+ *     of bytes that can be written to.
+ * </ol>
  * When no longer in use, every allocated buffer <b>must</b> be {@link #close()
- * closed} exactly once.
+ * closed} exactly once. It is not enough to close any buffers derived from
+ * this, for example via {@link #asWriter()}. Every buffer <b>must</b> be
+ * closed at some point, or memory may be leaked.
  * <p>
- * This interface is modeled after Java NIO {@link ByteBuffer} and
- * {@code ByteBuf} of the Netty library. Its purpose is to make room for
+ * This interface is modeled after the Java NIO {@link ByteBuffer}, as well as
+ * the {@code ByteBuf} of the Netty library. Its purpose is to make room for
  * automatic buffer recycling by being {@link #close() closeable}, as well as
  * to make buffer handling less prone to mistakes than its NIO counterpart,
  * primarily by relying on the same kinds of strategies as the Netty {@code
@@ -148,6 +182,7 @@ public interface Buffer extends BufferReader, BufferWriter {
      * longer in use.
      *
      * @return Read-only buffer.
+     * @throws BufferIsClosed If this buffer is closed.
      */
     default BufferReader asReader() {
         return new DefaultBufferReader(this);
@@ -164,6 +199,7 @@ public interface Buffer extends BufferReader, BufferWriter {
      * longer in use.
      *
      * @return Write-only buffer.
+     * @throws BufferIsClosed If this buffer is closed.
      */
     default BufferWriter asWriter() {
         return new DefaultBufferWriter(this);
@@ -174,29 +210,35 @@ public interface Buffer extends BufferReader, BufferWriter {
      * <p>
      * This method is only guaranteed to reset the internal read and write
      * offsets. It will likely not do anything to the actual buffer memory.
+     *
+     * @throws BufferIsClosed If this buffer is closed. Not guaranteed to be
+     *                        thrown by all implementations.
      */
     void clear();
-
-    /**
-     * Creates a new buffer being a dupe of this buffer.
-     * <p>
-     * The dupe has its own internal read and write offsets, but shares memory
-     * with this buffer.
-     *
-     * @return New dupe buffer.
-     */
-    Buffer dupe();
 
     /**
      * Updates the read and write offsets of this buffer atomically.
      * <p>
      * The read offset must be smaller than or equal to the write offset.
+     * <p>
+     * This method is preferred over calling {@link #readOffset(int)} and
+     * {@link #writeOffset(int)} separately right after each other. Using this
+     * method means that fewer bounds checks have to be performed, as well as
+     * there being no risk of problems arising due to the two methods being
+     * called in a problematic order. The bounds checks of those two methods
+     * could fail even though same values would have succeeded if provided to
+     * this method.
      *
      * @param readOffset  Desired read offset.
      * @param writeOffset Desired write offset.
+     * @throws BufferIsClosed            If this buffer is closed. Not
+     *                                   guaranteed to be thrown by all
+     *                                   implementations.
      * @throws IndexOutOfBoundsException If the {@code readOffset} is smaller
      *                                   than zero or larger than {@code
      *                                   writeOffset}.
+     * @see #readOffset(int)
+     * @see #writeOffset(int)
      */
     void offsets(int readOffset, int writeOffset);
 

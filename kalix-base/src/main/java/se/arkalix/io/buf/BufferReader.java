@@ -3,47 +3,41 @@ package se.arkalix.io.buf;
 import java.nio.ByteBuffer;
 
 /**
- * A {@link Buffer} that can be read from.
+ * A collection of memory that can be read from.
  * <p>
- * Keeps track of an {@link #readOffset() internal read offset}, which is
- * increased automatically whenever a read operation is performed on this
- * buffer. It also keeps tack of a {@link #readEnd() internal read end}, which
- * may never be passed by the internal read offset.
+ * Keeps track of a {@link #readOffset() read offset}, which is increased
+ * automatically whenever a read operation is successfully performed on this
+ * buffer. It also keeps tack of a {@link #readEnd() read end}, which may never
+ * be passed by the read offset.
  * <p>
- * The following diagram illustrates how this works in practice. The buffer
- * consists of a sequence of byte slots, denoted by squares in the diagram.
- * Each square has an <i>offset</i>, as well as a byte <i>value</i>. The
- * internal read offset and end both point to offsets within the buffer.
- * Whenever a byte is read from the buffer, the internal read offset is moved
- * closer to the internal end offset. If the buffer is written to through some
- * other class or interface, the internal read end may move further away from
- * the internal read offset.
+ * The below diagram illustrates how this works in practice. The buffer
+ * consists of a sequence of bytes, denoted by squares in the diagram. Each
+ * byte has an <i>offset</i> relative to the beginning of the memory, as well
+ * as a current <i>value</i>. The read offset and end both point to offsets
+ * within the buffer. Whenever a byte is read from the buffer, the read offset
+ * is moved closer to the end offset. If the buffer is written to through some
+ * other class or interface, the read end may move further away from the read
+ * offset.
  * <pre>
- *   Offset:   0   1   2   3   4   5   6   7   ...
+ *   Offset: 0   1   2   3   4   5   6   7   ...
  *           +---+---+---+---+---+---+---+---+-----+
  *    Value: | 0 | 0 | 5 | 1 | 9 | 0 | 1 | 0 | ... |
  *           +---+---+---+---+---+---+---+---+-----+
- *                 A               A
- *                 |               |
- *            Read Offset          |
- *                              Read End
+ *               A               A
+ *               |               |
+ *          Read Offset       Read End
  * </pre>
- * To support getting the contents of the buffer without its internal read
- * offset being updated, this interface also provides numerous {@code get*} and
- * {@code peek*} methods. The former category of methods read bytes from an
- * explicitly specified read offset, while the latter uses the internal read
- * offset without updating it.
+ * To support getting the contents of the buffer without its read offset being
+ * updated, this interface also provides numerous methods prefixed with {@code
+ * get} and {@code peek}. The former category of methods read bytes from an
+ * explicitly specified read offset, while the latter uses the read offset
+ * without updating it.
+ *
+ * @see Buffer
+ * @see BufferWriter
  */
 @SuppressWarnings("unused")
 public interface BufferReader extends AutoCloseable {
-    /**
-     * Converts this buffer reader into a read-only NIO {@link ByteBuffer}.
-     *
-     * @return Read-only NIO {@link ByteBuffer}.
-     * @throws BufferIsClosed If this buffer is closed.
-     */
-    ByteBuffer asReadOnlyByteBuffer();
-
     @Override
     void close();
 
@@ -94,8 +88,8 @@ public interface BufferReader extends AutoCloseable {
      * Gets {@code destination.writableBytes()} bytes from this buffer,
      * beginning at {@code offset}, and writes them to {@code destination}.
      * <p>
-     * The internal write offset of {@code destination} is increased if this
-     * operation is successful.
+     * The write offset of {@code destination} is increased if this operation
+     * is successful.
      *
      * @param offset      Offset from beginning of this buffer.
      * @param destination Buffer to write bytes to.
@@ -113,8 +107,8 @@ public interface BufferReader extends AutoCloseable {
      * Gets {@code length} bytes from this buffer, beginning at {@code offset},
      * and writes them to {@code destination}.
      * <p>
-     * The internal write offset of {@code destination} is increased if this
-     * operation is successful.
+     * The write offset of {@code destination} is increased if this operation
+     * is successful.
      *
      * @param offset      Offset from beginning of this buffer.
      * @param destination Buffer to write bytes to.
@@ -131,7 +125,7 @@ public interface BufferReader extends AutoCloseable {
 
     /**
      * Gets {@code length} bytes from this buffer, beginning at {@code offset},
-     * and copies them to {@code destination} without updating its internal
+     * and copies them to {@code destination} without updating its
      * write offset.
      *
      * @param offset            Offset from beginning of this buffer.
@@ -149,7 +143,7 @@ public interface BufferReader extends AutoCloseable {
      * Gets {@code destination.remaining()} bytes from this buffer, beginning
      * at {@code offset}, and writes them to {@code destination}.
      * <p>
-     * The internal write offset, or <i>position</i>, of {@code destination} is
+     * The write offset, or <i>position</i>, of {@code destination} is
      * increased if this operation is successful.
      *
      * @param offset      Offset from beginning of this buffer.
@@ -786,10 +780,9 @@ public interface BufferReader extends AutoCloseable {
 
     /**
      * Copies {@code destination.length} bytes from this buffer, beginning at
-     * its internal read offset, to {@code destination}.
+     * its read offset, to {@code destination}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer remains unchanged by this operation.
      *
      * @param destination Byte array to copy bytes to.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -803,12 +796,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Copies {@code length} bytes from this buffer, beginning at its internal
+     * Copies {@code length} bytes from this buffer, beginning at its
      * read offset, to {@code destination}, beginning at {@code
      * destinationOffset}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer remains unchanged by this operation.
      *
      * @param destination       Byte array to copy bytes to.
      * @param destinationOffset Offset from beginning of {@code destination}.
@@ -827,14 +819,12 @@ public interface BufferReader extends AutoCloseable {
 
     /**
      * Gets {@code destination.writableBytes()} bytes from this buffer,
-     * beginning at its internal read offset, and writes them to
-     * {@code destination}.
+     * beginning at its read offset, and writes them to {@code destination}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      * <p>
-     * The internal write offset of {@code destination} is increased if this
-     * operation is successful.
+     * The write offset of {@code destination} is increased if this operation
+     * is successful.
      *
      * @param destination Buffer to write bytes to.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -848,14 +838,13 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets {@code length} bytes from this buffer, beginning at its internal
-     * read offset, and writes them to {@code destination}.
+     * Gets {@code length} bytes from this buffer, beginning at its read offset,
+     * and writes them to {@code destination}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      * <p>
-     * The internal write offset of {@code destination} is increased if this
-     * operation is successful.
+     * The write offset of {@code destination} is increased if this operation
+     * is successful.
      *
      * @param destination Buffer to write bytes to.
      * @param length      Number of bytes to write.
@@ -870,12 +859,10 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets {@code length} bytes from this buffer, beginning at internal read
-     * offset, and copies them to {@code destination} without updating its
-     * internal write offset.
+     * Gets {@code length} bytes from this buffer, beginning at read offset,
+     * and copies them to {@code destination} without updating its write offset.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @param destination       Buffer to write bytes to.
      * @param destinationOffset Offset from beginning of {@code destination}.
@@ -891,12 +878,11 @@ public interface BufferReader extends AutoCloseable {
 
     /**
      * Gets {@code destination.remaining()} bytes from this buffer, beginning
-     * at its internal read offset, and writes them to {@code destination}.
+     * at its read offset, and writes them to {@code destination}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      * <p>
-     * The internal write offset, or <i>position</i>, of {@code destination} is
+     * The write offset, or <i>position</i>, of {@code destination} is
      * increased if this operation is successful.
      *
      * @param destination NIO {@link ByteBuffer} to write bytes to.
@@ -911,12 +897,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets four bytes from this buffer at its internal read offset, which are
-     * assumed to contain a IEEE 32-bit binary float with big-endian byte order,
-     * and converts them into a Java {@code float}.
+     * Gets four bytes from this buffer at its read offset, which are assumed
+     * to contain a IEEE 32-bit binary float with big-endian byte order, and
+     * converts them into a Java {@code float}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code float}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -929,12 +914,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets four bytes from this buffer at its internal read offset, which are
-     * assumed to contain a IEEE 32-bit binary float with little-endian
-     * byte order, and converts them into a Java {@code float}.
+     * Gets four bytes from this buffer at its read offset, which are assumed
+     * to contain a IEEE 32-bit binary float with little-endian byte order, and
+     * converts them into a Java {@code float}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code float}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -947,13 +931,12 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets four bytes from this buffer at its internal read offset, which are
-     * assumed to contain a IEEE 32-bit binary float with the same endianess as
-     * the system running this application, and converts them into a Java
-     * {@code float}.
+     * Gets four bytes from this buffer at its read offset, which are assumed
+     * to contain a IEEE 32-bit binary float with the same endianess as the
+     * system running this application, and converts them into a Java {@code
+     * float}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code float}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -966,12 +949,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets eight bytes from this buffer at its internal read offset, which are
-     * assumed to contain a IEEE 64-bit binary float with big-endian byte order,
-     * and converts them into a Java {@code double}.
+     * Gets eight bytes from this buffer at its read offset, which are assumed
+     * to contain a IEEE 64-bit binary float with big-endian byte order, and
+     * converts them into a Java {@code double}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code double}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -984,12 +966,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets eight bytes from this buffer at its internal read offset, which are
-     * assumed to contain a IEEE 64-bit binary float with little-endian
-     * byte order, and converts them into a Java {@code double}.
+     * Gets eight bytes from this buffer at its read offset, which are assumed
+     * to contain a IEEE 64-bit binary float with little-endian byte order, and
+     * converts them into a Java {@code double}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code double}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1002,13 +983,12 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets eight bytes from this buffer at its internal read offset, which are
-     * assumed to contain a IEEE 64-bit binary float with the same endianess as
-     * the system running this application, and converts them into a Java
-     * {@code double}.
+     * Gets eight bytes from this buffer at its read offset, which are assumed
+     * to contain a IEEE 64-bit binary float with the same endianess as the
+     * system running this application, and converts them into a Java {@code
+     * double}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code double}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1021,10 +1001,9 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets and returns one byte from this buffer at its internal read offset.
+     * Gets and returns one byte from this buffer at its read offset.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code byte}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1037,12 +1016,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets two bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 16-bit integer with big-endian byte order,
-     * and converts them into a Java {@code short}.
+     * Gets two bytes from this buffer at its read offset, which are assumed to
+     * contain a signed 16-bit integer with big-endian byte order, and converts
+     * them into a Java {@code short}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code short}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1055,12 +1033,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets two bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 16-bit integer with little-endian byte order,
-     * and converts them into a Java {@code short}.
+     * Gets two bytes from this buffer at its read offset, which are assumed to
+     * contain a signed 16-bit integer with little-endian byte order, and
+     * converts them into a Java {@code short}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code short}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1073,13 +1050,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets two bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 16-bit integer with the same endianess as
-     * the system running this application, and converts them into a Java
-     * {@code short}.
+     * Gets two bytes from this buffer at its read offset, which are assumed to
+     * contain a signed 16-bit integer with the same endianess as the system
+     * running this application, and converts them into a Java {@code short}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code short}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1092,12 +1067,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets three bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 24-bit integer with big-endian byte order,
-     * and converts them into a Java {@code int}.
+     * Gets three bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 24-bit integer with big-endian byte order, and
+     * converts them into a Java {@code int}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1110,12 +1084,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets three bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 24-bit integer with little-endian byte order,
-     * and converts them into a Java {@code int}.
+     * Gets three bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 24-bit integer with little-endian byte order, and
+     * converts them into a Java {@code int}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1128,13 +1101,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets three bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 24-bit integer with the same endianess as
-     * the system running this application, and converts them into a Java
-     * {@code int}.
+     * Gets three bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 24-bit integer with the same endianess as the system
+     * running this application, and converts them into a Java {@code int}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1147,12 +1118,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets four bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 32-bit integer with big-endian byte order,
-     * and converts them into a Java {@code int}.
+     * Gets four bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 32-bit integer with big-endian byte order, and
+     * converts them into a Java {@code int}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1165,12 +1135,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets four bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 32-bit integer with little-endian byte order,
-     * and converts them into a Java {@code int}.
+     * Gets four bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 32-bit integer with little-endian byte order, and
+     * converts them into a Java {@code int}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1183,13 +1152,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets four bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 32-bit integer with the same endianess as
-     * the system running this application, and converts them into a Java
-     * {@code int}.
+     * Gets four bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 32-bit integer with the same endianess as the system
+     * running this application, and converts them into a Java {@code int}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1202,12 +1169,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets six bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 48-bit integer with big-endian byte order,
-     * and converts them into a Java {@code long}.
+     * Gets six bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 48-bit integer with big-endian byte order, and
+     * converts them into a Java {@code big-endian}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1220,12 +1186,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets six bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 48-bit integer with little-endian byte order,
-     * and converts them into a Java {@code long}.
+     * Gets six bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 48-bit integer with little-endian byte order, and
+     * converts them into a Java {@code little-endian}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1238,13 +1203,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets six bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 48-bit integer with the same endianess as
-     * the system running this application, and converts them into a Java
-     * {@code long}.
+     * Gets six bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 48-bit integer with the same endianess as the system
+     * running this application, and converts them into a Java {@code long}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1257,12 +1220,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets eight bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 64-bit integer with big-endian byte order,
-     * and converts them into a Java {@code long}.
+     * Gets eight bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 64-bit integer with big-endian byte order, and
+     * converts them into a Java {@code big-endian}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1275,12 +1237,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets eight bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 64-bit integer with little-endian byte order,
-     * and converts them into a Java {@code long}.
+     * Gets eight bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 64-bit integer with little-endian byte order, and
+     * converts them into a Java {@code little-endian}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1293,13 +1254,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets eight bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 64-bit integer with the same endianess as
-     * the system running this application, and converts them into a Java
-     * {@code long}.
+     * Gets eight bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 64-bit integer with the same endianess as the system
+     * running this application, and converts them into a Java {@code long}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1312,11 +1271,9 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets and returns one unsigned byte from this buffer at its internal read
-     * offset.
+     * Gets and returns one unsigned byte from this buffer at its read offset.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Unsigned byte as java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1329,12 +1286,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets two bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 16-bit integer with big-endian byte order,
-     * and converts them into a Java {@code int}.
+     * Gets two bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 16-bit integer with big-endian byte order, and
+     * converts them into a Java {@code int}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Unsigned 16-bit integer as Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1347,12 +1303,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets two bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 16-bit integer with little-endian
-     * byte order, and converts them into a Java {@code int}.
+     * Gets two bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 16-bit integer with little-endian byte order, and
+     * converts them into a Java {@code int}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Unsigned 16-bit integer as Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1365,13 +1320,12 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets two bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 16-bit integer with the same endianess as
-     * the system running this application, and converts them into a Java
+     * Gets two bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 16-bit integer with the same endianess as the
+     * system running this application, and converts them into a Java
      * {@code int}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Unsigned 16-bit integer as Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1384,12 +1338,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets three bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 24-bit integer with big-endian byte order,
-     * and converts them into a Java {@code int}.
+     * Gets three bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 24-bit integer with big-endian byte order, and
+     * converts them into a Java {@code int}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Unsigned 24-bit integer as Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1402,12 +1355,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets three bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 24-bit integer with little-endian
-     * byte order, and converts them into a Java {@code int}.
+     * Gets three bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 24-bit integer with little-endian byte order, and
+     * converts them into a Java {@code int}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Unsigned 24-bit integer as Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1420,13 +1372,12 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets three bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 24-bit integer with the same endianess as
-     * the system running this application, and converts them into a Java
+     * Gets three bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 24-bit integer with the same endianess as the
+     * system running this application, and converts them into a Java
      * {@code int}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Unsigned 24-bit integer as Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1439,12 +1390,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets four bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 32-bit integer with big-endian byte order,
-     * and converts them into a Java {@code long}.
+     * Gets four bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 32-bit integer with big-endian byte order, and
+     * converts them into a Java {@code long}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Unsigned 32-bit integer as Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1457,12 +1407,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets four bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 32-bit integer with little-endian
-     * byte order, and converts them into a Java {@code long}.
+     * Gets four bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 32-bit integer with little-endian byte order, and
+     * converts them into a Java {@code long}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Unsigned 32-bit integer as Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1475,13 +1424,12 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets four bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 32-bit integer with the same endianess as
-     * the system running this application, and converts them into a Java
+     * Gets four bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 32-bit integer with the same endianess as the
+     * system running this application, and converts them into a Java
      * {@code long}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Unsigned 32-bit integer as Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1494,12 +1442,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets six bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 48-bit integer with big-endian byte
-     * order, and converts them into a Java {@code long}.
+     * Gets six bytes from this buffer at its read offset, which are assumed to
+     * contain an unsigned 48-bit integer with big-endian byte order, and
+     * converts them into a Java {@code long}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Unsigned 48-bit integer as Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1512,12 +1459,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets six bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 48-bit integer with little-endian byte
-     * order, and converts them into a Java {@code long}.
+     * Gets six bytes from this buffer at its read offset, which are assumed to
+     * contain an unsigned 48-bit integer with little-endian byte order, and
+     * converts them into a Java {@code long}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Unsigned 48-bit integer as Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1530,13 +1476,12 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets six bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 48-bit integer with the same endianess as
-     * the system running this application, and converts them into a Java
+     * Gets six bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 48-bit integer with the same endianess as the
+     * system running this application, and converts them into a Java
      * {@code long}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      *
      * @return Unsigned 48-bit integer as Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1549,12 +1494,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets eight bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 64-bit integer with big-endian byte order,
-     * and converts them into a Java {@code long}.
+     * Gets eight bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 64-bit integer with big-endian byte order, and
+     * converts them into a Java {@code long}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      * <p>
      * This method is simply an alias for {@link #peekS64Be()}, as there is no
      * way to represent unsigned 64-bit integers using a primitive type in Java
@@ -1571,12 +1515,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets eight bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 64-bit integer with little-endian byte
-     * order, and converts them into a Java {@code long}.
+     * Gets eight bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 64-bit integer with little-endian byte order, and
+     * converts them into a Java {@code long}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      * <p>
      * This method is simply an alias for {@link #peekS64Le()}, as there is no
      * way to represent unsigned 64-bit integers using a primitive type in Java
@@ -1593,13 +1536,12 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets eight bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 64-bit integer with the same endianess as
-     * the system running this application, and converts them into a Java
+     * Gets eight bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 64-bit integer with the same endianess as the
+     * system running this application, and converts them into a Java
      * {@code long}.
      * <p>
-     * The internal read offset of this buffer remains unchanged by this
-     * operation.
+     * The read offset of this buffer is not changed by this operation.
      * <p>
      * This method is simply an alias for {@link #peekS64Le()}, as there is no
      * way to represent unsigned 64-bit integers using a primitive type in Java
@@ -1619,28 +1561,30 @@ public interface BufferReader extends AutoCloseable {
      * Gets the number of bytes that can currently be read from this buffer.
      *
      * @return Current number of readable bytes.
-     * @throws BufferIsClosed If this buffer is closed, this exception may be
-     *                        thrown.
+     * @throws BufferIsClosed If this buffer is closed. Not guaranteed to be
+     *                        thrown by all implementations.
      */
-    int readableBytes();
+    default int readableBytes() {
+        return readEnd() - readOffset();
+    }
 
     /**
-     * Gets copy of internal read offset, which determines from where the next
+     * Gets copy of read offset, which determines from where the next
      * byte will be read.
      *
-     * @return Copy of internal read offset.
-     * @throws BufferIsClosed If this buffer is closed, this exception may be
-     *                        thrown.
+     * @return Copy of read offset.
+     * @throws BufferIsClosed If this buffer is closed. Not guaranteed to be
+     *                        thrown by all implementations.
      */
     int readOffset();
 
     /**
-     * Updates the internal read offset by setting it to the given value.
+     * Updates the read offset by setting it to the given value.
      *
-     * @param readOffset Desired new internal read offset.
+     * @param readOffset Desired new read offset.
      * @throws BufferIsClosed            If this buffer is closed.
      * @throws IndexOutOfBoundsException If {@code readOffset < 0 ||
-     *                                   readEnd() < readOffset}.
+     *                                   readOffset > readEnd()}.
      */
     void readOffset(int readOffset);
 
@@ -1648,16 +1592,16 @@ public interface BufferReader extends AutoCloseable {
      * Gets position of the last readable byte in this buffer.
      *
      * @return Offset of last readable byte in this buffer.
-     * @throws BufferIsClosed If this buffer is closed, this exception may be
-     *                        thrown.
+     * @throws BufferIsClosed If this buffer is closed. Not guaranteed to be
+     *                        thrown by all implementations.
      */
     int readEnd();
 
     /**
      * Copies {@code destination.length} bytes from this buffer, beginning at
-     * its internal read offset, to {@code destination}.
+     * its read offset, to {@code destination}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @param destination Byte array to copy bytes to.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1671,11 +1615,10 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Copies {@code length} bytes from this buffer, beginning at its internal
-     * read offset, to {@code destination}, beginning at {@code
-     * destinationOffset}.
+     * Copies {@code length} bytes from this buffer, beginning at its read
+     * offset, to {@code destination}, beginning at {@code destinationOffset}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @param destination       Byte array to copy bytes to.
      * @param destinationOffset Offset from beginning of {@code destination}.
@@ -1692,13 +1635,12 @@ public interface BufferReader extends AutoCloseable {
 
     /**
      * Gets {@code destination.writableBytes()} bytes from this buffer,
-     * beginning at its internal read offset, and writes them to
-     * {@code destination}.
+     * beginning at its read offset, and writes them to {@code destination}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      * <p>
-     * The internal write offset of {@code destination} is increased if this
-     * operation is successful.
+     * The write offset of {@code destination} is increased if this operation
+     * is successful.
      *
      * @param destination Buffer to write bytes to.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1712,13 +1654,13 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets {@code length} bytes from this buffer, beginning at its internal
-     * read offset, and writes them to {@code destination}.
+     * Gets {@code length} bytes from this buffer, beginning at its read offset,
+     * and writes them to {@code destination}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      * <p>
-     * The internal write offset of {@code destination} is increased if this
-     * operation is successful.
+     * The write offset of {@code destination} is increased if this operation
+     * is successful.
      *
      * @param destination Buffer to write bytes to.
      * @param length      Number of bytes to write.
@@ -1733,11 +1675,10 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets {@code length} bytes from this buffer, beginning at internal read
-     * offset, and copies them to {@code destination} without updating its
-     * internal write offset.
+     * Gets {@code length} bytes from this buffer, beginning at read offset,
+     * and copies them to {@code destination} without updating its write offset.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @param destination       Buffer to write bytes to.
      * @param destinationOffset Offset from beginning of {@code destination}.
@@ -1751,11 +1692,11 @@ public interface BufferReader extends AutoCloseable {
 
     /**
      * Gets {@code destination.remaining()} bytes from this buffer, beginning
-     * at its internal read offset, and writes them to {@code destination}.
+     * at its read offset, and writes them to {@code destination}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      * <p>
-     * The internal write offset, or <i>position</i>, of {@code destination} is
+     * The write offset, or <i>position</i>, of {@code destination} is
      * increased if this operation is successful.
      *
      * @param destination NIO {@link ByteBuffer} to write bytes to.
@@ -1768,11 +1709,11 @@ public interface BufferReader extends AutoCloseable {
     void read(ByteBuffer destination);
 
     /**
-     * Gets four bytes from this buffer at its internal read offset, which are
-     * assumed to contain a IEEE 32-bit binary float with big-endian byte order,
-     * and converts them into a Java {@code float}.
+     * Gets four bytes from this buffer at its read offset, which are assumed
+     * to contain a IEEE 32-bit binary float with big-endian byte order, and
+     * converts them into a Java {@code float}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code float}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1785,11 +1726,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets four bytes from this buffer at its internal read offset, which are
-     * assumed to contain a IEEE 32-bit binary float with little-endian
-     * byte order, and converts them into a Java {@code float}.
+     * Gets four bytes from this buffer at its read offset, which are assumed
+     * to contain a IEEE 32-bit binary float with little-endian byte order, and
+     * converts them into a Java {@code float}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code float}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1802,12 +1743,12 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets four bytes from this buffer at its internal read offset, which are
-     * assumed to contain a IEEE 32-bit binary float with the same endianess as
-     * the system running this application, and converts them into a Java
+     * Gets four bytes from this buffer at its read offset, which are assumed
+     * to contain a IEEE 32-bit binary float with the same endianess as the
+     * system running this application, and converts them into a Java
      * {@code float}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code float}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1820,11 +1761,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets eight bytes from this buffer at its internal read offset, which are
-     * assumed to contain a IEEE 64-bit binary float with big-endian byte order,
-     * and converts them into a Java {@code double}.
+     * Gets eight bytes from this buffer at its read offset, which are assumed
+     * to contain a IEEE 64-bit binary float with big-endian byte order, and
+     * converts them into a Java {@code double}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code double}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1837,11 +1778,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets eight bytes from this buffer at its internal read offset, which are
-     * assumed to contain a IEEE 64-bit binary float with little-endian
-     * byte order, and converts them into a Java {@code double}.
+     * Gets eight bytes from this buffer at its read offset, which are assumed
+     * to contain a IEEE 64-bit binary float with little-endian byte order, and
+     * converts them into a Java {@code double}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code double}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1854,12 +1795,12 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets eight bytes from this buffer at its internal read offset, which are
-     * assumed to contain a IEEE 64-bit binary float with the same endianess as
-     * the system running this application, and converts them into a Java
+     * Gets eight bytes from this buffer at its read offset, which are assumed
+     * to contain a IEEE 64-bit binary float with the same endianess as the
+     * system running this application, and converts them into a Java
      * {@code double}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code double}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1872,9 +1813,9 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets and returns one byte from this buffer at its internal read offset.
+     * Gets and returns one byte from this buffer at its read offset.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code byte}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1885,11 +1826,11 @@ public interface BufferReader extends AutoCloseable {
     byte readS8();
 
     /**
-     * Gets two bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 16-bit integer with big-endian byte order,
-     * and converts them into a Java {@code short}.
+     * Gets two bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 16-bit integer with big-endian byte order, and
+     * converts them into a Java {@code big-endian}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code short}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1900,11 +1841,11 @@ public interface BufferReader extends AutoCloseable {
     short readS16Be();
 
     /**
-     * Gets two bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 16-bit integer with little-endian byte order,
-     * and converts them into a Java {@code short}.
+     * Gets two bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 16-bit integer with little-endian byte order, and
+     * converts them into a Java {@code little-endian}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code short}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1915,12 +1856,11 @@ public interface BufferReader extends AutoCloseable {
     short readS16Le();
 
     /**
-     * Gets two bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 16-bit integer with the same endianess as
-     * the system running this application, and converts them into a Java
-     * {@code short}.
+     * Gets two bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 16-bit integer with the same endianess as the system
+     * running this application, and converts them into a Java {@code short}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code short}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1931,11 +1871,11 @@ public interface BufferReader extends AutoCloseable {
     short readS16Ne();
 
     /**
-     * Gets three bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 24-bit integer with big-endian byte order,
-     * and converts them into a Java {@code int}.
+     * Gets three bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 24-bit integer with big-endian byte order, and
+     * converts them into a Java {@code big-endian}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1952,11 +1892,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets three bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 24-bit integer with little-endian byte order,
-     * and converts them into a Java {@code int}.
+     * Gets three bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 24-bit integer with little-endian byte order, and
+     * converts them into a Java {@code little-endian}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1974,12 +1914,11 @@ public interface BufferReader extends AutoCloseable {
 
 
     /**
-     * Gets three bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 24-bit integer with the same endianess as
-     * the system running this application, and converts them into a Java
-     * {@code int}.
+     * Gets three bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 24-bit integer with the same endianess as the system
+     * running this application, and converts them into a Java {@code int}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -1996,11 +1935,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets four bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 32-bit integer with big-endian byte order,
-     * and converts them into a Java {@code int}.
+     * Gets four bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 32-bit integer with big-endian byte order, and
+     * converts them into a Java {@code big-endian}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2011,11 +1950,11 @@ public interface BufferReader extends AutoCloseable {
     int readS32Be();
 
     /**
-     * Gets four bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 32-bit integer with little-endian byte order,
-     * and converts them into a Java {@code int}.
+     * Gets four bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 32-bit integer with little-endian byte order, and
+     * converts them into a Java {@code little-endian}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2026,12 +1965,11 @@ public interface BufferReader extends AutoCloseable {
     int readS32Le();
 
     /**
-     * Gets four bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 32-bit integer with the same endianess as
-     * the system running this application, and converts them into a Java
-     * {@code int}.
+     * Gets four bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 32-bit integer with the same endianess as the system
+     * running this application, and converts them into a Java {@code int}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2042,11 +1980,11 @@ public interface BufferReader extends AutoCloseable {
     int readS32Ne();
 
     /**
-     * Gets six bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 48-bit integer with big-endian byte order,
-     * and converts them into a Java {@code long}.
+     * Gets six bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 48-bit integer with big-endian byte order, and
+     * converts them into a Java {@code big-endian}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2063,11 +2001,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets six bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 48-bit integer with little-endian byte order,
-     * and converts them into a Java {@code long}.
+     * Gets six bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 48-bit integer with little-endian byte order, and
+     * converts them into a Java {@code little-endian}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2085,12 +2023,11 @@ public interface BufferReader extends AutoCloseable {
 
 
     /**
-     * Gets six bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 48-bit integer with the same endianess as
-     * the system running this application, and converts them into a Java
-     * {@code long}.
+     * Gets six bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 48-bit integer with the same endianess as the system
+     * running this application, and converts them into a Java {@code long}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2107,11 +2044,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets eight bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 64-bit integer with big-endian byte order,
-     * and converts them into a Java {@code long}.
+     * Gets eight bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 64-bit integer with big-endian byte order, and
+     * converts them into a Java {@code big-endian}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2123,11 +2060,11 @@ public interface BufferReader extends AutoCloseable {
 
 
     /**
-     * Gets eight bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 64-bit integer with little-endian byte order,
-     * and converts them into a Java {@code long}.
+     * Gets eight bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 64-bit integer with little-endian byte order, and
+     * converts them into a Java {@code little-endian}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2139,12 +2076,11 @@ public interface BufferReader extends AutoCloseable {
 
 
     /**
-     * Gets eight bytes from this buffer at its internal read offset, which are
-     * assumed to contain a signed 64-bit integer with the same endianess as
-     * the system running this application, and converts them into a Java
-     * {@code long}.
+     * Gets eight bytes from this buffer at its read offset, which are assumed
+     * to contain a signed 64-bit integer with the same endianess as the system
+     * running this application, and converts them into a Java {@code long}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2156,10 +2092,9 @@ public interface BufferReader extends AutoCloseable {
 
 
     /**
-     * Gets and returns one unsigned byte from this buffer at its internal read
-     * offset.
+     * Gets and returns one unsigned byte from this buffer at its read offset.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Unsigned byte as java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2172,11 +2107,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets two bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 16-bit integer with big-endian byte order,
-     * and converts them into a Java {@code int}.
+     * Gets two bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 16-bit integer with big-endian byte order, and
+     * converts them into a Java {@code int}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Unsigned 16-bit integer as Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2189,11 +2124,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets two bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 16-bit integer with little-endian
-     * byte order, and converts them into a Java {@code int}.
+     * Gets two bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 16-bit integer with little-endian byte order, and
+     * converts them into a Java {@code int}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Unsigned 16-bit integer as Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2206,12 +2141,12 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets two bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 16-bit integer with the same endianess as
-     * the system running this application, and converts them into a Java
+     * Gets two bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 16-bit integer with the same endianess as the
+     * system running this application, and converts them into a Java
      * {@code int}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Unsigned 16-bit integer as Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2224,11 +2159,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets three bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 24-bit integer with big-endian byte order,
-     * and converts them into a Java {@code int}.
+     * Gets three bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 24-bit integer with big-endian byte order, and
+     * converts them into a Java {@code int}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Unsigned 24-bit integer as Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2239,11 +2174,11 @@ public interface BufferReader extends AutoCloseable {
     int readU24Be();
 
     /**
-     * Gets three bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 24-bit integer with little-endian
-     * byte order, and converts them into a Java {@code int}.
+     * Gets three bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 24-bit integer with little-endian byte order, and
+     * converts them into a Java {@code int}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Unsigned 24-bit integer as Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2254,12 +2189,12 @@ public interface BufferReader extends AutoCloseable {
     int readU24Le();
 
     /**
-     * Gets three bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 24-bit integer with the same endianess as
-     * the system running this application, and converts them into a Java
+     * Gets three bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 24-bit integer with the same endianess as the
+     * system running this application, and converts them into a Java
      * {@code int}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Unsigned 24-bit integer as Java {@code int}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2270,11 +2205,11 @@ public interface BufferReader extends AutoCloseable {
     int readU24Ne();
 
     /**
-     * Gets four bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 32-bit integer with big-endian byte order,
-     * and converts them into a Java {@code long}.
+     * Gets four bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 32-bit integer with big-endian byte order, and
+     * converts them into a Java {@code long}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Unsigned 32-bit integer as Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2287,11 +2222,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets four bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 32-bit integer with little-endian
-     * byte order, and converts them into a Java {@code long}.
+     * Gets four bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 32-bit integer with little-endian byte order, and
+     * converts them into a Java {@code long}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Unsigned 32-bit integer as Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2304,12 +2239,12 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets four bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 32-bit integer with the same endianess as
-     * the system running this application, and converts them into a Java
+     * Gets four bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 32-bit integer with the same endianess as the
+     * system running this application, and converts them into a Java
      * {@code long}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Unsigned 32-bit integer as Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2322,11 +2257,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets six bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 48-bit integer with big-endian byte
-     * order, and converts them into a Java {@code long}.
+     * Gets six bytes from this buffer at its read offset, which are assumed to
+     * contain an unsigned 48-bit integer with big-endian byte order, and
+     * converts them into a Java {@code long}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Unsigned 48-bit integer as Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2337,11 +2272,11 @@ public interface BufferReader extends AutoCloseable {
     long readU48Be();
 
     /**
-     * Gets six bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 48-bit integer with little-endian byte
-     * order, and converts them into a Java {@code long}.
+     * Gets six bytes from this buffer at its read offset, which are assumed to
+     * contain an unsigned 48-bit integer with little-endian byte order, and
+     * converts them into a Java {@code long}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Unsigned 48-bit integer as Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2352,12 +2287,12 @@ public interface BufferReader extends AutoCloseable {
     long readU48Le();
 
     /**
-     * Gets six bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 48-bit integer with the same endianess as
-     * the system running this application, and converts them into a Java
+     * Gets six bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 48-bit integer with the same endianess as the
+     * system running this application, and converts them into a Java
      * {@code long}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      *
      * @return Unsigned 48-bit integer as Java {@code long}.
      * @throws BufferIsClosed            If this buffer is closed.
@@ -2368,11 +2303,11 @@ public interface BufferReader extends AutoCloseable {
     long readU48Ne();
 
     /**
-     * Gets eight bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 64-bit integer with big-endian byte order,
-     * and converts them into a Java {@code long}.
+     * Gets eight bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 64-bit integer with big-endian byte order, and
+     * converts them into a Java {@code long}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      * <p>
      * This method is simply an alias for {@link #peekS64Be()}, as there is no
      * way to represent unsigned 64-bit integers using a primitive type in Java
@@ -2389,11 +2324,11 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets eight bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 64-bit integer with little-endian byte
-     * order, and converts them into a Java {@code long}.
+     * Gets eight bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 64-bit integer with little-endian byte order, and
+     * converts them into a Java {@code long}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      * <p>
      * This method is simply an alias for {@link #peekS64Le()}, as there is no
      * way to represent unsigned 64-bit integers using a primitive type in Java
@@ -2410,12 +2345,12 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Gets eight bytes from this buffer at its internal read offset, which are
-     * assumed to contain an unsigned 64-bit integer with the same endianess as
-     * the system running this application, and converts them into a Java
+     * Gets eight bytes from this buffer at its read offset, which are assumed
+     * to contain an unsigned 64-bit integer with the same endianess as the
+     * system running this application, and converts them into a Java
      * {@code long}.
      * <p>
-     * The internal read offset of this buffer is updated by this operation.
+     * The read offset of this buffer is updated by this operation.
      * <p>
      * This method is simply an alias for {@link #peekS64Le()}, as there is no
      * way to represent unsigned 64-bit integers using a primitive type in Java
@@ -2432,11 +2367,15 @@ public interface BufferReader extends AutoCloseable {
     }
 
     /**
-     * Increases the internal read offset of this buffer with {@code length}
-     * bytes.
+     * Increases the read offset of this buffer with {@code length} bytes.
      *
      * @param length Number of bytes to skip reading from this buffer.
-     * @throws BufferIsClosed If
+     * @throws BufferIsClosed            If this buffer is closed. Not
+     *                                   guaranteed to be thrown by all
+     *                                   implementations.
+     * @throws IndexOutOfBoundsException If {@code {[readOffset(), readOffset()
+     *                                   + length]}} is outside the readable
+     *                                   range of this buffer.
      */
     void skip(int length);
 }

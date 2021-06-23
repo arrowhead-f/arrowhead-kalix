@@ -16,11 +16,6 @@ public class DefaultBufferReader implements BufferReader {
     }
 
     @Override
-    public ByteBuffer asReadOnlyByteBuffer() {
-        return inner.asReadOnlyByteBuffer();
-    }
-
-    @Override
     public void getAt(final int offset, final byte[] destination, final int destinationOffset, final int length) {
         inner.getAt(offset, destination, destinationOffset, length);
     }

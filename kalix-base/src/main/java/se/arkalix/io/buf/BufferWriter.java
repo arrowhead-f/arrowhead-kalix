@@ -3,58 +3,46 @@ package se.arkalix.io.buf;
 import java.nio.ByteBuffer;
 
 /**
- * A {@link Buffer} that can be written to.
+ * A collection of memory that can be written to.
  * <p>
- * Keeps track of an {@link #writeOffset() internal write offset}, which is
- * increased automatically whenever a write operation is performed on this
- * buffer. It also keeps tack of a {@link #writeEnd() internal write end},
- * which indicates how much memory is currently allocated, or can be cheaply
- * written to. If exceeded, the write end will be moved automatically, given
- * that the buffer can be expanded, until it reaches the {@link #writeEndMax()
- * internal write end max}, which can never be exceeded.
+ * Keeps track of a {@link #writeOffset() write offset}, which is increased
+ * automatically whenever a write operation is successfully performed on this
+ * buffer. It also keeps tack of a {@link #writeEnd() write end}, which may
+ * never be passed by the write offset.
  * <p>
- * The following diagram illustrates how this works in practice. The buffer
- * consists of a sequence of byte slots, denoted by squares in the diagram.
- * Each square has an <i>offset</i>, as well as a byte <i>value</i>. The
- * internal write offset points within the buffer, while the write end and
- * write end max point just after and beyond the end of the buffer,
- * respectively. Whenever a byte is written to the buffer, the internal write
- * offset is moved closer to the internal end offset. As we already mentioned,
- * if the write end is exceeded, it will be moved further right until it
- * reaches the write end max, if more memory can be allocated for the buffer.
+ * The below diagram illustrates how this works in practice. The buffer
+ * consists of a sequence of bytes, denoted by squares in the diagram. Each
+ * byte has an <i>offset</i> relative to the beginning of the memory, as well
+ * as a current <i>value</i>. The write offset and end both point to offsets
+ * within the buffer. Whenever a byte is written to the buffer, the byte at the
+ * read offset is updated and the read offset itself is moved one step closer
+ * to the end offset. If the read offset reaches the end offset, all subsequent
+ * write operations will fail.
  * <pre>
- *   Offset:   0   1   2   3   4   5   6   7   8   9   A   B
- *           +---+---+---+---+---+---+---+---+   +   +   +   +
- *    Value: | 9 | 3 | 0 | 0 | 0 | 0 | 0 | 0 | .   .   .   .
- *           +---+---+---+---+---+---+---+---+   +   +   +   +
- *                     A                       A           A
- *                     |                       |           |
- *                Write Offset             Write End  Write End Max
- *
+ *   Offset: 0   1   2   3   4   5   6   7
+ *           +---+---+---+---+---+---+---+---+
+ *    Value: | 9 | 3 | 0 | 0 | 0 | 0 | 0 | 0 |
+ *           +---+---+---+---+---+---+---+---+
+ *                   A                       A
+ *                   |                       |
+ *              Write Offset             Write End
  * </pre>
  * To support writing to this buffer without affecting its internal write
- * offset, this interface also provides numerous {@code set*} methods. If data
- * is written after the write end using a {@code set*} method, the write end
- * will be moved if possible.
+ * offset, this interface also provides numerous methods prefixed with {@code
+ * set}, all of which requires that a buffer offset is explicitly provided.
+ *
+ * @see Buffer
+ * @see BufferReader
  */
 @SuppressWarnings("unused")
 public interface BufferWriter extends AutoCloseable {
-    /**
-     * Converts this buffer writer into a writable NIO {@link ByteBuffer}.
-     *
-     * @return NIO {@link ByteBuffer}.
-     * @throws BufferIsClosed If this buffer is closed.
-     */
-    ByteBuffer asByteBuffer();
-
     @Override
     void close();
 
     /**
-     * Determines if this buffer reader has been {@link #close() closed}.
+     * Determines if this buffer has been {@link #close() closed}.
      *
-     * @return {@code true} only if this buffer reader is {@link #close()
-     * closed}.
+     * @return {@code true} only if this buffer is {@link #close() closed}.
      */
     boolean isClosed();
 
@@ -236,40 +224,39 @@ public interface BufferWriter extends AutoCloseable {
         setS64NeAt(offset, value);
     }
 
+    /**
+     * Gets the number of bytes that can currently be written to this buffer,
+     * assuming any required memory allocations will succeed.
+     *
+     * @return Current number of writable bytes.
+     * @throws BufferIsClosed If this buffer is closed. Not guaranteed to be
+     *                        thrown by all implementations.
+     */
     default int writableBytes() {
         return writeEnd() - writeOffset();
     }
 
-    default void writableBytes(int writableBytes) {
-        writeEnd(writeOffset() + writableBytes);
-    }
-
-    default int writableBytesMax() {
-        return writeEndMax() - writeOffset();
-    }
-
     /**
-     * Gets position of the first byte outside the writable range of this
-     * buffer.
+     * Gets copy of internal write offset, which determines the position of the
+     * next byte written to this buffer.
      *
-     * @return Offset of first byte outside the writable range of this buffer.
-     * @throws BufferIsClosed If this buffer is closed, this exception may be
-     *                        thrown.
+     * @return Copy of internal write offset.
+     * @throws BufferIsClosed If this buffer is closed. Not guaranteed to be
+     *                        thrown by all implementations.
+     * @see #writeOffset(int)
      */
-    int writeEnd();
+    int writeOffset();
 
     /**
-     * Updates the internal write end by setting it to the given value.
-     * <p>
-     * If the given {@code writeEnd} larger than the current
-     * {@link #writeEnd()}, this call may trigger memory allocations.
+     * Updates the internal write offset by setting it to the given value.
      *
-     * @param writeEnd Desired new internal write end.
+     * @param writeOffset Desired new internal write offset.
      * @throws BufferIsClosed            If this buffer is closed.
-     * @throws IndexOutOfBoundsException If {@code writeEnd < 0 ||
-     *                                   writeEnd > writeEndMax()}.
+     * @throws IndexOutOfBoundsException If {@code writeOffset < 0 ||
+     *                                   writeOffset > writeEnd()}.
+     * @see #writeOffset()
      */
-    void writeEnd(int writeEnd);
+    void writeOffset(int writeOffset);
 
     /**
      * Gets position of the first byte outside the range of this buffer that
@@ -280,30 +267,10 @@ public interface BufferWriter extends AutoCloseable {
      * in bytes, of this buffer.
      *
      * @return Maximum buffer size.
-     * @throws BufferIsClosed If this buffer is closed, this exception may be
-     *                        thrown.
+     * @throws BufferIsClosed If this buffer is closed. Not guaranteed to be
+     *                        thrown by all implementations.
      */
-    int writeEndMax();
-
-    /**
-     * Gets copy of internal write offset, which determines from where the next
-     * byte will be written.
-     *
-     * @return Copy of internal write offset.
-     * @throws BufferIsClosed If this buffer is closed, this exception may be
-     *                        thrown.
-     */
-    int writeOffset();
-
-    /**
-     * Updates the internal write offset by setting it to the given value.
-     *
-     * @param writeOffset Desired new internal write offset.
-     * @throws BufferIsClosed            If this buffer is closed.
-     * @throws IndexOutOfBoundsException If {@code writeOffset < 0 ||
-     *                                   writeEnd() < writeOffset}.
-     */
-    void writeOffset(int writeOffset);
+    int writeEnd();
 
     default void write(final byte[] source) {
         write(source, 0, source.length);

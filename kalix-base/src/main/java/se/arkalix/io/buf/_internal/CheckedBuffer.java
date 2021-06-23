@@ -22,14 +22,6 @@ public abstract class CheckedBuffer implements Buffer {
     }
 
     @Override
-    public final Buffer dupe() {
-        checkIfOpen();
-        return dupeUnchecked();
-    }
-
-    protected abstract Buffer dupeUnchecked();
-
-    @Override
     public boolean isClosed() {
         return isClosed;
     }
@@ -444,23 +436,8 @@ public abstract class CheckedBuffer implements Buffer {
     protected abstract void skipUnchecked(int bytesToSkip);
 
     @Override
-    public int writableBytes() {
-        return writeEnd() - writeOffset();
-    }
-
-    @Override
-    public void writeEnd(final int writeEnd) {
-        checkIfOpen();
-        if (writeEnd < 0 || writeEnd > writeEndMax()) {
-            throw new IndexOutOfBoundsException();
-        }
-        writeEndUnchecked(writeEnd);
-    }
-
-    protected abstract void writeEndUnchecked(final int writeEnd);
-
-    @Override
     public void writeOffset(final int writeOffset) {
+        checkIfOpen();
         checkOffsets(readOffset(), writeOffset, writeEnd());
         writeOffsetUnchecked(writeOffset);
     }
@@ -890,18 +867,22 @@ public abstract class CheckedBuffer implements Buffer {
         }
     }
 
-    protected void ensureWriteRange(final int writeOffset, final int length) {
-        final var rangeEnd = writeOffset + length;
-        if (rangeEnd <= writeEnd()) {
-            return;
-        }
-        if (rangeEnd > writeEndMax()) {
-            throw new IndexOutOfBoundsException();
-        }
-        writeEnd(rangeEnd);
-    }
-
     protected void ensureWriteLength(final int length) {
         ensureWriteRange(writeOffset(), length);
     }
+
+    protected void ensureWriteRange(final int writeOffset, final int length) {
+        final var writeEnd = writeOffset + length;
+        if (writeEnd <= capacity()) {
+            return;
+        }
+        if (writeEnd > writeEnd()) {
+            throw new IndexOutOfBoundsException();
+        }
+        capacity(writeEnd);
+    }
+
+    protected abstract int capacity();
+
+    protected abstract void capacity(final int capacity);
 }

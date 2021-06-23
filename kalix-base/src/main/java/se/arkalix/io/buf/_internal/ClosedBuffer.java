@@ -24,22 +24,7 @@ public class ClosedBuffer implements Buffer {
     }
 
     @Override
-    public Buffer dupe() {
-        throw new BufferIsClosed();
-    }
-
-    @Override
     public void offsets(final int readOffset, final int writeOffset) {
-        throw new BufferIsClosed();
-    }
-
-    @Override
-    public ByteBuffer asByteBuffer() {
-        throw new BufferIsClosed();
-    }
-
-    @Override
-    public ByteBuffer asReadOnlyByteBuffer() {
         throw new BufferIsClosed();
     }
 
@@ -255,16 +240,6 @@ public class ClosedBuffer implements Buffer {
 
     @Override
     public int writeEnd() {
-        throw new BufferIsClosed();
-    }
-
-    @Override
-    public void writeEnd(final int writeEnd) {
-        throw new BufferIsClosed();
-    }
-
-    @Override
-    public int writeEndMax() {
         throw new BufferIsClosed();
     }
 

@@ -16,11 +16,6 @@ public class DefaultBufferWriter implements BufferWriter {
     }
 
     @Override
-    public ByteBuffer asByteBuffer() {
-        return inner.asByteBuffer();
-    }
-
-    @Override
     public void setAt(final int offset, final byte[] source, final int sourceOffset, final int length) {
         inner.setAt(offset, source, sourceOffset, length);
     }
@@ -121,23 +116,8 @@ public class DefaultBufferWriter implements BufferWriter {
     }
 
     @Override
-    public void writableBytes(final int writableBytes) {
-        inner.writableBytes(writableBytes);
-    }
-
-    @Override
     public int writeEnd() {
         return inner.writeEnd();
-    }
-
-    @Override
-    public void writeEnd(final int writeEnd) {
-        inner.writeEnd(writeEnd);
-    }
-
-    @Override
-    public int writeEndMax() {
-        return inner.writeEndMax();
     }
 
     @Override
