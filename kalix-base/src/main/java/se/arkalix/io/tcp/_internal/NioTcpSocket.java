@@ -1,10 +1,17 @@
 package se.arkalix.io.tcp._internal;
 
+import se.arkalix.io.evt.EventLoop;
 import se.arkalix.io.tcp.TcpSocket;
 import se.arkalix.util.concurrent.Future;
+import se.arkalix.util.logging.Logger;
 
 import java.net.InetSocketAddress;
+import java.net.SocketOption;
+import java.net.SocketOptions;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class NioTcpSocket {
 /*    private final AtomicReference<SelectionKey> selectionKey = new AtomicReference<>(null);
@@ -105,12 +112,32 @@ public class NioTcpSocket {
     }*/
 
     public static class Connector implements TcpSocket.Connector {
+        private TcpSocket.Receiver receiver = null;
+        private Logger logger = null;
+        private EventLoop eventLoop = null;
         private InetSocketAddress localSocketAddress = null;
         private InetSocketAddress remoteSocketAddress = null;
         private Duration readTimeout = null;
         private Duration writeTimeout = null;
-        private boolean nodelay = false;
-        private long ttl = 0;
+        private Map<SocketOption<?>, Object> socketOptions = new HashMap<>();
+
+        @Override
+        public TcpSocket.Connector receiver(final TcpSocket.Receiver receiver) {
+            this.receiver = receiver;
+            return this;
+        }
+
+        @Override
+        public TcpSocket.Connector logger(final Logger logger) {
+            this.logger = logger;
+            return this;
+        }
+
+        @Override
+        public TcpSocket.Connector eventLoop(final EventLoop eventLoop) {
+            this.eventLoop = eventLoop;
+            return this;
+        }
 
         @Override
         public TcpSocket.Connector localSocketAddress(final InetSocketAddress localSocketAddress) {
@@ -137,14 +164,9 @@ public class NioTcpSocket {
         }
 
         @Override
-        public TcpSocket.Connector nodelay(final boolean nodelay) {
-            this.nodelay = nodelay;
-            return this;
-        }
+        public <T> TcpSocket.Connector option(final SocketOption<T> option, final T value) {
 
-        @Override
-        public TcpSocket.Connector ttl(final long ttl) {
-            this.ttl = ttl;
+            socketOptions.put(option, value);
             return this;
         }
 
