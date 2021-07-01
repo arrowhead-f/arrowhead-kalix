@@ -2,7 +2,7 @@ package se.arkalix.util.function;
 
 /**
  * A value consumer, taking two input values and executing some arbitrary
- * action. May throw any {@link Exception} while being executed.
+ * action. May throw any {@link Throwable} while being executed.
  *
  * @param <T> Type of first value to be provided to consumer.
  * @param <U> Type of second value to be provided to consumer.
@@ -14,7 +14,7 @@ public interface ThrowingBiConsumer<T, U> {
      *
      * @param t First input value.
      * @param u Second input value.
-     * @throws Exception Any kind of exception.
+     * @throws Throwable Any kind of exception.
      */
     void accept(T t, U u) throws Throwable;
 }
