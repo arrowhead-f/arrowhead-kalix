@@ -66,7 +66,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
 
         final var pluginAttached = new Attached(system);
         return pluginAttached.registerEventReceiver(defaultSubscriptions)
-            .pass(pluginAttached);
+            .put(pluginAttached);
     }
 
     private static class Attached implements PluginAttached {
@@ -107,7 +107,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
                         .post("/#topic", (request, response) -> {
                             final var topicName = request.pathParameter(0);
                             return request.bodyTo(EventIncomingDto::decodeJson)
-                                .ifSuccess(event -> {
+                                .ifValue(event -> {
                                     try {
                                         final var topic = nameToTopic.get(topicName.toLowerCase());
                                         if (topic != null) {
@@ -128,7 +128,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
                                         response.status(HttpStatus.OK);
                                     }
                                 })
-                                .mapCatch(Throwable.class, fault -> {
+                                .recover(fault -> {
                                     if (logger.isWarnEnabled()) {
                                         logger.warn("HTTP/JSON event subscriber failed to " +
                                             "handle received event [topic=" + topicName + "]", fault);
@@ -146,14 +146,14 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
                             "HTTP/JSON event subscriber failed to setup event " +
                             "receiver for the \"" + system.name() + "\" system", fault));
                 })
-                .ifSuccess(ignored -> {
+                .ifValue(ignored -> {
                     if (logger.isInfoEnabled()) {
                         logger.info("HTTP/JSON event subscriber attached to " +
                             "system \"{}\" and registered all default event " +
                             "subscriptions", system.name());
                     }
                 })
-                .ifFailure(Throwable.class, fault -> {
+                .ifFault(Throwable.class, fault -> {
                     if (logger.isErrorEnabled()) {
                         logger.error("HTTP/JSON event subscriber failed " +
                             "to attach to system \"" + system.name() + "\"", fault);
@@ -206,7 +206,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
                                 .flatMap(eventUnsubscribe -> eventUnsubscribe
                                     .unsubscribe(topicName, system))
                                 .flatMap(ignored -> eventSubscribe.subscribe(request))
-                                .pass(null);
+                                .put(null);
                         }
                         return Future.failure(fault);
                     }))
@@ -218,7 +218,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
                     }
                     return (EventSubscriptionHandle) handle.get();
                 })
-                .ifFailure(Throwable.class, fault -> {
+                .ifFault(Throwable.class, fault -> {
                     if (logger.isWarnEnabled()) {
                         logger.warn("HTTP/JSON event subscriber did " +
                             "fail to subscribe system \"" + system.name() +
@@ -235,10 +235,10 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
             system.consume()
                 .oneUsing(HttpJsonEventUnsubscribeService.factory())
                 .flatMap(eventUnsubscribe -> eventUnsubscribe.unsubscribe(topic, system))
-                .ifSuccess(ignored -> logger.info("HTTP/JSON event " +
+                .ifValue(ignored -> logger.info("HTTP/JSON event " +
                     "subscriber unsubscribed system \"{}\" from topic " +
                     "\"{}\"", system.name(), topic))
-                .onFailure(fault -> logger.warn("HTTP/JSON event " +
+                .consumeIfFault(fault -> logger.warn("HTTP/JSON event " +
                     "subscriber failed to unsubscribe system \"" +
                     system.name() + "\" from topic \"" + topic +
                     "\"", fault));
@@ -263,7 +263,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
 
             system.consume()
                 .oneUsing(HttpJsonEventUnsubscribeService.factory())
-                .ifSuccess(consumer -> {
+                .ifValue(consumer -> {
                     for (final var topicName : nameToTopic.keySet()) {
                         unsubscribe(topicName);
                     }
@@ -271,7 +271,7 @@ public class HttpJsonEventSubscriberPlugin implements ArEventSubscriberPlugin {
                     logger.info("HTTP/JSON event subscriber detached from " +
                         "system \"{}\"", system.name());
                 })
-                .onFailure(fault -> {
+                .consumeIfFault(fault -> {
                     if (logger.isWarnEnabled()) {
                         logger.warn("HTTP/JSON event subscriber failed to " +
                             "unregister the event subscriptions of the \"" +

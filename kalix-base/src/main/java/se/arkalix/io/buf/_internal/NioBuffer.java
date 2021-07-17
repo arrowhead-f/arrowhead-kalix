@@ -1,14 +1,17 @@
 package se.arkalix.io.buf._internal;
 
+import se.arkalix.io.IoException;
 import se.arkalix.io.buf.BufferIsClosed;
 import se.arkalix.io.buf.BufferReader;
 import se.arkalix.io.buf.BufferWriter;
-import se.arkalix.util._internal.BinaryMath;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.annotation.Unsafe;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 
 import static se.arkalix.util._internal.BinaryMath.roundUpToMultipleOfPowerOfTwo;
 
@@ -72,6 +75,18 @@ public class NioBuffer extends CheckedBuffer {
     }
 
     @Override
+    protected int getAtUnchecked(final int offset, final WritableByteChannel destination, final int readEnd) {
+        try {
+            return destination.write(byteBuffer.asReadOnlyBuffer()
+                .position(offset)
+                .limit(readEnd));
+        }
+        catch (final IOException exception) {
+            throw new IoException(exception);
+        }
+    }
+
+    @Override
     protected byte getS8AtUnchecked(final int offset) {
         return byteBuffer.get(offset);
     }
@@ -87,13 +102,6 @@ public class NioBuffer extends CheckedBuffer {
     }
 
     @Override
-    protected short getS16NeAtUnchecked(final int offset) {
-        return ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN
-            ? getS16LeAtUnchecked(offset)
-            : getS16BeAtUnchecked(offset);
-    }
-
-    @Override
     protected int getS32BeAtUnchecked(final int offset) {
         return byteBuffer.getInt(offset);
     }
@@ -104,13 +112,6 @@ public class NioBuffer extends CheckedBuffer {
     }
 
     @Override
-    protected int getS32NeAtUnchecked(final int offset) {
-        return ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN
-            ? getS32LeAtUnchecked(offset)
-            : getS32BeAtUnchecked(offset);
-    }
-
-    @Override
     protected long getS64BeAtUnchecked(final int offset) {
         return byteBuffer.getLong(offset);
     }
@@ -118,55 +119,6 @@ public class NioBuffer extends CheckedBuffer {
     @Override
     protected long getS64LeAtUnchecked(final int offset) {
         return Long.reverseBytes(byteBuffer.getLong(offset));
-    }
-
-    @Override
-    protected long getS64NeAtUnchecked(final int offset) {
-        return ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN
-            ? getS64LeAtUnchecked(offset)
-            : getS64BeAtUnchecked(offset);
-    }
-
-    @Override
-    protected int getU24BeAtUnchecked(final int offset) {
-        final var buffer = new byte[3];
-        getAtUnchecked(offset, buffer, 0, 3);
-        return BinaryMath.getU24BeAt(buffer, 0);
-    }
-
-    @Override
-    protected int getU24LeAtUnchecked(final int offset) {
-        final var buffer = new byte[3];
-        getAtUnchecked(offset, buffer, 0, 3);
-        return BinaryMath.getU24LeAt(buffer, 0);
-    }
-
-    @Override
-    protected int getU24NeAtUnchecked(final int offset) {
-        final var buffer = new byte[3];
-        getAtUnchecked(offset, buffer, 0, 3);
-        return BinaryMath.getU24NeAt(buffer, 0);
-    }
-
-    @Override
-    protected long getU48BeAtUnchecked(final int offset) {
-        final var buffer = new byte[6];
-        getAtUnchecked(offset, buffer, 0, 6);
-        return BinaryMath.getU48BeAt(buffer, 0);
-    }
-
-    @Override
-    protected long getU48LeAtUnchecked(final int offset) {
-        final var buffer = new byte[6];
-        getAtUnchecked(offset, buffer, 0, 6);
-        return BinaryMath.getU48LeAt(buffer, 0);
-    }
-
-    @Override
-    protected long getU48NeAtUnchecked(final int offset) {
-        final var buffer = new byte[6];
-        getAtUnchecked(offset, buffer, 0, 6);
-        return BinaryMath.getU48NeAt(buffer, 0);
     }
 
     @Override
@@ -210,6 +162,13 @@ public class NioBuffer extends CheckedBuffer {
     }
 
     @Override
+    protected int readUnchecked(final WritableByteChannel destination, final int readEnd) {
+        final int numberOfReadBytes = getAtUnchecked(readOffset, destination, readEnd);
+        readOffset += numberOfReadBytes;
+        return numberOfReadBytes;
+    }
+
+    @Override
     protected byte readS8Unchecked() {
         final byte s8 = getS8AtUnchecked(readOffset);
         readOffset += 1;
@@ -231,34 +190,6 @@ public class NioBuffer extends CheckedBuffer {
     }
 
     @Override
-    protected short readS16NeUnchecked() {
-        final short s16 = getS16NeAtUnchecked(readOffset);
-        readOffset += 2;
-        return s16;
-    }
-
-    @Override
-    protected int readU24BeUnchecked() {
-        final int s24 = getS24BeAt(readOffset);
-        readOffset += 3;
-        return s24;
-    }
-
-    @Override
-    protected int readU24LeUnchecked() {
-        final int s24 = getS24LeAt(readOffset);
-        readOffset += 3;
-        return s24;
-    }
-
-    @Override
-    protected int readU24NeUnchecked() {
-        final int s24 = getS24NeAt(readOffset);
-        readOffset += 3;
-        return s24;
-    }
-
-    @Override
     protected int readS32BeUnchecked() {
         final int s32 = getS32BeAtUnchecked(readOffset);
         readOffset += 4;
@@ -273,34 +204,6 @@ public class NioBuffer extends CheckedBuffer {
     }
 
     @Override
-    protected int readS32NeUnchecked() {
-        final int s32 = getS32NeAtUnchecked(readOffset);
-        readOffset += 4;
-        return s32;
-    }
-
-    @Override
-    protected long readU48BeUnchecked() {
-        final long s48 = getS48BeAt(readOffset);
-        readOffset += 6;
-        return s48;
-    }
-
-    @Override
-    protected long readU48LeUnchecked() {
-        final long s48 = getS48LeAt(readOffset);
-        readOffset += 6;
-        return s48;
-    }
-
-    @Override
-    protected long readU48NeUnchecked() {
-        final long s48 = getS48NeAt(readOffset);
-        readOffset += 6;
-        return s48;
-    }
-
-    @Override
     protected long readS64BeUnchecked() {
         final long s64 = getS64BeAtUnchecked(readOffset);
         readOffset += 8;
@@ -310,13 +213,6 @@ public class NioBuffer extends CheckedBuffer {
     @Override
     protected long readS64LeUnchecked() {
         final long s64 = getS64LeAtUnchecked(readOffset);
-        readOffset += 8;
-        return s64;
-    }
-
-    @Override
-    protected long readS64NeUnchecked() {
-        final long s64 = getS64NeAtUnchecked(readOffset);
         readOffset += 8;
         return s64;
     }
@@ -348,6 +244,18 @@ public class NioBuffer extends CheckedBuffer {
     }
 
     @Override
+    protected int setAtUnchecked(final int offset, final ReadableByteChannel source, final int writeEnd) {
+        try {
+            return source.read(byteBuffer.duplicate()
+                .position(offset)
+                .limit(writeEnd));
+        }
+        catch (final IOException exception) {
+            throw new IoException(exception);
+        }
+    }
+
+    @Override
     protected void setS8AtUnchecked(final int offset, final byte value) {
         byteBuffer.put(offset, value);
     }
@@ -363,37 +271,6 @@ public class NioBuffer extends CheckedBuffer {
     }
 
     @Override
-    protected void setS16NeAtUnchecked(final int offset, final short value) {
-        if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
-            setS16LeAtUnchecked(offset, value);
-        }
-        else {
-            setS16BeAtUnchecked(offset, value);
-        }
-    }
-
-    @Override
-    protected void setS24BeAtUnchecked(final int offset, final int value) {
-        final var buffer = new byte[3];
-        BinaryMath.setS24BeAt(buffer, 0, value);
-        setAtUnchecked(offset, buffer, 0, 3);
-    }
-
-    @Override
-    protected void setS24LeAtUnchecked(final int offset, final int value) {
-        final var buffer = new byte[3];
-        BinaryMath.setS24LeAt(buffer, 0, value);
-        setAtUnchecked(offset, buffer, 0, 3);
-    }
-
-    @Override
-    protected void setS24NeAtUnchecked(final int offset, final int value) {
-        final var buffer = new byte[3];
-        BinaryMath.setS24NeAt(buffer, 0, value);
-        setAtUnchecked(offset, buffer, 0, 3);
-    }
-
-    @Override
     protected void setS32BeAtUnchecked(final int offset, final int value) {
         byteBuffer.putInt(offset, value);
     }
@@ -404,37 +281,6 @@ public class NioBuffer extends CheckedBuffer {
     }
 
     @Override
-    protected void setS32NeAtUnchecked(final int offset, final int value) {
-        if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
-            setS32LeAtUnchecked(offset, value);
-        }
-        else {
-            setS32BeAtUnchecked(offset, value);
-        }
-    }
-
-    @Override
-    protected void setS48BeAtUnchecked(final int offset, final long value) {
-        final var buffer = new byte[6];
-        BinaryMath.setS48BeAt(buffer, 0, value);
-        setAtUnchecked(offset, buffer, 0, 6);
-    }
-
-    @Override
-    protected void setS48LeAtUnchecked(final int offset, final long value) {
-        final var buffer = new byte[6];
-        BinaryMath.setS48LeAt(buffer, 0, value);
-        setAtUnchecked(offset, buffer, 0, 6);
-    }
-
-    @Override
-    protected void setS48NeAtUnchecked(final int offset, final long value) {
-        final var buffer = new byte[6];
-        BinaryMath.setS48NeAt(buffer, 0, value);
-        setAtUnchecked(offset, buffer, 0, 6);
-    }
-
-    @Override
     protected void setS64BeAtUnchecked(final int offset, final long value) {
         byteBuffer.putLong(offset, value);
     }
@@ -442,16 +288,6 @@ public class NioBuffer extends CheckedBuffer {
     @Override
     protected void setS64LeAtUnchecked(final int offset, final long value) {
         byteBuffer.putLong(offset, Long.reverseBytes(value));
-    }
-
-    @Override
-    protected void setS64NeAtUnchecked(final int offset, final long value) {
-        if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
-            setS64LeAtUnchecked(offset, value);
-        }
-        else {
-            setS64BeAtUnchecked(offset, value);
-        }
     }
 
     @Override
@@ -494,6 +330,13 @@ public class NioBuffer extends CheckedBuffer {
     }
 
     @Override
+    protected int writeUnchecked(final ReadableByteChannel source, final int writeEnd) {
+        final int numberOfWrittenBytes = setAtUnchecked(writeOffset, source, writeEnd);
+        writeOffset += numberOfWrittenBytes;
+        return numberOfWrittenBytes;
+    }
+
+    @Override
     protected void writeS8Unchecked(final byte value) {
         setS8AtUnchecked(writeOffset, value);
         writeOffset += 1;
@@ -512,30 +355,6 @@ public class NioBuffer extends CheckedBuffer {
     }
 
     @Override
-    protected void writeS16NeUnchecked(final short value) {
-        setS16NeAtUnchecked(writeOffset, value);
-        writeOffset += 2;
-    }
-
-    @Override
-    protected void writeS24BeUnchecked(final int value) {
-        setS24BeAtUnchecked(writeOffset, value);
-        writeOffset += 3;
-    }
-
-    @Override
-    protected void writeS24LeUnchecked(final int value) {
-        setS24LeAtUnchecked(writeOffset, value);
-        writeOffset += 3;
-    }
-
-    @Override
-    protected void writeS24NeUnchecked(final int value) {
-        setS24NeAtUnchecked(writeOffset, value);
-        writeOffset += 3;
-    }
-
-    @Override
     protected void writeS32BeUnchecked(final int value) {
         setS32BeAtUnchecked(writeOffset, value);
         writeOffset += 4;
@@ -548,30 +367,6 @@ public class NioBuffer extends CheckedBuffer {
     }
 
     @Override
-    protected void writeS32NeUnchecked(final int value) {
-        setS32LeAtUnchecked(writeOffset, value);
-        writeOffset += 4;
-    }
-
-    @Override
-    protected void writeS48BeUnchecked(final long value) {
-        setS48BeAtUnchecked(writeOffset, value);
-        writeOffset += 6;
-    }
-
-    @Override
-    protected void writeS48LeUnchecked(final long value) {
-        setS48LeAtUnchecked(writeOffset, value);
-        writeOffset += 6;
-    }
-
-    @Override
-    protected void writeS48NeUnchecked(final long value) {
-        setS48NeAtUnchecked(writeOffset, value);
-        writeOffset += 6;
-    }
-
-    @Override
     protected void writeS64BeUnchecked(final long value) {
         setS64BeAtUnchecked(writeOffset, value);
         writeOffset += 8;
@@ -580,12 +375,6 @@ public class NioBuffer extends CheckedBuffer {
     @Override
     protected void writeS64LeUnchecked(final long value) {
         setS64LeAtUnchecked(writeOffset, value);
-        writeOffset += 8;
-    }
-
-    @Override
-    protected void writeS64NeUnchecked(final long value) {
-        setS64NeAtUnchecked(writeOffset, value);
         writeOffset += 8;
     }
 

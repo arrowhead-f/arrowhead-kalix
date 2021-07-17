@@ -1,4 +1,4 @@
-package se.arkalix.util;
+package se.arkalix.util.concurrent;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -104,7 +104,7 @@ public class Result<V> {
      * Either returns {@code Result} value or throws its fault, depending
      * on whether it is successful or not.
      *
-     * @return Result value, if the {@code Result} is successful.
+     * @return Result value, if this {@code Result} is successful.
      */
     public V valueOrThrow() {
         if (isSuccess()) {
@@ -136,7 +136,7 @@ public class Result<V> {
      * @param consumer Consumer function to call, if not successful.
      */
     public void ifFailure(final Consumer<Throwable> consumer) {
-        if (!isSuccess()) {
+        if (isFailure()) {
             consumer.accept(fault());
         }
     }

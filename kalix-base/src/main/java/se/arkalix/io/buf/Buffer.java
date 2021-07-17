@@ -8,11 +8,25 @@ import se.arkalix.io.buf._internal.NioBuffer;
 import java.nio.ByteBuffer;
 
 /**
- * A collection of memory that can be read from and written to.
+ * An owned collection of memory that can be read from and written to.
  * <p>
- * The memory contains as if being a contiguous region of bytes, where each
- * byte has its own <i>offset</i>, or position, relative to the beginning of
- * the region. Five kinds of read/write methods are provided for acquiring or
+ * The memory contains as if being a contiguous region of bytes, where each byte
+ * has its own <i>offset</i>, or position, relative to the beginning of the
+ * region. Four pointers are maintained into the memory of the buffer. Those
+ * are:
+ * <ol>
+ *     <li>{@link #readOffset()}: The offset of the first byte in the region of
+ *     bytes that can be read from.
+ *     <li>{@link #readEnd()}: The offset of the first byte outside the region
+ *     of bytes that can be read from.
+ *     <li>{@link #writeOffset()}: The offset of the first byte in the region
+ *     of bytes that can be written to. A given buffer implementation <i>may</i>
+ *     treat the {@link #readEnd()} pointer as an alias for this pointer, which
+ *     would mean that they would always be equal.
+ *     <li>{@link #writeEnd()}: The offset of the first byte outside the region
+ *     of bytes that can be written to.
+ * </ol>
+ * Five kinds of read/write methods are provided for acquiring or
  * mutating those bytes, prefixed as follows:
  * <ul>
  *     <li><b>get</b>: Copies memory <i>from</i> this buffer, beginning at an
@@ -30,22 +44,11 @@ import java.nio.ByteBuffer;
  *     current write offset. The write offset is increased to make it point to
  *     the first byte right after the memory region written to.
  * </ul>
- * As implied by the above descriptions, four pointers are maintained into the
- * memory of the buffer. Those are:
- * <ol>
- *     <li>{@link #readOffset()}: The offset of the first byte in the region of
- *     bytes that can be read from.
- *     <li>{@link #readEnd()}: The offset of the first byte outside the region
- *     of bytes that can be read from.
- *     <li>{@link #writeOffset()}: The offset of the first byte in the region
- *     of bytes that can be written to.
- *     <li>{@link #writeEnd()}: The offset of the first byte outside the region
- *     of bytes that can be written to.
- * </ol>
  * When no longer in use, every allocated buffer <b>must</b> be {@link #close()
  * closed} exactly once. It is not enough to close any buffers derived from
  * this, for example via {@link #asWriter()}. Every buffer <b>must</b> be
- * closed at some point, or memory may be leaked.
+ * closed at some point, or memory may be leaked. It should always be safe to
+ * close a buffer more than once.
  * <p>
  * This interface is modeled after the Java NIO {@link ByteBuffer}, as well as
  * the {@code ByteBuf} of the Netty library. Its purpose is to make room for
@@ -68,8 +71,8 @@ public interface Buffer extends BufferReader, BufferWriter {
      * will be reallocated until it reaches the maximum capacity. The buffer
      * will reside in memory managed by the JVM.
      * <p>
-     * The returned buffer <b>must</b> be {@link #close() closed} once no
-     * longer in use.
+     * The returned buffer <b>must</b> be {@link #close() closed} once no longer
+     * in use.
      *
      * @param initialCapacity Desired initial capacity, in bytes.
      * @param maximumCapacity Desired maximum capacity, in bytes.
@@ -87,12 +90,12 @@ public interface Buffer extends BufferReader, BufferWriter {
      * <p>
      * If the initial capacity is exhausted by writing memory to the buffer, it
      * will be reallocated until it reaches the maximum capacity. The buffer
-     * will reside in memory <i>not</i> managed by the JVM. Direct memory can
-     * be faster for operations that require interaction with the operating
-     * system, such as writing to a socket or reading from a file.
+     * will reside in memory <i>not</i> managed by the JVM. Direct memory can be
+     * faster for operations that require interaction with the operating system,
+     * such as writing to a socket or reading from a file.
      * <p>
-     * The returned buffer <b>must</b> be {@link #close() closed} once no
-     * longer in use.
+     * The returned buffer <b>must</b> be {@link #close() closed} once no longer
+     * in use.
      *
      * @param initialCapacity Desired initial capacity, in bytes.
      * @param maximumCapacity Desired maximum capacity, in bytes.
@@ -159,8 +162,8 @@ public interface Buffer extends BufferReader, BufferWriter {
      *
      * @param byteArray Byte array to wrap.
      * @param offset    Offset from beginning of {@code byteArray}, in bytes.
-     * @param length    Number of bytes, beginning at {@code offset}, to
-     *                  include in the returned {@link Buffer}.
+     * @param length    Number of bytes, beginning at {@code offset}, to include
+     *                  in the returned {@link Buffer}.
      * @return Wrapped byte array.
      * @throws NullPointerException If {@code byteArray} is {@code null}.
      */
@@ -176,13 +179,18 @@ public interface Buffer extends BufferReader, BufferWriter {
      * <p>
      * Note that while the returned buffer can only be read from, it accesses
      * the same memory as this buffer, which means that you can still write to
-     * that memory by using this buffer.
+     * that memory by using this buffer. Closing this buffer causes the returned
+     * buffer to be closed by default. This behavior may, however, be changed by
+     * classes implementing this interface.
      * <p>
      * The returned buffer <b>should</b> be {@link #close() closed} once no
-     * longer in use.
+     * longer in use. The reason for this is that <i>if</i> this buffer
+     * implementation uses some sort of reference counting schema, its memory
+     * may end up being leaked if this reader is not closed.
      *
      * @return Read-only buffer.
-     * @throws BufferIsClosed If this buffer is closed.
+     * @throws BufferIsClosed If this buffer is closed. Not guaranteed to be
+     *                        thrown by all implementations.
      */
     default BufferReader asReader() {
         return new DefaultBufferReader(this);
@@ -193,13 +201,18 @@ public interface Buffer extends BufferReader, BufferWriter {
      * <p>
      * Note that while the returned buffer can only be written to, it updates
      * the same memory as this buffer, which means that you can still read from
-     * that memory by using this buffer.
+     * that memory by using this buffer. Closing this buffer causes the returned
+     * buffer to be closed by default. This behavior may, however, be changed by
+     * classes implementing this interface.
      * <p>
      * The returned buffer <b>should</b> be {@link #close() closed} once no
-     * longer in use.
+     * longer in use. The reason for this is that <i>if</i> this buffer
+     * implementation uses some sort of reference counting schema, its memory
+     * may end up being leaked if this reader is not closed.
      *
      * @return Write-only buffer.
-     * @throws BufferIsClosed If this buffer is closed.
+     * @throws BufferIsClosed If this buffer is closed. Not guaranteed to be
+     *                        thrown by all implementations.
      */
     default BufferWriter asWriter() {
         return new DefaultBufferWriter(this);
@@ -221,13 +234,12 @@ public interface Buffer extends BufferReader, BufferWriter {
      * <p>
      * The read offset must be smaller than or equal to the write offset.
      * <p>
-     * This method is preferred over calling {@link #readOffset(int)} and
-     * {@link #writeOffset(int)} separately right after each other. Using this
-     * method means that fewer bounds checks have to be performed, as well as
-     * there being no risk of problems arising due to the two methods being
-     * called in a problematic order. The bounds checks of those two methods
-     * could fail even though same values would have succeeded if provided to
-     * this method.
+     * This method is preferred over calling {@link #readOffset(int)} and {@link
+     * #writeOffset(int)} separately right after each other. Using this method
+     * means that fewer bounds checks have to be performed, as well as there
+     * being no risk of problems arising due to the two methods being called in
+     * a problematic order. The bounds checks of those two methods could fail
+     * even though same values would have succeeded if provided to this method.
      *
      * @param readOffset  Desired read offset.
      * @param writeOffset Desired write offset.

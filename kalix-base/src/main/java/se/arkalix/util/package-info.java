@@ -6,7 +6,7 @@
  * <p>
  * The most significant components of this package are the {@link
  * se.arkalix.util.concurrent concurrency package} and the {@link
- * se.arkalix.util.Result Result} class, both of which are used liberally
+ * se.arkalix.util.concurrent.Result Result} class, both of which are used liberally
  * throughout the Kalix library.
  *
  * @see se.arkalix.util.annotation Annotations

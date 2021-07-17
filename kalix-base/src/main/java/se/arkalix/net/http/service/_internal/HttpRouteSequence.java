@@ -1,7 +1,7 @@
 package se.arkalix.net.http.service._internal;
 
 import se.arkalix.net.http.service.*;
-import se.arkalix.util.Result;
+import se.arkalix.util.concurrent.Result;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;
 
@@ -59,7 +59,7 @@ public class HttpRouteSequence {
                 final var response = task.response();
                 return route
                     .handle(task.request().cloneAndSet(pathParameters), response)
-                    .mapResult(result -> {
+                    .rewrap(result -> {
                         if (result.isFailure()) {
                             return Result.failure(result.fault());
                         }

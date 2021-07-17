@@ -100,7 +100,7 @@ public class DefaultHttpConsumer implements HttpConsumer {
                     identity = new SystemIdentity(connection.remoteCertificateChain());
                     if (!Objects.equals(identity.publicKey(), service.provider().publicKey())) {
                         return connection.close()
-                            .fail(new HttpConsumerConnectionException("" +
+                            .raise(new HttpConsumerConnectionException("" +
                                 "The public key known to be associated with the " +
                                 "the consumed system \"" + service.provider().name() +
                                 "\" does not match the public key in the " +

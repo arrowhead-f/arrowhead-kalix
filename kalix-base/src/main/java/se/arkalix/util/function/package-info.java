@@ -5,6 +5,6 @@
  * available in this package are more permissive when it comes to exceptions,
  * as they are intended to be used in contexts where exceptions will always be
  * caught and packed into failing {@link se.arkalix.util.concurrent.Future
- * Future} or {@link se.arkalix.util.Result Result} instances.
+ * Future} or {@link se.arkalix.util.concurrent.Result Result} instances.
  */
 package se.arkalix.util.function;

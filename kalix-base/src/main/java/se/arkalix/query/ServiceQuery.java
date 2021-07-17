@@ -6,7 +6,7 @@ import se.arkalix.ArSystem;
 import se.arkalix.ServiceRecord;
 import se.arkalix.codec.CodecType;
 import se.arkalix.net.ProtocolType;
-import se.arkalix.util.Result;
+import se.arkalix.util.concurrent.Result;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.function.ThrowingFunction;
 
@@ -443,7 +443,7 @@ public class ServiceQuery {
      * ServiceNotFoundException}.
      */
     public Future<ServiceRecord> resolveOne() {
-        return resolveAll().mapResult(result -> {
+        return resolveAll().rewrap(result -> {
             if (result.isFailure()) {
                 return Result.failure(result.fault());
             }

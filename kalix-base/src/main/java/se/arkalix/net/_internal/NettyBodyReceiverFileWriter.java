@@ -4,7 +4,7 @@ import io.netty.buffer.ByteBuf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.net.BodyIncoming;
-import se.arkalix.util.Result;
+import se.arkalix.util.concurrent.Result;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;
 
@@ -116,7 +116,7 @@ public class NettyBodyReceiverFileWriter implements NettyBodyReceiver, Future<Lo
     }
 
     @Override
-    public void onResult(final Consumer<Result<Long>> consumer) {
+    public void await(final Consumer<Result<Long>> consumer) {
         if (result != null) {
             final var result0 = result;
             result = null;

@@ -1,6 +1,9 @@
-package se.arkalix.util.concurrent;
+package se.arkalix.util.concurrent._internal;
 
-import se.arkalix.util.Result;
+import se.arkalix.util.concurrent.Result;
+import se.arkalix.util.annotation.Internal;
+import se.arkalix.util.concurrent.Future;
+import se.arkalix.util.concurrent.Schedulers;
 import se.arkalix.util.function.ThrowingConsumer;
 import se.arkalix.util.function.ThrowingFunction;
 
@@ -9,27 +12,18 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-/**
- * A {@code Future} that always succeeds with a predetermined value.
- *
- * @param <V> Type of value.
- */
-class FutureSuccess<V> implements Future<V> {
-    static final FutureSuccess<?> NULL = new FutureSuccess<>(null);
+@Internal
+public class CertainSuccess<V> implements Future<V> {
+    public static final CertainSuccess<?> NULL = new CertainSuccess<>(null);
 
     private final V value;
 
-    /**
-     * Creates new successful {@link Future}.
-     *
-     * @param value Value to include in {@code Future}.
-     */
-    public FutureSuccess(final V value) {
+    public CertainSuccess(final V value) {
         this.value = value;
     }
 
     @Override
-    public void onResult(final Consumer<Result<V>> consumer) {
+    public void await(final Consumer<Result<V>> consumer) {
         Objects.requireNonNull(consumer, "consumer");
         consumer.accept(Result.success(value));
     }
@@ -40,13 +34,13 @@ class FutureSuccess<V> implements Future<V> {
     }
 
     @Override
-    public void onFailure(final Consumer<Throwable> consumer) {
+    public void consumeIfFault(final Consumer<Throwable> consumer) {
         Objects.requireNonNull(consumer);
         // Does nothing.
     }
 
     @Override
-    public Future<V> ifSuccess(final ThrowingConsumer<V> consumer) {
+    public Future<V> andIfSuccess(final ThrowingConsumer<V> consumer) {
         Objects.requireNonNull(consumer, "consumer");
         try {
             consumer.accept(value);
@@ -58,13 +52,13 @@ class FutureSuccess<V> implements Future<V> {
     }
 
     @Override
-    public <T extends Throwable> Future<V> ifFailure(final Class<T> class_, final ThrowingConsumer<T> consumer) {
+    public <T extends Throwable> Future<V> andIfFailure(final Class<T> class_, final ThrowingConsumer<T> consumer) {
         Objects.requireNonNull(consumer, "consumer");
         return this;
     }
 
     @Override
-    public Future<V> always(final ThrowingConsumer<Result<V>> consumer) {
+    public Future<V> and(final ThrowingConsumer<Result<V>> consumer) {
         Objects.requireNonNull(consumer, "consumer");
         try {
             consumer.accept(Result.success(value));
@@ -110,7 +104,7 @@ class FutureSuccess<V> implements Future<V> {
     public <U> Future<U> mapResult(final ThrowingFunction<Result<V>, Result<U>> mapper) {
         Objects.requireNonNull(mapper, "Expected mapper");
         try {
-            return new FutureResult<>(mapper.apply(Result.success(value)));
+            return new CertainResult<>(mapper.apply(Result.success(value)));
         }
         catch (final Throwable throwable) {
             return Future.failure(throwable);
@@ -161,7 +155,7 @@ class FutureSuccess<V> implements Future<V> {
     }
 
     @Override
-    public <U> Future<U> flatMapResult(final ThrowingFunction<Result<V>, ? extends Future<U>> mapper) {
+    public <U> Future<U> andFlatRewrap(final ThrowingFunction<Result<V>, ? extends Future<U>> mapper) {
         Objects.requireNonNull(mapper, "Expected mapper");
         try {
             return mapper.apply(Result.success(value));
@@ -180,14 +174,14 @@ class FutureSuccess<V> implements Future<V> {
             private boolean isCancelled = false;
 
             @Override
-            public void onResult(final Consumer<Result<V>> consumer) {
+            public void await(final Consumer<Result<V>> consumer) {
                 if (isCancelled) {
                     return;
                 }
                 try {
                     final var future = mapper.apply(value);
                     cancelTarget = future;
-                    future.onResult(result -> consumer.accept(Result.failure(result.isSuccess()
+                    future.await(result -> consumer.accept(Result.failure(result.isSuccess()
                         ? result.value()
                         : result.fault())));
                 }
@@ -208,25 +202,25 @@ class FutureSuccess<V> implements Future<V> {
     }
 
     @Override
-    public <U> Future<U> pass(final U value) {
+    public <U> Future<U> put(final U value) {
         Objects.requireNonNull(value, "Expected value");
         return Future.success(value);
     }
 
     @Override
-    public <U> Future<U> fail(final Throwable throwable) {
+    public <U> Future<U> injectFault(final Throwable throwable) {
         Objects.requireNonNull(throwable, "Expected throwable");
         return Future.failure(throwable);
     }
 
     @Override
-    public Future<V> delay(final Duration duration) {
+    public Future<V> andDelayFor(final Duration duration) {
         Objects.requireNonNull(duration, "Expected duration");
         return new Future<>() {
             private Future<?> cancelTarget = null;
 
             @Override
-            public void onResult(final Consumer<Result<V>> consumer) {
+            public void await(final Consumer<Result<V>> consumer) {
                 cancelTarget = Schedulers.fixed()
                     .schedule(duration, () -> consumer.accept(Result.success(value)));
             }
@@ -242,13 +236,13 @@ class FutureSuccess<V> implements Future<V> {
     }
 
     @Override
-    public Future<V> delayUntil(final Instant baseline) {
+    public Future<V> andDelayUntil(final Instant baseline) {
         Objects.requireNonNull(baseline, "Expected baseline");
         return new Future<>() {
             private Future<?> cancelTarget = null;
 
             @Override
-            public void onResult(final Consumer<Result<V>> consumer) {
+            public void await(final Consumer<Result<V>> consumer) {
                 final var duration = Duration.between(baseline, Instant.now());
                 final var result = Result.success(value);
                 if (duration.isNegative() || duration.isZero()) {

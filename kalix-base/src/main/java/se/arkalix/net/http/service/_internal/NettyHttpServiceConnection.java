@@ -212,8 +212,8 @@ public class NettyHttpServiceConnection
 
         service
             .handle(this.kalixRequest, kalixResponse)
-            .ifSuccess(ignored -> sendKalixResponseAndCleanup(kalixResponse, defaultCodecType))
-            .onFailure(fault -> {
+            .ifValue(ignored -> sendKalixResponseAndCleanup(kalixResponse, defaultCodecType))
+            .consumeIfFault(fault -> {
                 if (fault instanceof HttpServiceRequestException) {
                     final var exception = (HttpServiceRequestException) fault;
                     if (exception.status() == HttpStatus.INTERNAL_SERVER_ERROR && logger.isDebugEnabled()) {

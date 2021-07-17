@@ -1,6 +1,9 @@
-package se.arkalix.util.concurrent;
+package se.arkalix.util.concurrent._internal;
 
-import se.arkalix.util.Result;
+import se.arkalix.util.concurrent.Result;
+import se.arkalix.util.annotation.Internal;
+import se.arkalix.util.concurrent.Future;
+import se.arkalix.util.concurrent.Schedulers;
 import se.arkalix.util.function.ThrowingConsumer;
 import se.arkalix.util.function.ThrowingFunction;
 
@@ -9,26 +12,16 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-/**
- * A {@code Future} that always fails with a predetermined error.
- *
- * @param <V> Type of value that would have been included if successful.
- */
-class FutureFailure<V> implements Future<V> {
+@Internal
+public class CertainFailure<V> implements Future<V> {
     private final Throwable fault;
 
-    /**
-     * Creates new failing {@link Future}.
-     *
-     * @param fault Throwable to include in {@code Future}.
-     * @throws NullPointerException If {@code fault} is {@code null}.
-     */
-    public FutureFailure(final Throwable fault) {
+    public CertainFailure(final Throwable fault) {
         this.fault = Objects.requireNonNull(fault);
     }
 
     @Override
-    public void onResult(final Consumer<Result<V>> consumer) {
+    public void await(final Consumer<Result<V>> consumer) {
         Objects.requireNonNull(consumer, "consumer");
         consumer.accept(Result.failure(fault));
     }
@@ -39,20 +32,20 @@ class FutureFailure<V> implements Future<V> {
     }
 
     @Override
-    public void onFailure(final Consumer<Throwable> consumer) {
+    public void consumeIfFault(final Consumer<Throwable> consumer) {
         Objects.requireNonNull(consumer);
         consumer.accept(fault);
     }
 
     @Override
-    public Future<V> ifSuccess(final ThrowingConsumer<V> consumer) {
+    public Future<V> andIfSuccess(final ThrowingConsumer<V> consumer) {
         Objects.requireNonNull(consumer, "consumer");
         // Does nothing.
         return this;
     }
 
     @Override
-    public <T extends Throwable> Future<V> ifFailure(final Class<T> class_, final ThrowingConsumer<T> consumer) {
+    public <T extends Throwable> Future<V> andIfFailure(final Class<T> class_, final ThrowingConsumer<T> consumer) {
         Objects.requireNonNull(consumer, "consumer");
         try {
             if (class_.isAssignableFrom(fault.getClass())) {
@@ -67,7 +60,7 @@ class FutureFailure<V> implements Future<V> {
     }
 
     @Override
-    public Future<V> always(final ThrowingConsumer<Result<V>> consumer) {
+    public Future<V> and(final ThrowingConsumer<Result<V>> consumer) {
         Objects.requireNonNull(consumer, "consumer");
         try {
             consumer.accept(Result.failure(fault));
@@ -132,7 +125,7 @@ class FutureFailure<V> implements Future<V> {
     public <U> Future<U> mapResult(final ThrowingFunction<Result<V>, Result<U>> mapper) {
         Objects.requireNonNull(mapper, "mapper");
         try {
-            return new FutureResult<>(mapper.apply(Result.failure(fault)));
+            return new CertainResult<>(mapper.apply(Result.failure(fault)));
         }
         catch (final Throwable throwable) {
             return Future.failure(throwable);
@@ -185,7 +178,7 @@ class FutureFailure<V> implements Future<V> {
             private boolean isCancelled = false;
 
             @Override
-            public void onResult(final Consumer<Result<V>> consumer) {
+            public void await(final Consumer<Result<V>> consumer) {
                 if (isCancelled) {
                     return;
                 }
@@ -193,7 +186,7 @@ class FutureFailure<V> implements Future<V> {
                 if (class_.isAssignableFrom(fault.getClass())) {
                     try {
                         final var future1 = mapper.apply(fault);
-                        future1.onResult(result -> consumer.accept(Result.failure(result.isSuccess()
+                        future1.await(result -> consumer.accept(Result.failure(result.isSuccess()
                             ? result.value()
                             : result.fault())));
                         cancelTarget = future1;
@@ -221,7 +214,7 @@ class FutureFailure<V> implements Future<V> {
     }
 
     @Override
-    public <U> Future<U> flatMapResult(final ThrowingFunction<Result<V>, ? extends Future<U>> mapper) {
+    public <U> Future<U> andFlatRewrap(final ThrowingFunction<Result<V>, ? extends Future<U>> mapper) {
         try {
             return mapper.apply(Result.failure(fault));
         }
@@ -237,26 +230,26 @@ class FutureFailure<V> implements Future<V> {
     }
 
     @Override
-    public <U> Future<U> pass(final U value) {
+    public <U> Future<U> put(final U value) {
         Objects.requireNonNull(value, "Expected value");
         return Future.failure(fault);
     }
 
     @Override
-    public <U> Future<U> fail(final Throwable throwable) {
+    public <U> Future<U> injectFault(final Throwable throwable) {
         Objects.requireNonNull(throwable, "Expected throwable");
         throwable.addSuppressed(fault);
         return Future.failure(throwable);
     }
 
     @Override
-    public Future<V> delay(final Duration duration) {
+    public Future<V> andDelayFor(final Duration duration) {
         Objects.requireNonNull(duration, "Expected duration");
         return new Future<>() {
             private Future<?> cancelTarget = null;
 
             @Override
-            public void onResult(final Consumer<Result<V>> consumer) {
+            public void await(final Consumer<Result<V>> consumer) {
                 cancelTarget = Schedulers.fixed()
                     .schedule(duration, () -> consumer.accept(Result.failure(fault)));
             }
@@ -272,13 +265,13 @@ class FutureFailure<V> implements Future<V> {
     }
 
     @Override
-    public Future<V> delayUntil(final Instant baseline) {
+    public Future<V> andDelayUntil(final Instant baseline) {
         Objects.requireNonNull(baseline, "Expected baseline");
         return new Future<>() {
             private Future<?> cancelTarget = null;
 
             @Override
-            public void onResult(final Consumer<Result<V>> consumer) {
+            public void await(final Consumer<Result<V>> consumer) {
                 final var duration = Duration.between(baseline, Instant.now());
                 final var result = Result.<V>failure(fault);
                 if (duration.isNegative() || duration.isZero()) {
@@ -301,7 +294,7 @@ class FutureFailure<V> implements Future<V> {
     }
 
     @Override
-    public Future<?> fork(final Consumer<V> consumer) {
+    public Future<?> andDetach(final Consumer<V> consumer) {
         Objects.requireNonNull(consumer, "Expected consumer");
         return Future.failure(fault);
     }

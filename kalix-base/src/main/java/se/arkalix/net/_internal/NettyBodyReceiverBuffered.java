@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import se.arkalix.io.buf.BufferReader;
 import se.arkalix.io.buf._internal.NioBuffer;
 import se.arkalix.net.BodyIncoming;
-import se.arkalix.util.Result;
+import se.arkalix.util.concurrent.Result;
 import se.arkalix.util.concurrent.Future;
 
 import java.util.Objects;
@@ -82,7 +82,7 @@ public class NettyBodyReceiverBuffered implements NettyBodyReceiver, Future<Buff
     }
 
     @Override
-    public void onResult(final Consumer<Result<BufferReader>> consumer) {
+    public void await(final Consumer<Result<BufferReader>> consumer) {
         if (result != null) {
             final var result0 = result;
             result = null;

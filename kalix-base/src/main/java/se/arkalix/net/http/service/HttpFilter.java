@@ -99,7 +99,7 @@ public class HttpFilter implements HttpRoutable {
             final var response = task.response();
             try {
                 return handler.handle(task.request().cloneAndSet(pathParameters), response)
-                    .map(ignored -> response.status().isPresent());
+                    .map(__ -> response.status().isPresent());
             }
             catch (final Throwable throwable) {
                 return Future.failure(throwable);

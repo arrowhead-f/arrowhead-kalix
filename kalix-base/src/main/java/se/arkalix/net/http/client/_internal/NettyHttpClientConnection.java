@@ -21,7 +21,7 @@ import se.arkalix.net.http.client.HttpClientRequest;
 import se.arkalix.net.http.client.HttpClientResponse;
 import se.arkalix.security.SecurityDisabled;
 import se.arkalix.util.InternalException;
-import se.arkalix.util.Result;
+import se.arkalix.util.concurrent.Result;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.concurrent._internal.FutureCompletion;

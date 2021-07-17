@@ -1,81 +1,121 @@
 package se.arkalix.io.tcp._internal;
 
 import se.arkalix.io.IoException;
-import se.arkalix.io.tcp.TcpAcceptor;
+import se.arkalix.io.SocketHandler;
+import se.arkalix.io._internal.NioEventLoop;
+import se.arkalix.io._internal.NioEventLoopGroup;
 import se.arkalix.io.tcp.TcpListener;
+import se.arkalix.io.tcp.TcpSocket;
 import se.arkalix.util.concurrent.Future;
-import se.arkalix.util.function.ThrowingConsumer;
+import se.arkalix.util.concurrent.Promise;
+import se.arkalix.util.logging.Event;
+import se.arkalix.util.logging.Loggers;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.SocketOption;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 
-public class NioTcpListener implements TcpListener {
-    private final Map<SocketOption<Object>, Object> socketOptions = new HashMap<>();
+import static java.nio.channels.SelectionKey.*;
 
-    private InetSocketAddress localInetSocketAddress = null;
+public class NioTcpListener extends AbstractTcpSocketOptions<TcpListener> implements TcpListener {
     private int backlog = 0;
 
     @Override
-    public int backlog() {
-        return backlog;
-    }
-
-    @Override
     public TcpListener backlog(final int backlog) {
-        this.backlog = backlog;
-        return this;
+        this.backlog = Math.max(backlog, 0);
+        return null;
     }
 
     @Override
-    public InetSocketAddress localInetSocketAddress() {
-        return localInetSocketAddress != null
-            ? localInetSocketAddress
-            : new InetSocketAddress(0);
-    }
+    public Future<?> listen(final SocketHandler<TcpSocket> handler) {
+        if (handler == null) {
+            throw new NullPointerException("handler");
+        }
 
-    @Override
-    public TcpListener localInetSocketAddress(final InetSocketAddress localInetSocketAddress) {
-        this.localInetSocketAddress = localInetSocketAddress;
-        return this;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T> Optional<T> option(final SocketOption<T> name) {
-        return Optional.ofNullable((T) socketOptions.get(name));
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T> TcpListener option(final SocketOption<T> name, final T value) {
-        socketOptions.put((SocketOption<Object>) name, value);
-        return this;
-    }
-
-    @Override
-    public Future<?> listen(final ThrowingConsumer<TcpAcceptor> consumer) {
+        final ServerSocketChannel serverSocketChannel;
         try {
-            final var serverSocketChannel = ServerSocketChannel.open();
+            serverSocketChannel = ServerSocketChannel.open();
             serverSocketChannel.configureBlocking(false);
-            serverSocketChannel.bind(localInetSocketAddress(), backlog);
-            for (final var entry : socketOptions.entrySet()) {
-                try {
-                    serverSocketChannel.setOption(entry.getKey(), entry.getValue());
-                }
-                catch (final UnsupportedOperationException exception) {
-                    throw new IoException(exception); // TODO.
-                }
+            for (final var option : options().entrySet()) {
+                serverSocketChannel.setOption(castOption(option.getKey()), option.getValue());
             }
-            // TODO.
-            return null;
+            serverSocketChannel.bind(localAddress().orElse(null), backlog);
         }
         catch (final IOException exception) {
-            throw new IoException(exception);
+            return Future.failure(new IoException("failed to setup socket channel", exception));
         }
+
+        final var promiseToStopListening = new Promise<Void>();
+        final var eventLoopGroup = NioEventLoopGroup.main();
+
+        eventLoopGroup.nextEventLoop()
+            .register(serverSocketChannel, OP_ACCEPT, new NioEventLoop.Handler() {
+                @Override
+                public void handle(final SelectionKey key) {
+                    try {
+                        if (!key.isValid()) {
+                            if (serverSocketChannel.isOpen()) {
+                                stopListening(null);
+                            }
+                            return;
+                        }
+                        if (key.isAcceptable()) {
+                            final var socketChannel = serverSocketChannel.accept();
+                            assert socketChannel != null;
+
+                            socketChannel.configureBlocking(false);
+                            eventLoopGroup.nextEventLoop()
+                                .register(socketChannel, OP_CONNECT | OP_READ | OP_WRITE, new NioTcpSocketHandler(
+                                    socketChannel, handler, null, logger().orElse(null)));
+                        }
+                    }
+                    catch (Throwable throwable) {
+                        if (throwable instanceof IOException) {
+                            throwable = new IoException(throwable);
+                        }
+                        stopListening(throwable);
+                    }
+                }
+
+                private void stopListening(Throwable throwable) {
+                    try {
+                        serverSocketChannel.close();
+                    }
+                    catch (final Throwable throwable0) {
+                        if (throwable == null) {
+                            throwable = throwable0;
+                        }
+                        else {
+                            throwable.addSuppressed(throwable0);
+                        }
+                    }
+                    try {
+                        if (throwable != null) {
+                            promiseToStopListening.forfeit(throwable);
+                        }
+                        else {
+                            promiseToStopListening.fulfill();
+                        }
+                    }
+                    catch (final Throwable throwable0) {
+                        if (throwable != null) {
+                            throwable0.addSuppressed(throwable);
+                        }
+                        logger()
+                            .orElse(Loggers.text())
+                            .log(new Event("CompletePromiseWhileDisconnecting")
+                                .withContext(NioTcpListener.class)
+                                .withException(throwable0)
+                                .withMessage("failed to complete TCP disconnect promise"));
+                    }
+                }
+            });
+
+        return promiseToStopListening;
+    }
+
+    @Override
+    protected TcpListener self() {
+        return this;
     }
 }

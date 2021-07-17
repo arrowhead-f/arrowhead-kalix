@@ -1,80 +1,35 @@
 package se.arkalix.io.tcp._internal;
 
-import se.arkalix.io.evt.EventLoop;
+import se.arkalix.io.IoException;
+import se.arkalix.io.SocketIsClosed;
+import se.arkalix.io.buf.BufferReader;
 import se.arkalix.io.tcp.TcpSocket;
+import se.arkalix.util.annotation.Internal;
+import se.arkalix.util.annotation.ThreadSafe;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.logging.Logger;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketOption;
-import java.net.SocketOptions;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SocketChannel;
+import java.util.Objects;
+import java.util.Queue;
 
-public class NioTcpSocket {
-/*    private final AtomicReference<SelectionKey> selectionKey = new AtomicReference<>(null);
+@Internal
+public class NioTcpSocket implements TcpSocket {
     private final SocketChannel socketChannel;
+    private final Queue<PromiseToSend> sendQueue;
 
-    private Flow.Subscriber<? super BufferReader> subscriber = null;
-
-    public NioTcpSocket(
-        final BufferAllocator bufferAllocator,
-        final Selector selector,
-        final SocketChannel socketChannel
-    ) {
+    public NioTcpSocket(final SocketChannel socketChannel, final Queue<PromiseToSend> sendQueue) {
         this.socketChannel = Objects.requireNonNull(socketChannel, "socketChannel");
-
-        try {
-            final var ops = SelectionKey.OP_READ | SelectionKey.OP_WRITE;
-            selectionKey.set(socketChannel.register(selector, ops, (Runnable) () -> {
-                final var selectionKey0 = selectionKey.get();
-                if (selectionKey0 == null) {
-                    try {
-                        subscriber.onError(new IllegalStateException("selectionKey == null"));
-                    }
-                    finally {
-                        closeSocketChannel();
-                    }
-                    return;
-                }
-                try {
-                    while (selectionKey0.isReadable()) {
-                        final var buffer = bufferAllocator.allocate(8192, 8192);
-                        socketChannel.read(buffer.toByteBuffers());
-                    }
-                    while (selectionKey0.isWritable()) {
-                        final var buffer = bufferAllocator.allocate(8192, 8192); // TODO
-                        socketChannel.write(buffer.toByteBuffers());
-                    }
-                }
-                catch (final IOException exception) {
-                    try {
-                        subscriber.onError(new IoException(exception));
-                    }
-                    finally {
-                        closeSocketChannel();
-                    }
-                }
-            }));
-        }
-        catch (final ClosedChannelException exception) {
-            throw new SocketIsClosed(exception);
-        }
+        this.sendQueue = Objects.requireNonNull(sendQueue, "sendQueue");
     }
 
     @Override
-    public Future<?> write(final BufferReader buffer) {
-        return null;
-    }
-
-    @Override
+    @ThreadSafe
     public void close() {
-        closeSocketChannel();
-    }
-
-    private void closeSocketChannel() {
         try {
             socketChannel.close();
         }
@@ -84,95 +39,71 @@ public class NioTcpSocket {
     }
 
     @Override
-    public InetSocketAddress localSocketAddress() {
+    @ThreadSafe
+    public Future<?> send(final BufferReader buffer) {
+        final var promise = new PromiseToSend(buffer);
+        sendQueue.add(promise);
+        return promise;
+    }
+
+    @Override
+    @ThreadSafe
+    public <T> T option(final SocketOption<T> option) {
         try {
-            return (InetSocketAddress) socketChannel.getLocalAddress();
+            return socketChannel.getOption(option);
         }
-        catch (final IOException exception) {
+        catch (final ClosedChannelException exception) {
+            throw new SocketIsClosed(exception);
+        }
+        catch (IOException exception) {
             throw new IoException(exception);
         }
     }
 
     @Override
-    public InetSocketAddress remoteSocketAddress() {
+    @ThreadSafe
+    public <T> TcpSocket option(final SocketOption<T> option, final T value) {
         try {
-            return (InetSocketAddress) socketChannel.getRemoteAddress();
+            socketChannel.setOption(option, value);
         }
-        catch (final IOException exception) {
+        catch (final ClosedChannelException exception) {
+            throw new SocketIsClosed(exception);
+        }
+        catch (IOException exception) {
+            throw new IoException(exception);
+        }
+        return this;
+    }
+
+    @Override
+    @ThreadSafe
+    public InetSocketAddress localAddress() {
+        try {
+            final var localAddress = socketChannel.getLocalAddress();
+            assert localAddress instanceof InetSocketAddress;
+            return (InetSocketAddress) localAddress;
+        }
+        catch (final ClosedChannelException exception) {
+            throw new SocketIsClosed(exception);
+        }
+        catch (IOException exception) {
             throw new IoException(exception);
         }
     }
 
     @Override
-    public void subscribe(final Flow.Subscriber<? super BufferReader> subscriber) {
-        if (this.subscriber != null) {
-            throw new IllegalStateException("subscriber already set");
+    @ThreadSafe
+    public InetSocketAddress remoteAddress() {
+        try {
+            final var remoteAddress = socketChannel.getRemoteAddress();
+            assert remoteAddress instanceof InetSocketAddress;
+            return (InetSocketAddress) remoteAddress;
         }
-        this.subscriber = Objects.requireNonNull(subscriber, "subscriber");
-    }*/
-
-    public static class Connector implements TcpSocket.Connector {
-        private TcpSocket.Receiver receiver = null;
-        private Logger logger = null;
-        private EventLoop eventLoop = null;
-        private InetSocketAddress localSocketAddress = null;
-        private InetSocketAddress remoteSocketAddress = null;
-        private Duration readTimeout = null;
-        private Duration writeTimeout = null;
-        private Map<SocketOption<?>, Object> socketOptions = new HashMap<>();
-
-        @Override
-        public TcpSocket.Connector receiver(final TcpSocket.Receiver receiver) {
-            this.receiver = receiver;
-            return this;
+        catch (final ClosedChannelException exception) {
+            throw new SocketIsClosed(exception);
         }
-
-        @Override
-        public TcpSocket.Connector logger(final Logger logger) {
-            this.logger = logger;
-            return this;
-        }
-
-        @Override
-        public TcpSocket.Connector eventLoop(final EventLoop eventLoop) {
-            this.eventLoop = eventLoop;
-            return this;
-        }
-
-        @Override
-        public TcpSocket.Connector localSocketAddress(final InetSocketAddress localSocketAddress) {
-            this.localSocketAddress = localSocketAddress;
-            return this;
-        }
-
-        @Override
-        public TcpSocket.Connector remoteSocketAddress(final InetSocketAddress remoteSocketAddress) {
-            this.remoteSocketAddress = remoteSocketAddress;
-            return this;
-        }
-
-        @Override
-        public TcpSocket.Connector readTimeout(final Duration readTimeout) {
-            this.readTimeout = readTimeout;
-            return this;
-        }
-
-        @Override
-        public TcpSocket.Connector writeTimeout(final Duration writeTimeout) {
-            this.writeTimeout = writeTimeout;
-            return this;
-        }
-
-        @Override
-        public <T> TcpSocket.Connector option(final SocketOption<T> option, final T value) {
-
-            socketOptions.put(option, value);
-            return this;
-        }
-
-        @Override
-        public Future<TcpSocket> connect() {
-            return null;
+        catch (IOException exception) {
+            throw new IoException(exception);
         }
     }
 }

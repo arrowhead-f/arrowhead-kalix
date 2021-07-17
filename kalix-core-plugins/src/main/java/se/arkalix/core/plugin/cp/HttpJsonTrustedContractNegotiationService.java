@@ -84,7 +84,7 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
             .method(POST)
             .path(pathOffer)
             .body(offer::encodeJson))
-            .flatMapResult(result -> {
+            .flatRewrap(result -> {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Sent offer resulted in {}", result);
                 }
@@ -119,7 +119,7 @@ public class HttpJsonTrustedContractNegotiationService implements ArConsumer, Ar
                         "determine negotiation id", exception));
                 }
                 return HttpJsonServices.unwrap(response)
-                    .pass(negotiationId);
+                    .put(negotiationId);
             });
     }
 

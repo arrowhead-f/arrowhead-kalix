@@ -4,16 +4,21 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class Event {
     private final ArrayList<Attribute> attributes;
+    private final String name;
+    private final Instant timestamp;
 
-    public Event() {
-        this(10);
+    public Event(final String name) {
+        this(name, 10);
     }
 
-    public Event(final int initialCapacity) {
+    public Event(final String name, final int initialCapacity) {
         this.attributes = new ArrayList<>(initialCapacity);
+        this.name = Objects.requireNonNull(name, "name");
+        timestamp = Instant.now();
     }
 
     public Event with(final String label, final Object value) {
@@ -27,6 +32,11 @@ public class Event {
         return this;
     }
 
+    public Event withContext(final Class<?> context) {
+        attributes.add(new Attribute("context", context));
+        return this;
+    }
+
     public Event withException(final Throwable value) {
         attributes.add(new Attribute("exception", value));
         return this;
@@ -37,16 +47,15 @@ public class Event {
         return this;
     }
 
-    public Event withTimestamp() {
-        return withTimestamp(Instant.now());
-    }
-
-    public Event withTimestamp(final Instant value) {
-        attributes.add(new Attribute("timestamp", value));
-        return this;
-    }
-
     public List<Attribute> attributes() {
         return Collections.unmodifiableList(attributes);
+    }
+
+    public String name() {
+        return name;
+    }
+
+    public Instant timestamp() {
+        return timestamp;
     }
 }

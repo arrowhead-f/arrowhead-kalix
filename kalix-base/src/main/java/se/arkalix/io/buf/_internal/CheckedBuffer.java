@@ -5,6 +5,8 @@ import se.arkalix.util._internal.BinaryMath;
 import se.arkalix.util.annotation.Internal;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 
 @Internal
 public abstract class CheckedBuffer implements Buffer {
@@ -101,6 +103,19 @@ public abstract class CheckedBuffer implements Buffer {
     protected abstract void getAtUnchecked(int offset, ByteBuffer destination);
 
     @Override
+    public int getAt(final int offset, final WritableByteChannel destination, final int maxLength) {
+        checkIfOpen();
+        if (destination == null) {
+            throw new NullPointerException("destination");
+        }
+        final int readEnd = Math.min(offset + maxLength, writeOffset());
+        checkOffsets(offset, readEnd, writeEnd());
+        return getAtUnchecked(offset, destination, readEnd);
+    }
+
+    protected abstract int getAtUnchecked(final int offset, final WritableByteChannel destination, final int readEnd);
+
+    @Override
     public byte getS8At(final int offset) {
         checkIfOpen();
         checkReadRange(offset, 1);
@@ -128,15 +143,6 @@ public abstract class CheckedBuffer implements Buffer {
     protected abstract short getS16LeAtUnchecked(int offset);
 
     @Override
-    public short getS16NeAt(final int offset) {
-        checkIfOpen();
-        checkReadRange(offset, 2);
-        return getS16NeAtUnchecked(offset);
-    }
-
-    protected abstract short getS16NeAtUnchecked(int offset);
-
-    @Override
     public int getS32BeAt(final int offset) {
         checkIfOpen();
         checkReadRange(offset, 4);
@@ -155,15 +161,6 @@ public abstract class CheckedBuffer implements Buffer {
     protected abstract int getS32LeAtUnchecked(int offset);
 
     @Override
-    public int getS32NeAt(final int offset) {
-        checkIfOpen();
-        checkReadRange(offset, 4);
-        return getS32NeAtUnchecked(offset);
-    }
-
-    protected abstract int getS32NeAtUnchecked(int offset);
-
-    @Override
     public long getS64BeAt(final int offset) {
         checkIfOpen();
         checkReadRange(offset, 8);
@@ -180,69 +177,6 @@ public abstract class CheckedBuffer implements Buffer {
     }
 
     protected abstract long getS64LeAtUnchecked(int offset);
-
-    @Override
-    public long getS64NeAt(final int offset) {
-        checkIfOpen();
-        checkReadRange(offset, 8);
-        return getS64NeAtUnchecked(offset);
-    }
-
-    protected abstract long getS64NeAtUnchecked(int offset);
-
-    @Override
-    public int getU24BeAt(final int offset) {
-        checkIfOpen();
-        checkReadRange(offset, 3);
-        return getU24BeAtUnchecked(offset);
-    }
-
-    protected abstract int getU24BeAtUnchecked(int offset);
-
-    @Override
-    public int getU24LeAt(final int offset) {
-        checkIfOpen();
-        checkReadRange(offset, 3);
-        return getU24LeAtUnchecked(offset);
-    }
-
-    protected abstract int getU24LeAtUnchecked(int offset);
-
-    @Override
-    public int getU24NeAt(final int offset) {
-        checkIfOpen();
-        checkReadRange(offset, 3);
-        return getU24NeAtUnchecked(offset);
-    }
-
-    protected abstract int getU24NeAtUnchecked(int offset);
-
-    @Override
-    public long getU48BeAt(final int offset) {
-        checkIfOpen();
-        checkReadRange(offset, 6);
-        return getU48BeAtUnchecked(offset);
-    }
-
-    protected abstract long getU48BeAtUnchecked(int offset);
-
-    @Override
-    public long getU48LeAt(final int offset) {
-        checkIfOpen();
-        checkReadRange(offset, 6);
-        return getU48LeAtUnchecked(offset);
-    }
-
-    protected abstract long getU48LeAtUnchecked(int offset);
-
-    @Override
-    public long getU48NeAt(final int offset) {
-        checkIfOpen();
-        checkReadRange(offset, 6);
-        return getU48NeAtUnchecked(offset);
-    }
-
-    protected abstract long getU48NeAtUnchecked(int offset);
 
     @Override
     public void read(final byte[] destination, final int destinationOffset, final int length) {
@@ -283,6 +217,19 @@ public abstract class CheckedBuffer implements Buffer {
     protected abstract void readUnchecked(ByteBuffer destination);
 
     @Override
+    public int read(final WritableByteChannel destination, final int maxLength) {
+        checkIfOpen();
+        if (destination == null) {
+            throw new NullPointerException("destination");
+        }
+        final int readEnd = Math.min(readOffset() + maxLength, writeOffset());
+        checkOffsets(readOffset(), readEnd, writeEnd());
+        return readUnchecked(destination, readEnd);
+    }
+
+    protected abstract int readUnchecked(WritableByteChannel destination, int readEnd);
+
+    @Override
     public byte readS8() {
         checkIfOpen();
         checkReadLength(1);
@@ -310,15 +257,6 @@ public abstract class CheckedBuffer implements Buffer {
     protected abstract short readS16LeUnchecked();
 
     @Override
-    public short readS16Ne() {
-        checkIfOpen();
-        checkReadLength(2);
-        return readS16NeUnchecked();
-    }
-
-    protected abstract short readS16NeUnchecked();
-
-    @Override
     public int readS32Be() {
         checkIfOpen();
         checkReadLength(4);
@@ -337,15 +275,6 @@ public abstract class CheckedBuffer implements Buffer {
     protected abstract int readS32LeUnchecked();
 
     @Override
-    public int readS32Ne() {
-        checkIfOpen();
-        checkReadLength(4);
-        return readS32NeUnchecked();
-    }
-
-    protected abstract int readS32NeUnchecked();
-
-    @Override
     public long readS64Be() {
         checkIfOpen();
         checkReadLength(8);
@@ -362,69 +291,6 @@ public abstract class CheckedBuffer implements Buffer {
     }
 
     protected abstract long readS64LeUnchecked();
-
-    @Override
-    public long readS64Ne() {
-        checkIfOpen();
-        checkReadLength(8);
-        return readS64NeUnchecked();
-    }
-
-    protected abstract long readS64NeUnchecked();
-
-    @Override
-    public int readU24Be() {
-        checkIfOpen();
-        checkReadLength(3);
-        return readU24BeUnchecked();
-    }
-
-    protected abstract int readU24BeUnchecked();
-
-    @Override
-    public int readU24Le() {
-        checkIfOpen();
-        checkReadLength(3);
-        return readU24LeUnchecked();
-    }
-
-    protected abstract int readU24LeUnchecked();
-
-    @Override
-    public int readU24Ne() {
-        checkIfOpen();
-        checkReadLength(3);
-        return readU24NeUnchecked();
-    }
-
-    protected abstract int readU24NeUnchecked();
-
-    @Override
-    public long readU48Be() {
-        checkIfOpen();
-        checkReadLength(6);
-        return readU48BeUnchecked();
-    }
-
-    protected abstract long readU48BeUnchecked();
-
-    @Override
-    public long readU48Le() {
-        checkIfOpen();
-        checkReadLength(6);
-        return readU48LeUnchecked();
-    }
-
-    protected abstract long readU48LeUnchecked();
-
-    @Override
-    public long readU48Ne() {
-        checkIfOpen();
-        checkReadLength(6);
-        return readU48NeUnchecked();
-    }
-
-    protected abstract long readU48NeUnchecked();
 
     @Override
     public void skip(final int length) {
@@ -482,6 +348,19 @@ public abstract class CheckedBuffer implements Buffer {
     protected abstract void setAtUnchecked(int offset, ByteBuffer source);
 
     @Override
+    public int setAt(final int offset, final ReadableByteChannel source, final int maxLength) {
+        checkIfOpen();
+        if (source == null) {
+            throw new NullPointerException("source");
+        }
+        final int writeEnd = Math.min(offset + maxLength, writeEnd());
+        checkOffsets(readOffset(), offset, writeEnd);
+        return setAtUnchecked(offset, source, writeEnd);
+    }
+
+    protected abstract int setAtUnchecked(int offset, ReadableByteChannel source, int writeEnd);
+
+    @Override
     public void setS8At(final int offset, final byte value) {
         checkIfOpen();
         ensureWriteRange(offset, 1);
@@ -509,45 +388,6 @@ public abstract class CheckedBuffer implements Buffer {
     protected abstract void setS16LeAtUnchecked(int offset, short value);
 
     @Override
-    public void setS16NeAt(final int offset, final short value) {
-        checkIfOpen();
-        ensureWriteRange(offset, 2);
-        setS16NeAtUnchecked(offset, value);
-    }
-
-    protected abstract void setS16NeAtUnchecked(int offset, short value);
-
-    @Override
-    public void setS24BeAt(final int offset, final int value) {
-        checkS24(value);
-        checkIfOpen();
-        ensureWriteRange(offset, 3);
-        setS24BeAtUnchecked(offset, value);
-    }
-
-    protected abstract void setS24BeAtUnchecked(int offset, int value);
-
-    @Override
-    public void setS24LeAt(final int offset, final int value) {
-        checkS24(value);
-        checkIfOpen();
-        ensureWriteRange(offset, 3);
-        setS24LeAtUnchecked(offset, value);
-    }
-
-    protected abstract void setS24LeAtUnchecked(int offset, int value);
-
-    @Override
-    public void setS24NeAt(final int offset, final int value) {
-        checkS24(value);
-        checkIfOpen();
-        ensureWriteRange(offset, 3);
-        setS24NeAtUnchecked(offset, value);
-    }
-
-    protected abstract void setS24NeAtUnchecked(int offset, int value);
-
-    @Override
     public void setS32BeAt(final int offset, final int value) {
         checkIfOpen();
         ensureWriteRange(offset, 4);
@@ -566,45 +406,6 @@ public abstract class CheckedBuffer implements Buffer {
     protected abstract void setS32LeAtUnchecked(int offset, int value);
 
     @Override
-    public void setS32NeAt(final int offset, final int value) {
-        checkIfOpen();
-        ensureWriteRange(offset, 4);
-        setS32NeAtUnchecked(offset, value);
-    }
-
-    protected abstract void setS32NeAtUnchecked(int offset, int value);
-
-    @Override
-    public void setS48BeAt(final int offset, final long value) {
-        checkS48(value);
-        checkIfOpen();
-        ensureWriteRange(offset, 6);
-        setS48BeAtUnchecked(offset, value);
-    }
-
-    protected abstract void setS48BeAtUnchecked(int offset, long value);
-
-    @Override
-    public void setS48LeAt(final int offset, final long value) {
-        checkS48(value);
-        checkIfOpen();
-        ensureWriteRange(offset, 6);
-        setS48LeAtUnchecked(offset, value);
-    }
-
-    protected abstract void setS48LeAtUnchecked(int offset, long value);
-
-    @Override
-    public void setS48NeAt(final int offset, final long value) {
-        checkS48(value);
-        checkIfOpen();
-        ensureWriteRange(offset, 6);
-        setS48NeAtUnchecked(offset, value);
-    }
-
-    protected abstract void setS48NeAtUnchecked(int offset, long value);
-
-    @Override
     public void setS64BeAt(final int offset, final long value) {
         checkIfOpen();
         ensureWriteRange(offset, 8);
@@ -621,15 +422,6 @@ public abstract class CheckedBuffer implements Buffer {
     }
 
     protected abstract void setS64LeAtUnchecked(int offset, long value);
-
-    @Override
-    public void setS64NeAt(final int offset, final long value) {
-        checkIfOpen();
-        ensureWriteRange(offset, 8);
-        setS64NeAtUnchecked(offset, value);
-    }
-
-    protected abstract void setS64NeAtUnchecked(int offset, long value);
 
     @Override
     public void write(final byte[] source, final int sourceOffset, final int length) {
@@ -670,6 +462,19 @@ public abstract class CheckedBuffer implements Buffer {
     protected abstract void writeUnchecked(ByteBuffer source);
 
     @Override
+    public int write(final ReadableByteChannel source, final int maxLength) {
+        checkIfOpen();
+        if (source == null) {
+            throw new NullPointerException("source");
+        }
+        final int writeEnd = Math.min(writeOffset() + maxLength, writeEnd());
+        checkOffsets(readOffset(), writeOffset(), writeEnd);
+        return writeUnchecked(source, writeEnd);
+    }
+
+    protected abstract int writeUnchecked(ReadableByteChannel source, int maxLength);
+
+    @Override
     public void writeS8(final byte value) {
         checkIfOpen();
         ensureWriteLength(1);
@@ -697,45 +502,6 @@ public abstract class CheckedBuffer implements Buffer {
     protected abstract void writeS16LeUnchecked(short value);
 
     @Override
-    public void writeS16Ne(final short value) {
-        checkIfOpen();
-        ensureWriteLength(2);
-        writeS16NeUnchecked(value);
-    }
-
-    protected abstract void writeS16NeUnchecked(short value);
-
-    @Override
-    public void writeS24Be(final int value) {
-        checkS24(value);
-        checkIfOpen();
-        ensureWriteLength(3);
-        writeS24BeUnchecked(value);
-    }
-
-    protected abstract void writeS24BeUnchecked(int value);
-
-    @Override
-    public void writeS24Le(final int value) {
-        checkS24(value);
-        checkIfOpen();
-        ensureWriteLength(3);
-        writeS24LeUnchecked(value);
-    }
-
-    protected abstract void writeS24LeUnchecked(int value);
-
-    @Override
-    public void writeS24Ne(final int value) {
-        checkS24(value);
-        checkIfOpen();
-        ensureWriteLength(3);
-        writeS24NeUnchecked(value);
-    }
-
-    protected abstract void writeS24NeUnchecked(int value);
-
-    @Override
     public void writeS32Be(final int value) {
         checkIfOpen();
         ensureWriteLength(4);
@@ -754,45 +520,6 @@ public abstract class CheckedBuffer implements Buffer {
     protected abstract void writeS32LeUnchecked(int value);
 
     @Override
-    public void writeS32Ne(final int value) {
-        checkIfOpen();
-        ensureWriteLength(4);
-        writeS32NeUnchecked(value);
-    }
-
-    protected abstract void writeS32NeUnchecked(int value);
-
-    @Override
-    public void writeS48Be(final long value) {
-        checkS48(value);
-        checkIfOpen();
-        ensureWriteLength(6);
-        writeS48BeUnchecked(value);
-    }
-
-    protected abstract void writeS48BeUnchecked(long value);
-
-    @Override
-    public void writeS48Le(final long value) {
-        checkS48(value);
-        checkIfOpen();
-        ensureWriteLength(6);
-        writeS48LeUnchecked(value);
-    }
-
-    protected abstract void writeS48LeUnchecked(long value);
-
-    @Override
-    public void writeS48Ne(final long value) {
-        checkS48(value);
-        checkIfOpen();
-        ensureWriteLength(6);
-        writeS48NeUnchecked(value);
-    }
-
-    protected abstract void writeS48NeUnchecked(long value);
-
-    @Override
     public void writeS64Be(final long value) {
         checkIfOpen();
         ensureWriteLength(8);
@@ -809,27 +536,6 @@ public abstract class CheckedBuffer implements Buffer {
     }
 
     protected abstract void writeS64LeUnchecked(long value);
-
-    @Override
-    public void writeS64Ne(final long value) {
-        checkIfOpen();
-        ensureWriteLength(8);
-        writeS64NeUnchecked(value);
-    }
-
-    protected abstract void writeS64NeUnchecked(long value);
-
-    protected void checkS24(final int value) {
-        if (value < -8388608 || value > 8388607) {
-            throw new BufferValueOutOfBounds(-8388608, 8388607, value);
-        }
-    }
-
-    protected void checkS48(final long value) {
-        if (value < -140737488355328L || value > 140737488355327L) {
-            throw new BufferValueOutOfBounds(-140737488355328L, 140737488355327L, value);
-        }
-    }
 
     protected void checkIfOpen() {
         if (isClosed) {

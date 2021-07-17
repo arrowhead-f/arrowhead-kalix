@@ -4,9 +4,9 @@ package se.arkalix.io.buf;
  * Signifies the attempt to write a value that cannot be represented under the
  * conditions in which the write was issued.
  * <p>
- * This exception could, for example, be thrown if attempting to write
- * {@code -5} as an unsigned 8-bit value to a {@link Buffer}, as {@code -5} is
- * outside the range of representable 8-bit unsigned values.
+ * This exception could, for example, be thrown if attempting to write {@code
+ * -5} as an unsigned 8-bit value to a {@link Buffer}, as {@code -5} is outside
+ * the range of representable 8-bit unsigned values.
  */
 public class BufferValueOutOfBounds extends BufferException {
     private final long min;

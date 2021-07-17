@@ -5,6 +5,7 @@ import se.arkalix.io.buf.BufferWriter;
 import se.arkalix.util.annotation.Internal;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
 import java.util.Objects;
 
 @Internal
@@ -28,6 +29,11 @@ public class DefaultBufferWriter implements BufferWriter {
     @Override
     public void setAt(final int offset, final ByteBuffer source) {
         inner.setAt(offset, source);
+    }
+
+    @Override
+    public int setAt(final int offset, final ReadableByteChannel source, final int maxLength) {
+        return inner.setAt(offset, source, maxLength);
     }
 
     @Override
@@ -143,6 +149,11 @@ public class DefaultBufferWriter implements BufferWriter {
     @Override
     public void write(final ByteBuffer source) {
         inner.write(source);
+    }
+
+    @Override
+    public int write(final ReadableByteChannel source, final int maxLength) {
+        return inner.write(source, maxLength);
     }
 
     @Override

@@ -1,6 +1,10 @@
 package se.arkalix.io.buf;
 
+import se.arkalix.util._internal.BinaryMath;
+
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.ReadableByteChannel;
 
 /**
  * A collection of memory that can be written to.
@@ -10,14 +14,14 @@ import java.nio.ByteBuffer;
  * buffer. It also keeps tack of a {@link #writeEnd() write end}, which may
  * never be passed by the write offset.
  * <p>
- * The below diagram illustrates how this works in practice. The buffer
- * consists of a sequence of bytes, denoted by squares in the diagram. Each
- * byte has an <i>offset</i> relative to the beginning of the memory, as well
- * as a current <i>value</i>. The write offset and end both point to offsets
- * within the buffer. Whenever a byte is written to the buffer, the byte at the
- * read offset is updated and the read offset itself is moved one step closer
- * to the end offset. If the read offset reaches the end offset, all subsequent
- * write operations will fail.
+ * The below diagram illustrates how this works in practice. The buffer consists
+ * of a sequence of bytes, denoted by squares in the diagram. Each byte has an
+ * <i>offset</i> relative to the beginning of the memory, as well as a current
+ * <i>value</i>. The write offset and end both point to offsets within the
+ * buffer. Whenever a byte is written to the buffer, the byte at the read offset
+ * is updated and the read offset itself is moved one step closer to the end
+ * offset. If the read offset reaches the end offset, all subsequent write
+ * operations will fail.
  * <pre>
  *   Offset: 0   1   2   3   4   5   6   7
  *           +---+---+---+---+---+---+---+---+
@@ -50,7 +54,11 @@ public interface BufferWriter extends AutoCloseable {
         setAt(offset, source, 0, source.length);
     }
 
-    void setAt(int offset, byte[] source, int sourceOffset, int length);
+    default void setAt(final int offset, final byte[] source, final int sourceOffset, final int length) {
+        try (final var sourceBuffer = Buffer.wrap(source)) {
+            setAt(offset, sourceBuffer, sourceOffset, length);
+        }
+    }
 
     default void setAt(final int offset, final BufferReader source) {
         setAt(offset, source, source.readableBytes());
@@ -64,6 +72,12 @@ public interface BufferWriter extends AutoCloseable {
     void setAt(int offset, BufferReader source, int sourceOffset, int length);
 
     void setAt(int offset, ByteBuffer source);
+
+    default int setAt(final int offset, final ReadableByteChannel source) {
+        return setAt(offset, source, writableBytes());
+    }
+
+    int setAt(int offset, ReadableByteChannel source, int maxLength);
 
     default void setF32BeAt(final int offset, final float value) {
         setS32BeAt(offset, Float.floatToIntBits(value));
@@ -89,37 +103,114 @@ public interface BufferWriter extends AutoCloseable {
         setS64NeAt(offset, Double.doubleToLongBits(value));
     }
 
-    void setS8At(int offset, byte value);
+    default void setS8At(final int offset, final byte value) {
+        setAt(offset, new byte[]{value});
+    }
 
-    void setS16BeAt(int offset, short value);
+    default void setS16BeAt(final int offset, final short value) {
+        final var buffer = new byte[2];
+        BinaryMath.setS16BeAt(buffer, 0, value);
+        setAt(offset, buffer);
+    }
 
-    void setS16NeAt(int offset, short value);
+    default void setS16LeAt(int offset, short value) {
+        final var buffer = new byte[2];
+        BinaryMath.setS16LeAt(buffer, 0, value);
+        setAt(offset, buffer);
+    }
 
-    void setS16LeAt(int offset, short value);
+    default void setS16NeAt(final int offset, final short value) {
+        if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
+            setS16BeAt(offset, value);
+        }
+        else {
+            setS16LeAt(offset, value);
+        }
+    }
 
-    void setS24BeAt(int offset, int value);
+    default void setS24BeAt(final int offset, final int value) {
+        final var buffer = new byte[3];
+        BinaryMath.setS24BeAt(buffer, 0, value);
+        setAt(offset, buffer);
+    }
 
-    void setS24NeAt(int offset, int value);
+    default void setS24LeAt(final int offset, final int value) {
+        final var buffer = new byte[3];
+        BinaryMath.setS24LeAt(buffer, 0, value);
+        setAt(offset, buffer);
+    }
 
-    void setS24LeAt(int offset, int value);
+    default void setS24NeAt(final int offset, final int value) {
+        if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
+            setS24BeAt(offset, value);
+        }
+        else {
+            setS24LeAt(offset, value);
+        }
+    }
 
-    void setS32BeAt(int offset, int value);
+    default void setS32BeAt(final int offset, final int value) {
+        final var buffer = new byte[4];
+        BinaryMath.setS32BeAt(buffer, 0, value);
+        setAt(offset, buffer);
+    }
 
-    void setS32NeAt(int offset, int value);
+    default void setS32LeAt(final int offset, final int value) {
+        final var buffer = new byte[4];
+        BinaryMath.setS32LeAt(buffer, 0, value);
+        setAt(offset, buffer);
+    }
 
-    void setS32LeAt(int offset, int value);
+    default void setS32NeAt(final int offset, final int value) {
+        if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
+            setS32BeAt(offset, value);
+        }
+        else {
+            setS32LeAt(offset, value);
+        }
+    }
 
-    void setS48BeAt(int offset, long value);
+    default void setS48BeAt(final int offset, final long value) {
+        final var buffer = new byte[6];
+        BinaryMath.setS48BeAt(buffer, 0, value);
+        setAt(offset, buffer);
+    }
 
-    void setS48NeAt(int offset, long value);
+    default void setS48LeAt(final int offset, final long value) {
+        final var buffer = new byte[6];
+        BinaryMath.setS48LeAt(buffer, 0, value);
+        setAt(offset, buffer);
+    }
 
-    void setS48LeAt(int offset, long value);
+    default void setS48NeAt(final int offset, final long value) {
+        if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
+            setS48BeAt(offset, value);
+        }
+        else {
+            setS48LeAt(offset, value);
+        }
+    }
 
-    void setS64BeAt(int offset, long value);
+    default void setS64BeAt(final int offset, final long value) {
+        final var buffer = new byte[8];
+        BinaryMath.setS64BeAt(buffer, 0, value);
+        setAt(offset, buffer);
+    }
 
-    void setS64NeAt(int offset, long value);
+    default void setS64LeAt(final int offset, final long value) {
+        final var buffer = new byte[8];
+        BinaryMath.setS64LeAt(buffer, 0, value);
+        setAt(offset, buffer);
+    }
 
-    void setS64LeAt(int offset, long value);
+    default void setS64NeAt(final int offset, final long value) {
+        if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
+            setS64BeAt(offset, value);
+        }
+        else {
+            setS64LeAt(offset, value);
+        }
+    }
 
     default void setU8At(final int offset, final int value) {
         if (value < 0 || value > 255) {
@@ -276,7 +367,11 @@ public interface BufferWriter extends AutoCloseable {
         write(source, 0, source.length);
     }
 
-    void write(byte[] source, int sourceOffset, int length);
+    default void write(final byte[] source, final int sourceOffset, final int length) {
+        try (final var sourceBuffer = Buffer.wrap(source)) {
+            write(sourceBuffer, sourceOffset, length);
+        }
+    }
 
     default void write(final BufferReader source) {
         write(source, source.readableBytes());
@@ -290,6 +385,12 @@ public interface BufferWriter extends AutoCloseable {
     void write(BufferReader source, int sourceOffset, int length);
 
     void write(ByteBuffer source);
+
+    default int write(final ReadableByteChannel source) {
+        return write(source, writableBytes());
+    }
+
+    int write(ReadableByteChannel source, int maxLength);
 
     default void writeF32Be(final float value) {
         writeS32Be(Float.floatToIntBits(value));
@@ -315,37 +416,126 @@ public interface BufferWriter extends AutoCloseable {
         writeS64Ne(Double.doubleToLongBits(value));
     }
 
-    void writeS8(byte value);
+    default void writeS8(final byte value) {
+        write(new byte[]{value});
+    }
 
-    void writeS16Be(short value);
+    default void writeS16Be(final short value) {
+        final var buffer = new byte[2];
+        BinaryMath.setS16BeAt(buffer, 0, value);
+        write(buffer);
+    }
 
-    void writeS16Le(short value);
+    default void writeS16Le(final short value) {
+        final var buffer = new byte[2];
+        BinaryMath.setS16LeAt(buffer, 0, value);
+        write(buffer);
+    }
 
-    void writeS16Ne(short value);
+    default void writeS16Ne(final short value) {
+        if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
+            writeS16Be(value);
+        }
+        else {
+            writeS16Le(value);
+        }
+    }
 
-    void writeS24Be(int value);
+    default void writeS24Be(final int value) {
+        if (value < -8388608 || value > 8388607) {
+            throw new BufferValueOutOfBounds(-8388608, 8388607, value);
+        }
+        final var buffer = new byte[3];
+        BinaryMath.setS24BeAt(buffer, 0, value);
+        write(buffer);
+    }
 
-    void writeS24Le(int value);
+    default void writeS24Le(final int value) {
+        if (value < -8388608 || value > 8388607) {
+            throw new BufferValueOutOfBounds(-8388608, 8388607, value);
+        }
+        final var buffer = new byte[3];
+        BinaryMath.setS24LeAt(buffer, 0, value);
+        write(buffer);
+    }
 
-    void writeS24Ne(int value);
+    default void writeS24Ne(final int value) {
+        if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
+            writeS24Be(value);
+        }
+        else {
+            writeS24Le(value);
+        }
+    }
 
-    void writeS32Be(int value);
+    default void writeS32Be(final int value) {
+        final var buffer = new byte[4];
+        BinaryMath.setS32BeAt(buffer, 0, value);
+        write(buffer);
+    }
 
-    void writeS32Le(int value);
+    default void writeS32Le(final int value) {
+        final var buffer = new byte[4];
+        BinaryMath.setS32LeAt(buffer, 0, value);
+        write(buffer);
+    }
 
-    void writeS32Ne(int value);
+    default void writeS32Ne(final int value) {
+        if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
+            writeS32Be(value);
+        }
+        else {
+            writeS32Le(value);
+        }
+    }
 
-    void writeS48Be(long value);
+    default void writeS48Be(final long value) {
+        if (value < -140737488355328L || value > 140737488355327L) {
+            throw new BufferValueOutOfBounds(-140737488355328L, 140737488355327L, value);
+        }
+        final var buffer = new byte[6];
+        BinaryMath.setS48BeAt(buffer, 0, value);
+        write(buffer);
+    }
 
-    void writeS48Le(long value);
+    default void writeS48Le(final long value) {
+        if (value < -140737488355328L || value > 140737488355327L) {
+            throw new BufferValueOutOfBounds(-140737488355328L, 140737488355327L, value);
+        }
+        final var buffer = new byte[6];
+        BinaryMath.setS48LeAt(buffer, 0, value);
+        write(buffer);
+    }
 
-    void writeS48Ne(long value);
+    default void writeS48Ne(final long value) {
+        if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
+            writeS48Be(value);
+        }
+        else {
+            writeS48Le(value);
+        }
+    }
 
-    void writeS64Be(long value);
+    default void writeS64Be(final long value) {
+        final var buffer = new byte[8];
+        BinaryMath.setS64BeAt(buffer, 0, value);
+        write(buffer);
+    }
 
-    void writeS64Le(long value);
+    default void writeS64Le(final long value) {
+        final var buffer = new byte[8];
+        BinaryMath.setS64LeAt(buffer, 0, value);
+        write(buffer);
+    }
 
-    void writeS64Ne(long value);
+    default void writeS64Ne(final long value) {
+        if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
+            writeS64Be(value);
+        }
+        else {
+            writeS64Le(value);
+        }
+    }
 
     default void writeU8(final int value) {
         if (value < 0 || value > 255) {

@@ -40,7 +40,7 @@ public class DefaultSystem implements ArSystem {
     private final PluginNotifier pluginNotifier;
 
     private final ArServiceRecordCache consumedServices;
-    private final Map<Class<? extends ArService>, FutureAnnouncement<ArServer>> servers = new ConcurrentHashMap<>();
+    private final Map<Class<? extends ArService>, FuturePublisher<ArServer>> servers = new ConcurrentHashMap<>();
 
     private final SystemRecord description;
     private final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
@@ -97,7 +97,7 @@ public class DefaultSystem implements ArSystem {
 
         scheduler = Schedulers.fixed();
         schedulerShutdownListener = (scheduler) -> shutdown()
-            .onFailure(fault -> {
+            .consumeIfFault(fault -> {
                 if (logger.isErrorEnabled()) {
                     logger.error("Shutdown of \"" + name + "\" failed", fault);
                 }
@@ -111,7 +111,7 @@ public class DefaultSystem implements ArSystem {
 
     private Future<?> attachPlugins() {
         return pluginNotifier.onAttach()
-            .ifSuccess(pluginClassToFacade -> this.pluginClassToFacade = pluginClassToFacade);
+            .ifValue(pluginClassToFacade -> this.pluginClassToFacade = pluginClassToFacade);
     }
 
     @Override
@@ -190,7 +190,7 @@ public class DefaultSystem implements ArSystem {
                 "matching the given query, delegating query to plugins ...");
         }
         return pluginNotifier.onServiceQueried(query)
-            .ifSuccess(services -> {
+            .ifValue(services -> {
                 if (isTraceEnabled) {
                     logger.trace("Retrieved the following entries from " +
                         "plugins, which will be used to update the service " +
@@ -201,7 +201,7 @@ public class DefaultSystem implements ArSystem {
             .map(services -> services.stream()
                 .filter(query::matches)
                 .collect(Collectors.toUnmodifiableSet()))
-            .ifSuccess(services -> {
+            .ifValue(services -> {
                 if (isTraceEnabled) {
                     logger.trace("The following entries matched the given " +
                         "query: {}", services);
@@ -229,7 +229,7 @@ public class DefaultSystem implements ArSystem {
                 service.getClass() + "\"; cannot provide service \"" +
                 service.name() + "\""))
             .create(this, pluginNotifier)
-            .toAnnouncement())
+            .toPublisher())
             .subscribe()
             .flatMap(server -> server.provide(service));
     }
@@ -274,7 +274,7 @@ public class DefaultSystem implements ArSystem {
             final var announcement = entry.getValue();
             final var optional = announcement.resultIfAvailable();
             if (optional.isEmpty()) {
-                announcement.cancel(true);
+                announcement.cancel();
                 continue;
             }
             final var result = optional.get();
@@ -289,7 +289,7 @@ public class DefaultSystem implements ArSystem {
         }
 
         return Futures.serialize(closingServers)
-            .mapResult(result -> {
+            .rewrap(result -> {
                 pluginNotifier.onDetach();
                 servers.clear();
                 return result;
@@ -399,7 +399,7 @@ public class DefaultSystem implements ArSystem {
             try {
                 final var system = new DefaultSystem(this);
                 return system.attachPlugins()
-                    .pass(system);
+                    .put(system);
             }
             catch (final Throwable throwable) {
                 return Future.failure(throwable);

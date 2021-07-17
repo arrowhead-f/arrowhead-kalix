@@ -65,7 +65,7 @@ public class PluginNotifier {
                 return a.ordinal() - b.ordinal();
             })
             .map(plugin -> attach(plugin, handlers)))
-            .map(ignored -> {
+            .map(__ -> {
                 final var pluginClassToFacade = new HashMap<Class<? extends Plugin>, PluginFacade>();
                 handlers.trimToSize();
                 for (final var handler : handlers) {

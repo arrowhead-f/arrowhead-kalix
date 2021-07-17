@@ -14,7 +14,7 @@ import se.arkalix._internal.ArServer;
 import se.arkalix.plugin._internal.PluginNotifier;
 import se.arkalix.util.concurrent._internal.NettyScheduler;
 import se.arkalix.net.http.service.HttpService;
-import se.arkalix.util.Result;
+import se.arkalix.util.concurrent.Result;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.concurrent.Schedulers;
@@ -108,7 +108,7 @@ public class HttpServer implements ArServer {
             return Future.failure(cannotProvideServiceShuttingDownException(null));
         }
 
-        return pluginNotifier.onServicePrepared(service).flatMapResult(result0 -> {
+        return pluginNotifier.onServicePrepared(service).flatRewrap(result0 -> {
             if (result0.isFailure()) {
                 return Future.failure(result0.fault());
             }
@@ -131,7 +131,7 @@ public class HttpServer implements ArServer {
             final var handle = new ServiceHandle(httpService, key);
 
             return pluginNotifier.onServiceProvided(httpService.description())
-                .mapResult(result1 -> {
+                .rewrap(result1 -> {
                     synchronized (handles) {
                         handles.add(handle);
                     }

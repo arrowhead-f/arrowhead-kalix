@@ -114,7 +114,7 @@ public class HttpCatcher<T extends Throwable> implements HttpRoutable {
             try {
                 return handler.handle(exceptionClass.cast(throwable),
                     task.request().cloneAndSet(pathParameters), response)
-                    .map(ignored -> response.status().isPresent());
+                    .map(__ -> response.status().isPresent());
             }
             catch (final Throwable throwable1) {
                 throwable1.addSuppressed(throwable);
