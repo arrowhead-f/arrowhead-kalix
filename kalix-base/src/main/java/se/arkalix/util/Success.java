@@ -47,9 +47,9 @@ public class Success<T> implements Result<T> {
     }
 
     @Override
-    public void ifSuccessOrElse(final Consumer<? super T> consumer, final Consumer<Throwable> failureAction) {
+    public void ifSuccessOrElse(final Consumer<? super T> consumer, final Consumer<Throwable> failureConsumer) {
         Objects.requireNonNull(consumer);
-        Objects.requireNonNull(failureAction);
+        Objects.requireNonNull(failureConsumer);
 
         consumer.accept(value);
     }
@@ -135,6 +135,22 @@ public class Success<T> implements Result<T> {
         }
 
         return isMatch ? this : Failure.of(new NoSuchElementException());
+    }
+
+    @Override
+    public Result<T> filter(final Predicate<? super T> predicate, final Supplier<Throwable> failureSupplier) {
+        Objects.requireNonNull(predicate);
+
+        final boolean isMatch;
+        try {
+            isMatch = predicate.test(value);
+        }
+        catch (final Throwable throwable) {
+            Throwables.throwSilentlyIfFatal(throwable);
+            return Failure.of(throwable);
+        }
+
+        return isMatch ? this : Failure.of(failureSupplier.get());
     }
 
     @Override

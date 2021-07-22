@@ -3,8 +3,6 @@ package se.arkalix.concurrent;
 import se.arkalix.util.Failure;
 import se.arkalix.util.Result;
 import se.arkalix.util.Success;
-import se.arkalix.util.concurrent.FutureAlreadyHasConsumer;
-import se.arkalix.util.concurrent.FutureAlreadyHasResult;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -25,12 +23,8 @@ public class Promise<T> {
         switch (state) {
         case STATE_INITIAL:
             state = STATE_HAS_CONSUMER;
-            Promise.this.consumer = consumer;
+            this.consumer = consumer;
             break;
-
-        case STATE_HAS_CONSUMER:
-        case STATE_COMPLETED:
-            throw new FutureAlreadyHasConsumer();
 
         case STATE_HAS_RESULT:
             state = STATE_COMPLETED;
@@ -38,13 +32,13 @@ public class Promise<T> {
                 consumer.accept(result);
             }
             finally {
-                Promise.this.consumer = null;
+                this.consumer = null;
                 result = null;
             }
             break;
 
         default:
-            throw new IllegalStateException("Bad promise state: " + state);
+            throw new IllegalStateException();
         }
     };
 
@@ -52,22 +46,29 @@ public class Promise<T> {
         return future;
     }
 
-    public void fulfill(final T value) {
-        complete(Success.of(value));
-    }
-
-    public void fail(final Throwable fault) {
-        complete(Failure.of(fault));
+    public boolean isCompleted() {
+        return state == STATE_COMPLETED;
     }
 
     public void complete(final Result<T> result) {
+        if (!tryComplete(result)) {
+            throw new IllegalStateException();
+        }
+    }
+
+    public void completeWith(final Future<T> future) {
+        Objects.requireNonNull(future)
+            .onCompletion(this::complete);
+    }
+
+    public boolean tryComplete(final Result<T> result) {
         Objects.requireNonNull(result);
 
         switch (state) {
         case STATE_INITIAL:
             state = STATE_HAS_RESULT;
             this.result = result;
-            break;
+            return true;
 
         case STATE_HAS_CONSUMER:
             state = STATE_COMPLETED;
@@ -78,26 +79,26 @@ public class Promise<T> {
                 consumer = null;
                 this.result = null;
             }
-            break;
-
-        case STATE_HAS_RESULT:
-        case STATE_COMPLETED:
-            throw new FutureAlreadyHasResult();
+            return true;
 
         default:
-            throw new IllegalStateException("Bad promise state: " + state);
+            return false;
         }
     }
 
-    public boolean isCompleted() {
-        return state == STATE_COMPLETED;
+    public void fulfill(final T value) {
+        complete(Success.of(value));
     }
 
-    public boolean isFailure() {
-        return isCompleted() && result.isFailure();
+    public boolean tryFulfill(final T value) {
+        return tryComplete(Success.of(value));
     }
-    
-    public boolean isSuccess() {
-        return isCompleted() && result.isSuccess();
+
+    public void fail(final Throwable exception) {
+        complete(Failure.of(exception));
+    }
+
+    public boolean tryFail(final Throwable exception) {
+        return tryComplete(Failure.of(exception));
     }
 }

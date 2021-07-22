@@ -12,7 +12,7 @@ public interface Result<T> {
 
     void ifSuccess(Consumer<? super T> consumer);
 
-    void ifSuccessOrElse(Consumer<? super T> consumer, Consumer<Throwable> failureAction);
+    void ifSuccessOrElse(Consumer<? super T> consumer, Consumer<Throwable> failureConsumer);
 
     void ifFailure(Consumer<Throwable> consumer);
 
@@ -31,6 +31,8 @@ public interface Result<T> {
     <R> Result<R> flatMap(Function<? super T, ? extends Result<? extends R>> mapper);
 
     Result<T> filter(Predicate<? super T> predicate);
+
+    Result<T> filter(Predicate<? super T> predicate, Supplier<Throwable> failureSupplier);
 
     Result<T> recover(Function<Throwable, ? extends T> mapper);
 

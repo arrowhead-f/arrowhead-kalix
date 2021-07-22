@@ -22,7 +22,7 @@ public class Failure<T> implements Result<T> {
         return new Failure<>(fault);
     }
 
-    public Throwable fault() {
+    public Throwable exception() {
         return fault;
     }
 
@@ -42,9 +42,9 @@ public class Failure<T> implements Result<T> {
     }
 
     @Override
-    public void ifSuccessOrElse(final Consumer<? super T> consumer, final Consumer<Throwable> failureAction) {
+    public void ifSuccessOrElse(final Consumer<? super T> consumer, final Consumer<Throwable> failureConsumer) {
         Objects.requireNonNull(consumer);
-        Objects.requireNonNull(failureAction)
+        Objects.requireNonNull(failureConsumer)
             .accept(fault);
     }
 
@@ -114,6 +114,11 @@ public class Failure<T> implements Result<T> {
 
     @Override
     public Result<T> filter(final Predicate<? super T> predicate) {
+        return this;
+    }
+
+    @Override
+    public Result<T> filter(final Predicate<? super T> predicate, final Supplier<Throwable> failureSupplier) {
         return this;
     }
 
