@@ -10,14 +10,8 @@ public final class Throwables {
             throwable instanceof LinkageError;
     }
 
-    public static <X extends Throwable> void throwIfFatal(final X throwable) throws X {
-        if (isFatal(throwable)) {
-            throw throwable;
-        }
-    }
-
     @SuppressWarnings("unchecked")
-    public static <X extends Throwable> void throwSilently(Throwable throwable) throws X {
+    public static <X extends Throwable> void throwSilently(final Throwable throwable) throws X {
         throw (X) throwable;
     }
 

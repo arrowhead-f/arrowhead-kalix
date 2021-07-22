@@ -1,6 +1,5 @@
 package se.arkalix.util;
 
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -17,13 +16,15 @@ public interface Result<T> {
 
     void ifFailure(Consumer<Throwable> consumer);
 
-    T get();
-
     Result<T> or(Supplier<? extends Result<? extends T>> supplier);
 
     T orElse(T other);
 
     T orElseGet(Supplier<? extends T> supplier);
+
+    T orElseThrow();
+
+    T orElseThrow(Function<Throwable, Throwable> mapper);
 
     <R> Result<R> map(Function<? super T, ? extends R> mapper);
 
@@ -34,6 +35,4 @@ public interface Result<T> {
     Result<T> recover(Function<Throwable, ? extends T> mapper);
 
     Result<T> recoverWith(Function<Throwable, ? extends Result<? extends T>> mapper);
-
-    Optional<T> toOptional();
 }

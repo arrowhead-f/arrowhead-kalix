@@ -3,7 +3,6 @@ package se.arkalix.util;
 import se.arkalix.util._internal.Throwables;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -23,9 +22,8 @@ public class Failure<T> implements Result<T> {
         return new Failure<>(fault);
     }
 
-    @SuppressWarnings("unchecked")
-    private static <X extends Throwable> void throwSilently(Throwable throwable) throws X {
-        throw (X) throwable;
+    public Throwable fault() {
+        return fault;
     }
 
     @Override
@@ -57,24 +55,24 @@ public class Failure<T> implements Result<T> {
     }
 
     @Override
-    public T get() {
-        throwSilently(fault);
-        return null;
-    }
-
-    @Override
     public Result<T> or(final Supplier<? extends Result<? extends T>> supplier) {
         Objects.requireNonNull(supplier);
 
+        final Result<? extends T> result0;
         try {
-            @SuppressWarnings("unchecked") final var result = (Result<T>) supplier.get();
-
-            return Objects.requireNonNull(result);
+            result0 = supplier.get();
         }
         catch (final Throwable throwable0) {
             throwable0.addSuppressed(fault);
-            return new Failure<>(throwable0);
+            return Failure.of(throwable0);
         }
+
+        Objects.requireNonNull(result0);
+
+        @SuppressWarnings("unchecked")
+        final var result1 = (Result<T>) result0;
+
+        return result1;
     }
 
     @Override
@@ -86,6 +84,18 @@ public class Failure<T> implements Result<T> {
     public T orElseGet(final Supplier<? extends T> supplier) {
         return Objects.requireNonNull(supplier)
             .get();
+    }
+
+    @Override
+    public T orElseThrow() {
+        Throwables.throwSilently(fault);
+        return null;
+    }
+
+    @Override
+    public T orElseThrow(final Function<Throwable, Throwable> mapper) {
+        Throwables.throwSilently(mapper.apply(fault));
+        return null;
     }
 
     @Override
@@ -109,35 +119,35 @@ public class Failure<T> implements Result<T> {
 
     @Override
     public Result<T> recover(final Function<Throwable, ? extends T> mapper) {
+        Objects.requireNonNull(mapper);
         try {
-            final var value = Objects.requireNonNull(mapper)
-                .apply(fault);
-            return Success.of(value);
+            return Success.of(mapper.apply(fault));
         }
         catch (final Throwable throwable0) {
             throwable0.addSuppressed(fault);
-            return new Failure<>(throwable0);
+            Throwables.throwSilentlyIfFatal(throwable0);
+            return Failure.of(throwable0);
         }
     }
 
     @Override
     public Result<T> recoverWith(final Function<Throwable, ? extends Result<? extends T>> mapper) {
+        Objects.requireNonNull(mapper);
+
+        final Result<? extends T> result0;
         try {
-            final var result = Objects.requireNonNull(mapper)
-                .apply(fault);
-
-            @SuppressWarnings("unchecked") final var result0 = (Result<T>) result;
-
-            return result0;
+            result0 = mapper.apply(fault);
         }
         catch (final Throwable throwable0) {
             throwable0.addSuppressed(fault);
-            return new Failure<>(throwable0);
+            Throwables.throwSilentlyIfFatal(throwable0);
+            return Failure.of(throwable0);
         }
-    }
 
-    @Override
-    public Optional<T> toOptional() {
-        return Optional.empty();
+        Objects.requireNonNull(result0);
+
+        @SuppressWarnings("unchecked") final var result1 = (Result<T>) result0;
+
+        return result1;
     }
 }
