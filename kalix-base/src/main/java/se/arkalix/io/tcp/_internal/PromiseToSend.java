@@ -1,12 +1,12 @@
 package se.arkalix.io.tcp._internal;
 
+import se.arkalix.concurrent.SynchronizedPromise;
 import se.arkalix.io.buffer.BufferReader;
-import se.arkalix.util.concurrent.Promise;
 
 import java.nio.channels.WritableByteChannel;
 import java.util.Objects;
 
-public class PromiseToSend extends Promise<Void> {
+public class PromiseToSend extends SynchronizedPromise<Void> {
     private final BufferReader buffer;
 
     public PromiseToSend(final BufferReader buffer) {
@@ -16,7 +16,7 @@ public class PromiseToSend extends Promise<Void> {
     public int send(final WritableByteChannel destination) {
         final int numberOfSentBytes = buffer.read(destination);
         if (buffer.readableBytes() == 0) {
-            fulfill();
+            fulfill(null);
         }
         return numberOfSentBytes;
     }

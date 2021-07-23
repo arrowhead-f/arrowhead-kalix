@@ -1,12 +1,12 @@
 package se.arkalix.io.tcp._internal;
 
+import se.arkalix.concurrent.Future;
 import se.arkalix.io.IoException;
 import se.arkalix.io.SocketIsClosed;
 import se.arkalix.io.buffer.BufferReader;
 import se.arkalix.io.tcp.TcpSocket;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.annotation.ThreadSafe;
-import se.arkalix.util.concurrent.Future;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -17,13 +17,10 @@ import java.util.Objects;
 import java.util.Queue;
 
 @Internal
-public class NioTcpSocket implements TcpSocket {
-    private final SocketChannel socketChannel;
-    private final Queue<PromiseToSend> sendQueue;
-
-    public NioTcpSocket(final SocketChannel socketChannel, final Queue<PromiseToSend> sendQueue) {
-        this.socketChannel = Objects.requireNonNull(socketChannel, "socketChannel");
-        this.sendQueue = Objects.requireNonNull(sendQueue, "sendQueue");
+public record NioTcpSocket(SocketChannel socketChannel, Queue<PromiseToSend> sendQueue) implements TcpSocket {
+    public NioTcpSocket {
+        Objects.requireNonNull(socketChannel);
+        Objects.requireNonNull(sendQueue);
     }
 
     @Override
@@ -42,7 +39,7 @@ public class NioTcpSocket implements TcpSocket {
     public Future<?> send(final BufferReader buffer) {
         final var promise = new PromiseToSend(buffer);
         sendQueue.add(promise);
-        return promise;
+        return promise.future();
     }
 
     @Override

@@ -1,13 +1,13 @@
 package se.arkalix.io.tcp._internal;
 
+import se.arkalix.concurrent.Future;
+import se.arkalix.concurrent.SynchronizedPromise;
 import se.arkalix.io.IoException;
 import se.arkalix.io.SocketHandler;
 import se.arkalix.io._internal.NioEventLoop;
 import se.arkalix.io._internal.NioEventLoopGroup;
 import se.arkalix.io.tcp.TcpListener;
 import se.arkalix.io.tcp.TcpSocket;
-import se.arkalix.util.concurrent.Future;
-import se.arkalix.util.concurrent.Promise;
 import se.arkalix.util.logging.Event;
 import se.arkalix.util.logging.Loggers;
 
@@ -45,7 +45,7 @@ public class NioTcpListener extends AbstractTcpSocketOptions<TcpListener> implem
             return Future.failure(new IoException("failed to setup socket channel", exception));
         }
 
-        final var promiseToStopListening = new Promise<Void>();
+        final var promiseToStopListening = new SynchronizedPromise<Void>();
         final var eventLoopGroup = NioEventLoopGroup.main();
 
         eventLoopGroup.nextEventLoop()
@@ -91,10 +91,10 @@ public class NioTcpListener extends AbstractTcpSocketOptions<TcpListener> implem
                     }
                     try {
                         if (throwable != null) {
-                            promiseToStopListening.forfeit(throwable);
+                            promiseToStopListening.fail(throwable);
                         }
                         else {
-                            promiseToStopListening.fulfill();
+                            promiseToStopListening.fulfill(null);
                         }
                     }
                     catch (final Throwable throwable0) {
@@ -111,7 +111,7 @@ public class NioTcpListener extends AbstractTcpSocketOptions<TcpListener> implem
                 }
             });
 
-        return promiseToStopListening;
+        return promiseToStopListening.future();
     }
 
     @Override

@@ -8,11 +8,9 @@ import java.io.IOException;
 import java.nio.channels.ScatteringByteChannel;
 import java.util.Objects;
 
-public class NioSocketReader implements SocketReader {
-    private final ScatteringByteChannel channel;
-
-    public NioSocketReader(final ScatteringByteChannel channel) {
-        this.channel = Objects.requireNonNull(channel, "channel");
+public record NioSocketReader(ScatteringByteChannel channel) implements SocketReader {
+    public NioSocketReader {
+        Objects.requireNonNull(channel);
     }
 
     @Override

@@ -1,12 +1,12 @@
 package se.arkalix.io.tcp._internal;
 
+import se.arkalix.concurrent.Future;
+import se.arkalix.concurrent.SynchronizedPromise;
 import se.arkalix.io.IoException;
 import se.arkalix.io.SocketHandler;
 import se.arkalix.io._internal.NioEventLoopGroup;
 import se.arkalix.io.tcp.TcpConnector;
 import se.arkalix.io.tcp.TcpSocket;
-import se.arkalix.util.concurrent.Future;
-import se.arkalix.util.concurrent.Promise;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -41,14 +41,14 @@ public class NioTcpConnector extends AbstractTcpSocketOptions<TcpConnector> impl
             return Future.failure(new IoException("failed to setup socket channel", exception));
         }
 
-        final var disconnectPromise = new Promise<Void>();
+        final var disconnectPromise = new SynchronizedPromise<Void>();
 
         NioEventLoopGroup.main()
             .nextEventLoop()
             .register(socketChannel, OP_CONNECT | OP_READ | OP_WRITE, new NioTcpSocketHandler(
                 socketChannel, handler, disconnectPromise, logger().orElse(null)));
 
-        return disconnectPromise;
+        return disconnectPromise.future();
     }
 
     @Override

@@ -1,12 +1,12 @@
 package se.arkalix.io.tcp._internal;
 
+import se.arkalix.concurrent.Promise;
 import se.arkalix.io.IoException;
 import se.arkalix.io.SocketHandler;
 import se.arkalix.io.SocketReceiver;
 import se.arkalix.io._internal.NioEventLoop;
 import se.arkalix.io._internal.NioSocketReader;
 import se.arkalix.io.tcp.TcpSocket;
-import se.arkalix.util.concurrent.Promise;
 import se.arkalix.util.logging.Event;
 import se.arkalix.util.logging.Logger;
 import se.arkalix.util.logging.Loggers;
@@ -100,10 +100,10 @@ public class NioTcpSocketHandler implements NioEventLoop.Handler {
         }
         try {
             if (throwable != null) {
-                disconnectPromise.forfeit(throwable);
+                disconnectPromise.fail(throwable);
             }
             else {
-                disconnectPromise.fulfill();
+                disconnectPromise.fulfill(null);
             }
         }
         catch (final Throwable throwable0) {

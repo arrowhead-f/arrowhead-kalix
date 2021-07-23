@@ -8,13 +8,9 @@ import java.time.Instant;
 import java.util.Objects;
 
 @Internal
-public class NioEventLoopTask implements Comparable<NioEventLoopTask>, Runnable {
-    private final Runnable runnable;
-    private final long baselineEpochMs;
-
-    public NioEventLoopTask(final Runnable runnable, final long baselineEpochMs) {
-        this.runnable = Objects.requireNonNull(runnable, "runnable");
-        this.baselineEpochMs = baselineEpochMs;
+public record NioEventLoopTask(Runnable runnable, long baselineEpochMs) implements Comparable<NioEventLoopTask>, Runnable {
+    public NioEventLoopTask {
+        Objects.requireNonNull(runnable);
     }
 
     @ThreadSafe
@@ -46,10 +42,5 @@ public class NioEventLoopTask implements Comparable<NioEventLoopTask>, Runnable 
     @Override
     public void run() {
         runnable.run();
-    }
-
-    @ThreadSafe
-    public long baselineEpochMs() {
-        return baselineEpochMs;
     }
 }
