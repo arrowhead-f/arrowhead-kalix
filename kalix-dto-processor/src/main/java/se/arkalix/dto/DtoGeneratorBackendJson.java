@@ -13,8 +13,8 @@ import se.arkalix.codec.json._internal.JsonTokenizer;
 import se.arkalix.dto.types.*;
 import se.arkalix.dto.util.BinaryWriterWriteCache;
 import se.arkalix.dto.util.Expander;
-import se.arkalix.io.buf.BufferReader;
-import se.arkalix.io.buf.BufferWriter;
+import se.arkalix.io.buffer.BufferReader;
+import se.arkalix.io.buffer.BufferWriter;
 import se.arkalix.util.annotation.Internal;
 
 import javax.lang.model.element.Modifier;

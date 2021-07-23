@@ -1,4 +1,4 @@
-package se.arkalix.io.buf;
+package se.arkalix.io.buffer;
 
 import se.arkalix.util._internal.BinaryMath;
 

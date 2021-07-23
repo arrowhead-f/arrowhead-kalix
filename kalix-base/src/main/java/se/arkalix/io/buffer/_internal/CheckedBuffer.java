@@ -1,6 +1,6 @@
-package se.arkalix.io.buf._internal;
+package se.arkalix.io.buffer._internal;
 
-import se.arkalix.io.buf.*;
+import se.arkalix.io.buffer.*;
 import se.arkalix.util._internal.BinaryMath;
 import se.arkalix.util.annotation.Internal;
 

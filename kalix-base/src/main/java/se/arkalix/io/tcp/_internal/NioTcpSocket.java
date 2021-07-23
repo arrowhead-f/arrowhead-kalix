@@ -2,12 +2,11 @@ package se.arkalix.io.tcp._internal;
 
 import se.arkalix.io.IoException;
 import se.arkalix.io.SocketIsClosed;
-import se.arkalix.io.buf.BufferReader;
+import se.arkalix.io.buffer.BufferReader;
 import se.arkalix.io.tcp.TcpSocket;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.annotation.ThreadSafe;
 import se.arkalix.util.concurrent.Future;
-import se.arkalix.util.logging.Logger;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

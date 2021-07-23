@@ -6,7 +6,7 @@ import io.netty.channel.DefaultFileRegion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.arkalix.codec.CodecType;
-import se.arkalix.io.buf._internal.NioBuffer;
+import se.arkalix.io.buffer._internal.NioBuffer;
 import se.arkalix.net.BodyOutgoing;
 
 import java.io.IOException;

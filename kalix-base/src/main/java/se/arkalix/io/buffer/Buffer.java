@@ -1,9 +1,9 @@
-package se.arkalix.io.buf;
+package se.arkalix.io.buffer;
 
-import se.arkalix.io.buf._internal.DefaultBufferReader;
-import se.arkalix.io.buf._internal.DefaultBufferWriter;
-import se.arkalix.io.buf._internal.EmptyBuffer;
-import se.arkalix.io.buf._internal.NioBuffer;
+import se.arkalix.io.buffer._internal.DefaultBufferReader;
+import se.arkalix.io.buffer._internal.DefaultBufferWriter;
+import se.arkalix.io.buffer._internal.EmptyBuffer;
+import se.arkalix.io.buffer._internal.NioBuffer;
 
 import java.nio.ByteBuffer;
 

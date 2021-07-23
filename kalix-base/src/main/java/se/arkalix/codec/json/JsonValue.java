@@ -3,8 +3,8 @@ package se.arkalix.codec.json;
 import se.arkalix.codec.CodecType;
 import se.arkalix.codec.json._internal.JsonTokenBuffer;
 import se.arkalix.codec.json._internal.JsonTokenizer;
-import se.arkalix.io.buf.BufferReader;
-import se.arkalix.io.buf.BufferWriter;
+import se.arkalix.io.buffer.BufferReader;
+import se.arkalix.io.buffer.BufferWriter;
 import se.arkalix.util.annotation.Internal;
 
 import java.util.Optional;

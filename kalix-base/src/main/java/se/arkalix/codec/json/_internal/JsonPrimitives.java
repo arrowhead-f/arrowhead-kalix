@@ -3,8 +3,8 @@ package se.arkalix.codec.json._internal;
 import se.arkalix.codec.CodecType;
 import se.arkalix.codec.DecoderException;
 import se.arkalix.codec.EncodableException;
-import se.arkalix.io.buf.BufferReader;
-import se.arkalix.io.buf.BufferWriter;
+import se.arkalix.io.buffer.BufferReader;
+import se.arkalix.io.buffer.BufferWriter;
 import se.arkalix.util.annotation.Internal;
 
 import java.math.BigDecimal;

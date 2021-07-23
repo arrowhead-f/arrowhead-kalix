@@ -1,7 +1,7 @@
 package se.arkalix.codec.json._internal;
 
 import se.arkalix.codec.json.JsonType;
-import se.arkalix.io.buf.BufferReader;
+import se.arkalix.io.buffer.BufferReader;
 import se.arkalix.util.annotation.Internal;
 
 import java.util.List;

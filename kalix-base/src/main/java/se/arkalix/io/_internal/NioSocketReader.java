@@ -2,7 +2,7 @@ package se.arkalix.io._internal;
 
 import se.arkalix.io.IoException;
 import se.arkalix.io.SocketReader;
-import se.arkalix.io.buf.BufferWriter;
+import se.arkalix.io.buffer.BufferWriter;
 
 import java.io.IOException;
 import java.nio.channels.ScatteringByteChannel;

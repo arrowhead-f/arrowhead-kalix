@@ -1,6 +1,6 @@
 package se.arkalix.io.tcp._internal;
 
-import se.arkalix.io.buf.BufferReader;
+import se.arkalix.io.buffer.BufferReader;
 import se.arkalix.util.concurrent.Promise;
 
 import java.nio.channels.WritableByteChannel;

@@ -5,8 +5,8 @@ import se.arkalix.codec.DecoderException;
 import se.arkalix.codec.json._internal.JsonPrimitives;
 import se.arkalix.codec.json._internal.JsonTokenBuffer;
 import se.arkalix.codec.json._internal.JsonTokenizer;
-import se.arkalix.io.buf.BufferReader;
-import se.arkalix.io.buf.BufferWriter;
+import se.arkalix.io.buffer.BufferReader;
+import se.arkalix.io.buffer.BufferWriter;
 import se.arkalix.util.annotation.Internal;
 
 import java.math.BigDecimal;

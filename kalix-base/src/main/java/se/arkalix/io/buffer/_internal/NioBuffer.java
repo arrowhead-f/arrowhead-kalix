@@ -1,9 +1,9 @@
-package se.arkalix.io.buf._internal;
+package se.arkalix.io.buffer._internal;
 
 import se.arkalix.io.IoException;
-import se.arkalix.io.buf.BufferIsClosed;
-import se.arkalix.io.buf.BufferReader;
-import se.arkalix.io.buf.BufferWriter;
+import se.arkalix.io.buffer.BufferIsClosed;
+import se.arkalix.io.buffer.BufferReader;
+import se.arkalix.io.buffer.BufferWriter;
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.annotation.Unsafe;
 

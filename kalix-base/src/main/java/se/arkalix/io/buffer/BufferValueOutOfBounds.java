@@ -1,4 +1,4 @@
-package se.arkalix.io.buf;
+package se.arkalix.io.buffer;
 
 /**
  * Signifies the attempt to write a value that cannot be represented under the

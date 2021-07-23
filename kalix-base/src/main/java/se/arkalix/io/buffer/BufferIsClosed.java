@@ -1,4 +1,4 @@
-package se.arkalix.io.buf;
+package se.arkalix.io.buffer;
 
 /**
  * Signifies that a {@link Buffer} operation failed to complete due to the

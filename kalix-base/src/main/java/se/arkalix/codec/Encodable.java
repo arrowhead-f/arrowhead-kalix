@@ -1,6 +1,6 @@
 package se.arkalix.codec;
 
-import se.arkalix.io.buf.BufferWriter;
+import se.arkalix.io.buffer.BufferWriter;
 
 /**
  * A function used to encode an implicit class instance into binary data.
