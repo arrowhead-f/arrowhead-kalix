@@ -5,36 +5,38 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-public interface Result<T> {
-    boolean isSuccess();
+public abstract class Result<T> {
+    Result() {}
 
-    boolean isFailure();
+    public abstract boolean isSuccess();
 
-    void ifSuccess(Consumer<? super T> consumer);
+    public abstract boolean isFailure();
 
-    void ifSuccessOrElse(Consumer<? super T> consumer, Consumer<Throwable> failureConsumer);
+    public abstract void ifSuccess(Consumer<? super T> consumer);
 
-    void ifFailure(Consumer<Throwable> consumer);
+    public abstract void ifSuccessOrElse(Consumer<? super T> consumer, Consumer<Throwable> failureConsumer);
 
-    Result<T> or(Supplier<? extends Result<? extends T>> supplier);
+    public abstract void ifFailure(Consumer<Throwable> consumer);
 
-    T orElse(T other);
+    public abstract Result<T> or(Supplier<? extends Result<? extends T>> supplier);
 
-    T orElseGet(Supplier<? extends T> supplier);
+    public abstract T orElse(T other);
 
-    T orElseThrow();
+    public abstract T orElseGet(Supplier<? extends T> supplier);
 
-    T orElseThrow(Function<Throwable, Throwable> mapper);
+    public abstract T orElseThrow();
 
-    <R> Result<R> map(Function<? super T, ? extends R> mapper);
+    public abstract T orElseThrow(Function<Throwable, Throwable> mapper);
 
-    <R> Result<R> flatMap(Function<? super T, ? extends Result<? extends R>> mapper);
+    public abstract <R> Result<R> map(Function<? super T, ? extends R> mapper);
 
-    Result<T> filter(Predicate<? super T> predicate);
+    public abstract <R> Result<R> flatMap(Function<? super T, ? extends Result<? extends R>> mapper);
 
-    Result<T> filter(Predicate<? super T> predicate, Supplier<Throwable> failureSupplier);
+    public abstract Result<T> filter(Predicate<? super T> predicate);
 
-    Result<T> recover(Function<Throwable, ? extends T> mapper);
+    public abstract Result<T> filter(Predicate<? super T> predicate, Supplier<Throwable> failureSupplier);
 
-    Result<T> recoverWith(Function<Throwable, ? extends Result<? extends T>> mapper);
+    public abstract Result<T> recover(Function<Throwable, ? extends T> mapper);
+
+    public abstract Result<T> flatRecover(Function<Throwable, ? extends Result<? extends T>> mapper);
 }

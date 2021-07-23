@@ -56,7 +56,7 @@ public class Promise<T> {
         }
     }
 
-    public void completeWith(final Future<T> future) {
+    public void complete(final Future<T> future) {
         Objects.requireNonNull(future)
             .onCompletion(this::complete);
     }

@@ -9,7 +9,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-public class Success<T> implements Result<T> {
+public final class Success<T> extends Result<T> {
     private static final Success<Void> EMPTY = new Success<>(null);
 
     private final T value;
@@ -159,7 +159,7 @@ public class Success<T> implements Result<T> {
     }
 
     @Override
-    public Result<T> recoverWith(final Function<Throwable, ? extends Result<? extends T>> mapper) {
+    public Result<T> flatRecover(final Function<Throwable, ? extends Result<? extends T>> mapper) {
         return this;
     }
 }

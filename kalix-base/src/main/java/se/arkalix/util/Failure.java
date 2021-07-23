@@ -8,7 +8,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-public class Failure<T> implements Result<T> {
+public final class Failure<T> extends Result<T> {
     private final Throwable fault;
 
     private Failure(final Throwable fault) {
@@ -136,7 +136,7 @@ public class Failure<T> implements Result<T> {
     }
 
     @Override
-    public Result<T> recoverWith(final Function<Throwable, ? extends Result<? extends T>> mapper) {
+    public Result<T> flatRecover(final Function<Throwable, ? extends Result<? extends T>> mapper) {
         Objects.requireNonNull(mapper);
 
         final Result<? extends T> result0;
