@@ -15,8 +15,8 @@ subprojects {
     version = '0.7.0-SNAPSHOT'
 
     tasks.withType(JavaCompile) {
-        sourceCompatibility = '11'
-        targetCompatibility = '11'
+        sourceCompatibility = '16'
+        targetCompatibility = '16'
     }
 }
 

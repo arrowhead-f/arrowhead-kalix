@@ -8,22 +8,19 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-public final class Failure<T> extends Result<T> {
-    private final Throwable fault;
-
-    private Failure(final Throwable fault) {
-        Objects.requireNonNull(fault);
-        Throwables.throwSilentlyIfFatal(fault);
-
-        this.fault = fault;
+public record Failure<T>(Throwable exception) implements Result<T> {
+    public Failure {
+        Objects.requireNonNull(exception);
+        Throwables.throwSilentlyIfFatal(exception);
     }
 
-    public static <T> Failure<T> of(final Throwable fault) {
-        return new Failure<>(fault);
+    public static <T> Failure<T> of(final Throwable exception) {
+        return new Failure<>(exception);
     }
 
-    public Throwable exception() {
-        return fault;
+    public <U> Failure<U> retype() {
+        @SuppressWarnings("unchecked") final var self = (Failure<U>) this;
+        return self;
     }
 
     @Override
@@ -45,13 +42,13 @@ public final class Failure<T> extends Result<T> {
     public void ifSuccessOrElse(final Consumer<? super T> consumer, final Consumer<Throwable> failureConsumer) {
         Objects.requireNonNull(consumer);
         Objects.requireNonNull(failureConsumer)
-            .accept(fault);
+            .accept(exception);
     }
 
     @Override
     public void ifFailure(final Consumer<Throwable> consumer) {
         Objects.requireNonNull(consumer)
-            .accept(fault);
+            .accept(exception);
     }
 
     @Override
@@ -63,7 +60,7 @@ public final class Failure<T> extends Result<T> {
             result0 = supplier.get();
         }
         catch (final Throwable throwable0) {
-            throwable0.addSuppressed(fault);
+            throwable0.addSuppressed(exception);
             return Failure.of(throwable0);
         }
 
@@ -88,13 +85,13 @@ public final class Failure<T> extends Result<T> {
 
     @Override
     public T orElseThrow() {
-        Throwables.throwSilently(fault);
+        Throwables.throwSilently(exception);
         return null;
     }
 
     @Override
     public T orElseThrow(final Function<Throwable, Throwable> mapper) {
-        Throwables.throwSilently(mapper.apply(fault));
+        Throwables.throwSilently(mapper.apply(exception));
         return null;
     }
 
@@ -126,10 +123,10 @@ public final class Failure<T> extends Result<T> {
     public Result<T> recover(final Function<Throwable, ? extends T> mapper) {
         Objects.requireNonNull(mapper);
         try {
-            return Success.of(mapper.apply(fault));
+            return Success.of(mapper.apply(exception));
         }
         catch (final Throwable throwable0) {
-            throwable0.addSuppressed(fault);
+            throwable0.addSuppressed(exception);
             Throwables.throwSilentlyIfFatal(throwable0);
             return Failure.of(throwable0);
         }
@@ -141,10 +138,10 @@ public final class Failure<T> extends Result<T> {
 
         final Result<? extends T> result0;
         try {
-            result0 = mapper.apply(fault);
+            result0 = mapper.apply(exception);
         }
         catch (final Throwable throwable0) {
-            throwable0.addSuppressed(fault);
+            throwable0.addSuppressed(exception);
             Throwables.throwSilentlyIfFatal(throwable0);
             return Failure.of(throwable0);
         }

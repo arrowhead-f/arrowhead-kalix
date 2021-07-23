@@ -21,14 +21,15 @@ public class Event {
         timestamp = Instant.now();
     }
 
+    public Event with(final Attribute attribute) {
+        Objects.requireNonNull(attribute);
+
+        attributes.add(attribute);
+        return this;
+    }
+
     public Event with(final String label, final Object value) {
-        final String value0;
-        if (value != null) {
-            value0 = value.toString();
-        } else {
-            value0 = null;
-        }
-        attributes.add(new Attribute(label, value0));
+        attributes.add(new Attribute(label, value));
         return this;
     }
 

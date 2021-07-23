@@ -27,10 +27,10 @@ public interface Future<T> {
             final Result<U> result1;
 
             fail:
-            if (result0.isSuccess()) {
+            if (result0 instanceof Success<T> success) {
                 final U value;
                 try {
-                    value = mapper.apply(((Success<T>) result0).value());
+                    value = mapper.apply(success.value());
                 }
                 catch (final Throwable throwable) {
                     Throwables.throwSilentlyIfFatal(throwable);
@@ -58,10 +58,10 @@ public interface Future<T> {
             final Throwable exception;
 
             fail:
-            if (result.isSuccess()) {
+            if (result instanceof Success<T> success) {
                 final Future<? extends U> future0;
                 try {
-                    future0 = mapper.apply(((Success<T>) result).value());
+                    future0 = mapper.apply(success.value());
                 }
                 catch (final Throwable throwable) {
                     Throwables.throwSilentlyIfFatal(throwable);
@@ -97,11 +97,10 @@ public interface Future<T> {
 
             fail:
             {
-                if (result0.isSuccess()) {
-                    final var value = ((Success<T>) result0).value();
+                if (result0 instanceof Success<T> success) {
                     final boolean isMatch;
                     try {
-                        isMatch = predicate.test(value);
+                        isMatch = predicate.test(success.value());
                     }
                     catch (final Throwable throwable) {
                         Throwables.throwSilentlyIfFatal(throwable);
@@ -134,11 +133,10 @@ public interface Future<T> {
             fail:
             {
                 pass:
-                if (result0.isSuccess()) {
-                    final var value = ((Success<T>) result0).value();
+                if (result0 instanceof Success<T> success) {
                     final boolean isMatch;
                     try {
-                        isMatch = predicate.test(value);
+                        isMatch = predicate.test(success.value());
                     }
                     catch (final Throwable throwable) {
                         Throwables.throwSilentlyIfFatal(throwable);
@@ -207,11 +205,10 @@ public interface Future<T> {
         onCompletion(result0 -> {
             final Result<T> result1;
 
-            if (result0.isSuccess()) {
-                final var value = ((Success<T>) result0).value();
+            if (result0 instanceof Success<T> success) {
                 Throwable exception;
                 try {
-                    exception = mapper.apply(value);
+                    exception = mapper.apply(success.value());
                 }
                 catch (final Throwable throwable) {
                     Throwables.throwSilentlyIfFatal(throwable);
@@ -237,8 +234,8 @@ public interface Future<T> {
         onCompletion(result0 -> {
             Result<T> result1;
 
-            if (result0.isFailure()) {
-                final var exception = ((Failure<T>) result0).exception();
+            if (result0 instanceof Failure<T> failure) {
+                final var exception = failure.exception();
                 try {
                     result1 = Success.of(mapper.apply(exception));
                 }
@@ -267,8 +264,8 @@ public interface Future<T> {
             final Result<T> result1;
 
             fail:
-            if (result0.isFailure()) {
-                final var exception = ((Failure<T>) result0).exception();
+            if (result0 instanceof Failure<T> failure) {
+                final var exception = failure.exception();
                 final Future<? extends T> future0;
                 try {
                     future0 = mapper.apply(exception);
@@ -356,7 +353,10 @@ public interface Future<T> {
         return promise.future();
     }
 
-    default <U, R> Future<R> zip(final Future<U> other, final BiFunction<? super T, ? super U, ? extends R> combinator) {
+    default <U, R> Future<R> zip(
+        final Future<U> other,
+        final BiFunction<? super T, ? super U, ? extends R> combinator
+    ) {
         Objects.requireNonNull(other);
         Objects.requireNonNull(combinator);
 
@@ -367,32 +367,34 @@ public interface Future<T> {
 
             fail:
             {
-                if (thisResult.isFailure()) {
-                    if (otherResult.isSuccess()) {
-                        result = ((Failure<R>) thisResult);
-                        break fail;
+                if (thisResult instanceof Failure<T> thisFailure) {
+                    if (otherResult instanceof Failure<U> otherFailure) {
+                        final var exception = thisFailure.exception();
+                        exception.addSuppressed(otherFailure.exception());
+                        result = Failure.of(exception);
                     }
-
-                    final var exception = ((Failure<T>) thisResult).exception();
-                    exception.addSuppressed(((Failure<U>) otherResult).exception());
-                    result = Failure.of(exception);
+                    else {
+                        result = thisFailure.retype();
+                    }
                     break fail;
                 }
-                if (otherResult.isFailure()) {
-                    result = ((Failure<R>) otherResult);
+
+                if (otherResult instanceof Failure<U> otherFailure) {
+                    result = otherFailure.retype();
                     break fail;
                 }
 
                 final R value;
+                final var thisSuccess = (Success<T>) thisResult;
+                final var otherSuccess = (Success<U>) otherResult;
                 try {
-                    value = combinator.apply(((Success<T>) thisResult).value(), ((Success<U>) otherResult).value());
+                    value = combinator.apply(thisSuccess.value(), otherSuccess.value());
                 }
                 catch (final Throwable throwable) {
                     Throwables.throwSilentlyIfFatal(throwable);
                     result = Failure.of(throwable);
                     break fail;
                 }
-
                 result = Success.of(value);
             }
 
@@ -402,7 +404,10 @@ public interface Future<T> {
         return promise.future();
     }
 
-    default <U, R> Future<R> flatZip(final Future<U> other, final BiFunction<? super T, ? super U, ? extends Future<? extends R>> combinator) {
+    default <U, R> Future<R> flatZip(
+        final Future<U> other,
+        final BiFunction<? super T, ? super U, ? extends Future<? extends R>> combinator
+    ) {
         Objects.requireNonNull(other);
         Objects.requireNonNull(combinator);
 
@@ -413,25 +418,28 @@ public interface Future<T> {
 
             fail:
             {
-                if (thisResult.isFailure()) {
-                    if (otherResult.isSuccess()) {
-                        result = ((Failure<R>) thisResult);
-                        break fail;
+                if (thisResult instanceof Failure<T> thisFailure) {
+                    if (otherResult instanceof Failure<U> otherFailure) {
+                        final var exception = thisFailure.exception();
+                        exception.addSuppressed(otherFailure.exception());
+                        result = Failure.of(exception);
                     }
-
-                    final var exception = ((Failure<T>) thisResult).exception();
-                    exception.addSuppressed(((Failure<U>) otherResult).exception());
-                    result = Failure.of(exception);
+                    else {
+                        result = thisFailure.retype();
+                    }
                     break fail;
                 }
-                if (otherResult.isFailure()) {
-                    result = ((Failure<R>) otherResult);
+
+                if (otherResult instanceof Failure<U> otherFailure) {
+                    result = otherFailure.retype();
                     break fail;
                 }
 
                 final Future<? extends R> future0;
+                final var thisSuccess = (Success<T>) thisResult;
+                final var otherSuccess = (Success<U>) otherResult;
                 try {
-                    future0 = combinator.apply(((Success<T>) thisResult).value(), ((Success<U>) otherResult).value());
+                    future0 = combinator.apply(thisSuccess.value(), otherSuccess.value());
                 }
                 catch (final Throwable throwable) {
                     Throwables.throwSilentlyIfFatal(throwable);

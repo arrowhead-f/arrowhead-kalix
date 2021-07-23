@@ -9,14 +9,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-public final class Success<T> extends Result<T> {
+public record Success<T>(T value) implements Result<T> {
     private static final Success<Void> EMPTY = new Success<>(null);
-
-    private final T value;
-
-    private Success(final T value) {
-        this.value = value;
-    }
 
     public static Success<Void> empty() {
         return EMPTY;
@@ -24,10 +18,6 @@ public final class Success<T> extends Result<T> {
 
     public static <T> Success<T> of(final T value) {
         return new Success<>(value);
-    }
-
-    public T value() {
-        return value;
     }
 
     @Override

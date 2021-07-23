@@ -21,12 +21,11 @@ public class Promise<T> {
         Objects.requireNonNull(consumer);
 
         switch (state) {
-        case STATE_INITIAL:
+        case STATE_INITIAL -> {
             state = STATE_HAS_CONSUMER;
             this.consumer = consumer;
-            break;
-
-        case STATE_HAS_RESULT:
+        }
+        case STATE_HAS_RESULT -> {
             state = STATE_COMPLETED;
             try {
                 consumer.accept(result);
@@ -35,10 +34,8 @@ public class Promise<T> {
                 this.consumer = null;
                 result = null;
             }
-            break;
-
-        default:
-            throw new IllegalStateException();
+        }
+        default -> throw new IllegalStateException();
         }
     };
 
@@ -64,13 +61,13 @@ public class Promise<T> {
     public boolean tryComplete(final Result<T> result) {
         Objects.requireNonNull(result);
 
-        switch (state) {
-        case STATE_INITIAL:
+        return switch (state) {
+        case STATE_INITIAL -> {
             state = STATE_HAS_RESULT;
             this.result = result;
-            return true;
-
-        case STATE_HAS_CONSUMER:
+            yield true;
+        }
+        case STATE_HAS_CONSUMER -> {
             state = STATE_COMPLETED;
             try {
                 consumer.accept(result);
@@ -79,11 +76,10 @@ public class Promise<T> {
                 consumer = null;
                 this.result = null;
             }
-            return true;
-
-        default:
-            return false;
+            yield true;
         }
+        default -> false;
+        };
     }
 
     public void fulfill(final T value) {
