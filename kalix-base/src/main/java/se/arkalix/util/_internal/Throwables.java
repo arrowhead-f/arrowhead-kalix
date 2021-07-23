@@ -15,7 +15,16 @@ public final class Throwables {
         throw (X) throwable;
     }
 
-    public static <X extends Throwable> void throwSilentlyIfFatal(final Throwable throwable) {
+    public static void throwSilentlyIfFatal(final Throwable throwable) {
+        if (isFatal(throwable)) {
+            throwSilently(throwable);
+        }
+    }
+
+    public static void throwSilentlyIfFatalOrNull(final Throwable throwable) {
+        if (throwable == null) {
+            throw new NullPointerException();
+        }
         if (isFatal(throwable)) {
             throwSilently(throwable);
         }

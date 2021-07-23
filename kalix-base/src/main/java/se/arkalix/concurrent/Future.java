@@ -21,7 +21,7 @@ public interface Future<T> {
     default <U> Future<U> map(final Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper);
 
-        final var promise = new Promise<U>();
+        final var promise = new UnsynchronizedPromise<U>();
 
         onCompletion(result0 -> {
             final Result<U> result1;
@@ -29,6 +29,7 @@ public interface Future<T> {
             fail:
             if (result0 instanceof Success<T> success) {
                 final U value;
+
                 try {
                     value = mapper.apply(success.value());
                 }
@@ -37,6 +38,7 @@ public interface Future<T> {
                     result1 = Failure.of(throwable);
                     break fail;
                 }
+
                 result1 = Success.of(value);
             }
             else {
@@ -52,7 +54,7 @@ public interface Future<T> {
     default <U> Future<U> flatMap(final Function<? super T, ? extends Future<? extends U>> mapper) {
         Objects.requireNonNull(mapper);
 
-        final var promise = new Promise<U>();
+        final var promise = new UnsynchronizedPromise<U>();
 
         onCompletion(result -> {
             final Throwable exception;
@@ -60,6 +62,7 @@ public interface Future<T> {
             fail:
             if (result instanceof Success<T> success) {
                 final Future<? extends U> future0;
+
                 try {
                     future0 = mapper.apply(success.value());
                 }
@@ -68,6 +71,7 @@ public interface Future<T> {
                     exception = throwable;
                     break fail;
                 }
+
                 if (future0 == null) {
                     exception = new NullPointerException();
                     break fail;
@@ -76,11 +80,13 @@ public interface Future<T> {
                 @SuppressWarnings("unchecked") final var future1 = (Future<U>) future0;
 
                 promise.complete(future1);
+
                 return;
             }
             else {
                 exception = ((Failure<T>) result).exception();
             }
+
             promise.fail(exception);
         });
 
@@ -90,7 +96,7 @@ public interface Future<T> {
     default Future<T> filter(final Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate);
 
-        final var promise = new Promise<T>();
+        final var promise = new UnsynchronizedPromise<T>();
 
         onCompletion(result0 -> {
             final Result<T> result1;
@@ -99,6 +105,7 @@ public interface Future<T> {
             {
                 if (result0 instanceof Success<T> success) {
                     final boolean isMatch;
+
                     try {
                         isMatch = predicate.test(success.value());
                     }
@@ -125,7 +132,7 @@ public interface Future<T> {
     default Future<T> filter(final Predicate<? super T> predicate, final Supplier<Throwable> failureSupplier) {
         Objects.requireNonNull(predicate);
 
-        final var promise = new Promise<T>();
+        final var promise = new UnsynchronizedPromise<T>();
 
         onCompletion(result0 -> {
             final Result<T> result1;
@@ -135,6 +142,7 @@ public interface Future<T> {
                 pass:
                 if (result0 instanceof Success<T> success) {
                     final boolean isMatch;
+
                     try {
                         isMatch = predicate.test(success.value());
                     }
@@ -149,6 +157,7 @@ public interface Future<T> {
                     }
 
                     Throwable exception;
+
                     try {
                         exception = failureSupplier.get();
                     }
@@ -156,7 +165,9 @@ public interface Future<T> {
                         Throwables.throwSilentlyIfFatal(throwable);
                         exception = throwable;
                     }
+
                     result1 = Failure.of(exception);
+
                     break fail;
                 }
                 result1 = result0;
@@ -171,13 +182,14 @@ public interface Future<T> {
     default Future<T> reject(final Supplier<Throwable> supplier) {
         Objects.requireNonNull(supplier);
 
-        final var promise = new Promise<T>();
+        final var promise = new UnsynchronizedPromise<T>();
 
         onCompletion(result0 -> {
             final Result<T> result1;
 
             if (result0.isSuccess()) {
                 Throwable exception;
+
                 try {
                     exception = supplier.get();
                 }
@@ -185,6 +197,7 @@ public interface Future<T> {
                     Throwables.throwSilentlyIfFatal(throwable);
                     exception = throwable;
                 }
+
                 result1 = Failure.of(exception);
             }
             else {
@@ -200,13 +213,14 @@ public interface Future<T> {
     default Future<T> reject(final Function<? super T, Throwable> mapper) {
         Objects.requireNonNull(mapper);
 
-        final var promise = new Promise<T>();
+        final var promise = new UnsynchronizedPromise<T>();
 
         onCompletion(result0 -> {
             final Result<T> result1;
 
             if (result0 instanceof Success<T> success) {
                 Throwable exception;
+
                 try {
                     exception = mapper.apply(success.value());
                 }
@@ -214,6 +228,7 @@ public interface Future<T> {
                     Throwables.throwSilentlyIfFatal(throwable);
                     exception = throwable;
                 }
+
                 result1 = Failure.of(exception);
             }
             else {
@@ -229,13 +244,14 @@ public interface Future<T> {
     default Future<T> recover(final Function<Throwable, ? extends T> mapper) {
         Objects.requireNonNull(mapper);
 
-        final var promise = new Promise<T>();
+        final var promise = new UnsynchronizedPromise<T>();
 
         onCompletion(result0 -> {
             Result<T> result1;
 
             if (result0 instanceof Failure<T> failure) {
                 final var exception = failure.exception();
+
                 try {
                     result1 = Success.of(mapper.apply(exception));
                 }
@@ -258,7 +274,7 @@ public interface Future<T> {
     default Future<T> flatRecover(Function<Throwable, ? extends Future<? extends T>> mapper) {
         Objects.requireNonNull(mapper);
 
-        final var promise = new Promise<T>();
+        final var promise = new UnsynchronizedPromise<T>();
 
         onCompletion(result0 -> {
             final Result<T> result1;
@@ -266,7 +282,9 @@ public interface Future<T> {
             fail:
             if (result0 instanceof Failure<T> failure) {
                 final var exception = failure.exception();
+
                 final Future<? extends T> future0;
+
                 try {
                     future0 = mapper.apply(exception);
                 }
@@ -280,6 +298,7 @@ public interface Future<T> {
                 @SuppressWarnings("unchecked") final var future1 = (Future<T>) future0;
 
                 promise.complete(future1);
+
                 return;
             }
             else {
@@ -295,10 +314,11 @@ public interface Future<T> {
     default <U> Future<U> rewrap(final Function<? super Result<? super T>, ? extends Result<? extends U>> mapper) {
         Objects.requireNonNull(mapper);
 
-        final var promise = new Promise<U>();
+        final var promise = new UnsynchronizedPromise<U>();
 
         onCompletion(result0 -> {
             Result<? extends U> result1;
+
             try {
                 result1 = mapper.apply(result0);
             }
@@ -321,22 +341,27 @@ public interface Future<T> {
     default <U> Future<U> flatRewrap(final Function<? super Result<? super T>, ? extends Future<? extends U>> mapper) {
         Objects.requireNonNull(mapper);
 
-        final var promise = new Promise<U>();
+        final var promise = new UnsynchronizedPromise<U>();
 
         onCompletion(result -> {
-            Throwable exception;
+            final Throwable exception;
 
             fail:
             {
                 final Future<? extends U> future0;
+
                 try {
                     future0 = mapper.apply(result);
                 }
                 catch (final Throwable throwable) {
                     Throwables.throwSilentlyIfFatal(throwable);
+                    if (result instanceof Failure<T> failure) {
+                        throwable.addSuppressed(failure.exception());
+                    }
                     exception = throwable;
                     break fail;
                 }
+
                 if (future0 == null) {
                     exception = new NullPointerException();
                     break fail;
@@ -345,6 +370,7 @@ public interface Future<T> {
                 @SuppressWarnings("unchecked") final var future1 = (Future<U>) future0;
 
                 promise.complete(future1);
+
                 return;
             }
             promise.fail(exception);
@@ -353,14 +379,11 @@ public interface Future<T> {
         return promise.future();
     }
 
-    default <U, R> Future<R> zip(
-        final Future<U> other,
-        final BiFunction<? super T, ? super U, ? extends R> combinator
-    ) {
+    default <U, R> Future<R> zip(final Future<U> other, final BiFunction<? super T, ? super U, ? extends R> combinator) {
         Objects.requireNonNull(other);
         Objects.requireNonNull(combinator);
 
-        final var promise = new Promise<R>();
+        final var promise = new UnsynchronizedPromise<R>();
 
         onCompletion(thisResult -> other.onCompletion(otherResult -> {
             final Result<R> result;
@@ -387,6 +410,7 @@ public interface Future<T> {
                 final R value;
                 final var thisSuccess = (Success<T>) thisResult;
                 final var otherSuccess = (Success<U>) otherResult;
+
                 try {
                     value = combinator.apply(thisSuccess.value(), otherSuccess.value());
                 }
@@ -395,6 +419,7 @@ public interface Future<T> {
                     result = Failure.of(throwable);
                     break fail;
                 }
+
                 result = Success.of(value);
             }
 
@@ -404,14 +429,11 @@ public interface Future<T> {
         return promise.future();
     }
 
-    default <U, R> Future<R> flatZip(
-        final Future<U> other,
-        final BiFunction<? super T, ? super U, ? extends Future<? extends R>> combinator
-    ) {
+    default <U, R> Future<R> flatZip(final Future<U> other, final BiFunction<? super T, ? super U, ? extends Future<? extends R>> combinator) {
         Objects.requireNonNull(other);
         Objects.requireNonNull(combinator);
 
-        final var promise = new Promise<R>();
+        final var promise = new UnsynchronizedPromise<R>();
 
         onCompletion(thisResult -> other.onCompletion(otherResult -> {
             final Result<R> result;
@@ -438,6 +460,7 @@ public interface Future<T> {
                 final Future<? extends R> future0;
                 final var thisSuccess = (Success<T>) thisResult;
                 final var otherSuccess = (Success<U>) otherResult;
+
                 try {
                     future0 = combinator.apply(thisSuccess.value(), otherSuccess.value());
                 }
@@ -455,6 +478,7 @@ public interface Future<T> {
                 @SuppressWarnings("unchecked") final var future1 = (Future<R>) future0;
 
                 promise.complete(future1);
+
                 return;
             }
 
@@ -467,7 +491,7 @@ public interface Future<T> {
     default Future<T> and(final Runnable action) {
         Objects.requireNonNull(action);
 
-        final var promise = new Promise<T>();
+        final var promise = new UnsynchronizedPromise<T>();
 
         onCompletion(result -> {
             Throwable exception;
@@ -478,6 +502,7 @@ public interface Future<T> {
                     action.run();
                 }
                 catch (final Throwable throwable) {
+                    Throwables.throwSilentlyIfFatal(throwable);
                     if (result.isFailure()) {
                         throwable.addSuppressed(((Failure<T>) result).exception());
                     }
@@ -486,6 +511,7 @@ public interface Future<T> {
                 }
 
                 promise.complete(result);
+
                 return;
             }
 
@@ -498,7 +524,7 @@ public interface Future<T> {
     default Future<T> and(final Consumer<? super Result<? super T>> consumer) {
         Objects.requireNonNull(consumer);
 
-        final var promise = new Promise<T>();
+        final var promise = new UnsynchronizedPromise<T>();
 
         onCompletion(result -> {
             Throwable exception;
@@ -509,6 +535,7 @@ public interface Future<T> {
                     consumer.accept(result);
                 }
                 catch (final Throwable throwable) {
+                    Throwables.throwSilentlyIfFatal(throwable);
                     if (result.isFailure()) {
                         throwable.addSuppressed(((Failure<T>) result).exception());
                     }
@@ -517,6 +544,7 @@ public interface Future<T> {
                 }
 
                 promise.complete(result);
+
                 return;
             }
 
@@ -529,7 +557,7 @@ public interface Future<T> {
     default <U> Future<T> and(final Supplier<? extends U> supplier) {
         Objects.requireNonNull(supplier);
 
-        final var promise = new Promise<T>();
+        final var promise = new UnsynchronizedPromise<T>();
 
         onCompletion(result -> {
             Throwable exception;
@@ -540,6 +568,7 @@ public interface Future<T> {
                     supplier.get();
                 }
                 catch (final Throwable throwable) {
+                    Throwables.throwSilentlyIfFatal(throwable);
                     if (result.isFailure()) {
                         throwable.addSuppressed(((Failure<T>) result).exception());
                     }
@@ -548,6 +577,7 @@ public interface Future<T> {
                 }
 
                 promise.complete(result);
+
                 return;
             }
 
@@ -560,7 +590,7 @@ public interface Future<T> {
     default <U> Future<T> and(final Function<? super Result<? super T>, ? extends U> mapper) {
         Objects.requireNonNull(mapper);
 
-        final var promise = new Promise<T>();
+        final var promise = new UnsynchronizedPromise<T>();
 
         onCompletion(result -> {
             Throwable exception;
@@ -571,6 +601,7 @@ public interface Future<T> {
                     mapper.apply(result);
                 }
                 catch (final Throwable throwable) {
+                    Throwables.throwSilentlyIfFatal(throwable);
                     if (result.isFailure()) {
                         throwable.addSuppressed(((Failure<T>) result).exception());
                     }
@@ -579,6 +610,7 @@ public interface Future<T> {
                 }
 
                 promise.complete(result);
+
                 return;
             }
 
@@ -602,14 +634,14 @@ public interface Future<T> {
     }
 
     static <T> Future<T> success(final T value) {
-        throw new UnsupportedOperationException(); // TODO: Implement.
+        return new FutureSuccess<>(value);
     }
 
     static <T> Future<T> failure(final Throwable exception) {
-        throw new UnsupportedOperationException(); // TODO: Implement.
+        return new FutureFailure<>(exception);
     }
 
     static Future<Void> done() {
-        throw new UnsupportedOperationException(); // TODO: Implement.
+        return FutureSuccess.empty();
     }
 }

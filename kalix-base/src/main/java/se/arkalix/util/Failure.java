@@ -10,8 +10,7 @@ import java.util.function.Supplier;
 
 public record Failure<T>(Throwable exception) implements Result<T> {
     public Failure {
-        Objects.requireNonNull(exception);
-        Throwables.throwSilentlyIfFatal(exception);
+        Throwables.throwSilentlyIfFatalOrNull(exception);
     }
 
     public static <T> Failure<T> of(final Throwable exception) {
