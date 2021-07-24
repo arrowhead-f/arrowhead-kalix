@@ -489,7 +489,7 @@ public interface Future<T> {
         return promise.future();
     }
 
-    default Future<T> and(final Runnable action) {
+    default Future<T> then(final Runnable action) {
         Objects.requireNonNull(action);
 
         final var promise = new PromiseForSameThread<T>();
@@ -522,7 +522,7 @@ public interface Future<T> {
         return promise.future();
     }
 
-    default Future<T> and(final Consumer<? super Result<? super T>> consumer) {
+    default Future<T> then(final Consumer<? super Result<? super T>> consumer) {
         Objects.requireNonNull(consumer);
 
         final var promise = new PromiseForSameThread<T>();
@@ -555,7 +555,7 @@ public interface Future<T> {
         return promise.future();
     }
 
-    default <U> Future<T> and(final Supplier<? extends U> supplier) {
+    default <U> Future<T> then(final Supplier<? extends U> supplier) {
         Objects.requireNonNull(supplier);
 
         final var promise = new PromiseForSameThread<T>();
@@ -588,7 +588,7 @@ public interface Future<T> {
         return promise.future();
     }
 
-    default <U> Future<T> and(final Function<? super Result<? super T>, ? extends U> mapper) {
+    default <U> Future<T> then(final Function<? super Result<? super T>, ? extends U> mapper) {
         Objects.requireNonNull(mapper);
 
         final var promise = new PromiseForSameThread<T>();

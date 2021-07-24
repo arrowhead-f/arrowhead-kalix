@@ -346,7 +346,7 @@ public record FutureSuccess<T>(T value) implements Future<T> {
     }
 
     @Override
-    public Future<T> and(final Runnable action) {
+    public Future<T> then(final Runnable action) {
         Objects.requireNonNull(action);
 
         try {
@@ -361,7 +361,7 @@ public record FutureSuccess<T>(T value) implements Future<T> {
     }
 
     @Override
-    public Future<T> and(final Consumer<? super Result<? super T>> consumer) {
+    public Future<T> then(final Consumer<? super Result<? super T>> consumer) {
         Objects.requireNonNull(consumer);
 
         try {
@@ -376,7 +376,7 @@ public record FutureSuccess<T>(T value) implements Future<T> {
     }
 
     @Override
-    public <U> Future<T> and(final Supplier<? extends U> supplier) {
+    public <U> Future<T> then(final Supplier<? extends U> supplier) {
         Objects.requireNonNull(supplier);
 
         try {
@@ -391,7 +391,7 @@ public record FutureSuccess<T>(T value) implements Future<T> {
     }
 
     @Override
-    public <U> Future<T> and(final Function<? super Result<? super T>, ? extends U> mapper) {
+    public <U> Future<T> then(final Function<? super Result<? super T>, ? extends U> mapper) {
         Objects.requireNonNull(mapper);
 
         try {

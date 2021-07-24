@@ -10,6 +10,6 @@ public interface Socket<S extends Socket<?>> extends SocketOptions<S> {
 
     default Future<?> sendAndClose(final BufferReader buffer) {
         return send(buffer)
-            .and(this::close);
+            .then(this::close);
     }
 }
