@@ -1,24 +1,7 @@
 package se.arkalix.concurrent;
 
-import java.time.Duration;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-public interface Scheduler extends ScheduledExecutorService {
-    /**
-     * Blocks until all tasks have completed execution after a shutdown request,
-     * or the timeout occurs, or the current thread is interrupted, whichever
-     * happens first.
-     *
-     * @param timeout The maximum time to wait.
-     * @return {@code true} if this executor terminated and {@code false} if the
-     * timeout elapsed before termination.
-     * @throws InterruptedException If interrupted while waiting.
-     */
-    default boolean awaitTermination(final Duration timeout) throws InterruptedException {
-        return awaitTermination(timeout.toMillis(), TimeUnit.MILLISECONDS);
-    }
+public interface Scheduler {
+    /*<T> Future<T> schedule(Task<T> task);
 
     @Override
     <T> SchedulerFuture<T> submit(Callable<T> task);
@@ -55,5 +38,5 @@ public interface Scheduler extends ScheduledExecutorService {
     }
 
     @Override
-    SchedulerFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit);
+    SchedulerFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit);*/
 }

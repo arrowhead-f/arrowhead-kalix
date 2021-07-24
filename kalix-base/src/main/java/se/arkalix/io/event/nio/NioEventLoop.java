@@ -1,6 +1,5 @@
 package se.arkalix.io.event.nio;
 
-import se.arkalix.concurrent.SchedulerFuture;
 import se.arkalix.io.event.EventLoop;
 
 import java.util.Collection;

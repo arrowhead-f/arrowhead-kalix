@@ -9,6 +9,7 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.*;
 
+@FunctionalInterface
 public interface Future<T> {
     void onCompletion(Consumer<? super Result<T>> consumer);
 
