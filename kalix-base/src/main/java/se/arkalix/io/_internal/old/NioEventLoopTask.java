@@ -1,4 +1,4 @@
-package se.arkalix.io._internal;
+package se.arkalix.io._internal.old;
 
 import se.arkalix.util.annotation.Internal;
 import se.arkalix.util.annotation.ThreadSafe;

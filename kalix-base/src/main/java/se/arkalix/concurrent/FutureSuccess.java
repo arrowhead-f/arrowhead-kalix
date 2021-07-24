@@ -265,7 +265,7 @@ public record FutureSuccess<T>(T value) implements Future<T> {
         Objects.requireNonNull(other);
         Objects.requireNonNull(combinator);
 
-        final var promise = new UnsynchronizedPromise<R>();
+        final var promise = new PromiseForSameThread<R>();
 
         other.onCompletion(otherResult -> {
             final Result<R> result;
@@ -303,7 +303,7 @@ public record FutureSuccess<T>(T value) implements Future<T> {
         Objects.requireNonNull(other);
         Objects.requireNonNull(combinator);
 
-        final var promise = new UnsynchronizedPromise<R>();
+        final var promise = new PromiseForSameThread<R>();
 
         other.onCompletion(otherResult -> {
             final Result<R> result;

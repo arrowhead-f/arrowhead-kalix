@@ -51,7 +51,7 @@ public class FuturePublisher<T> {
             return future;
         }
 
-        final var promise = new SynchronizedPromise<T>();
+        final var promise = new PromiseForAnyThread<T>();
 
         subscribers.add(promise);
 

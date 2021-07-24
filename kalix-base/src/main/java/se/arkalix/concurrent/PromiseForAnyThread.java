@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-public class SynchronizedPromise<T> implements Promise<T> {
+public class PromiseForAnyThread<T> implements Promise<T> {
     private static final int STATE_INITIAL = 0;
     private static final int STATE_HAS_CONSUMER = 1;
     private static final int STATE_HAS_RESULT = 2;

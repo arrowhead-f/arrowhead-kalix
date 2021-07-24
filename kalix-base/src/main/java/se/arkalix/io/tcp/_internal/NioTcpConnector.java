@@ -1,10 +1,10 @@
 package se.arkalix.io.tcp._internal;
 
 import se.arkalix.concurrent.Future;
-import se.arkalix.concurrent.SynchronizedPromise;
+import se.arkalix.concurrent.PromiseForAnyThread;
 import se.arkalix.io.IoException;
 import se.arkalix.io.SocketHandler;
-import se.arkalix.io._internal.NioEventLoopGroup;
+import se.arkalix.io._internal.old.NioEventLoopGroup;
 import se.arkalix.io.tcp.TcpConnector;
 import se.arkalix.io.tcp.TcpSocket;
 
@@ -41,7 +41,7 @@ public class NioTcpConnector extends AbstractTcpSocketOptions<TcpConnector> impl
             return Future.failure(new IoException("failed to setup socket channel", exception));
         }
 
-        final var disconnectPromise = new SynchronizedPromise<Void>();
+        final var disconnectPromise = new PromiseForAnyThread<Void>();
 
         NioEventLoopGroup.main()
             .nextEventLoop()

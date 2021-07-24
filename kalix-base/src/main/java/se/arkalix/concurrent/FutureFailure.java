@@ -146,7 +146,7 @@ public record FutureFailure<T>(Throwable exception) implements Future<T> {
         Objects.requireNonNull(other);
         Objects.requireNonNull(combinator);
 
-        final var promise = new UnsynchronizedPromise<R>();
+        final var promise = new PromiseForSameThread<R>();
 
         other.onCompletion(otherResult -> {
             if (otherResult instanceof Failure<U> otherFailure) {
@@ -164,7 +164,7 @@ public record FutureFailure<T>(Throwable exception) implements Future<T> {
         Objects.requireNonNull(other);
         Objects.requireNonNull(combinator);
 
-        final var promise = new UnsynchronizedPromise<R>();
+        final var promise = new PromiseForSameThread<R>();
 
         other.onCompletion(otherResult -> {
             if (otherResult instanceof Failure<U> otherFailure) {

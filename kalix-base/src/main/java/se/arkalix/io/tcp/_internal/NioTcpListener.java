@@ -1,11 +1,11 @@
 package se.arkalix.io.tcp._internal;
 
 import se.arkalix.concurrent.Future;
-import se.arkalix.concurrent.SynchronizedPromise;
+import se.arkalix.concurrent.PromiseForAnyThread;
 import se.arkalix.io.IoException;
 import se.arkalix.io.SocketHandler;
-import se.arkalix.io._internal.NioEventLoop;
-import se.arkalix.io._internal.NioEventLoopGroup;
+import se.arkalix.io._internal.old.NioEventLoop;
+import se.arkalix.io._internal.old.NioEventLoopGroup;
 import se.arkalix.io.tcp.TcpListener;
 import se.arkalix.io.tcp.TcpSocket;
 import se.arkalix.util.logging.Event;
@@ -45,7 +45,7 @@ public class NioTcpListener extends AbstractTcpSocketOptions<TcpListener> implem
             return Future.failure(new IoException("failed to setup socket channel", exception));
         }
 
-        final var promiseToStopListening = new SynchronizedPromise<Void>();
+        final var promiseToStopListening = new PromiseForAnyThread<Void>();
         final var eventLoopGroup = NioEventLoopGroup.main();
 
         eventLoopGroup.nextEventLoop()

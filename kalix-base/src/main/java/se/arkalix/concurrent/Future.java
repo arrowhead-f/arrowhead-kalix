@@ -21,7 +21,7 @@ public interface Future<T> {
     default <U> Future<U> map(final Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper);
 
-        final var promise = new UnsynchronizedPromise<U>();
+        final var promise = new PromiseForSameThread<U>();
 
         onCompletion(result0 -> {
             final Result<U> result1;
@@ -54,7 +54,7 @@ public interface Future<T> {
     default <U> Future<U> flatMap(final Function<? super T, ? extends Future<? extends U>> mapper) {
         Objects.requireNonNull(mapper);
 
-        final var promise = new UnsynchronizedPromise<U>();
+        final var promise = new PromiseForSameThread<U>();
 
         onCompletion(result -> {
             final Throwable exception;
@@ -96,7 +96,7 @@ public interface Future<T> {
     default Future<T> filter(final Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate);
 
-        final var promise = new UnsynchronizedPromise<T>();
+        final var promise = new PromiseForSameThread<T>();
 
         onCompletion(result0 -> {
             final Result<T> result1;
@@ -132,7 +132,7 @@ public interface Future<T> {
     default Future<T> filter(final Predicate<? super T> predicate, final Supplier<Throwable> failureSupplier) {
         Objects.requireNonNull(predicate);
 
-        final var promise = new UnsynchronizedPromise<T>();
+        final var promise = new PromiseForSameThread<T>();
 
         onCompletion(result0 -> {
             final Result<T> result1;
@@ -182,7 +182,7 @@ public interface Future<T> {
     default Future<T> reject(final Supplier<Throwable> supplier) {
         Objects.requireNonNull(supplier);
 
-        final var promise = new UnsynchronizedPromise<T>();
+        final var promise = new PromiseForSameThread<T>();
 
         onCompletion(result0 -> {
             final Result<T> result1;
@@ -213,7 +213,7 @@ public interface Future<T> {
     default Future<T> reject(final Function<? super T, Throwable> mapper) {
         Objects.requireNonNull(mapper);
 
-        final var promise = new UnsynchronizedPromise<T>();
+        final var promise = new PromiseForSameThread<T>();
 
         onCompletion(result0 -> {
             final Result<T> result1;
@@ -244,7 +244,7 @@ public interface Future<T> {
     default Future<T> recover(final Function<Throwable, ? extends T> mapper) {
         Objects.requireNonNull(mapper);
 
-        final var promise = new UnsynchronizedPromise<T>();
+        final var promise = new PromiseForSameThread<T>();
 
         onCompletion(result0 -> {
             Result<T> result1;
@@ -274,7 +274,7 @@ public interface Future<T> {
     default Future<T> flatRecover(Function<Throwable, ? extends Future<? extends T>> mapper) {
         Objects.requireNonNull(mapper);
 
-        final var promise = new UnsynchronizedPromise<T>();
+        final var promise = new PromiseForSameThread<T>();
 
         onCompletion(result0 -> {
             final Result<T> result1;
@@ -314,7 +314,7 @@ public interface Future<T> {
     default <U> Future<U> rewrap(final Function<? super Result<? super T>, ? extends Result<? extends U>> mapper) {
         Objects.requireNonNull(mapper);
 
-        final var promise = new UnsynchronizedPromise<U>();
+        final var promise = new PromiseForSameThread<U>();
 
         onCompletion(result0 -> {
             Result<? extends U> result1;
@@ -341,7 +341,7 @@ public interface Future<T> {
     default <U> Future<U> flatRewrap(final Function<? super Result<? super T>, ? extends Future<? extends U>> mapper) {
         Objects.requireNonNull(mapper);
 
-        final var promise = new UnsynchronizedPromise<U>();
+        final var promise = new PromiseForSameThread<U>();
 
         onCompletion(result -> {
             final Throwable exception;
@@ -383,7 +383,7 @@ public interface Future<T> {
         Objects.requireNonNull(other);
         Objects.requireNonNull(combinator);
 
-        final var promise = new UnsynchronizedPromise<R>();
+        final var promise = new PromiseForSameThread<R>();
 
         onCompletion(thisResult -> other.onCompletion(otherResult -> {
             final Result<R> result;
@@ -433,7 +433,7 @@ public interface Future<T> {
         Objects.requireNonNull(other);
         Objects.requireNonNull(combinator);
 
-        final var promise = new UnsynchronizedPromise<R>();
+        final var promise = new PromiseForSameThread<R>();
 
         onCompletion(thisResult -> other.onCompletion(otherResult -> {
             final Result<R> result;
@@ -491,7 +491,7 @@ public interface Future<T> {
     default Future<T> and(final Runnable action) {
         Objects.requireNonNull(action);
 
-        final var promise = new UnsynchronizedPromise<T>();
+        final var promise = new PromiseForSameThread<T>();
 
         onCompletion(result -> {
             Throwable exception;
@@ -524,7 +524,7 @@ public interface Future<T> {
     default Future<T> and(final Consumer<? super Result<? super T>> consumer) {
         Objects.requireNonNull(consumer);
 
-        final var promise = new UnsynchronizedPromise<T>();
+        final var promise = new PromiseForSameThread<T>();
 
         onCompletion(result -> {
             Throwable exception;
@@ -557,7 +557,7 @@ public interface Future<T> {
     default <U> Future<T> and(final Supplier<? extends U> supplier) {
         Objects.requireNonNull(supplier);
 
-        final var promise = new UnsynchronizedPromise<T>();
+        final var promise = new PromiseForSameThread<T>();
 
         onCompletion(result -> {
             Throwable exception;
@@ -590,7 +590,7 @@ public interface Future<T> {
     default <U> Future<T> and(final Function<? super Result<? super T>, ? extends U> mapper) {
         Objects.requireNonNull(mapper);
 
-        final var promise = new UnsynchronizedPromise<T>();
+        final var promise = new PromiseForSameThread<T>();
 
         onCompletion(result -> {
             Throwable exception;

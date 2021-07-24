@@ -1,12 +1,12 @@
 package se.arkalix.io.tcp._internal;
 
-import se.arkalix.concurrent.SynchronizedPromise;
+import se.arkalix.concurrent.PromiseForAnyThread;
 import se.arkalix.io.buffer.BufferReader;
 
 import java.nio.channels.WritableByteChannel;
 import java.util.Objects;
 
-public class PromiseToSend extends SynchronizedPromise<Void> {
+public class PromiseToSend extends PromiseForAnyThread<Void> {
     private final BufferReader buffer;
 
     public PromiseToSend(final BufferReader buffer) {

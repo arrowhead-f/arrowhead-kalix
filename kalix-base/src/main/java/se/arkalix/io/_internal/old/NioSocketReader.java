@@ -1,4 +1,4 @@
-package se.arkalix.io._internal;
+package se.arkalix.io._internal.old;
 
 import se.arkalix.io.IoException;
 import se.arkalix.io.SocketReader;
