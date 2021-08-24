@@ -70,7 +70,9 @@ public class DefaultSystemDescription implements SystemDescription {
         return "DefaultSystemDescription{" +
             "name='" + name + '\'' +
             ", socketAddress=" + socketAddress +
-            ", publicKey='base64:" + Base64.getEncoder().encodeToString(publicKey.getEncoded()) + '\'' +
+            (publicKey != null
+                ? ", publicKey='base64:" + Base64.getEncoder().encodeToString(publicKey.getEncoded()) + '\''
+                : ", publicKey=null") +
             '}';
     }
 }
