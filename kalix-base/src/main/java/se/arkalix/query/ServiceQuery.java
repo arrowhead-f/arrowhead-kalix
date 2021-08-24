@@ -11,6 +11,7 @@ import se.arkalix.util.concurrent.Future;
 import se.arkalix.util.function.ThrowingFunction;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -287,41 +288,57 @@ public class ServiceQuery {
         }
 
         // Set and check service transports.
-        Collection<TransportDescriptor> currentTransports = Collections.emptyList();
         if (transports == null) {
             transports = factory.serviceTransports();
+            if (transports.isEmpty()) {
+                return new IllegalStateException("No supported service transport");
+            }
         }
         else {
-            currentTransports = transports;
-            transports.retainAll(factory.serviceTransports());
-        }
-        if (transports.isEmpty()) {
-            return new IllegalStateException("The provided " +
-                "consumer factory \"" + factory + "\" only supports the " +
-                "following application-level transport protocols: " +
-                factory.serviceTransports() + ", while this query was " +
-                "already configured to require that any out of " +
-                currentTransports + " be supported; no factory-" +
-                "supported transports are present in the existing " +
-                "collection; cannot resolve service");
+            final var unfilteredTransports = transports;
+            final var supportedTransports = factory.serviceTransports();
+
+            transports = transports.stream()
+                .filter(supportedTransports::contains)
+                .collect(Collectors.toUnmodifiableList());
+
+            if (transports.isEmpty()) {
+                return new IllegalStateException("The provided " +
+                    "consumer factory \"" + factory + "\" only supports the " +
+                    "following application-level transport protocols: " +
+                    supportedTransports + ", while this query was " +
+                    "already configured to require that any out of " +
+                    unfilteredTransports + " be supported; no factory-" +
+                    "supported transports are present in the existing " +
+                    "collection; cannot resolve service");
+            }
         }
 
+
         // Set and check service encodings.
-        Collection<EncodingDescriptor> currentEncodings = Collections.emptyList();
         if (encodings == null) {
             encodings = factory.serviceEncodings();
+            if (encodings.isEmpty()) {
+                return new IllegalStateException("No supported service encodings");
+            }
         }
         else {
-            encodings.retainAll(factory.serviceEncodings());
-        }
-        if (encodings.isEmpty()) {
-            return new IllegalStateException("The provided " +
-                "consumer factory \"" + factory + "\" only supports the " +
-                "following encodings: " + factory.serviceEncodings() + ", " +
-                "while this query was already configured to require that " +
-                "any out of " + currentEncodings + " be supported; no " +
-                "factory-supported encodings are present in the existing " +
-                "collection; cannot resolve service");
+            final var unfilteredEncodings = encodings;
+            final var supportedEncodings = factory.serviceEncodings();
+
+            encodings = encodings.stream()
+                .filter(supportedEncodings::contains)
+                .collect(Collectors.toUnmodifiableList());
+
+            if (encodings.isEmpty()) {
+                return new IllegalStateException("The provided " +
+                    "consumer factory \"" + factory + "\" only supports the " +
+                    "following encodings: " + supportedEncodings + ", " +
+                    "while this query was already configured to require that " +
+                    "any out of " + supportedEncodings + " be supported; no " +
+                    "factory-supported encodings are present in the existing " +
+                    "collection; cannot resolve service");
+            }
         }
 
         // Set and check service metadata.
