@@ -33,6 +33,7 @@ import java.net.InetSocketAddress;
 import java.security.PublicKey;
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static se.arkalix.security.access.AccessPolicyType.CERTIFICATE;
@@ -62,6 +63,7 @@ import static se.arkalix.util.concurrent.Future.done;
 @SuppressWarnings("unused")
 public class HttpJsonCloudPlugin implements Plugin {
     private static final Logger logger = LoggerFactory.getLogger(HttpJsonCloudPlugin.class);
+    private static final Pattern serviceRegistryPattern = Pattern.compile("^service[_-]?registry$");
 
     private final Predicate<ServiceRecord> serviceRegistrationPredicate;
     private final InetSocketAddress serviceRegistrySocketAddress;
@@ -327,7 +329,7 @@ public class HttpJsonCloudPlugin implements Plugin {
                         if (isSecure) {
                             final var identity = new SystemIdentity(connection.remoteCertificateChain());
                             final var name = identity.name();
-                            if (!Objects.equals(name, "serviceregistry")) {
+                            if (!serviceRegistryPattern.matcher(name).matches()) {
                                 return Result.failure(new CloudException("" +
                                     "HTTP/JSON cloud plugin connected to " +
                                     "system at " + serviceRegistrySocketAddress +
